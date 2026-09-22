@@ -1,0 +1,44 @@
+.cuenta {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 140px);
+  padding: 3rem 1.5rem;
+  background-color: #0d0d0f;
+}
+
+.contenido {
+  width: 100%;
+  max-width: 480px;
+}
+
+.panel-cuenta {
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+}
+
+.panel-cuenta h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.panel-cuenta p {
+  font-size: 0.9rem;
+  color: #a1a1aa;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .cuenta {
+    padding: 2rem 1rem;
+  }
+
+  .panel-cuenta {
+    padding: 2rem 1.5rem;
+  }
+}
