@@ -5,3 +5,14 @@
 body {
   @apply bg-gamer-bg text-white;
 }
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0a0908;
+  color: #e7e5e4;
+}
+
+#root {
+  min-height: 100vh;
+}
