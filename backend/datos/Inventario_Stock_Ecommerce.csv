@@ -1,0 +1,42 @@
+ID,Categoría,Marca,Nombre del Producto / Descripción
+1,Herramientas Técnicas,Genérica,Multímetro Digital con puntas de prueba (Tester)
+2,Herramientas Técnicas,Arctic,Pasta Térmica Arctic MX-4 (4 gramos)
+3,Herramientas Técnicas,iFixit,Kit de destornilladores de precisión (64 puntas)
+4,Herramientas Técnicas,Genérica,Pulsera antiestática con cable a tierra
+5,Herramientas Técnicas,Genérica,Tester de Fuente de Alimentación (ATX / 20+4 pines)
+6,Herramientas Técnicas,Delta,Alcohol Isopropílico de alta pureza (1 Litro)
+7,Herramientas Técnicas,Compitt,Aire comprimido en aerosol para limpieza de hardware
+8,Herramientas Técnicas,Nisuta,Pinza Crimpeadora para conectores RJ45 / RJ11
+9,Herramientas Técnicas,Genérica,Lector adaptador SATA/IDE a USB 3.0 para discos duros
+10,Herramientas Técnicas,Genérica,Kit organizador de cables (Rollo de Velcro + 100 Precintos)
+11,Procesadores,AMD (Ryzen),Procesador AMD Ryzen 3 3200G con gráficos Radeon Vega 8
+12,Procesadores,AMD (Ryzen),Procesador AMD Ryzen 5 4600G con gráficos integrados
+13,Procesadores,AMD (Ryzen),Procesador AMD Ryzen 5 5600X (Sin gráficos integrados)
+14,Procesadores,AMD (Ryzen),Procesador AMD Ryzen 7 5700X
+15,Procesadores,AMD (Ryzen),Procesador AMD Ryzen 9 7900X
+16,Procesadores,Intel,Procesador Intel Core i3-12100F
+17,Procesadores,Intel,Procesador Intel Core i5-10400
+18,Procesadores,Intel,Procesador Intel Core i5-12400F
+19,Procesadores,Intel,Procesador Intel Core i7-13700K
+20,Procesadores,Intel,Procesador Intel Core i9-14900K
+21,Tarjetas de Video,MSI,Placa de Video MSI GeForce RTX 3060 Ventus 2X 12GB
+22,Placas Madre,MSI,Placa Madre MSI B550M PRO-VDH WiFi
+23,Fuentes,MSI,Fuente de Alimentación MSI MAG A650BN 650W 80+ Bronze
+24,Tarjetas de Video,MSI,Placa de Video MSI Radeon RX 6600 MECH 2X 8GB
+25,Monitores,MSI,"Monitor Gamer MSI Optix G2412 24"" 170Hz"
+26,Placas Madre,ASRock,Placa Madre ASRock A320M-HDV R4.0
+27,Placas Madre,ASRock,Placa Madre ASRock B450M Steel Legend
+28,Placas Madre,ASRock,Placa Madre ASRock H610M-HDV/M.2
+29,Placas Madre,ASRock,Placa Madre ASRock B650M PG Riptide
+30,Tarjetas de Video,ASRock,Placa de Video ASRock Radeon RX 7600 Challenger 8GB
+31,Almacenamiento,Kingston,Unidad SSD Kingston A400 480GB SATA III
+32,Almacenamiento,Kingston,Unidad SSD Kingston NV2 1TB M.2 PCIe 4.0 NVMe
+33,Memorias RAM,Kingston,Memoria RAM Kingston FURY Beast 8GB DDR4 3200MHz
+34,Memorias RAM,Kingston,Memoria RAM Kingston FURY Beast 16GB (2x8GB) DDR4 3200MHz
+35,Periféricos,Kingston,Pendrive Kingston DataTraveler Exodia 64GB USB 3.2
+36,Gabinetes,GameMax,Gabinete GameMax Black Diamond A206 (con panel de cristal)
+37,Fuentes,GameMax,Fuente de Alimentación GameMax VP-600 600W 80+ Bronze
+38,Refrigeración,GameMax,Cooler para CPU GameMax Gamma 500 RGB
+39,Gabinetes,GameMax,Gabinete GameMax Brufen C1 (Flujo de aire optimizado)
+40,Refrigeración,GameMax,Kit de Ventiladores GameMax FN-12 Rainbow (3x120mm)
+41,Kits de PC,Genérica,"Kit de Gabinete 4 en 1 (Incluye: Gabinete, Fuente de alimentación genérica de 500W, Teclado, Mouse y Parlantes)"

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hefesto Tech - Catálogo</title>
+    <style>
+      :root {
+        --primary: #2c3e50;
+        --accent: #e74c3c;
+        --bg: #f4f7f6;
+        --text: #333;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background-color: var(--primary);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      }
+      .card img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+      }
+      .card-content {
+        padding: 1.2rem;
+      }
+      .badge {
+        background-color: var(--accent);
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      .marca {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-top: 0.8rem;
+        margin-bottom: 0.2rem;
+      }
+      .nombre {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.4;
+      }
+      .loading {
+        text-align: center;
+        font-size: 1.2rem;
+        color: var(--primary);
+        grid-column: 1 / -1;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Hefesto Tech</h1>
+      <p>Catálogo de Hardware y Asistencia Técnica</p>
+    </header>
+
+    <div class="container">
+      <div id="grid-productos" class="grid">
+        <div class="loading">Conectando con el servidor FastAPI...</div>
+      </div>
+    </div>
+
+    <script>
+      async function cargarProductos() {
+        const grid = document.getElementById("grid-productos");
+        try {
+          // Llamada a tu servidor local FastAPI
+          const respuesta = await fetch("http://127.0.0.1:8000/api/productos");
+          const datos = await respuesta.json();
+
+          grid.innerHTML = ""; // Limpiar el mensaje de carga
+
+          if (datos.productos && datos.productos.length > 0) {
+            datos.productos.forEach((producto) => {
+              const card = document.createElement("div");
+              card.className = "card";
+
+              card.innerHTML = `
+                            <img src="${producto.Imagen_URL}" alt="${producto.Marca}">
+                            <div class="card-content">
+                                <span class="badge">${producto["Categoría"]}</span>
+                                <p class="marca">${producto.Marca}</p>
+                                <p class="nombre">${producto["Nombre del Producto / Descripción"]}</p>
+                            </div>
+                        `;
+              grid.appendChild(card);
+            });
+          } else {
+            grid.innerHTML =
+              '<p class="loading">No hay productos en el inventario.</p>';
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          grid.innerHTML = `
+                    <div class="loading" style="color: red;">
+                        Error al conectar con la API.<br>
+                        Asegúrate de que el servidor uvicorn (http://127.0.0.1:8000) esté encendido.
+                    </div>`;
+        }
+      }
+
+      // Ejecutar la función al cargar la página
+      cargarProductos();
+    </script>
+  </body>
+</html>
