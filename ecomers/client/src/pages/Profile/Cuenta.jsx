@@ -1,17 +1,14 @@
 import { useState } from "react";
+import Login from "../Login/Login";
 import "./Cuenta.css";
+
 function Cuenta() {
   const [vista, setVista] = useState("login");
 
   return (
     <div className="cuenta">
       <div className="contenido">
-        {vista === "login" && (
-          <div className="panel-cuenta">
-            <h2>Iniciar sesión</h2>
-            <p>Próximamente vas a poder loguearte acá.</p>
-          </div>
-        )}
+        {vista === "login" && <Login />}
 
         {vista === "registro" && (
           <div className="panel-cuenta">

@@ -4,6 +4,8 @@ import Layout from "./components/layout/Layout";
 import Home from "./pages/Home/Home";
 import Carrito from "./pages/Carrito/Carrito";
 import Cuenta from "./pages/Profile/Cuenta";
+import Acerca from "./pages/About/Acerca";
+import Contactanos from "./pages/Contact/Contacto";
 
 export default function App() {
   const [carrito, setCarrito] = useState([]);
@@ -52,6 +54,8 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="carrito" element={<Carrito carrito={carrito} />} />
         <Route path="cuenta" element={<Cuenta />} />
+        <Route path="acerca" element={<Acerca />} />
+        <Route path="contactanos" element={<Contactanos />} />
       </Route>
     </Routes>
   );
