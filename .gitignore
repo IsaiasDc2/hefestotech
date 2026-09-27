@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Builds
+dist/
+build/
+
+# Variables de entorno (los .env.example si se versionan)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
