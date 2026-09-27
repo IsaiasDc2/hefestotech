@@ -55,7 +55,6 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
-/* Opciones: recordarme + olvidaste tu contraseña */
 .opciones-login {
   display: flex;
   justify-content: space-between;
@@ -206,4 +205,11 @@
     margin: 2rem auto;
     padding: 2rem 1.5rem;
   }
+}
+
+.login-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: -0.6rem 0 0.8rem;
+  text-align: center;
 }
