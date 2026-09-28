@@ -80,21 +80,21 @@ function Footer() {
 
 
             <li>
-              <Link to="/acerca">
-                Nosotros
+              <Link to="/productos">
+                Productos
+              </Link>
+            </li>
+
+
+            <li>
+              <Link to="/cuenta">
+                Mi cuenta
               </Link>
             </li>
 
 
             <li>
               <Link to="/contactanos">
-                Contacto
-              </Link>
-            </li>
-
-
-            <li>
-              <Link to="/arma-tu-pc">
                 Armá tu PC
               </Link>
             </li>
@@ -119,21 +119,21 @@ function Footer() {
           <ul>
 
             <li>
-              <Link to="/envios">
+              <Link to="/contactanos">
                 Envíos
               </Link>
             </li>
 
 
             <li>
-              <Link to="/cambios-devoluciones">
+              <Link to="/contactanos">
                 Cambios y devoluciones
               </Link>
             </li>
 
 
             <li>
-              <Link to="/preguntas-frecuentes">
+              <Link to="/acerca">
                 Preguntas frecuentes
               </Link>
             </li>

@@ -1,18 +1,110 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  @apply bg-gamer-bg text-white;
+:root {
+  --bg: #0b0908;
+  --surface: #141110;
+  --card: #1c1614;
+  --card-2: #241b17;
+  --border: #2e2521;
+  --border-suave: #231d1a;
+  --text: #f5efe9;
+  --muted: #a8a29e;
+  --muted-oscuro: #78716c;
+  --fuego: #f97316;
+  --fuego-oscuro: #c2410c;
+  --brasa: #ef4444;
+  --oro: #fbbf24;
+  --ok: #4ade80;
+  --grad-fuego: linear-gradient(135deg, #f97316, #dc2626);
+  --radio: 12px;
+  --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
-html,
-body {
+
+* {
   margin: 0;
   padding: 0;
-  background-color: #0a0908;
-  color: #e7e5e4;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--fuego);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+}
+
+input::placeholder {
+  color: var(--muted-oscuro);
+}
+
+button {
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fuego-oscuro);
 }

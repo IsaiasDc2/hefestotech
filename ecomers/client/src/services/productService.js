@@ -1,18 +1,26 @@
-import api from "./api";
+import { supabase } from "../components/lib/supabaseClient";
 
 export const obtenerProductos = async () => {
-  const response = await api.get("/productos");
-  return response.data;
+  const { data, error } = await supabase.from("productos").select("*");
+  if (error) throw new Error(error.message);
+  return data;
 };
 
 export const obtenerProductoPorId = async (id) => {
-  const response = await api.get(`/productos/${id}`);
-  return response.data;
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
 };
 
 export const buscarProductos = async (query) => {
-  const response = await api.get("/productos/buscar", {
-    params: { q: query },
-  });
-  return response.data;
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%`);
+  if (error) throw new Error(error.message);
+  return data;
 };

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { loginUsuario, registrarUsuario, obtenerUsuarioActual } from "../services/authService";
+import { loginUsuario, registrarUsuario, obtenerUsuarioActual, cerrarSesion } from "../services/authService";
 
 const useAuthStore = create((set) => ({
   usuario: null,
@@ -49,9 +49,13 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  logout: () => {
-    localStorage.removeItem("token");
-    set({ usuario: null, isAuthenticated: false });
+  logout: async () => {
+    try {
+      await cerrarSesion();
+    } finally {
+      localStorage.removeItem("token");
+      set({ usuario: null, isAuthenticated: false });
+    }
   },
 }));
 
