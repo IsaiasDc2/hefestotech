@@ -83,6 +83,94 @@
         color: var(--primary);
         grid-column: 1 / -1;
       }
+
+      /* Estilos del Chat */
+      .chat-bubble {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: var(--accent);
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        transition: transform 0.2s;
+      }
+      .chat-bubble:hover {
+        transform: scale(1.1);
+      }
+      .chat-window {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        display: none;
+        flex-direction: column;
+        z-index: 1000;
+        overflow: hidden;
+      }
+      .chat-header {
+        background-color: var(--primary);
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        text-align: center;
+      }
+      .chat-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #f9f9f9;
+      }
+      .chat-input-area {
+        display: flex;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+      }
+      .chat-input-area input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+      }
+      .chat-input-area button {
+        background-color: var(--accent);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        margin-left: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .msg-user {
+        align-self: flex-end;
+        background-color: #d1f2eb;
+        padding: 8px 12px;
+        border-radius: 15px 15px 0 15px;
+        font-size: 0.9rem;
+      }
+      .msg-bot {
+        align-self: flex-start;
+        background-color: #e8e8e8;
+        padding: 8px 12px;
+        border-radius: 15px 15px 15px 0;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
   <body>
@@ -97,15 +185,35 @@
       </div>
     </div>
 
+    <!-- Burbuja y Ventana de Chat -->
+    <div class="chat-bubble" onclick="toggleChat()">💬</div>
+
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-header">Asistente Hefesto</div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg-bot">¡Hola! ¿En qué te puedo ayudar hoy?</div>
+      </div>
+      <div class="chat-input-area">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Escribe tu consulta..."
+          onkeypress="manejarEnter(event)"
+        />
+        <button onclick="enviarMensaje()">Enviar</button>
+      </div>
+    </div>
+
+    <!-- Scripts unificados -->
     <script>
+      // Lógica del Catálogo
       async function cargarProductos() {
         const grid = document.getElementById("grid-productos");
         try {
-          // Llamada a tu servidor local FastAPI
           const respuesta = await fetch("http://127.0.0.1:8000/api/productos");
           const datos = await respuesta.json();
 
-          grid.innerHTML = ""; // Limpiar el mensaje de carga
+          grid.innerHTML = "";
 
           if (datos.productos && datos.productos.length > 0) {
             datos.productos.forEach((producto) => {
@@ -123,8 +231,7 @@
               grid.appendChild(card);
             });
           } else {
-            grid.innerHTML =
-              '<p class="loading">No hay productos en el inventario.</p>';
+            grid.innerHTML = '<p class="loading">No hay productos en el inventario.</p>';
           }
         } catch (error) {
           console.error("Error:", error);
@@ -133,11 +240,50 @@
                         Error al conectar con la API.<br>
                         Asegúrate de que el servidor uvicorn (http://127.0.0.1:8000) esté encendido.
                     </div>`;
-        }
+        } // ¡AQUÍ ESTABAN LAS LLAVES FALTANTES!
       }
 
-      // Ejecutar la función al cargar la página
-      cargarProductos();
+      cargarProductos(); // Ejecutamos la carga del catálogo
+
+      // Lógica del Chat
+      function toggleChat() {
+        const chat = document.getElementById("chatWindow");
+        chat.style.display = chat.style.display === "flex" ? "none" : "flex";
+      }
+
+      function manejarEnter(event) {
+        if (event.key === "Enter") enviarMensaje();
+      }
+
+      async function enviarMensaje() {
+        const input = document.getElementById("chatInput");
+        const mensaje = input.value.trim();
+        if (!mensaje) return;
+
+        const mensajesDiv = document.getElementById("chatMessages");
+
+        // 1. Mostrar el mensaje del usuario en la pantalla
+        mensajesDiv.innerHTML += `<div class="msg-user">${mensaje}</div>`;
+        input.value = "";
+        mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+
+        try {
+          // 2. Enviar el mensaje a FastAPI
+          const respuesta = await fetch("http://127.0.0.1:8000/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ texto: mensaje }),
+          });
+
+          const datos = await respuesta.json();
+
+          // 3. Mostrar la respuesta de la IA en la pantalla
+          mensajesDiv.innerHTML += `<div class="msg-bot">${datos.respuesta}</div>`;
+          mensajesDiv.scrollTop = mensajesDiv.scrollHeight;
+        } catch (error) {
+          mensajesDiv.innerHTML += `<div class="msg-bot" style="color:red;">Error de conexión con el servidor.</div>`;
+        }
+      }
     </script>
   </body>
 </html>
