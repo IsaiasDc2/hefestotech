@@ -65,8 +65,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             </Link>
           ))}
           <span className="nav-ayuda">
-            <Link to="/acerca">Ayuda</Link>
-            <Link to="/contactanos">Posventa</Link>
+            <Link to="/acerca">Nosotros</Link>
+            <Link to="/contactanos">Contactanos</Link>
           </span>
         </div>
       </nav>

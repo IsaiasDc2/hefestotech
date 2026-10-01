@@ -88,12 +88,36 @@ export default function Banner() {
             aria-roledescription="diapositiva"
             aria-label={`${i + 1} de ${total}`}
           >
-            <div className="banner-arte" aria-hidden="true">
-              <span className="razo r1" />
-              <span className="razo r2" />
-              <span className="razo r3" />
-              <span className="orbe" />
-            </div>
+            {s.id === "gpu" && (
+              <div className="banner-visual" aria-hidden="true">
+                <div className="gpu">
+                  <span className="gpu-fan f1" />
+                  <span className="gpu-fan f2" />
+                  <span className="gpu-fan f3" />
+                  <span className="gpu-logo">RTX</span>
+                </div>
+              </div>
+            )}
+            {s.id === "setup" && (
+              <div className="banner-visual" aria-hidden="true">
+                <div className="setup">
+                  <span className="setup-torre" />
+                  <span className="setup-monitor" />
+                  <span className="setup-base" />
+                </div>
+              </div>
+            )}
+            {s.id === "peris" && (
+              <div className="banner-visual" aria-hidden="true">
+                <div className="teclado">
+                  <span className="tec-fila" />
+                  <span className="tec-fila" />
+                  <span className="tec-fila" />
+                  <span className="tec-fila corta" />
+                  <span className="mouse" />
+                </div>
+              </div>
+            )}
             <div className="banner-texto">
               <p className="banner-eyebrow">{s.eyebrow}</p>
               <h2>{s.titulo}</h2>
