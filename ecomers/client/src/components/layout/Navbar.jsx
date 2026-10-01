@@ -5,11 +5,12 @@ import "./Navbar.css";
 
 const CATEGORIAS = [
   { label: "Productos", to: "/productos" },
-  { label: "Procesadores", to: "/productos?categoria=Procesadores" },
-  { label: "Placas de video", to: "/productos?categoria=Placas de video" },
-  { label: "Memorias", to: "/productos?categoria=Memorias" },
-  { label: "Almacenamiento", to: "/productos?categoria=Almacenamiento" },
-  { label: "Ofertas", to: "/productos?orden=mayor" },
+  { label: "Procesadores", to: "/productos?categoria=procesadores" },
+  { label: "Placas de video", to: "/productos?categoria=placas-de-video" },
+  { label: "Memorias", to: "/productos?categoria=memorias" },
+  { label: "Almacenamiento", to: "/productos?categoria=almacenamiento" },
+  { label: "Periféricos", to: "/productos?categoria=perifericos" },
+  { label: "Ofertas", to: "/productos?categoria=ofertas" },
 ];
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {

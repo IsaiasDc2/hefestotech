@@ -29,12 +29,12 @@ const MARCAS = [
 ];
 
 const CATEGORIAS = [
-  { nombre: "Procesadores", icono: <FaMicrochip /> },
-  { nombre: "Placas de video", icono: <FaDesktop /> },
-  { nombre: "Memorias", icono: <FaMemory /> },
-  { nombre: "Almacenamiento", icono: <FaHardDrive /> },
-  { nombre: "Periféricos", icono: <FaKeyboard /> },
-  { nombre: "Ofertas", icono: <FaFire /> },
+  { nombre: "Procesadores", slug: "procesadores", icono: <FaMicrochip /> },
+  { nombre: "Placas de video", slug: "placas-de-video", icono: <FaDesktop /> },
+  { nombre: "Memorias", slug: "memorias", icono: <FaMemory /> },
+  { nombre: "Almacenamiento", slug: "almacenamiento", icono: <FaHardDrive /> },
+  { nombre: "Periféricos", slug: "perifericos", icono: <FaKeyboard /> },
+  { nombre: "Ofertas", slug: "ofertas", icono: <FaFire /> },
 ];
 
 function Home({ agregarAlCarrito }) {
@@ -91,7 +91,7 @@ function Home({ agregarAlCarrito }) {
           {CATEGORIAS.map((c) => (
             <Link
               key={c.nombre}
-              to={`/productos?categoria=${encodeURIComponent(c.nombre)}`}
+              to={`/productos?categoria=${c.slug}`}
               className="card-categoria"
             >
               <span className="cat-icono">{c.icono}</span>

@@ -34,7 +34,7 @@ const SLIDES = [
     titulo: "Precisión en cada clic",
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
-    to: "/productos?categoria=Periferico",
+    to: "/productos?categoria=perifericos",
     posicion: "right center",
   },
 ];

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import ProductCard from "./ProductCard";
 import "./Productos.css";
 
@@ -18,13 +19,25 @@ function Productos({ agregarAlCarrito }) {
 
   const [busqueda, setBusqueda] = useState(params.get("q") || "");
 
-  const [categoria, setCategoria] = useState(params.get("categoria") || "Todas");
+  const categoriaInicial = resolverCategoria(params.get("categoria"));
+  const [categoria, setCategoria] = useState(categoriaInicial.db);
+  const [soloOfertas, setSoloOfertas] = useState(categoriaInicial.ofertas);
 
   const [precioMin, setPrecioMin] = useState("");
 
   const [precioMax, setPrecioMax] = useState("");
 
   const [orden, setOrden] = useState(params.get("orden") === "mayor" ? "mayor" : "");
+
+
+  // Si cambia la URL (ej: clic en otra categoría) se re-aplican los filtros
+  useEffect(() => {
+    const r = resolverCategoria(params.get("categoria"));
+    setCategoria(r.db);
+    setSoloOfertas(r.ofertas);
+    setBusqueda(params.get("q") || "");
+    setOrden(params.get("orden") === "mayor" ? "mayor" : "");
+  }, [params]);
 
 
 
@@ -64,6 +77,7 @@ function Productos({ agregarAlCarrito }) {
           ...p,
           precio: Number(p.precio ?? 0),
           stock: Number(p.stock ?? 0),
+          descuento_porcentaje: Number(p.descuento_porcentaje ?? 0),
           imagen: p.imagen || "",
           categoria: p.categoria || "General",
         }));
@@ -133,6 +147,8 @@ function Productos({ agregarAlCarrito }) {
 
     setCategoria("Todas");
 
+    setSoloOfertas(false);
+
     setPrecioMin("");
 
     setPrecioMax("");
@@ -180,6 +196,12 @@ function Productos({ agregarAlCarrito }) {
       producto.categoria===categoria;
 
 
+      const coincideOferta =
+      !soloOfertas
+      ||
+      (producto.descuento_porcentaje ?? 0) > 0;
+
+
 
 
 
@@ -208,6 +230,7 @@ function Productos({ agregarAlCarrito }) {
 
         coincideNombre &&
         coincideCategoria &&
+        coincideOferta &&
         coincideMin &&
         coincideMax
 
@@ -249,6 +272,7 @@ function Productos({ agregarAlCarrito }) {
     productos,
     busqueda,
     categoria,
+    soloOfertas,
     precioMin,
     precioMax,
     orden
@@ -270,15 +294,17 @@ function Productos({ agregarAlCarrito }) {
 
 
         <h1>
-          Componentes de PC
+          {soloOfertas ? "Ofertas" : "Componentes de PC"}
         </h1>
 
 
         <p className="subtitulo-productos">
 
-          Encontrá procesadores, placas de video,
+          {soloOfertas
+            ? "Descuentos reales en hardware seleccionado."
+            : `Encontrá procesadores, placas de video,
           memorias y todo lo necesario para armar
-          tu PC ideal.
+          tu PC ideal.`}
 
         </p>
 
@@ -318,7 +344,7 @@ function Productos({ agregarAlCarrito }) {
           value={categoria}
 
           onChange={
-            e=>setCategoria(e.target.value)
+            e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
           }
 
         >
