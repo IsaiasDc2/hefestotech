@@ -24,7 +24,12 @@ function ProductCard({ producto, agregarAlCarrito }) {
       </button>
 
       <Link to={`/producto/${producto.id}`} className="producto-detalle">
-        <img src={producto.imagen} alt={producto.nombre} />
+        <img
+          src={producto.imagen}
+          alt={producto.nombre}
+          loading="lazy"
+          decoding="async"
+        />
         <h3>{producto.nombre}</h3>
       </Link>
 

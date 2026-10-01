@@ -13,6 +13,7 @@ import {
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
 import ProductCard from "../../components/product/ProductCard";
+import Banner from "../../components/layout/Banner";
 import "./Home.css";
 
 const CATEGORIAS = [
@@ -56,6 +57,7 @@ function Home({ agregarAlCarrito }) {
 
   return (
     <div className="home">
+      <Banner />
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-texto">

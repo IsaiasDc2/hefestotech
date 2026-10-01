@@ -1,13 +1,24 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Home from "./pages/Home/Home";
-import Productos from "./components/product/Producto";
-import ProductoDetalle from "./components/product/ProductList";
-import Carrito from "./pages/Carrito/Carrito";
-import Cuenta from "./pages/Profile/Cuenta";
-import Acerca from "./pages/About/Acerca";
-import Contactanos from "./pages/Contact/Contacto";
+
+const Home = lazy(() => import("./pages/Home/Home"));
+const Productos = lazy(() => import("./components/product/Producto"));
+const ProductoDetalle = lazy(() => import("./components/product/ProductList"));
+const Carrito = lazy(() => import("./pages/Carrito/Carrito"));
+const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
+const Acerca = lazy(() => import("./pages/About/Acerca"));
+const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
+
+function CargandoPagina() {
+  return (
+    <div className="cargando-pagina" role="status" aria-label="Cargando página">
+      <span className="cargando-punto" />
+      <span className="cargando-punto" />
+      <span className="cargando-punto" />
+    </div>
+  );
+}
 
 export default function App() {
   const [carrito, setCarrito] = useState([]);
@@ -52,7 +63,8 @@ export default function App() {
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
-    <Routes>
+    <Suspense fallback={<CargandoPagina />}>
+      <Routes>
       <Route
         path="/"
         element={
@@ -83,6 +95,7 @@ export default function App() {
         <Route path="contactanos" element={<Contactanos />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

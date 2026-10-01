@@ -1,0 +1,142 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import "./Banner.css";
+
+const SLIDES = [
+  {
+    id: "gpu",
+    tema: "neon",
+    eyebrow: "Nueva generación",
+    titulo: "Potencia bruta para tu setup",
+    texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
+    cta: "Ver placas de video",
+    to: "/productos?categoria=Placas de video",
+  },
+  {
+    id: "setup",
+    tema: "magenta",
+    eyebrow: "Todo en un lugar",
+    titulo: "Armá tu setup completo",
+    texto: "Monitor, gabinete, refrigeración y más para tu espacio ideal.",
+    cta: "Explorar productos",
+    to: "/productos",
+  },
+  {
+    id: "peris",
+    tema: "ambar",
+    eyebrow: "Precisión gamer",
+    titulo: "Precisión en cada clic",
+    texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
+    cta: "Ver periféricos",
+    to: "/productos?categoria=Periféricos",
+  },
+];
+
+const AUTOPLAY_MS = 6000;
+
+export default function Banner() {
+  const [indice, setIndice] = useState(0);
+  const [pausado, setPausado] = useState(false);
+  const total = SLIDES.length;
+  const timer = useRef(null);
+  const touchX = useRef(null);
+
+  const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);
+  const anterior = useCallback(() => irA(indice - 1), [indice, irA]);
+  const siguiente = useCallback(() => irA(indice + 1), [indice, irA]);
+
+  useEffect(() => {
+    if (pausado || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    timer.current = setTimeout(() => irA(indice + 1), AUTOPLAY_MS);
+    return () => clearTimeout(timer.current);
+  }, [indice, pausado, irA]);
+
+  const onTouchStart = (e) => {
+    touchX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    if (Math.abs(dx) > 40) {
+      if (dx < 0) siguiente();
+      else anterior();
+    }
+    touchX.current = null;
+  };
+
+  return (
+    <section
+      className="banner"
+      aria-roledescription="carrusel"
+      aria-label="Promociones destacadas"
+      onMouseEnter={() => setPausado(true)}
+      onMouseLeave={() => setPausado(false)}
+      onFocus={() => setPausado(true)}
+      onBlur={() => setPausado(false)}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <div
+        className="banner-pista"
+        style={{ transform: `translateX(-${indice * 100}%)` }}
+      >
+        {SLIDES.map((s, i) => (
+          <article
+            key={s.id}
+            className={`banner-slide tema-${s.tema}`}
+            aria-hidden={i !== indice}
+            aria-roledescription="diapositiva"
+            aria-label={`${i + 1} de ${total}`}
+          >
+            <div className="banner-arte" aria-hidden="true">
+              <span className="razo r1" />
+              <span className="razo r2" />
+              <span className="razo r3" />
+              <span className="orbe" />
+            </div>
+            <div className="banner-texto">
+              <p className="banner-eyebrow">{s.eyebrow}</p>
+              <h2>{s.titulo}</h2>
+              <p>{s.texto}</p>
+              <Link
+                to={s.to}
+                className="banner-cta"
+                tabIndex={i === indice ? 0 : -1}
+              >
+                {s.cta}
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <button
+        className="banner-flecha ant"
+        onClick={anterior}
+        aria-label="Diapositiva anterior"
+      >
+        ‹
+      </button>
+      <button
+        className="banner-flecha sig"
+        onClick={siguiente}
+        aria-label="Diapositiva siguiente"
+      >
+        ›
+      </button>
+
+      <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
+        {SLIDES.map((s, i) => (
+          <button
+            key={s.id}
+            role="tab"
+            aria-selected={i === indice}
+            aria-label={`Ir a la diapositiva ${i + 1}`}
+            className={i === indice ? "activo" : ""}
+            onClick={() => irA(i)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
