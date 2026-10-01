@@ -1,0 +1,71 @@
+.carrusel {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 0;
+}
+
+.carrusel-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.carrusel-acciones a {
+  color: var(--fuego);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.carrusel-acciones a:hover {
+  text-decoration: underline;
+}
+
+.carrusel-acciones button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.carrusel-acciones button:hover {
+  border-color: var(--fuego);
+  color: var(--fuego);
+}
+
+.carrusel-pista {
+  display: flex;
+  gap: 1.1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 0.4rem 0.1rem 1rem;
+  margin: 0 -0.1rem;
+}
+
+.carrusel-pista::-webkit-scrollbar {
+  display: none;
+}
+
+.carrusel-item {
+  flex: 0 0 min(270px, 72vw);
+  scroll-snap-align: start;
+  display: flex;
+}
+
+.carrusel-item > * {
+  flex: 1;
+}
+
+@media (max-width: 560px) {
+  .carrusel {
+    padding-inline: 1rem;
+  }
+}

@@ -2,182 +2,41 @@
   background-color: var(--bg);
 }
 
-/* ---------- HERO ---------- */
-.hero {
-  position: relative;
-  overflow: hidden;
-  border-bottom: 1px solid var(--border);
-  background:
-    radial-gradient(ellipse 60% 90% at 12% 110%, rgba(249, 115, 22, 0.22), transparent 60%),
-    radial-gradient(ellipse 50% 80% at 95% -10%, rgba(220, 38, 38, 0.16), transparent 60%),
-    linear-gradient(180deg, #141010 0%, #0b0908 100%);
+/* ---------- MARCAS ---------- */
+.marcas {
+  padding-bottom: 1rem;
 }
 
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(249, 115, 22, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(249, 115, 22, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, black 30%, transparent 75%);
-  pointer-events: none;
-}
-
-.hero-inner {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 2rem;
-  align-items: center;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 4.5rem 1.5rem 5rem;
-}
-
-.hero-eyebrow {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--oro);
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  background: rgba(251, 191, 36, 0.08);
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
-  margin-bottom: 1.2rem;
-}
-
-.hero-texto h1 {
-  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: var(--text);
-  margin-bottom: 1.1rem;
-}
-
-.hero-fuego {
-  background: linear-gradient(100deg, #fdba74 0%, var(--fuego) 40%, var(--brasa) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.hero-sub {
-  font-size: 1.05rem;
-  color: var(--muted);
-  max-width: 480px;
-  margin-bottom: 2rem;
-}
-
-.hero-acciones {
+.marcas-fila {
   display: flex;
-  gap: 0.9rem;
-  flex-wrap: wrap;
+  gap: 0.8rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0.4rem 0.1rem 1rem;
 }
 
-.btn-hero {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.85rem 1.9rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+.marcas-fila::-webkit-scrollbar {
+  display: none;
 }
 
-.btn-hero.primario {
-  background: var(--grad-fuego);
-  color: #fff;
-  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.4);
-}
-
-.btn-hero.primario:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(249, 115, 22, 0.5);
-}
-
-.btn-hero.fantasma {
+.marca-chip {
+  flex: 0 0 auto;
+  padding: 0.7rem 1.5rem;
   border: 1px solid var(--border);
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.btn-hero.fantasma:hover {
-  border-color: var(--fuego);
-  color: var(--fuego);
-}
-
-/* Visual del hero: brasas + yunque con monograma */
-.hero-visual {
-  display: flex;
-  justify-content: center;
-}
-
-.brasas {
-  position: relative;
-  width: min(380px, 80vw);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 65%, rgba(249, 115, 22, 0.35), transparent 55%),
-    radial-gradient(circle at 50% 50%, #2a1a12 0%, #141010 65%, transparent 70%);
-  border: 1px solid rgba(249, 115, 22, 0.25);
-  box-shadow: 0 0 90px rgba(249, 115, 22, 0.18), inset 0 0 60px rgba(0, 0, 0, 0.6);
-  animation: respirar 4s ease-in-out infinite;
-}
-
-@keyframes respirar {
-  0%, 100% { box-shadow: 0 0 70px rgba(249, 115, 22, 0.14), inset 0 0 60px rgba(0, 0, 0, 0.6); }
-  50% { box-shadow: 0 0 110px rgba(249, 115, 22, 0.28), inset 0 0 60px rgba(0, 0, 0, 0.6); }
-}
-
-.yunque {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 130px;
-  height: 130px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.6rem;
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  color: #fff7ed;
-  background: linear-gradient(145deg, #3a2a22, #1c1410);
-  border: 2px solid rgba(249, 115, 22, 0.5);
-  border-radius: 26px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(249, 115, 22, 0.25);
-}
-
-.chip-spec {
-  position: absolute;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--oro);
-  background: rgba(12, 9, 7, 0.9);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  animation: flotar 5s ease-in-out infinite;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
 }
 
-.chip-spec.s1 { top: 8%; left: 6%; }
-.chip-spec.s2 { top: 22%; right: 2%; animation-delay: -1.5s; }
-.chip-spec.s3 { bottom: 20%; left: 0%; animation-delay: -3s; }
-.chip-spec.s4 { bottom: 8%; right: 10%; animation-delay: -4s; }
-
-@keyframes flotar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-9px); }
+.marca-chip:hover {
+  border-color: var(--fuego);
+  color: var(--text);
+  transform: translateY(-2px);
 }
 
 /* ---------- BENEFICIOS ---------- */
@@ -294,12 +153,6 @@
   border-radius: 14px;
 }
 
-.grid-destacados {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.1rem;
-}
-
 .estado-carga,
 .vacio {
   text-align: center;
@@ -321,34 +174,9 @@
   .grid-categorias {
     grid-template-columns: repeat(3, 1fr);
   }
-  .grid-destacados {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 860px) {
-  .hero-inner {
-    grid-template-columns: 1fr;
-    padding: 3rem 1.25rem 3.5rem;
-    text-align: center;
-  }
-  .hero-sub {
-    margin-inline: auto;
-  }
-  .hero-acciones {
-    justify-content: center;
-  }
-  .hero-visual {
-    order: -1;
-  }
-  .brasas {
-    width: min(240px, 64vw);
-  }
-  .yunque {
-    width: 88px;
-    height: 88px;
-    font-size: 1.8rem;
-  }
   .beneficios {
     grid-template-columns: 1fr;
   }
@@ -357,8 +185,5 @@
 @media (max-width: 560px) {
   .grid-categorias {
     grid-template-columns: repeat(2, 1fr);
-  }
-  .grid-destacados {
-    grid-template-columns: 1fr;
   }
 }

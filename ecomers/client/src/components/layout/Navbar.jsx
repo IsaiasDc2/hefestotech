@@ -22,7 +22,20 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   };
 
   return (
-    <header className="site-head">
+    <>
+      <div className="topbar">
+        <div className="topbar-inner">
+          <span>Envíos a todo el país</span>
+          <span className="topbar-links">
+            <Link to="/acerca">Ayuda</Link>
+            <Link to="/contactanos">Posventa</Link>
+            <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
+              WhatsApp
+            </a>
+          </span>
+        </div>
+      </div>
+      <header className="site-head">
       <div className="site-head-inner">
         <Link to="/" className="logo">
           <FaMicrochip className="logo-icon" />
@@ -71,6 +84,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         </div>
       </nav>
     </header>
+    </>
   );
 }
 

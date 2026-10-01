@@ -12,9 +12,21 @@ import {
   FaCreditCard,
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
-import ProductCard from "../../components/product/ProductCard";
+import ProductCarousel from "../../components/product/ProductCarousel";
+import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
 import "./Home.css";
+
+const MARCAS = [
+  "Logitech",
+  "Redragon",
+  "AMD",
+  "Intel",
+  "NVIDIA",
+  "Corsair",
+  "Kingston",
+  "Razer",
+];
 
 const CATEGORIAS = [
   { nombre: "Procesadores", icono: <FaMicrochip /> },
@@ -27,27 +39,37 @@ const CATEGORIAS = [
 
 function Home({ agregarAlCarrito }) {
   const [destacados, setDestacados] = useState([]);
+  const [ofertas, setOfertas] = useState([]);
   const [cargando, setCargando] = useState(true);
+
+  const normalizar = (data) =>
+    (data || []).map((p) => ({
+      ...p,
+      precio: Number(p.precio ?? 0),
+      stock: Number(p.stock ?? 0),
+      imagen: p.imagen || "",
+      categoria: p.categoria || "General",
+    }));
 
   useEffect(() => {
     async function cargar() {
       try {
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*")
-          .limit(8);
-        if (error) throw error;
-        setDestacados(
-          (data || []).map((p) => ({
-            ...p,
-            precio: Number(p.precio ?? 0),
-            stock: Number(p.stock ?? 0),
-            imagen: p.imagen || "",
-            categoria: p.categoria || "General",
-          }))
-        );
+        const [{ data: dest, error: e1 }, { data: ofer, error: e2 }] =
+          await Promise.all([
+            supabase.from("productos").select("*").limit(8),
+            supabase
+              .from("productos")
+              .select("*")
+              .gt("descuentoPorcentaje", 0)
+              .limit(10),
+          ]);
+        if (e1) throw e1;
+        if (e2) throw e2;
+        setDestacados(normalizar(dest));
+        setOfertas(normalizar(ofer));
       } catch {
         setDestacados([]);
+        setOfertas([]);
       } finally {
         setCargando(false);
       }
@@ -58,37 +80,66 @@ function Home({ agregarAlCarrito }) {
   return (
     <div className="home">
       <Banner />
-      <section className="hero">
-        <div className="hero-inner">
-          <div className="hero-texto">
-            <p className="hero-eyebrow">Hefestotech · Hardware & Gaming</p>
-            <h1>
-              Forjá tu próxima
-              <span className="hero-fuego"> máquina</span>
-            </h1>
-            <p className="hero-sub">
-              Procesadores, placas de video, memorias y todo lo que tu setup
-              necesita para trabajar, crear y jugar a tu manera.
-            </p>
-            <div className="hero-acciones">
-              <Link to="/productos" className="btn-hero primario">
-                Ver productos
-              </Link>
-              <Link to="/contactanos" className="btn-hero fantasma">
-                Armá tu PC
-              </Link>
-            </div>
-          </div>
+      <PromoBar />
 
-          <div className="hero-visual" aria-hidden="true">
-            <div className="brasas">
-              <span className="chip-spec s1">DDR5</span>
-              <span className="chip-spec s2">NVMe Gen4</span>
-              <span className="chip-spec s3">RTX Ready</span>
-              <span className="chip-spec s4">AM5</span>
-              <div className="yunque">HT</div>
+      <section className="seccion">
+        <div className="seccion-head">
+          <h2>Explorá por categoría</h2>
+          <Link to="/productos">Ver todo →</Link>
+        </div>
+        <div className="grid-categorias">
+          {CATEGORIAS.map((c) => (
+            <Link
+              key={c.nombre}
+              to={`/productos?categoria=${encodeURIComponent(c.nombre)}`}
+              className="card-categoria"
+            >
+              <span className="cat-icono">{c.icono}</span>
+              <span>{c.nombre}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {cargando ? (
+        <p className="estado-carga">Calentando la forja...</p>
+      ) : (
+        <>
+          <ProductCarousel
+            titulo="Ofertas de la semana"
+            verTodo="/productos?orden=mayor"
+            productos={ofertas}
+            agregarAlCarrito={agregarAlCarrito}
+          />
+          <ProductCarousel
+            titulo="Destacados de la forja"
+            verTodo="/productos"
+            productos={destacados}
+            agregarAlCarrito={agregarAlCarrito}
+          />
+          {destacados.length === 0 && ofertas.length === 0 && (
+            <div className="vacio">
+              <p>El catálogo se está forjando.</p>
+              <span>Volvé pronto para ver los destacados.</span>
             </div>
-          </div>
+          )}
+        </>
+      )}
+
+      <section className="seccion marcas">
+        <div className="seccion-head">
+          <h2>Nuestras marcas</h2>
+        </div>
+        <div className="marcas-fila">
+          {MARCAS.map((m) => (
+            <Link
+              key={m}
+              to={`/productos?q=${encodeURIComponent(m)}`}
+              className="marca-chip"
+            >
+              {m}
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -114,50 +165,6 @@ function Home({ agregarAlCarrito }) {
             <span>12 meses en todos los productos</span>
           </div>
         </div>
-      </section>
-
-      <section className="seccion">
-        <div className="seccion-head">
-          <h2>Explorá por categoría</h2>
-          <Link to="/productos">Ver todo →</Link>
-        </div>
-        <div className="grid-categorias">
-          {CATEGORIAS.map((c) => (
-            <Link
-              key={c.nombre}
-              to={`/productos?categoria=${encodeURIComponent(c.nombre)}`}
-              className="card-categoria"
-            >
-              <span className="cat-icono">{c.icono}</span>
-              <span>{c.nombre}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="seccion">
-        <div className="seccion-head">
-          <h2>Destacados de la forja</h2>
-          <Link to="/productos">Ver catálogo →</Link>
-        </div>
-        {cargando ? (
-          <p className="estado-carga">Calentando la forja...</p>
-        ) : destacados.length === 0 ? (
-          <div className="vacio">
-            <p>El catálogo se está forjando.</p>
-            <span>Volvé pronto para ver los destacados.</span>
-          </div>
-        ) : (
-          <div className="grid-destacados">
-            {destacados.map((p) => (
-              <ProductCard
-                key={p.id}
-                producto={p}
-                agregarAlCarrito={agregarAlCarrito}
-              />
-            ))}
-          </div>
-        )}
       </section>
     </div>
   );

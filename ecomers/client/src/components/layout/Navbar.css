@@ -1,3 +1,34 @@
+.topbar {
+  background: #060504;
+  border-bottom: 1px solid var(--border-suave, #1c1614);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.topbar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.topbar-links {
+  display: flex;
+  gap: 1.2rem;
+}
+
+.topbar-links a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.topbar-links a:hover {
+  color: var(--fuego);
+}
+
 .site-head {
   position: sticky;
   top: 0;

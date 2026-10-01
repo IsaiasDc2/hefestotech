@@ -11,6 +11,8 @@ const SLIDES = [
     texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
     cta: "Ver placas de video",
     to: "/productos?categoria=Placas de video",
+    imagen: "",
+    posicion: "right center",
   },
   {
     id: "setup",
@@ -20,6 +22,8 @@ const SLIDES = [
     texto: "Monitor, gabinete, refrigeración y más para tu espacio ideal.",
     cta: "Explorar productos",
     to: "/productos",
+    imagen: "",
+    posicion: "right center",
   },
   {
     id: "peris",
@@ -29,6 +33,8 @@ const SLIDES = [
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=Periféricos",
+    imagen: "",
+    posicion: "right center",
   },
 ];
 
@@ -88,35 +94,50 @@ export default function Banner() {
             aria-roledescription="diapositiva"
             aria-label={`${i + 1} de ${total}`}
           >
-            {s.id === "gpu" && (
-              <div className="banner-visual" aria-hidden="true">
-                <div className="gpu">
-                  <span className="gpu-fan f1" />
-                  <span className="gpu-fan f2" />
-                  <span className="gpu-fan f3" />
-                  <span className="gpu-logo">RTX</span>
-                </div>
+            {s.imagen ? (
+              <div className="banner-foto">
+                <img
+                  src={s.imagen}
+                  alt=""
+                  aria-hidden="true"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  style={{ objectPosition: s.posicion }}
+                />
               </div>
-            )}
-            {s.id === "setup" && (
-              <div className="banner-visual" aria-hidden="true">
-                <div className="setup">
-                  <span className="setup-torre" />
-                  <span className="setup-monitor" />
-                  <span className="setup-base" />
-                </div>
-              </div>
-            )}
-            {s.id === "peris" && (
-              <div className="banner-visual" aria-hidden="true">
-                <div className="teclado">
-                  <span className="tec-fila" />
-                  <span className="tec-fila" />
-                  <span className="tec-fila" />
-                  <span className="tec-fila corta" />
-                  <span className="mouse" />
-                </div>
-              </div>
+            ) : (
+              <>
+                {s.id === "gpu" && (
+                  <div className="banner-visual" aria-hidden="true">
+                    <div className="gpu">
+                      <span className="gpu-fan f1" />
+                      <span className="gpu-fan f2" />
+                      <span className="gpu-fan f3" />
+                      <span className="gpu-logo">RTX</span>
+                    </div>
+                  </div>
+                )}
+                {s.id === "setup" && (
+                  <div className="banner-visual" aria-hidden="true">
+                    <div className="setup">
+                      <span className="setup-torre" />
+                      <span className="setup-monitor" />
+                      <span className="setup-base" />
+                    </div>
+                  </div>
+                )}
+                {s.id === "peris" && (
+                  <div className="banner-visual" aria-hidden="true">
+                    <div className="teclado">
+                      <span className="tec-fila" />
+                      <span className="tec-fila" />
+                      <span className="tec-fila" />
+                      <span className="tec-fila corta" />
+                      <span className="mouse" />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <div className="banner-texto">
               <p className="banner-eyebrow">{s.eyebrow}</p>
