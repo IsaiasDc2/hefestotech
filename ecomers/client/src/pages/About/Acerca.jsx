@@ -4,28 +4,31 @@ import "./Acerca.css";
 function Acerca() {
   return (
     <div className="acerca">
-      <header className="acerca-hero">
-        <h1>Acerca de Nosotros</h1>
+      <header className="acerca-hero anim-entrada">
+        <p className="badge badge-info hero-kicker">Desde 2020 · Buenos Aires</p>
+        <h1>
+          Acerca de <span className="titulo-degradado">Nosotros</span>
+        </h1>
         <p>
           Armamos y recomendamos componentes de PC con la misma exigencia
           con la que armaríamos nuestra propia máquina.
         </p>
       </header>
 
-      <section className="acerca-stats">
-        <div className="stat">
+      <section className="acerca-stats" aria-label="HefestoTech en números">
+        <div className="stat card">
           <strong>5000+</strong>
           <span>Clientes atendidos</span>
         </div>
-        <div className="stat">
+        <div className="stat card">
           <strong>2020</strong>
           <span>Año de fundación</span>
         </div>
-        <div className="stat">
+        <div className="stat card">
           <strong>24-48hs</strong>
           <span>Tiempo de envío</span>
         </div>
-        <div className="stat">
+        <div className="stat card">
           <strong>4.8★</strong>
           <span>Valoración promedio</span>
         </div>
@@ -45,8 +48,8 @@ function Acerca() {
         <h2>Lo que nos guía</h2>
 
         <div className="valores-grid">
-          <div className="valor-card">
-            <span className="valor-icono">🔧</span>
+          <div className="valor-card card">
+            <span className="valor-icono" aria-hidden="true">🔧</span>
             <h3>Calidad verificada</h3>
             <p>
               Cada producto pasa control de stock real y garantía oficial
@@ -54,8 +57,8 @@ function Acerca() {
             </p>
           </div>
 
-          <div className="valor-card">
-            <span className="valor-icono">🚚</span>
+          <div className="valor-card card">
+            <span className="valor-icono" aria-hidden="true">🚚</span>
             <h3>Envíos rápidos</h3>
             <p>
               Despachamos en 24-48hs y ofrecemos envío gratis en compras
@@ -63,8 +66,8 @@ function Acerca() {
             </p>
           </div>
 
-          <div className="valor-card">
-            <span className="valor-icono">💬</span>
+          <div className="valor-card card">
+            <span className="valor-icono" aria-hidden="true">💬</span>
             <h3>Soporte real</h3>
             <p>
               Te ayudamos a elegir la pieza correcta antes de comprar, no
@@ -72,8 +75,8 @@ function Acerca() {
             </p>
           </div>
 
-          <div className="valor-card">
-            <span className="valor-icono">💳</span>
+          <div className="valor-card card">
+            <span className="valor-icono" aria-hidden="true">💳</span>
             <h3>Precios claros</h3>
             <p>
               Cuotas sin interés y sin letra chica: el precio que ves es
@@ -84,15 +87,17 @@ function Acerca() {
       </section>
 
       <section className="acerca-cta">
-        <h2>¿Listo para armar tu próxima PC?</h2>
-        <p>Explorá el catálogo completo de componentes disponibles.</p>
-        <div className="acerca-cta-botones">
-          <Link to="/productos" className="acerca-btn">
-            Ver productos
-          </Link>
-          <Link to="/contactanos" className="acerca-btn acerca-btn-outline">
-            🖥️ Armá tu PC
-          </Link>
+        <div className="acerca-cta-panel card">
+          <h2>¿Listo para armar tu próxima PC?</h2>
+          <p>Explorá el catálogo completo de componentes disponibles.</p>
+          <div className="acerca-cta-botones">
+            <Link to="/productos" className="btn-fuego">
+              Ver productos
+            </Link>
+            <Link to="/contactanos" className="btn-fantasma">
+              🖥️ Armá tu PC
+            </Link>
+          </div>
         </div>
       </section>
     </div>

@@ -13,6 +13,8 @@ const SLIDES = [
     texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
     cta: "Ver placas de video",
     to: "/productos?categoria=placas-de-video",
+    ctaSec: "Ver ofertas",
+    toSec: "/productos?categoria=ofertas",
     posicion: "right center",
   },
   {
@@ -24,6 +26,8 @@ const SLIDES = [
     texto: "Monitor, gabinete, refrigeración y más para tu espacio ideal.",
     cta: "Explorar productos",
     to: "/productos",
+    ctaSec: "Ver periféricos",
+    toSec: "/productos?categoria=perifericos",
     posicion: "right center",
   },
   {
@@ -35,8 +39,16 @@ const SLIDES = [
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
+    ctaSec: "Explorar productos",
+    toSec: "/productos",
     posicion: "right center",
   },
+];
+
+const CONFIANZA = [
+  "Envío a todo el país",
+  "6 cuotas sin interés",
+  "Garantía oficial",
 ];
 
 const AUTOPLAY_MS = 6000;
@@ -111,73 +123,100 @@ export default function Banner() {
         className="banner-pista"
         style={{ transform: `translateX(-${indice * 100}%)` }}
       >
-        {slides.map((s, i) => (
-          <article
-            key={s.id}
-            className={`banner-slide tema-${s.tema}`}
-            aria-hidden={i !== indice}
-            aria-roledescription="diapositiva"
-            aria-label={`${i + 1} de ${total}`}
-          >
-            {s.imagen ? (
-              <div className="banner-foto">
-                <img
-                  src={s.imagen}
-                  alt=""
-                  aria-hidden="true"
-                  loading={i === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  style={{ objectPosition: s.posicion }}
-                />
+        {slides.map((s, i) => {
+          const activo = i === indice;
+          return (
+            <article
+              key={s.id}
+              className={`banner-slide tema-${s.tema}${activo ? " es-activa" : ""}`}
+              aria-hidden={!activo}
+              aria-roledescription="diapositiva"
+              aria-label={`${i + 1} de ${total}`}
+            >
+              {s.imagen ? (
+                <div className="banner-foto" aria-hidden="true">
+                  <img
+                    src={s.imagen}
+                    alt=""
+                    aria-hidden="true"
+                    loading={i === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    style={{ objectPosition: s.posicion }}
+                  />
+                </div>
+              ) : (
+                <>
+                  {s.id === "gpu" && (
+                    <div className="banner-visual" aria-hidden="true">
+                      <div className="gpu">
+                        <span className="gpu-fan f1" />
+                        <span className="gpu-fan f2" />
+                        <span className="gpu-fan f3" />
+                        <span className="gpu-logo">RTX</span>
+                      </div>
+                    </div>
+                  )}
+                  {s.id === "setup" && (
+                    <div className="banner-visual" aria-hidden="true">
+                      <div className="setup">
+                        <span className="setup-torre" />
+                        <span className="setup-monitor" />
+                        <span className="setup-base" />
+                      </div>
+                    </div>
+                  )}
+                  {s.id === "peris" && (
+                    <div className="banner-visual" aria-hidden="true">
+                      <div className="teclado">
+                        <span className="tec-fila" />
+                        <span className="tec-fila" />
+                        <span className="tec-fila" />
+                        <span className="tec-fila corta" />
+                        <span className="mouse" />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              <div className="banner-velo" aria-hidden="true" />
+              <div className="banner-texto">
+                <p className="banner-kicker">
+                  <span className="banner-kicker-num">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="banner-kicker-sep" aria-hidden="true" />
+                  {s.eyebrow}
+                </p>
+                <h2>{s.titulo}</h2>
+                <p className="banner-desc">{s.texto}</p>
+                <div className="banner-acciones">
+                  <Link
+                    to={s.to}
+                    className="banner-cta"
+                    tabIndex={activo ? 0 : -1}
+                  >
+                    {s.cta}
+                  </Link>
+                  <Link
+                    to={s.toSec}
+                    className="banner-cta-sec"
+                    tabIndex={activo ? 0 : -1}
+                  >
+                    {s.ctaSec}
+                  </Link>
+                </div>
+                <ul className="banner-confianza" aria-label="Beneficios destacados">
+                  {CONFIANZA.map((c) => (
+                    <li key={c}>
+                      <span className="banner-check" aria-hidden="true" />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ) : (
-              <>
-                {s.id === "gpu" && (
-                  <div className="banner-visual" aria-hidden="true">
-                    <div className="gpu">
-                      <span className="gpu-fan f1" />
-                      <span className="gpu-fan f2" />
-                      <span className="gpu-fan f3" />
-                      <span className="gpu-logo">RTX</span>
-                    </div>
-                  </div>
-                )}
-                {s.id === "setup" && (
-                  <div className="banner-visual" aria-hidden="true">
-                    <div className="setup">
-                      <span className="setup-torre" />
-                      <span className="setup-monitor" />
-                      <span className="setup-base" />
-                    </div>
-                  </div>
-                )}
-                {s.id === "peris" && (
-                  <div className="banner-visual" aria-hidden="true">
-                    <div className="teclado">
-                      <span className="tec-fila" />
-                      <span className="tec-fila" />
-                      <span className="tec-fila" />
-                      <span className="tec-fila corta" />
-                      <span className="mouse" />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            <div className="banner-texto">
-              <p className="banner-eyebrow">{s.eyebrow}</p>
-              <h2>{s.titulo}</h2>
-              <p>{s.texto}</p>
-              <Link
-                to={s.to}
-                className="banner-cta"
-                tabIndex={i === indice ? 0 : -1}
-              >
-                {s.cta}
-              </Link>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       <button
@@ -197,18 +236,26 @@ export default function Banner() {
         ›
       </button>
 
-      <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
-        {slides.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={i === indice}
-            aria-label={`Ir a la diapositiva ${i + 1}`}
-            className={i === indice ? "activo" : ""}
-            onClick={() => irA(i)}
-          />
-        ))}
+      <div className="banner-barra">
+        <span className="banner-contador" aria-live="polite">
+          {String(indice + 1).padStart(2, "0")}
+          <span className="banner-contador-total"> / {String(total).padStart(2, "0")}</span>
+        </span>
+        <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
+          {slides.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={i === indice}
+              aria-label={`Ir a la diapositiva ${i + 1}`}
+              className={i === indice ? "activo" : ""}
+              onClick={() => irA(i)}
+            >
+              <span className="banner-progreso" key={`${s.id}-${i === indice ? indice : "x"}`} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );

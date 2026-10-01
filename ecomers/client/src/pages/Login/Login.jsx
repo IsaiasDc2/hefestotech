@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaGoogle, FaGithub, FaLock, FaUser } from "react-icons/fa";
+import { FaGoogle, FaGithub, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
 import "./Login.css";
 
@@ -18,62 +18,79 @@ function Login() {
   };
 
   return (
-    <form className="login" onSubmit={handleSubmit}>
-      <h2>Iniciar sesión</h2>
+    <div className="login-pagina">
+      <form className="login card anim-entrada" onSubmit={handleSubmit}>
+        <p className="badge badge-info hero-kicker">
+          <FaLock aria-hidden="true" /> HefestoTech
+        </p>
+        <h2>Iniciar sesión</h2>
 
-      <input
-        type="email"
-        placeholder="Correo electrónico"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
+        <div className="input-con-icono">
+          <FaEnvelope className="input-icono" aria-hidden="true" />
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            aria-label="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
 
-      <input
-        type="password"
-        placeholder="Contraseña"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
+        <div className="input-con-icono">
+          <FaLock className="input-icono" aria-hidden="true" />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            aria-label="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
 
-      {error && <p className="login-error">{error}</p>}
+        {error && (
+          <p className="badge badge-peligro login-error" role="alert">
+            {error}
+          </p>
+        )}
 
-      <div className="opciones-login">
-        <label>
-          <input type="checkbox" />
-          Recordarme
-        </label>
+        <div className="opciones-login">
+          <label>
+            <input type="checkbox" />
+            Recordarme
+          </label>
 
-        <Link to="/contactanos">
-          <FaLock className="icono-link" />
-          ¿Olvidaste tu contraseña?
-        </Link>
-      </div>
+          <Link to="/contactanos">
+            <FaLock className="icono-link" aria-hidden="true" />
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
 
-      <button type="submit" disabled={cargando}>
-        {cargando ? "Ingresando..." : "Ingresar"}
-      </button>
+        <button type="submit" className="btn-fuego" disabled={cargando}>
+          {cargando ? "Ingresando..." : "Ingresar"}
+        </button>
 
-      <div className="separador">
-        <span>o</span>
-      </div>
+        <div className="separador" aria-hidden="true">
+          <span>o</span>
+        </div>
 
-      <button type="button" className="google" title="Disponible próximamente">
-        <FaGoogle />
-        Continuar con Google
-      </button>
+        <button type="button" className="btn-fantasma" title="Disponible próximamente">
+          <FaGoogle aria-hidden="true" />
+          Continuar con Google
+        </button>
 
-      <button type="button" className="github" title="Disponible próximamente">
-        <FaGithub />
-        Continuar con GitHub
-      </button>
+        <button type="button" className="btn-fantasma" title="Disponible próximamente">
+          <FaGithub aria-hidden="true" />
+          Continuar con GitHub
+        </button>
 
-      <p className="registro">
-        <FaUser className="icono-link" />
-        ¿No tienes una cuenta? <Link to="/contactanos"><strong>Contactanos para crearla</strong></Link>
-      </p>
-    </form>
+        <p className="registro">
+          <FaUser className="icono-link" aria-hidden="true" />
+          ¿No tienes una cuenta? <Link to="/contactanos"><strong>Contactanos para crearla</strong></Link>
+        </p>
+      </form>
+    </div>
   );
 }
 

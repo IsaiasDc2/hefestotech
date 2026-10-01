@@ -5,7 +5,9 @@
 }
 
 .productos-header {
-  margin-bottom: 1.8rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 1px solid var(--border-suave);
+  padding-bottom: 1.2rem;
 }
 
 .productos-header h1 {
@@ -20,6 +22,7 @@
   margin-top: 0.4rem;
 }
 
+/* Barra de filtros tipo tienda pro */
 .filtros {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
@@ -28,7 +31,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radio);
   padding: 1rem;
-  margin-bottom: 1.6rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--sombra-suave);
 }
 
 .buscador {
@@ -43,12 +47,13 @@
   font-weight: 600;
   padding: 0.65rem 1rem;
   white-space: nowrap;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 
 .btn-limpiar:hover {
   border-color: var(--fuego);
   color: var(--fuego);
+  background: var(--fuego-suave);
 }
 
 .btn-limpiar:focus-visible {
@@ -57,10 +62,36 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
+/* Contador de resultados */
+.resultados-contador {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0 0 1.2rem;
+}
+
+.resultados-contador strong {
+  color: var(--oro);
+  font-variant-numeric: tabular-nums;
+}
+
+.resultados-contador::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fuego);
+  box-shadow: 0 0 10px var(--fuego-resplandor);
+}
+
 .grid-productos {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.1rem;
+  align-items: stretch;
 }
 
 .grid-productos h2 {
@@ -84,30 +115,32 @@
 .estado-carga {
   position: relative;
   overflow: hidden;
-}
-
-/* Skeleton sutil con paleta forja */
-.estado-carga::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 30%, var(--fuego-suave) 50%, transparent 70%);
+  background:
+    linear-gradient(100deg, transparent 30%, var(--fuego-suave) 50%, transparent 70%),
+    var(--surface);
+  background-size: 200% 100%;
   animation: estado-brillo 1.6s ease-in-out infinite;
 }
 
 @keyframes estado-brillo {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(100%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .estado-carga::after { animation: none; }
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
 }
 
 .estado-error {
   color: var(--danger);
   border-color: var(--danger-borde);
   background: var(--surface);
+}
+
+/* Sticky en desktop: la barra acompaña el scroll del catálogo */
+@media (min-width: 1025px) {
+  .filtros {
+    position: sticky;
+    top: 0.75rem;
+    z-index: 20;
+    backdrop-filter: blur(8px);
+  }
 }
 
 @media (max-width: 1024px) {
@@ -125,5 +158,11 @@
   }
   .grid-productos {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado-carga {
+    animation: none;
   }
 }

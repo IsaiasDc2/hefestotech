@@ -1,3 +1,7 @@
+.login-pagina {
+  width: 100%;
+}
+
 .login {
   display: flex;
   flex-direction: column;
@@ -13,16 +17,6 @@
   box-shadow: var(--sombra);
 }
 
-.login::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--grad-fuego);
-}
-
 .login h2 {
   font-size: 1.4rem;
   font-weight: 800;
@@ -32,9 +26,11 @@
   letter-spacing: -0.01em;
 }
 
-.login input[type="email"],
-.login input[type="password"] {
-  width: 100%;
+.login .hero-kicker {
+  align-self: flex-start;
+}
+
+.login .input-con-icono {
   margin-bottom: 0.9rem;
 }
 
@@ -59,6 +55,7 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
+  padding: 0;
 }
 
 .opciones-login a {
@@ -79,28 +76,18 @@
   font-size: 0.85rem;
 }
 
-.login > button[type="submit"] {
+.login .btn-fuego {
   width: 100%;
-  padding: 0.8rem;
-  background: var(--grad-fuego);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.25);
-  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
-.login > button[type="submit"]:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.4);
-  transform: translateY(-1px);
+.login .btn-fantasma {
+  width: 100%;
+  margin-bottom: 0.7rem;
 }
 
-.login > button[type="submit"]:disabled {
-  opacity: 0.6;
-  cursor: wait;
+.login .btn-fantasma svg {
+  color: var(--fuego);
+  flex-shrink: 0;
 }
 
 .separador {
@@ -126,45 +113,6 @@
   letter-spacing: 0.05em;
 }
 
-.google,
-.github {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 0.7rem 1rem;
-  margin-bottom: 0.7rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background-color: var(--bg);
-  color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 500;
-  transition: border-color 0.15s ease, transform 0.15s ease;
-}
-
-.google:hover,
-.github:hover {
-  border-color: var(--fuego);
-  transform: translateY(-1px);
-}
-
-.google svg {
-  color: var(--fuego);
-  flex-shrink: 0;
-}
-
-.google:focus-visible,
-.github:focus-visible,
-.login > button[type="submit"]:focus-visible,
-.opciones-login a:focus-visible,
-.registro a:focus-visible {
-  outline: 2px solid var(--fuego);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
 .registro {
   display: flex;
   justify-content: center;
@@ -173,6 +121,8 @@
   margin: 1.4rem 0 0;
   color: var(--muted);
   font-size: 0.87rem;
+  flex-wrap: wrap;
+  text-align: center;
 }
 
 .registro strong {
@@ -186,14 +136,16 @@
 }
 
 .login-error {
-  color: #fca5a5;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.35);
-  border-radius: 8px;
+  width: 100%;
+  justify-content: center;
+  text-transform: none;
+  letter-spacing: 0;
   font-size: 0.85rem;
+  font-weight: 500;
   padding: 0.6rem;
   margin: 0 0 0.9rem;
   text-align: center;
+  white-space: normal;
 }
 
 @media (max-width: 480px) {
@@ -209,15 +161,13 @@
   max-width: none;
 }
 
+.cuenta .contenido .login-pagina {
+  width: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .login > button[type="submit"],
-  .google,
-  .github {
+  .login .btn-fuego,
+  .login .btn-fantasma {
     transition: none;
-  }
-  .login > button[type="submit"]:hover:not(:disabled),
-  .google:hover,
-  .github:hover {
-    transform: none;
   }
 }

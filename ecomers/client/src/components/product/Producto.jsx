@@ -515,6 +515,17 @@ function Productos({ agregarAlCarrito }) {
         !cargando &&
         !error &&
 
+        <p className="resultados-contador" role="status">
+          <strong>{productosOrdenados.length}</strong>
+          &nbsp;resultados
+        </p>
+      }
+
+
+      {
+        !cargando &&
+        !error &&
+
 
         <div className="grid-productos">
 

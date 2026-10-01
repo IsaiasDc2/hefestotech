@@ -3,14 +3,19 @@
   min-height: 100vh;
 }
 
+/* Hero editorial */
 .acerca-hero {
   text-align: center;
   padding: 4.5rem 1.5rem 3rem;
   background-image: radial-gradient(
     circle at 50% 0%,
-    rgba(249, 115, 22, 0.12),
+    var(--fuego-resplandor),
     transparent 60%
   );
+}
+
+.acerca-hero .hero-kicker {
+  display: inline-flex;
 }
 
 .acerca-hero h1 {
@@ -78,17 +83,15 @@
 }
 
 .valor-card {
-  background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
-  border: 1px solid var(--border);
   border-radius: var(--radio);
   padding: 1.8rem 1.4rem;
   text-align: center;
   box-shadow: var(--sombra);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
 .valor-card:hover {
-  border-color: var(--fuego);
+  border-color: var(--fuego-borde);
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
@@ -107,8 +110,8 @@
   font-size: 1.4rem;
   line-height: 1;
   margin-bottom: 0.9rem;
-  background: var(--card-2);
-  border: 1px solid var(--border);
+  background: var(--fuego-suave);
+  border: 1px solid var(--fuego-borde);
 }
 
 .valor-card h3 {
@@ -129,11 +132,18 @@
 
 .acerca-cta {
   text-align: center;
-  padding: 3.5rem 1.5rem 4.5rem;
+  padding: 0 1.5rem 4.5rem;
   border-top: 1px solid var(--border-suave);
+  padding-top: 3.5rem;
 }
 
-.acerca-cta h2 {
+.acerca-cta-panel {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.acerca-cta-panel h2 {
   font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.25;
@@ -143,64 +153,13 @@
   margin: 0 0 0.6rem;
 }
 
-.acerca-cta p {
+.acerca-cta-panel p {
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.6;
   margin: 0 0 1.8rem;
 }
 
-.acerca-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0.8rem 1.6rem;
-  margin: 0 0.5rem;
-  background: var(--grad-fuego);
-  color: #fff;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.25);
-  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
-
-.acerca-btn:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.4);
-  transform: translateY(-1px);
-}
-
-.acerca-btn:active {
-  transform: scale(0.97);
-}
-
-.acerca-btn:focus-visible {
-  outline: 2px solid var(--oro);
-  outline-offset: 3px;
-}
-
-@media (max-width: 900px) {
-  .valores-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .valores-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .acerca-btn {
-    display: block;
-    margin: 0.6rem auto;
-    max-width: 220px;
-  }
-}
 .acerca-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -209,6 +168,17 @@
   margin: 0 auto;
   padding: 0 1.5rem 3rem;
   text-align: center;
+}
+
+.stat {
+  padding: 1.4rem 1rem;
+  border-radius: var(--radio-md);
+  transition: transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+
+.stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--fuego-borde);
 }
 
 .stat strong {
@@ -235,26 +205,31 @@
   flex-wrap: wrap;
 }
 
-.acerca-btn-outline {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: none;
-  color: var(--text);
+@media (max-width: 900px) {
+  .valores-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.acerca-btn-outline:hover {
-  border-color: var(--fuego);
-  background-color: var(--card);
-  box-shadow: none;
+@media (max-width: 480px) {
+  .valores-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acerca-cta-botones .btn-fuego,
+  .acerca-cta-botones .btn-fantasma {
+    width: 100%;
+    max-width: 280px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .valor-card,
-  .acerca-btn {
+  .stat {
     transition: none;
   }
   .valor-card:hover,
-  .acerca-btn:hover {
+  .stat:hover {
     transform: none;
   }
 }

@@ -63,20 +63,42 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
   return (
     <section className="detalle-container">
+      <nav className="migajas" aria-label="Miga de pan">
+        <Link to="/">Inicio</Link>
+        <span className="migajas-sep" aria-hidden="true">/</span>
+        <Link to="/productos">Catálogo</Link>
+        <span className="migajas-sep" aria-hidden="true">/</span>
+        <span className="migajas-actual">{producto.nombre}</span>
+      </nav>
       <Link to="/productos" className="volver">
         ← Volver al catálogo
       </Link>
 
       <div className="detalle-grid">
-        <div className="detalle-imagen">
-          {producto.imagen ? (
-            <img
-              src={producto.imagen}
-              alt={producto.nombre || "Producto"}
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-            />
-          ) : (
-            <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
+        <div className="detalle-galeria">
+          <div className="detalle-imagen">
+            {tieneOferta && (
+              <span className="detalle-oferta-flotante">
+                OFERTA -{Math.round(Number(producto.descuento_porcentaje ?? 0))}%
+              </span>
+            )}
+            {producto.imagen ? (
+              <img
+                src={producto.imagen}
+                alt={producto.nombre || "Producto"}
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            ) : (
+              <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
+            )}
+          </div>
+          {producto.imagen && (
+            <div className="detalle-miniaturas" aria-hidden="true">
+              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
+              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
+              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
+              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
+            </div>
           )}
         </div>
 
@@ -111,9 +133,9 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
           <div className="detalle-stock">
             {producto.stock ? (
-              <span className="disponible">🟢 Disponible</span>
+              <span className="disponible"><span className="stock-dot" aria-hidden="true" />🟢 Disponible</span>
             ) : (
-              <span className="sin-stock">🔴 Sin stock</span>
+              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />🔴 Sin stock</span>
             )}
           </div>
 

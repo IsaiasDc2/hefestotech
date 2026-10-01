@@ -82,6 +82,13 @@
   --dur-3: 350ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-rapida: ease-out;
+
+  /* Catálogo premium (aditivos, no renombran nada) */
+  --skeleton-base: #221a16;
+  --skeleton-brillo: rgba(251, 191, 36, 0.14);
+  --media-velo: linear-gradient(180deg, transparent 55%, rgba(11, 9, 8, 0.55));
+  --estrella: #fbbf24;
+  --detalle-col: 520px;
 }
 
 * {
@@ -331,4 +338,328 @@ img {
 
 .carrito-subtotal {
   font-size: 1.1rem;
+}
+
+/* ============================================================
+   HefestoTech · Sistema UI compartido (solo ADICIONES)
+   Tokens + botones + badges + card + input con icono +
+   skeleton + vacío + precio + utilidades + focus + entrada.
+   Todo con tokens, transform/opacity y reduced-motion.
+   ============================================================ */
+:root {
+  --info: #7dd3fc;
+  --info-borde: rgba(125, 211, 252, 0.4);
+  --info-suave: rgba(125, 211, 252, 0.1);
+  --aviso: #facc15;
+  --aviso-borde: rgba(250, 204, 21, 0.4);
+  --aviso-suave: rgba(250, 204, 21, 0.1);
+  --ok-suave: rgba(74, 222, 128, 0.1);
+  --ok-borde: rgba(74, 222, 128, 0.35);
+  --peligro: #f87171;
+  --peligro-suave: rgba(248, 113, 113, 0.1);
+  --peligro-borde: rgba(248, 113, 113, 0.4);
+  --superficie-elevada: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
+}
+
+/* Focus visible global accesible */
+:where(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Botones del sistema ---------- */
+.btn-fuego,
+.btn-fantasma,
+.btn-peligro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), filter var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+
+.btn-fuego {
+  background: var(--grad-fuego);
+  color: #fff;
+  box-shadow: var(--sombra-fuego);
+}
+
+.btn-fuego:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  opacity: 0.98;
+}
+
+.btn-fuego:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-fuego:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.btn-fantasma {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-fantasma:hover:not(:disabled) {
+  border-color: var(--fuego-borde);
+  transform: translateY(-1px);
+}
+
+.btn-fantasma:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-peligro {
+  background: var(--peligro-suave);
+  color: var(--peligro);
+  border-color: var(--peligro-borde);
+}
+
+.btn-peligro:hover:not(:disabled) {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.btn-peligro:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: var(--radio-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.badge-info {
+  background: var(--info-suave);
+  border-color: var(--info-borde);
+  color: var(--info);
+}
+
+.badge-ok {
+  background: var(--ok-suave);
+  border-color: var(--ok-borde);
+  color: var(--ok);
+}
+
+.badge-peligro {
+  background: var(--peligro-suave);
+  border-color: var(--peligro-borde);
+  color: var(--peligro);
+}
+
+.badge-aviso {
+  background: var(--aviso-suave);
+  border-color: var(--aviso-borde);
+  color: var(--aviso);
+}
+
+/* ---------- Card base ---------- */
+.card {
+  background: var(--superficie-elevada);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-media);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-fuego);
+  opacity: 0.9;
+}
+
+/* ---------- Input con icono ---------- */
+.input-con-icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-con-icono input,
+.input-con-icono textarea {
+  width: 100%;
+  padding-left: 2.6rem;
+}
+
+.input-icono {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--muted-oscuro);
+  font-size: 0.9rem;
+  pointer-events: none;
+  transition: color var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.input-con-icono:focus-within .input-icono {
+  color: var(--fuego);
+  opacity: 1;
+}
+
+/* ---------- Skeleton shimmer ---------- */
+.skeleton {
+  display: block;
+  width: 100%;
+  min-height: 0.9rem;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--card-2) 25%, var(--border) 50%, var(--card-2) 75%);
+  background-size: 200% 100%;
+  animation: ht-shimmer 1.4s ease-in-out infinite;
+  opacity: 0.9;
+}
+
+@keyframes ht-shimmer {
+  0% { background-position: 200% 0; opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { background-position: -200% 0; opacity: 0.7; }
+}
+
+/* ---------- Vacío ilustrado ---------- */
+.vacio {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radio-md);
+  background: var(--bg);
+}
+
+.vacio-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--fuego-suave);
+  border: 1px solid var(--fuego-borde);
+  color: var(--fuego);
+  font-size: 1.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.vacio-titulo {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  font-size: 1rem;
+  color: var(--text);
+  margin: 0 0 0.4rem;
+}
+
+.vacio-texto {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0 0 1.1rem;
+  text-wrap: pretty;
+}
+
+/* ---------- Precio ---------- */
+.precio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.precio-actual {
+  font-family: var(--font-display);
+  font-size: var(--text-precio);
+  font-weight: var(--weight-display);
+  color: var(--oro);
+  letter-spacing: 0.01em;
+}
+
+.precio-anterior {
+  font-size: var(--text-small);
+  color: var(--muted-oscuro);
+  text-decoration: line-through;
+}
+
+/* ---------- Utilidades ---------- */
+.texto-mutado {
+  color: var(--muted);
+}
+
+.centrado {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------- Hero editorial ---------- */
+.hero-kicker {
+  margin-bottom: 1rem;
+}
+
+.titulo-degradado {
+  background: var(--grad-fuego);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Entrada suave (transform/opacity) ---------- */
+.anim-entrada {
+  animation: ht-entrada var(--dur-3) var(--ease) both;
+}
+
+@keyframes ht-entrada {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-fuego,
+  .btn-fantasma,
+  .btn-peligro,
+  .input-icono {
+    transition: none;
+  }
+  .btn-fuego:hover:not(:disabled),
+  .btn-fantasma:hover:not(:disabled),
+  .btn-peligro:hover:not(:disabled),
+  .btn-fuego:active:not(:disabled),
+  .btn-fantasma:active:not(:disabled),
+  .btn-peligro:active:not(:disabled) {
+    transform: none;
+  }
+  .skeleton,
+  .anim-entrada {
+    animation: none;
+  }
+  .skeleton {
+    opacity: 1;
+  }
 }

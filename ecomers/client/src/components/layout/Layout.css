@@ -9,6 +9,28 @@
   background-color: var(--bg);
 }
 
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 1000;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  background: var(--grad-fuego);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  box-shadow: var(--sombra-fuego);
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  top: 0.75rem;
+  outline: 2px solid var(--oro);
+  outline-offset: 2px;
+}
+
 .layout > header,
 .layout > .site-head {
   grid-area: header;
@@ -17,6 +39,10 @@
 .layout-main {
   grid-area: main;
   min-height: 60vh;
+}
+
+.layout-main:focus {
+  outline: none;
 }
 
 .layout > footer {
@@ -38,5 +64,11 @@
 @media (max-width: 480px) {
   .layout-main {
     padding-inline: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
   }
 }

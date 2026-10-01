@@ -6,6 +6,18 @@
   touch-action: pan-y;
 }
 
+.banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg, var(--fuego), var(--brasa), var(--oro));
+  opacity: 0.9;
+}
+
 .banner-pista {
   display: flex;
   transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.35, 1);
@@ -14,28 +26,42 @@
 .banner-slide {
   position: relative;
   flex: 0 0 100%;
-  min-height: 340px;
+  min-height: 480px;
   display: flex;
   align-items: center;
   overflow: hidden;
 }
 
-/* Fondos temáticos (arte CSS, sin imágenes) */
+/* Fondos cinematográficos */
 .tema-neon {
   background:
     radial-gradient(ellipse 55% 90% at 78% 50%, rgba(74, 222, 80, 0.22), transparent 65%),
+    radial-gradient(ellipse 70% 60% at 15% 100%, rgba(249, 115, 22, 0.12), transparent 60%),
     linear-gradient(100deg, #060807 30%, #0a120c 70%, #060807);
 }
 .tema-magenta {
   background:
     radial-gradient(ellipse 50% 85% at 80% 20%, rgba(217, 70, 239, 0.25), transparent 65%),
     radial-gradient(ellipse 45% 80% at 75% 90%, rgba(34, 211, 238, 0.2), transparent 65%),
+    radial-gradient(ellipse 60% 55% at 10% 100%, rgba(249, 115, 22, 0.1), transparent 60%),
     linear-gradient(100deg, #0b0710 30%, #120a1a 70%, #0b0710);
 }
 .tema-ambar {
   background:
     radial-gradient(ellipse 55% 90% at 78% 50%, rgba(251, 191, 36, 0.2), transparent 65%),
+    radial-gradient(ellipse 65% 60% at 12% 0%, rgba(249, 115, 22, 0.14), transparent 60%),
     linear-gradient(100deg, #0d0a06 30%, #171106 70%, #0d0a06);
+}
+
+/* Velo cinematográfico para legibilidad */
+.banner-velo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(11, 9, 8, 0.92) 0%, rgba(11, 9, 8, 0.72) 42%, rgba(11, 9, 8, 0.18) 72%, transparent 100%),
+    linear-gradient(0deg, rgba(11, 9, 8, 0.55) 0%, transparent 32%);
 }
 
 /* Visual hardware (ilustración CSS, lado derecho) */
@@ -247,16 +273,33 @@
   box-shadow: 0 0 10px 2px rgba(251, 191, 36, 0.7);
 }
 
-/* Texto siempre legible sobre el visual */
+/* Texto hero con jerarquía fuerte */
 .banner-texto {
   position: relative;
   z-index: 2;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 3.5rem 1.5rem;
+  padding: 4rem 1.5rem 5rem;
   width: 100%;
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.75);
 }
+
+.banner-texto > * {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.banner-slide.es-activa .banner-texto > * {
+  opacity: 1;
+  transform: none;
+}
+
+.banner-slide.es-activa .banner-texto > *:nth-child(1) { transition-delay: 0.15s; }
+.banner-slide.es-activa .banner-texto > *:nth-child(2) { transition-delay: 0.22s; }
+.banner-slide.es-activa .banner-texto > *:nth-child(3) { transition-delay: 0.3s; }
+.banner-slide.es-activa .banner-texto > *:nth-child(4) { transition-delay: 0.38s; }
+.banner-slide.es-activa .banner-texto > *:nth-child(5) { transition-delay: 0.46s; }
 
 /* Foto real (cuando el slide la trae): panel derecho con fundido */
 .banner-foto {
@@ -276,49 +319,81 @@
   object-fit: cover;
 }
 
-.banner-eyebrow {
-  display: inline-block;
+.banner-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-body);
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  padding: 0.45rem 0.9rem;
+  padding: 0.55rem 1rem 0.55rem 0.7rem;
   border-radius: 999px;
-  margin-bottom: 1.1rem;
-  border: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--fuego-borde);
   color: var(--oro);
-  border-color: var(--border);
-  background: rgba(249, 115, 22, 0.1);
+  background: rgba(11, 9, 8, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.tema-neon .banner-eyebrow { color: var(--ok); border-color: var(--border); background: rgba(74, 222, 128, 0.08); }
-.tema-magenta .banner-eyebrow { color: var(--text); border-color: var(--border); background: rgba(249, 115, 22, 0.1); }
-.tema-ambar .banner-eyebrow { color: var(--oro); border-color: var(--border); background: rgba(251, 191, 36, 0.08); }
+.banner-kicker-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 999px;
+  background: var(--grad-fuego);
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-shadow: none;
+}
+
+.banner-kicker-sep {
+  width: 1.6rem;
+  height: 1px;
+  background: var(--oro-borde);
+}
 
 .banner-texto h2 {
-  font-size: clamp(1.9rem, 4.5vw, 3.2rem);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+  line-height: 1.02;
   text-wrap: balance;
   color: var(--text);
-  max-width: 22ch;
-  margin-bottom: 0.75rem;
+  max-width: 16ch;
+  margin-bottom: 0.9rem;
 }
 
-.banner-texto p {
+.banner-desc {
   color: var(--muted);
-  font-size: 1rem;
+  font-size: clamp(0.95rem, 1vw + 0.7rem, 1.08rem);
   line-height: 1.6;
   max-width: 46ch;
-  margin-bottom: 1.6rem;
+  margin-bottom: 1.8rem;
   text-wrap: pretty;
 }
 
+.banner-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 1.8rem;
+}
+
 .banner-cta {
-  display: inline-block;
-  padding: 0.85rem 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
   border-radius: 10px;
   font-weight: 700;
   font-size: 0.95rem;
@@ -329,7 +404,13 @@
   background: var(--grad-fuego);
   border: 1px solid transparent;
   box-shadow: 0 4px 24px rgba(249, 115, 22, 0.4);
-  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+}
+
+.banner-cta::after {
+  content: "→";
+  font-weight: 700;
+  transition: transform 0.18s ease;
 }
 
 .banner-cta:hover {
@@ -338,16 +419,79 @@
   box-shadow: 0 8px 30px rgba(249, 115, 22, 0.5);
 }
 
+.banner-cta:hover::after {
+  transform: translateX(3px);
+}
+
 .banner-cta:active {
   transform: scale(0.97);
 }
 
-.banner-cta:focus-visible {
+.banner-cta:focus-visible,
+.banner-cta-sec:focus-visible {
   outline: 2px solid var(--oro);
   outline-offset: 3px;
 }
 
-/* Flechas y puntos */
+.banner-cta-sec {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.7rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.banner-cta-sec:hover {
+  border-color: var(--fuego-borde);
+  background: var(--fuego-suave);
+  transform: translateY(-2px);
+}
+
+.banner-cta-sec:active {
+  transform: scale(0.97);
+}
+
+.banner-confianza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.banner-confianza li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.banner-check {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background:
+    linear-gradient(var(--ok), var(--ok)) center / 55% 2px no-repeat,
+    linear-gradient(var(--ok), var(--ok)) center / 2px 32% no-repeat,
+    rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  transform: rotate(45deg);
+}
+
+/* Flechas y barra inferior elegante */
 .banner-flecha {
   position: absolute;
   top: 50%;
@@ -395,47 +539,87 @@
 .banner-flecha.ant { left: 1rem; }
 .banner-flecha.sig { right: 1rem; }
 
-.banner-puntos {
+.banner-barra {
   position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.banner-contador {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  min-width: 3.5rem;
+}
+
+.banner-contador-total {
+  color: var(--muted-oscuro);
+}
+
+.banner-puntos {
   display: flex;
   gap: 0.5rem;
-  z-index: 2;
+  flex: 1;
+  max-width: 340px;
 }
 
 .banner-puntos button {
-  width: 26px;
+  position: relative;
+  flex: 1;
   height: 4px;
   border-radius: 999px;
   border: none;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.16);
   cursor: pointer;
   padding: 0;
-  transition: width 0.25s ease, background 0.25s ease, opacity 0.25s ease;
-  opacity: 0.8;
+  overflow: hidden;
+  opacity: 1;
+  transition: background 0.25s ease;
 }
 
 .banner-puntos button:hover {
-  background: var(--muted);
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.32);
 }
 
 .banner-puntos button.activo {
-  width: 44px;
-  background: var(--fuego);
-  opacity: 1;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.banner-progreso {
+  position: absolute;
+  inset: 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--fuego), var(--oro));
   box-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+}
+
+button.activo .banner-progreso {
+  animation: banner-progreso 6s linear forwards;
+}
+
+@keyframes banner-progreso {
+  from { width: 0; }
+  to { width: 100%; }
 }
 
 .banner-puntos button:focus-visible {
   outline: 2px solid var(--oro);
   outline-offset: 3px;
-  opacity: 1;
 }
 
 @media (max-width: 900px) {
+  .banner-slide { min-height: 440px; }
   .banner-visual {
     right: -110px;
     opacity: 0.35;
@@ -449,13 +633,18 @@
     opacity: 0.32;
     mask-image: linear-gradient(180deg, transparent 30%, black 75%);
   }
+  .banner-velo {
+    background:
+      linear-gradient(0deg, rgba(11, 9, 8, 0.92) 20%, rgba(11, 9, 8, 0.55) 60%, rgba(11, 9, 8, 0.25) 100%);
+  }
 }
 
 @media (max-width: 768px) {
-  .banner-slide { min-height: 300px; }
+  .banner-slide { min-height: 420px; }
   .banner-flecha { display: none; }
   .banner-visual { right: -150px; opacity: 0.28; }
   .mouse { display: none; }
+  .banner-confianza { display: none; }
 }
 
 /* Teléfonos chicos: texto compacto y CTA a ancho completo */
@@ -466,37 +655,45 @@
   }
 
   .banner-texto {
-    padding: 2.2rem 1.1rem 3.2rem;
+    padding: 3rem 1.1rem 4.4rem;
   }
 
   .banner-texto h2 {
-    font-size: 1.65rem;
+    font-size: 2rem;
   }
 
-  .banner-texto p {
+  .banner-desc {
     font-size: 0.9rem;
   }
 
-  .banner-eyebrow {
+  .banner-kicker {
     font-size: 0.65rem;
   }
 
-  .banner-cta {
-    display: block;
-    text-align: center;
-    padding: 0.9rem 1rem;
+  .banner-acciones {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .banner-puntos {
-    bottom: 0.7rem;
+  .banner-cta,
+  .banner-cta-sec {
+    text-align: center;
+    width: 100%;
+  }
+
+  .banner-barra {
+    padding: 0 1.1rem 0.9rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .banner-pista { transition: none; }
+  .banner-texto > * { opacity: 1; transform: none; transition: none; }
   .banner-cta:hover,
+  .banner-cta-sec:hover,
   .banner-flecha:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
+  button.activo .banner-progreso { animation: none; width: 100%; }
   .gpu-fan,
   .setup-torre::before { animation: none; }
 }

@@ -5,32 +5,47 @@
   min-height: calc(100vh - 140px);
   padding: 3rem 1.5rem 4rem;
   background-color: var(--bg);
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    var(--fuego-resplandor),
+    transparent 55%
+  );
 }
 
+/* Segmented control premium */
 .cuenta-tabs {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
   margin-bottom: 1.75rem;
   max-width: 560px;
+  width: 100%;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-full);
+  box-shadow: var(--sombra-suave);
+  overflow-x: auto;
 }
 
 .cuenta-tabs button {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.55rem 1.15rem;
+  flex: 1 1 0;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-full);
+  padding: 0.6rem 1.15rem;
   font-weight: 600;
   font-size: 0.88rem;
   line-height: 1;
   color: var(--muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
 .cuenta-tabs button:hover:not(.activo) {
   color: var(--text);
-  border-color: var(--fuego);
+  background: var(--fuego-suave);
   transform: translateY(-1px);
 }
 
@@ -38,16 +53,12 @@
   transform: scale(0.97);
 }
 
-.cuenta-tabs button:focus-visible {
-  outline: 2px solid var(--fuego);
-  outline-offset: 2px;
-}
-
 .cuenta-tabs button.activo {
   background: var(--grad-fuego);
   border-color: transparent;
   color: #fff;
-  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.35);
+  box-shadow: var(--sombra-fuego);
+  opacity: 1;
 }
 
 .contenido {
@@ -56,23 +67,13 @@
 }
 
 .panel-cuenta {
-  background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
-  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2.5rem 2rem;
-  position: relative;
-  overflow: hidden;
   box-shadow: var(--sombra);
 }
 
-.panel-cuenta::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--grad-fuego);
+.panel-cuenta .badge {
+  margin-bottom: 0.9rem;
 }
 
 .panel-cuenta h2 {
@@ -84,20 +85,40 @@
   letter-spacing: -0.01em;
 }
 
-.panel-cuenta p {
+.panel-cuenta > p {
   font-size: 0.9rem;
   color: var(--muted);
   margin: 0;
   line-height: 1.6;
 }
 
-.panel-cuenta p + p {
+.panel-cuenta > p + p {
   margin-top: 0.4rem;
+}
+
+.panel-cuenta .vacio {
+  margin-top: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.panel-cuenta .vacio .btn-fuego,
+.panel-cuenta .vacio .btn-fantasma {
+  width: 100%;
 }
 
 @media (max-width: 480px) {
   .cuenta {
     padding: 2rem 1rem 3rem;
+  }
+
+  .cuenta-tabs {
+    border-radius: 16px;
+  }
+
+  .cuenta-tabs button {
+    flex: 1 0 auto;
   }
 
   .panel-cuenta {

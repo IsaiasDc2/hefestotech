@@ -27,10 +27,10 @@ export default function ProductCarousel({
         <h2>{titulo}</h2>
         <div className="carrusel-acciones">
           <Link to={verTodo}>Ver todo →</Link>
-          <button onClick={() => desplazar(-1)} aria-label="Anterior">
+          <button type="button" onClick={() => desplazar(-1)} aria-label="Anterior">
             ‹
           </button>
-          <button onClick={() => desplazar(1)} aria-label="Siguiente">
+          <button type="button" onClick={() => desplazar(1)} aria-label="Siguiente">
             ›
           </button>
         </div>

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaMicrochip, FaCartShopping, FaMagnifyingGlass, FaUser } from "react-icons/fa6";
+import { FaMicrochip, FaCartShopping, FaMagnifyingGlass, FaUser, FaTruckFast } from "react-icons/fa6";
 import { CATEGORIAS, linkOfertas } from "../../constants/categorias";
 import "./Navbar.css";
 
@@ -19,6 +19,8 @@ const ENLACES_RAPIDOS = SLUGS_RAPIDOS.map(
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [pop, setPop] = useState(false);
+  const primeraVez = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,6 +30,17 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Badge animado al cambiar la cantidad (solo visual).
+  useEffect(() => {
+    if (primeraVez.current) {
+      primeraVez.current = false;
+      return;
+    }
+    setPop(true);
+    const t = setTimeout(() => setPop(false), 450);
+    return () => clearTimeout(t);
+  }, [cantidadCarrito]);
 
   const params = new URLSearchParams(location.search);
   const categoriaActual = (params.get("categoria") || "").toLowerCase();
@@ -51,7 +64,11 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     <>
       <div className="topbar">
         <div className="topbar-inner">
-          <span>Envíos a todo el país</span>
+          <span className="topbar-envio">
+            <FaTruckFast aria-hidden="true" />
+            Envíos a todo el país
+          </span>
+          <span className="topbar-sep" aria-hidden="true" />
           <span className="topbar-links">
             <Link to="/acerca">Ayuda</Link>
             <Link to="/contactanos">Posventa</Link>
@@ -64,11 +81,14 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
       <header className={`site-head${scrolled ? " is-scrolled" : ""}`}>
       <div className="site-head-inner">
         <Link to="/" className="logo" aria-label="HefestoTech inicio">
-          <FaMicrochip className="logo-icon" />
+          <span className="logo-badge" aria-hidden="true">
+            <FaMicrochip className="logo-icon" />
+          </span>
           Hefesto<span>Tech</span>
         </Link>
 
         <form className="buscador-head" onSubmit={buscar} role="search">
+          <FaMagnifyingGlass className="buscador-icono" aria-hidden="true" />
           <input
             type="text"
             placeholder="¿Qué estás buscando?"
@@ -77,21 +97,21 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             aria-label="Buscar productos"
           />
           <button type="submit" aria-label="Buscar">
-            <FaMagnifyingGlass />
+            <FaMagnifyingGlass aria-hidden="true" />
           </button>
         </form>
 
-        <nav className="nav-cuenta">
+        <nav className="nav-cuenta" aria-label="Cuenta y carrito">
           <Link to="/cuenta" className="link-cuenta" aria-label="Mi cuenta">
-            <FaUser />
+            <FaUser aria-hidden="true" />
             <span>
               Iniciá sesión
             </span>
           </Link>
 
-          <button className="carrito-btn" onClick={abrirCarrito} aria-label="Abrir carrito">
-            <FaCartShopping />
-            <span className="carrito-count">{cantidadCarrito}</span>
+          <button className="carrito-btn" onClick={abrirCarrito} aria-label={`Abrir carrito, ${cantidadCarrito} productos`}>
+            <FaCartShopping aria-hidden="true" />
+            <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">{cantidadCarrito}</span>
           </button>
         </nav>
       </div>

@@ -1,5 +1,10 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { FaCartShopping, FaXmark, FaTrashCan, FaMinus, FaPlus, FaTruckFast, FaCircleCheck, FaArrowRight } from "react-icons/fa6";
 import "./CarritoLateral.css";
+
+// Umbral solo visual para la barra de progreso a envío gratis.
+const UMBRAL_ENVIO_GRATIS = 150000;
 
 function CarritoLateral({
   isOpen,
@@ -30,6 +35,13 @@ function CarritoLateral({
         Number(item.cantidad ?? 1),
     0
   );
+  const cantidadTotal = carrito.reduce(
+    (acc, item) => acc + Number(item.cantidad ?? 1),
+    0
+  );
+  const progreso = Math.min(1, UMBRAL_ENVIO_GRATIS > 0 ? total / UMBRAL_ENVIO_GRATIS : 1);
+  const faltante = Math.max(0, UMBRAL_ENVIO_GRATIS - total);
+  const envioGratis = total >= UMBRAL_ENVIO_GRATIS && carrito.length > 0;
 
   return (
     <>
@@ -48,41 +60,100 @@ function CarritoLateral({
       >
 
         <div className="cart-header">
-          <h2>🛒 Mi carrito</h2>
+          <h2>
+            <span className="cart-header-icono" aria-hidden="true">
+              <FaCartShopping />
+            </span>
+            Mi carrito
+            {cantidadTotal > 0 && (
+              <span className="cart-header-conteo">{cantidadTotal}</span>
+            )}
+          </h2>
           <button type="button" onClick={onClose} aria-label="Cerrar carrito">
-            ✕
+            <FaXmark aria-hidden="true" />
           </button>
         </div>
+
+        {carrito.length > 0 && (
+          <div className="cart-envio">
+            <p className="cart-envio-texto">
+              {envioGratis ? (
+                <>
+                  <FaCircleCheck aria-hidden="true" />
+                  ¡Tenés envío gratis!
+                </>
+              ) : (
+                <>
+                  <FaTruckFast aria-hidden="true" />
+                  Te faltan ${faltante.toLocaleString("es-AR")} para el envío gratis
+                </>
+              )}
+            </p>
+            <div
+              className="cart-envio-barra"
+              role="progressbar"
+              aria-valuenow={Math.round(progreso * 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Progreso hacia el envío gratis"
+            >
+              <span
+                className={`cart-envio-relleno${envioGratis ? " is-completo" : ""}`}
+                style={{ width: `${Math.round(progreso * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="cart-body">
           {carrito.length === 0 ? (
             <div className="cart-vacio">
+              <div className="cart-vacio-ilustra" aria-hidden="true">
+                <span className="cart-vacio-anillo" />
+                <FaCartShopping className="cart-vacio-icono" />
+              </div>
               <p className="cart-vacio-titulo">Tu carrito está vacío</p>
               <p className="cart-vacio-texto">Sumá productos y aparecen acá.</p>
+              <button type="button" className="cart-vacio-cta" onClick={onClose}>
+                Ver productos
+                <FaArrowRight aria-hidden="true" />
+              </button>
             </div>
           ) : (
-            carrito.map(item => (
+            carrito.map(item => {
+              const unitario = Number(item.precio_con_descuento ?? item.precio ?? 0);
+              const linea = unitario * Number(item.cantidad ?? 1);
+              return (
               <div className="cart-item" key={item.id}>
-                {item.imagen ? (
-                  <img
-                    src={item.imagen}
-                    alt={item.nombre || "Producto"}
-                    onError={(e) => { e.currentTarget.style.display = "none"; }}
-                  />
-                ) : null}
+                <div className="cart-thumb" aria-hidden={!item.imagen}>
+                  {item.imagen ? (
+                    <img
+                      src={item.imagen}
+                      alt=""
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  ) : (
+                    <FaCartShopping className="cart-thumb-icono" />
+                  )}
+                </div>
 
                 <div className="info">
                   <h4>{item.nombre}</h4>
-                  <p className="cart-precio">${Number(item.precio_con_descuento ?? item.precio ?? 0).toLocaleString("es-AR")}</p>
+                  <p className="cart-precio">${unitario.toLocaleString("es-AR")}</p>
 
-                  <div className="cantidad">
-                    <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label="Quitar uno">
-                      -
-                    </button>
-                    <span>{item.cantidad}</span>
-                    <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label="Agregar uno">
-                      +
-                    </button>
+                  <div className="cart-item-pie">
+                    <div className="cantidad">
+                      <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label="Quitar uno">
+                        <FaMinus aria-hidden="true" />
+                      </button>
+                      <span aria-live="polite" aria-label={`Cantidad: ${item.cantidad}`}>{item.cantidad}</span>
+                      <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label="Agregar uno">
+                        <FaPlus aria-hidden="true" />
+                      </button>
+                    </div>
+                    <strong className="cart-linea-total">
+                      ${linea.toLocaleString("es-AR")}
+                    </strong>
                   </div>
 
                   <button
@@ -90,11 +161,13 @@ function CarritoLateral({
                     className="eliminar"
                     onClick={() => eliminarDelCarrito(item.id)}
                   >
-                    🗑 Eliminar
+                    <FaTrashCan aria-hidden="true" />
+                    Eliminar
                   </button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -103,10 +176,15 @@ function CarritoLateral({
             <span>Subtotal</span>
             <strong>${total.toLocaleString("es-AR")}</strong>
           </div>
+          <p className="cart-nota">Impuestos incluidos. El envío se calcula al finalizar.</p>
 
           <button type="button" className="btnComprar" disabled={carrito.length === 0}>
             Finalizar compra
+            <FaArrowRight aria-hidden="true" />
           </button>
+          <Link to="/productos" className="cart-seguir" onClick={onClose}>
+            Seguir comprando
+          </Link>
         </div>
 
       </aside>

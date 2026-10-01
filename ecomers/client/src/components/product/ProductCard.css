@@ -3,39 +3,64 @@
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card-2), var(--card));
   border: 1px solid var(--border);
-  border-radius: var(--radio);
-  padding: 1rem;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  border-radius: var(--radio-md);
+  padding: 0.9rem 0.9rem 1rem;
+  transition: transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  overflow: hidden;
+}
+
+.card-producto::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--fuego), var(--oro), transparent);
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
 }
 
 .card-producto:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
   border-color: var(--fuego-borde);
-  box-shadow: var(--sombra), 0 0 24px var(--fuego-suave);
+  box-shadow: var(--sombra-media), 0 0 28px var(--fuego-resplandor);
+}
+
+.card-producto:hover::before {
+  opacity: 1;
 }
 
 .oferta {
   position: absolute;
   top: 0.8rem;
   left: 0.8rem;
-  z-index: 2;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--sobre-fuego);
   background: var(--grad-fuego);
-  padding: 0.25rem 0.6rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 6px;
-  box-shadow: 0 2px 10px var(--fuego-sombra);
+  box-shadow: 0 2px 12px var(--fuego-sombra);
+}
+
+.oferta-pct {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .favorito {
   position: absolute;
   top: 0.6rem;
   right: 0.6rem;
-  z-index: 2;
+  z-index: 3;
   width: 34px;
   height: 34px;
   display: flex;
@@ -76,13 +101,43 @@
   gap: 0.6rem;
 }
 
-.producto-detalle img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 8px;
+.card-media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border-suave);
+  aspect-ratio: 1;
+}
+
+.card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--media-velo);
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+  pointer-events: none;
+}
+
+.card-producto:hover .card-media::after {
+  opacity: 1;
+}
+
+.card-media img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--dur-3) var(--ease), filter var(--dur-2) var(--ease);
+  will-change: transform;
+}
+
+.producto-detalle:hover .card-media img,
+.card-producto:hover .card-media img {
+  transform: scale(1.07);
 }
 
 .producto-detalle img[src=""] {
@@ -97,16 +152,41 @@
   align-items: center;
   justify-content: center;
   width: 100%;
+  height: 100%;
+  min-height: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
   background:
     linear-gradient(135deg, var(--fuego-resplandor), transparent 60%),
     var(--surface);
-  border: 1px solid var(--border-suave);
   color: var(--muted);
   font-weight: 800;
   letter-spacing: 0.08em;
   font-size: 0.8rem;
+}
+
+.card-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.card-rating .estrellas {
+  color: var(--estrella);
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.card-rating .rating-num {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-rating .rating-count {
+  color: var(--muted-oscuro);
 }
 
 .producto-detalle h3 {
@@ -125,9 +205,9 @@
 }
 
 .categoria {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -135,20 +215,45 @@
 .stock {
   font-size: 0.82rem;
   font-weight: 600;
+}
+
+.stock-linea {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   color: var(--muted);
 }
 
-.stock span:last-child {
+.stock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted-oscuro);
+  box-shadow: 0 0 0 3px rgba(168, 162, 158, 0.15);
+  flex: none;
+}
+
+.stock-linea.disponible {
   color: var(--muted);
 }
 
-/* Sin stock: tono peligro AA + imagen atenuada sin tocar JSX */
-.card-producto:has(.btn-carrito:disabled) .producto-detalle img {
-  filter: grayscale(0.5) brightness(0.75);
+.stock-linea.disponible .stock-dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18), 0 0 10px rgba(74, 222, 128, 0.6);
 }
 
-.card-producto:has(.btn-carrito:disabled) .stock {
+.stock-linea.agotado {
   color: var(--danger);
+}
+
+.stock-linea.agotado .stock-dot {
+  background: var(--brasa);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+}
+
+/* Sin stock: imagen atenuada */
+.card-producto:has(.btn-carrito:disabled) .card-media img {
+  filter: grayscale(0.5) brightness(0.75);
 }
 
 .precios {
@@ -160,22 +265,26 @@
 
 .precio-anterior {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--muted-oscuro);
   text-decoration: line-through;
   text-decoration-thickness: 1px;
+  font-variant-numeric: tabular-nums;
 }
 
-.card-producto strong {
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.precio-actual {
+  font-family: var(--font-display);
+  font-size: var(--text-precio);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Jerarquía oferta: precio final en oro, anterior atenuado */
-.precios:has(.precio-anterior) strong {
+/* Jerarquía oferta: precio final destacado en oro */
+.precios:has(.precio-anterior) .precio-actual {
   color: var(--oro);
-  font-size: 1.35rem;
+  font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.6rem);
+  text-shadow: 0 2px 14px rgba(251, 191, 36, 0.25);
 }
 
 .cuotas {
@@ -185,28 +294,37 @@
 }
 
 .envio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.78rem;
   color: var(--oro);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .btn-carrito {
   margin-top: auto;
   width: 100%;
   padding: 0.7rem;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: var(--grad-fuego);
   color: var(--sobre-fuego);
   font-weight: 800;
   font-size: 0.88rem;
   box-shadow: 0 2px 12px var(--fuego-sombra);
-  transition: filter 0.2s ease, transform 0.15s ease;
+  transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
 }
 
 .btn-carrito:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.12);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--fuego-sombra), var(--sombra-suave);
+}
+
+.btn-carrito:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.96);
 }
 
 .btn-carrito:disabled {
@@ -216,6 +334,29 @@
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.85;
+}
+
+/* Skeleton shimmer elegante para tarjetas */
+.card-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-md);
+  min-height: 340px;
+}
+
+.card-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 25%, var(--skeleton-brillo) 50%, transparent 75%);
+  animation: card-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes card-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
 /* Teléfonos chicos: card más compacta */
@@ -229,7 +370,7 @@
     font-size: 0.88rem;
   }
 
-  .card-producto strong {
+  .precio-actual {
     font-size: 1.15rem;
   }
 
@@ -251,5 +392,29 @@
 
   .btn-carrito:active:not(:disabled) {
     filter: brightness(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-producto,
+  .card-media img,
+  .card-media::after,
+  .card-producto::before,
+  .btn-carrito,
+  .favorito {
+    transition: none;
+  }
+
+  .card-producto:hover {
+    transform: none;
+  }
+
+  .producto-detalle:hover .card-media img,
+  .card-producto:hover .card-media img {
+    transform: none;
+  }
+
+  .card-skeleton::after {
+    animation: none;
   }
 }

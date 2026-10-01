@@ -1,7 +1,41 @@
 .detalle-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 3.5rem;
+  padding: 2rem 1.5rem 3.5rem;
+}
+
+/* Breadcrumb visual */
+.migajas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.9rem;
+}
+
+.migajas a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color var(--dur-1) var(--ease-rapida);
+}
+
+.migajas a:hover {
+  color: var(--fuego);
+}
+
+.migajas .migajas-sep {
+  color: var(--muted-oscuro);
+}
+
+.migajas .migajas-actual {
+  color: var(--text);
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .volver {
@@ -20,18 +54,93 @@
 
 .detalle-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, var(--detalle-col)) minmax(0, 1fr);
   gap: 2.5rem;
   align-items: start;
+}
+
+/* Galería */
+.detalle-galeria {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.detalle-imagen {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radio);
+  border: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .detalle-imagen img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
-  border-radius: var(--radio);
-  background: var(--surface);
+  display: block;
+  transition: transform var(--dur-3) var(--ease);
+}
+
+.detalle-imagen:hover img {
+  transform: scale(1.04);
+}
+
+.detalle-imagen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(11, 9, 8, 0.45));
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+  pointer-events: none;
+}
+
+.detalle-imagen:hover::after {
+  opacity: 1;
+}
+
+.detalle-oferta-flotante {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--sobre-fuego);
+  background: var(--grad-fuego);
+  padding: 0.32rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px var(--fuego-sombra);
+}
+
+.detalle-miniaturas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+
+.detalle-miniaturas span {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 8px;
   border: 1px solid var(--border);
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface);
+  opacity: 0.85;
+}
+
+.detalle-miniaturas span:first-child {
+  border-color: var(--fuego-borde);
+  box-shadow: 0 0 0 2px var(--fuego-suave);
+  opacity: 1;
 }
 
 .detalle-sin-imagen {
@@ -54,6 +163,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  min-width: 0;
 }
 
 .detalle-marca {
@@ -89,36 +199,51 @@
   font-size: 0.95rem;
 }
 
+/* Precio destacado */
 .detalle-precio {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--card-2), var(--surface));
   border: 1px solid var(--border);
+  border-left: 3px solid var(--fuego);
   border-radius: var(--radio);
-  padding: 1.2rem;
+  padding: 1.2rem 1.3rem;
+  box-shadow: var(--sombra-suave);
 }
 
 .detalle-precio strong {
-  font-size: 2rem;
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.6rem + 1.5vw, 2.6rem);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
   color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .detalle-precio:has(.precio-anterior) strong {
   color: var(--oro);
+  text-shadow: 0 2px 18px rgba(251, 191, 36, 0.25);
 }
 
 .detalle-precio .precio-anterior {
   display: block;
   font-size: 1rem;
   margin-bottom: 0.2rem;
-  color: var(--muted);
+  color: var(--muted-oscuro);
   text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
 }
 
 .detalle-stock {
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--muted);
+}
+
+.detalle-stock .disponible,
+.detalle-stock .sin-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .detalle-stock .disponible {
@@ -129,8 +254,20 @@
   color: var(--danger);
 }
 
+.detalle-stock .stock-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.detalle-stock .disponible .stock-dot {
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18), 0 0 12px rgba(74, 222, 128, 0.6);
+}
+
 .volver:focus-visible,
-.detalle-estado a:focus-visible {
+.detalle-estado a:focus-visible,
+.migajas a:focus-visible {
   outline: 2px solid var(--fuego);
   outline-offset: 2px;
   border-radius: 4px;
@@ -143,8 +280,10 @@
 
 .detalle-especificaciones {
   margin-top: 0.5rem;
-  border-top: 1px solid var(--border);
-  padding-top: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radio);
+  background: var(--surface);
+  padding: 1.2rem;
 }
 
 .detalle-especificaciones h2 {
@@ -157,17 +296,39 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.detalle-especificaciones tbody tr:nth-child(odd) {
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.detalle-especificaciones tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.detalle-especificaciones tbody tr:hover {
+  background: var(--fuego-suave);
 }
 
 .detalle-especificaciones td {
-  padding: 0.55rem 0.7rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--border-suave);
+}
+
+.detalle-especificaciones tr:last-child td {
+  border-bottom: none;
 }
 
 .detalle-especificaciones .clave {
   color: var(--muted);
   font-weight: 600;
   width: 40%;
+}
+
+.detalle-especificaciones .valor {
+  color: var(--text);
 }
 
 .detalle-estado {
@@ -185,5 +346,20 @@
   .detalle-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+
+  .detalle-galeria {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detalle-imagen img,
+  .detalle-imagen::after {
+    transition: none;
+  }
+
+  .detalle-imagen:hover img {
+    transform: none;
   }
 }

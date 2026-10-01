@@ -93,10 +93,18 @@ function Home({ agregarAlCarrito }) {
       <Banner />
       <PromoBar />
 
-      <section className="seccion">
-        <div className="seccion-head">
-          <h2>Explorá por categoría</h2>
-          <Link to="/productos">Ver todo →</Link>
+      <section className="seccion" aria-labelledby="home-categorias">
+        <div className="seccion-head editorial">
+          <div className="seccion-titular">
+            <p className="kicker">
+              <span className="kicker-num" aria-hidden="true">01</span>
+              Explorar
+            </p>
+            <h2 id="home-categorias">Explorá por categoría</h2>
+          </div>
+          <Link to="/productos" className="ver-todo">
+            Ver todo <span aria-hidden="true">→</span>
+          </Link>
         </div>
         <div className="grid-categorias">
           {CATEGORIAS.map((c) => (
@@ -105,7 +113,7 @@ function Home({ agregarAlCarrito }) {
               to={`/productos?categoria=${c.slug}`}
               className="card-categoria"
             >
-              <span className="cat-icono">{c.icono}</span>
+              <span className="cat-icono" aria-hidden="true">{c.icono}</span>
               <span>{c.nombre}</span>
             </Link>
           ))}
@@ -116,9 +124,15 @@ function Home({ agregarAlCarrito }) {
         <p className="estado-carga">Calentando la forja...</p>
       ) : (
         <>
-          <section className="seccion filtro-home">
-            <div className="seccion-head">
-              <h2>Buscá en el catálogo</h2>
+          <section className="seccion filtro-home" aria-labelledby="home-catalogo">
+            <div className="seccion-head editorial">
+              <div className="seccion-titular">
+                <p className="kicker">
+                  <span className="kicker-num" aria-hidden="true">02</span>
+                  Catálogo
+                </p>
+                <h2 id="home-catalogo">Buscá en el catálogo</h2>
+              </div>
               <span className="conteo">
                 {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
               </span>
@@ -195,9 +209,18 @@ function Home({ agregarAlCarrito }) {
         </>
       )}
 
-      <section className="seccion marcas">
-        <div className="seccion-head">
-          <h2>Nuestras marcas</h2>
+      <section className="seccion marcas" aria-labelledby="home-marcas">
+        <div className="seccion-head editorial">
+          <div className="seccion-titular">
+            <p className="kicker">
+              <span className="kicker-num" aria-hidden="true">03</span>
+              Marcas
+            </p>
+            <h2 id="home-marcas">Nuestras marcas</h2>
+          </div>
+          <Link to="/productos" className="ver-todo">
+            Ver todo <span aria-hidden="true">→</span>
+          </Link>
         </div>
         <div className="marcas-fila">
           {MARCAS.map((m) => (
@@ -212,23 +235,23 @@ function Home({ agregarAlCarrito }) {
         </div>
       </section>
 
-      <section className="beneficios">
+      <section className="beneficios" aria-label="Beneficios de compra">
         <div className="beneficio">
-          <FaCreditCard />
+          <FaCreditCard aria-hidden="true" />
           <div>
             <strong>6 cuotas sin interés</strong>
             <span>Con todas las tarjetas</span>
           </div>
         </div>
         <div className="beneficio">
-          <FaTruckFast />
+          <FaTruckFast aria-hidden="true" />
           <div>
             <strong>Envío a todo el país</strong>
             <span>Gratis desde $99.999</span>
           </div>
         </div>
         <div className="beneficio">
-          <FaShieldHalved />
+          <FaShieldHalved aria-hidden="true" />
           <div>
             <strong>Garantía oficial</strong>
             <span>12 meses en todos los productos</span>

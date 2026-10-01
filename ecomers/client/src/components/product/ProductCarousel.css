@@ -23,21 +23,41 @@
 }
 
 .carrusel-acciones button {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--velo);
+  backdrop-filter: blur(6px);
   color: var(--text);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+
+/* Flechas visibles al hover del carrusel */
+.carrusel:hover .carrusel-acciones button,
+.carrusel:focus-within .carrusel-acciones button {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .carrusel-acciones button:hover {
   border-color: var(--fuego);
   color: var(--fuego);
+  background: var(--fuego-suave);
+}
+
+.carrusel-acciones button:active {
+  transform: scale(0.94);
 }
 
 .carrusel-acciones a:focus-visible,
@@ -45,6 +65,9 @@
   outline: 2px solid var(--fuego);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
 }
 
 .carrusel-acciones button:disabled {
@@ -58,10 +81,12 @@
   display: flex;
   gap: 1.1rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  scroll-padding-inline: 0.25rem;
   scrollbar-width: none;
-  padding: 0.4rem 0.1rem 1rem;
-  margin: 0 -0.1rem;
+  padding: 0.6rem 0.15rem 1.2rem;
+  margin: 0 -0.15rem;
   touch-action: pan-x pan-y;
   overscroll-behavior-x: contain;
 }
@@ -73,6 +98,7 @@
 .carrusel-item {
   flex: 0 0 min(270px, 72vw);
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
 }
 
@@ -80,8 +106,30 @@
   flex: 1;
 }
 
+/* En táctil no hay hover: flechas siempre visibles */
+@media (hover: none) {
+  .carrusel-acciones button {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
 @media (max-width: 560px) {
   .carrusel {
     padding-inline: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carrusel-pista {
+    scroll-behavior: auto;
+  }
+
+  .carrusel-acciones button {
+    transition: none;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
   }
 }
