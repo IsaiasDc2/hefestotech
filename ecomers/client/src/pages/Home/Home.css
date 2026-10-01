@@ -2,6 +2,69 @@
   background-color: var(--bg);
 }
 
+/* ---------- FILTRO DEL HOME ---------- */
+.filtro-home .filtros {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 0.7rem;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radio);
+  padding: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.filtro-home .buscador {
+  min-width: 0;
+}
+
+.filtro-home .conteo {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.btn-limpiar {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-limpiar:hover {
+  border-color: var(--fuego);
+  color: var(--fuego);
+}
+
+.grid-destacados {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-destacados {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .filtro-home .filtros {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .grid-destacados {
+    grid-template-columns: 1fr;
+  }
+  .filtro-home .filtros {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- MARCAS ---------- */
 .marcas {
   padding-bottom: 1rem;

@@ -12,6 +12,7 @@ import {
   FaCreditCard,
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
+import ProductCard from "../../components/product/ProductCard";
 import ProductCarousel from "../../components/product/ProductCarousel";
 import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
@@ -29,24 +30,26 @@ const MARCAS = [
 ];
 
 const CATEGORIAS = [
-  { nombre: "Procesadores", slug: "procesadores", icono: <FaMicrochip /> },
-  { nombre: "Placas de video", slug: "placas-de-video", icono: <FaDesktop /> },
-  { nombre: "Memorias", slug: "memorias", icono: <FaMemory /> },
-  { nombre: "Almacenamiento", slug: "almacenamiento", icono: <FaHardDrive /> },
-  { nombre: "Periféricos", slug: "perifericos", icono: <FaKeyboard /> },
-  { nombre: "Ofertas", slug: "ofertas", icono: <FaFire /> },
+  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip /> },
+  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop /> },
+  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory /> },
+  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive /> },
+  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard /> },
+  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire /> },
 ];
 
 function Home({ agregarAlCarrito }) {
-  const [destacados, setDestacados] = useState([]);
-  const [ofertas, setOfertas] = useState([]);
+  const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [filtroTexto, setFiltroTexto] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("Todas");
 
   const normalizar = (data) =>
     (data || []).map((p) => ({
       ...p,
       precio: Number(p.precio ?? 0),
       stock: Number(p.stock ?? 0),
+      descuento_porcentaje: Number(p.descuento_porcentaje ?? 0),
       imagen: p.imagen || "",
       categoria: p.categoria || "General",
     }));
@@ -54,28 +57,36 @@ function Home({ agregarAlCarrito }) {
   useEffect(() => {
     async function cargar() {
       try {
-        const [{ data: dest, error: e1 }, { data: ofer, error: e2 }] =
-          await Promise.all([
-            supabase.from("productos").select("*").limit(8),
-            supabase
-              .from("productos")
-              .select("*")
-              .gt("descuento_porcentaje", 0)
-              .limit(10),
-          ]);
-        if (e1) throw e1;
-        if (e2) throw e2;
-        setDestacados(normalizar(dest));
-        setOfertas(normalizar(ofer));
+        const { data, error } = await supabase
+          .from("productos")
+          .select("*")
+          .limit(100);
+        if (error) throw error;
+        setProductos(normalizar(data));
       } catch {
-        setDestacados([]);
-        setOfertas([]);
+        setProductos([]);
       } finally {
         setCargando(false);
       }
     }
     cargar();
   }, []);
+
+  const destacados = productos.slice(0, 8);
+  const ofertas = productos
+    .filter((p) => p.descuento_porcentaje > 0)
+    .slice(0, 10);
+
+  const filtrados = productos.filter((p) => {
+    const texto = filtroTexto.trim().toLowerCase();
+    const coincideTexto =
+      !texto ||
+      p.nombre.toLowerCase().includes(texto) ||
+      (p.marca || "").toLowerCase().includes(texto);
+    const coincideCategoria =
+      filtroCategoria === "Todas" || p.categoria === filtroCategoria;
+    return coincideTexto && coincideCategoria;
+  });
 
   return (
     <div className="home">
@@ -105,6 +116,64 @@ function Home({ agregarAlCarrito }) {
         <p className="estado-carga">Calentando la forja...</p>
       ) : (
         <>
+          <section className="seccion filtro-home">
+            <div className="seccion-head">
+              <h2>Buscá en el catálogo</h2>
+              <span className="conteo">
+                {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="filtros">
+              <input
+                className="buscador"
+                type="text"
+                placeholder="🔍 Buscar por nombre o marca..."
+                value={filtroTexto}
+                onChange={(e) => setFiltroTexto(e.target.value)}
+                aria-label="Buscar productos"
+              />
+              <select
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+                aria-label="Filtrar por categoría"
+              >
+                <option value="Todas">Todas las categorías</option>
+                {CATEGORIAS.filter((c) => c.db).map((c) => (
+                  <option key={c.slug} value={c.db}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              {(filtroTexto || filtroCategoria !== "Todas") && (
+                <button
+                  className="btn-limpiar"
+                  onClick={() => {
+                    setFiltroTexto("");
+                    setFiltroCategoria("Todas");
+                  }}
+                >
+                  ↻ Limpiar
+                </button>
+              )}
+            </div>
+            {filtrados.length === 0 ? (
+              <div className="vacio">
+                <p>Sin resultados con ese filtro.</p>
+                <span>Probá con otra búsqueda o categoría.</span>
+              </div>
+            ) : (
+              <div className="grid-destacados">
+                {filtrados.slice(0, 8).map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    producto={p}
+                    agregarAlCarrito={agregarAlCarrito}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
           <ProductCarousel
             titulo="Ofertas de la semana"
             verTodo="/productos?orden=mayor"

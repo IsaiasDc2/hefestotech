@@ -116,6 +116,10 @@ function Productos({ agregarAlCarrito }) {
 
 
 
+  const etiquetaCategoria =
+    CATEGORIAS.find((c) => c.db === categoria)?.label || categoria;
+
+
   const categorias = useMemo(()=>{
 
 
@@ -294,7 +298,7 @@ function Productos({ agregarAlCarrito }) {
 
 
         <h1>
-          {soloOfertas ? "Ofertas" : "Componentes de PC"}
+          {soloOfertas ? "Ofertas" : etiquetaCategoria === "Todas" ? "Componentes de PC" : etiquetaCategoria}
         </h1>
 
 
