@@ -219,3 +219,64 @@
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
+
+/* Tablets y pantallas táctiles: blancos más grandes */
+@media (pointer: coarse) {
+  .cantidad button {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+  }
+
+  .cart-header button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .eliminar {
+    padding: 0.4rem 0;
+  }
+}
+
+/* Landscape bajo (teléfonos apaisados) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .cart-header {
+    padding: 0.7rem 1rem;
+  }
+
+  .cart-body {
+    padding: 0.6rem 1rem;
+  }
+
+  .cart-item {
+    padding: 0.6rem 0;
+  }
+
+  .cart-item img {
+    width: 52px;
+    height: 52px;
+  }
+
+  .cart-footer {
+    padding: 0.8rem 1rem;
+  }
+}
+
+/* Teléfonos con notch: respeta el área segura */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .cart-footer {
+    padding-bottom: calc(1.2rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 380px) {
+  .cart-header,
+  .cart-body,
+  .cart-footer {
+    padding-inline: 1rem;
+  }
+
+  .subtotal strong {
+    font-size: 1.1rem;
+  }
+}

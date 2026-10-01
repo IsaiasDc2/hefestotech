@@ -407,6 +407,40 @@
   .mouse { display: none; }
 }
 
+/* Teléfonos chicos: texto compacto y CTA a ancho completo */
+@media (max-width: 480px) {
+  .banner-slide {
+    min-height: 0;
+    align-items: flex-end;
+  }
+
+  .banner-texto {
+    padding: 2.2rem 1.1rem 3.2rem;
+  }
+
+  .banner-texto h2 {
+    font-size: 1.65rem;
+  }
+
+  .banner-texto p {
+    font-size: 0.9rem;
+  }
+
+  .banner-eyebrow {
+    font-size: 0.65rem;
+  }
+
+  .banner-cta {
+    display: block;
+    text-align: center;
+    padding: 0.9rem 1rem;
+  }
+
+  .banner-puntos {
+    bottom: 0.7rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .banner-pista { transition: none; }
   .gpu-fan,

@@ -162,3 +162,39 @@
   box-shadow: none;
   cursor: not-allowed;
 }
+
+/* Teléfonos chicos: card más compacta */
+@media (max-width: 380px) {
+  .card-producto {
+    padding: 0.8rem;
+    gap: 0.45rem;
+  }
+
+  .producto-detalle h3 {
+    font-size: 0.88rem;
+  }
+
+  .card-producto strong {
+    font-size: 1.15rem;
+  }
+
+  .btn-carrito {
+    padding: 0.8rem;
+    font-size: 0.92rem;
+  }
+}
+
+/* Sin hover en táctil: feedback al tocar */
+@media (hover: none) {
+  .card-producto:hover {
+    transform: none;
+  }
+
+  .card-producto:active {
+    border-color: rgba(249, 115, 22, 0.5);
+  }
+
+  .btn-carrito:active:not(:disabled) {
+    filter: brightness(1.1);
+  }
+}

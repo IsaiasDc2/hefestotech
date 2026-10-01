@@ -243,3 +243,57 @@
     display: none;
   }
 }
+
+/* Teléfonos chicos */
+@media (max-width: 480px) {
+  .topbar-inner {
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+
+  .topbar-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-head-inner {
+    padding: 0.7rem 1rem;
+    gap: 0.6rem;
+  }
+
+  .logo {
+    font-size: 1.05rem;
+  }
+
+  .nav-categorias-inner {
+    gap: 1.1rem;
+    padding: 0.55rem 1rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .nav-categorias-inner a {
+    font-size: 0.82rem;
+    scroll-snap-align: start;
+  }
+
+  .carrito-btn {
+    padding: 0.5rem 0.7rem;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .carrito-btn svg {
+    font-size: 1.05rem;
+  }
+}
+
+/* Táctil: blancos mínimos de 40px */
+@media (pointer: coarse) {
+  .nav-categorias-inner a {
+    padding: 0.5rem 0;
+  }
+
+  .buscador-head button {
+    min-width: 44px;
+  }
+}

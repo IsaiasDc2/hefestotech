@@ -91,6 +91,15 @@ button {
   cursor: pointer;
 }
 
+/* Imágenes nunca rompen el layout */
+img {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cargando-punto { animation: none; opacity: 1; }
+}
+
 .cargando-pagina {
   display: flex;
   align-items: center;

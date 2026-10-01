@@ -22,3 +22,16 @@
 .layout > footer {
   grid-area: footer;
 }
+
+/* Evita scroll horizontal por elementos anchos */
+.layout,
+.layout-main {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (max-width: 480px) {
+  .layout-main {
+    padding-inline: 0;
+  }
+}
