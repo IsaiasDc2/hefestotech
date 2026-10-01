@@ -44,6 +44,7 @@ body {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 a {
@@ -87,8 +88,37 @@ input::placeholder {
   color: var(--muted-oscuro);
 }
 
-button {
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
   cursor: pointer;
+}
+
+button,
+[role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn-carrito:active:not(:disabled),
+.banner-cta:active,
+.carrito-btn:active,
+.carrusel-acciones button:active {
+  transform: scale(0.96);
+  transition-duration: 100ms;
+}
+
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 /* Imágenes nunca rompen el layout */

@@ -3,6 +3,7 @@
   overflow: hidden;
   border-bottom: 1px solid var(--border);
   background: #060607;
+  touch-action: pan-y;
 }
 
 .banner-pista {
