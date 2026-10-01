@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { loginUsuario, registrarUsuario, obtenerUsuarioActual, cerrarSesion } from "../services/authService";
+import { loginUsuario, registrarUsuario, obtenerSesion, cerrarSesion, suscribirCambiosAuth } from "../services/authService";
 
 const useAuthStore = create((set) => ({
   usuario: null,
@@ -11,11 +11,13 @@ const useAuthStore = create((set) => ({
     set({ cargando: true, error: null });
     try {
       const data = await loginUsuario(email, password);
-      localStorage.setItem("token", data.token);
+      // La sesión la persiste Supabase (sb-*-auth-token); solo se guarda
+      // el token como respaldo para interceptores que lo lean.
+      if (data.token) localStorage.setItem("token", data.token);
       set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
       set({
-        error: "Email o contraseña incorrectos",
+        error: err.message || "Email o contraseña incorrectos",
         cargando: false,
       });
     }
@@ -25,29 +27,51 @@ const useAuthStore = create((set) => ({
     set({ cargando: true, error: null });
     try {
       const data = await registrarUsuario(datos);
-      localStorage.setItem("token", data.token);
-      set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
+      if (data.token) localStorage.setItem("token", data.token);
+      // Sin token (confirmación por email) no hay sesión todavía.
+      if (data.token) {
+        set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
+      } else {
+        set({ usuario: null, isAuthenticated: false, cargando: false });
+      }
+      return data;
     } catch (err) {
       set({
-        error: "No se pudo crear la cuenta",
+        error: err.message || "No se pudo crear la cuenta",
         cargando: false,
       });
+      throw err;
     }
   },
 
   cargarSesion: async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     set({ cargando: true });
     try {
-      const usuario = await obtenerUsuarioActual();
-      set({ usuario, isAuthenticated: true, cargando: false });
+      const sesion = await obtenerSesion();
+      if (!sesion) {
+        localStorage.removeItem("token");
+        set({ usuario: null, isAuthenticated: false, cargando: false });
+        return;
+      }
+      if (sesion.token) localStorage.setItem("token", sesion.token);
+      set({ usuario: sesion.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
       localStorage.removeItem("token");
-      set({ usuario: null, isAuthenticated: false, cargando: false });
+      set({ usuario: null, isAuthenticated: false, cargando: false, error: err.message });
     }
   },
+
+  // Sincroniza el store con refresh de token / logout en otra pestaña.
+  // Llamar una vez al arrancar la app. Devuelve función para desuscribir.
+  suscribirseACambios: () =>
+    suscribirCambiosAuth((usuario) => {
+      if (usuario) {
+        set({ usuario, isAuthenticated: true });
+      } else {
+        localStorage.removeItem("token");
+        set({ usuario: null, isAuthenticated: false });
+      }
+    }),
 
   logout: async () => {
     try {

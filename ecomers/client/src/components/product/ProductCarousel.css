@@ -40,6 +40,20 @@
   color: var(--fuego);
 }
 
+.carrusel-acciones a:focus-visible,
+.carrusel-acciones button:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+.carrusel-acciones button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--border);
+  color: var(--muted);
+}
+
 .carrusel-pista {
   display: flex;
   gap: 1.1rem;

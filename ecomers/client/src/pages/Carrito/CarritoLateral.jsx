@@ -12,12 +12,22 @@ function CarritoLateral({
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [isOpen]);
+    if (!isOpen) return undefined;
+    const alTeclado = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", alTeclado);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", alTeclado);
+    };
+  }, [isOpen, onClose]);
 
   const total = carrito.reduce(
     (acc, item) =>
-      acc + item.precio * item.cantidad,
+      acc +
+      Number(item.precio_con_descuento ?? item.precio ?? 0) *
+        Number(item.cantidad ?? 1),
     0
   );
 
@@ -26,40 +36,57 @@ function CarritoLateral({
       <div
         className={`overlay ${isOpen ? "show" : ""}`}
         onClick={onClose}
+        aria-hidden={!isOpen}
       ></div>
 
-      <aside className={`cart ${isOpen ? "open" : ""}`}>
+      <aside
+        className={`cart ${isOpen ? "open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Carrito de compras"
+        aria-hidden={!isOpen}
+      >
 
         <div className="cart-header">
           <h2>🛒 Mi carrito</h2>
-          <button onClick={onClose} aria-label="Cerrar carrito">
+          <button type="button" onClick={onClose} aria-label="Cerrar carrito">
             ✕
           </button>
         </div>
 
         <div className="cart-body">
           {carrito.length === 0 ? (
-            <p>Tu carrito está vacío</p>
+            <div className="cart-vacio">
+              <p className="cart-vacio-titulo">Tu carrito está vacío</p>
+              <p className="cart-vacio-texto">Sumá productos y aparecen acá.</p>
+            </div>
           ) : (
             carrito.map(item => (
               <div className="cart-item" key={item.id}>
-                <img src={item.imagen} alt={item.nombre} />
+                {item.imagen ? (
+                  <img
+                    src={item.imagen}
+                    alt={item.nombre || "Producto"}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
+                ) : null}
 
                 <div className="info">
                   <h4>{item.nombre}</h4>
-                  <p>${item.precio.toLocaleString()}</p>
+                  <p className="cart-precio">${Number(item.precio_con_descuento ?? item.precio ?? 0).toLocaleString("es-AR")}</p>
 
                   <div className="cantidad">
-                    <button onClick={() => disminuirCantidad(item.id)}>
+                    <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label="Quitar uno">
                       -
                     </button>
                     <span>{item.cantidad}</span>
-                    <button onClick={() => aumentarCantidad(item.id)}>
+                    <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label="Agregar uno">
                       +
                     </button>
                   </div>
 
                   <button
+                    type="button"
                     className="eliminar"
                     onClick={() => eliminarDelCarrito(item.id)}
                   >
@@ -72,12 +99,12 @@ function CarritoLateral({
         </div>
 
         <div className="cart-footer">
-          <div className="subtotal">
-            <span>Total</span>
-            <strong>${total.toLocaleString()}</strong>
+          <div className="subtotal" aria-live="polite">
+            <span>Subtotal</span>
+            <strong>${total.toLocaleString("es-AR")}</strong>
           </div>
 
-          <button className="btnComprar">
+          <button type="button" className="btnComprar" disabled={carrito.length === 0}>
             Finalizar compra
           </button>
         </div>

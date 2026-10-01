@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0b0908"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" fill="none" stroke="#2e2521" stroke-width="2"/>
+  <!-- Yunque minimalista -->
+  <path d="M10 26 h26 c8 0 12-3.5 16-8 l2-3 c.6-.9 2-.4 1.8.7 L53 26 h-3 v3 h-8 v-3 z" fill="#f97316"/>
+  <rect x="26" y="29" width="10" height="9" fill="#c2410c"/>
+  <rect x="18" y="38" width="26" height="4" rx="2" fill="#f97316"/>
+  <rect x="14" y="42" width="34" height="4" rx="2" fill="#fbbf24"/>
+  <!-- Chispa / fuego -->
+  <path d="M46 44 c-2.4-3.6-2.4-6.4 0-9.6 2.2 2 3.4 3.4 3.4 5.6 0 2-1.5 4-3.4 4z" fill="#ef4444"/>
+  <circle cx="20" cy="18" r="1.6" fill="#fbbf24"/>
+  <circle cx="26" cy="14" r="1.2" fill="#ef4444"/>
+</svg>

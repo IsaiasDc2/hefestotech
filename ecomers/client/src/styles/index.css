@@ -13,10 +13,75 @@
   --brasa: #ef4444;
   --oro: #fbbf24;
   --ok: #4ade80;
+  --danger: #fca5a5;
+  --sobre-fuego: #1c0d02;
+  --fuego-suave: rgba(249, 115, 22, 0.12);
+  --fuego-borde: rgba(249, 115, 22, 0.5);
+  --fuego-resplandor: rgba(249, 115, 22, 0.16);
+  --fuego-sombra: rgba(249, 115, 22, 0.3);
+  --oro-suave: rgba(251, 191, 36, 0.08);
+  --oro-borde: rgba(251, 191, 36, 0.4);
+  --danger-borde: rgba(239, 68, 68, 0.4);
+  --velo: rgba(11, 9, 8, 0.75);
+  --anillo-foco: rgba(249, 115, 22, 0.45);
   --grad-fuego: linear-gradient(135deg, #f97316, #dc2626);
   --radio: 12px;
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Tipografia: display condensada gamer/editorial + cuerpo legible */
+  --font-display: "Oswald", "Arial Narrow", "Impact", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Escala fluida */
+  --text-h1: clamp(2rem, 1.4rem + 3vw, 3.25rem);
+  --text-h2: clamp(1.5rem, 1.15rem + 1.75vw, 2.25rem);
+  --text-h3: clamp(1.2rem, 1.05rem + 0.75vw, 1.5rem);
+  --text-h4: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-precio: clamp(1.15rem, 1rem + 0.75vw, 1.5rem);
+  --text-body: 0.9375rem;
+  --text-small: 0.8125rem;
+
+  /* Pesos y tracking */
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-display: 600;
+  --tracking-display: 0.015em;
+  --tracking-humo: 0.08em;
+  --tracking-body: 0;
+  --leading-tight: 1.1;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  /* Espaciados */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3.5rem;
+
+  /* Radios */
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 16px;
+  --radio-full: 999px;
+
+  /* Sombras */
+  --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --sombra-media: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --sombra-fuego: 0 6px 24px rgba(249, 115, 22, 0.25);
+
+  /* Transiciones */
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 350ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-rapida: ease-out;
 }
 
 * {
@@ -36,10 +101,47 @@ body {
 }
 
 body {
-  font-family: var(--fuente);
-  font-size: 15px;
-  line-height: 1.55;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: var(--weight-body);
+  letter-spacing: var(--tracking-body);
+  line-height: var(--leading-normal);
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+  text-transform: uppercase;
+}
+
+h1 {
+  font-size: var(--text-h1);
+}
+
+h2 {
+  font-size: var(--text-h2);
+}
+
+h3 {
+  font-size: var(--text-h3);
+  letter-spacing: 0.02em;
+}
+
+h4 {
+  font-size: var(--text-h4);
+}
+
+small {
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
 }
 
 #root {
@@ -179,4 +281,54 @@ img {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--fuego-oscuro);
+}
+
+/* Página /carrito (sin CSS propio): lista simple y legible */
+.carrito-pagina {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.carrito-pagina a {
+  color: var(--fuego);
+  font-weight: 600;
+}
+
+.carrito-lista {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.carrito-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radio);
+  padding: 0.9rem 1.1rem;
+}
+
+.carrito-item-acciones {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.carrito-item-acciones button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+}
+
+.carrito-subtotal {
+  font-size: 1.1rem;
 }

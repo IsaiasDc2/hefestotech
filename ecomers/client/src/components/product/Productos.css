@@ -51,6 +51,12 @@
   color: var(--fuego);
 }
 
+.btn-limpiar:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
 .grid-productos {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -75,9 +81,33 @@
   color: var(--muted);
 }
 
+.estado-carga {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Skeleton sutil con paleta forja */
+.estado-carga::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, var(--fuego-suave) 50%, transparent 70%);
+  animation: estado-brillo 1.6s ease-in-out infinite;
+}
+
+@keyframes estado-brillo {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estado-carga::after { animation: none; }
+}
+
 .estado-error {
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--danger);
+  border-color: var(--danger-borde);
+  background: var(--surface);
 }
 
 @media (max-width: 1024px) {

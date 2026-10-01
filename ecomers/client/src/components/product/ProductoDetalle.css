@@ -34,6 +34,22 @@
   border: 1px solid var(--border);
 }
 
+.detalle-sin-imagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radio);
+  background:
+    linear-gradient(135deg, var(--fuego-resplandor), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
 .detalle-info {
   display: flex;
   flex-direction: column;
@@ -47,8 +63,8 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--oro);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid var(--oro-borde);
+  background: var(--oro-suave);
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
 }
@@ -65,7 +81,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted-oscuro);
+  color: var(--muted);
 }
 
 .detalle-descripcion {
@@ -84,17 +100,25 @@
   font-size: 2rem;
   font-weight: 900;
   letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.detalle-precio:has(.precio-anterior) strong {
+  color: var(--oro);
 }
 
 .detalle-precio .precio-anterior {
   display: block;
   font-size: 1rem;
   margin-bottom: 0.2rem;
+  color: var(--muted);
+  text-decoration: line-through;
 }
 
 .detalle-stock {
   font-weight: 700;
   font-size: 0.95rem;
+  color: var(--muted);
 }
 
 .detalle-stock .disponible {
@@ -102,7 +126,14 @@
 }
 
 .detalle-stock .sin-stock {
-  color: #fca5a5;
+  color: var(--danger);
+}
+
+.volver:focus-visible,
+.detalle-estado a:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .detalle-info .btn-carrito {

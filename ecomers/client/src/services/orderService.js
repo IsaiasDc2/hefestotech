@@ -1,4 +1,5 @@
 import { supabase } from "../components/lib/supabaseClient";
+import { precioFinal } from "./productService";
 
 const sesionUsuarioId = async () => {
   const {
@@ -8,6 +9,8 @@ const sesionUsuarioId = async () => {
   return user.id;
 };
 
+// Requiere tablas `ordenes` y `orden_items` (ver supabase/migrations/002_*).
+// Si aún no aplicaste la migración, estos métodos lanzan el error de PostgREST.
 export const crearOrden = async (datosOrden) => {
   const user_id = await sesionUsuarioId();
   const { items = [], ...orden } = datosOrden;
@@ -22,9 +25,9 @@ export const crearOrden = async (datosOrden) => {
   if (items.length > 0) {
     const filas = items.map((item) => ({
       orden_id: creada.id,
-      producto_id: item.id,
-      cantidad: item.cantidad,
-      precio: item.precio,
+      producto_id: item.producto_id ?? item.id,
+      cantidad: item.cantidad ?? 1,
+      precio: Number(item.precio ?? precioFinal(item)),
     }));
     const { error: errorItems } = await supabase
       .from("orden_items")
@@ -47,10 +50,12 @@ export const obtenerMisOrdenes = async () => {
 };
 
 export const obtenerOrdenPorId = async (id) => {
+  const user_id = await sesionUsuarioId();
   const { data, error } = await supabase
     .from("ordenes")
     .select("*, orden_items(*)")
     .eq("id", id)
+    .eq("user_id", user_id)
     .single();
   if (error) throw new Error(error.message);
   return data;

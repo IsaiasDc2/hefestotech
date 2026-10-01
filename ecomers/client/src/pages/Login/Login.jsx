@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FaGoogle, FaGithub, FaLock, FaUser } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
 import "./Login.css";
@@ -8,20 +8,14 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const cargando = useAuthStore((state) => state.cargando);
   const error = useAuthStore((state) => state.error);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     await login(email, password);
   };
-
-  if (isAuthenticated) {
-    navigate("/cuenta");
-  }
 
   return (
     <form className="login" onSubmit={handleSubmit}>
@@ -51,10 +45,10 @@ function Login() {
           Recordarme
         </label>
 
-        <a href="#">
+        <Link to="/contactanos">
           <FaLock className="icono-link" />
           ¿Olvidaste tu contraseña?
-        </a>
+        </Link>
       </div>
 
       <button type="submit" disabled={cargando}>
@@ -65,19 +59,19 @@ function Login() {
         <span>o</span>
       </div>
 
-      <button type="button" className="google">
+      <button type="button" className="google" title="Disponible próximamente">
         <FaGoogle />
         Continuar con Google
       </button>
 
-      <button type="button" className="github">
+      <button type="button" className="github" title="Disponible próximamente">
         <FaGithub />
         Continuar con GitHub
       </button>
 
       <p className="registro">
         <FaUser className="icono-link" />
-        ¿No tienes una cuenta? <strong>Regístrate</strong>
+        ¿No tienes una cuenta? <Link to="/contactanos"><strong>Contactanos para crearla</strong></Link>
       </p>
     </form>
   );

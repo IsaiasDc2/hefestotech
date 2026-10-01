@@ -12,8 +12,8 @@
 
 .card-producto:hover {
   transform: translateY(-4px);
-  border-color: rgba(249, 115, 22, 0.5);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 24px rgba(249, 115, 22, 0.1);
+  border-color: var(--fuego-borde);
+  box-shadow: var(--sombra), 0 0 24px var(--fuego-suave);
 }
 
 .oferta {
@@ -24,11 +24,11 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #fff;
+  color: var(--sobre-fuego);
   background: var(--grad-fuego);
   padding: 0.25rem 0.6rem;
   border-radius: 6px;
-  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 2px 10px var(--fuego-sombra);
 }
 
 .favorito {
@@ -42,16 +42,30 @@
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  background: rgba(11, 9, 8, 0.75);
+  background: var(--velo);
   border: 1px solid var(--border);
   border-radius: 50%;
   backdrop-filter: blur(4px);
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .favorito:hover {
   transform: scale(1.12);
   border-color: var(--fuego);
+}
+
+.favorito.activo {
+  border-color: var(--fuego);
+  background: var(--fuego-suave);
+  box-shadow: 0 0 0 3px var(--fuego-suave), 0 0 16px var(--fuego-resplandor);
+}
+
+.favorito:focus-visible,
+.producto-detalle:focus-visible,
+.btn-carrito:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
 .producto-detalle {
@@ -74,8 +88,25 @@
 .producto-detalle img[src=""] {
   min-height: 180px;
   background:
-    linear-gradient(135deg, rgba(249, 115, 22, 0.14), transparent 60%),
+    linear-gradient(135deg, var(--fuego-suave), transparent 60%),
     var(--surface);
+}
+
+.producto-sin-imagen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, var(--fuego-resplandor), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--border-suave);
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
 }
 
 .producto-detalle h3 {
@@ -98,24 +129,40 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--muted-oscuro);
+  color: var(--muted);
 }
 
 .stock {
   font-size: 0.82rem;
   font-weight: 600;
+  color: var(--muted);
+}
+
+.stock span:last-child {
+  color: var(--muted);
+}
+
+/* Sin stock: tono peligro AA + imagen atenuada sin tocar JSX */
+.card-producto:has(.btn-carrito:disabled) .producto-detalle img {
+  filter: grayscale(0.5) brightness(0.75);
+}
+
+.card-producto:has(.btn-carrito:disabled) .stock {
+  color: var(--danger);
 }
 
 .precios {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .precio-anterior {
   font-size: 0.85rem;
-  color: var(--muted-oscuro);
+  color: var(--muted);
   text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .card-producto strong {
@@ -123,6 +170,12 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text);
+}
+
+/* Jerarquía oferta: precio final en oro, anterior atenuado */
+.precios:has(.precio-anterior) strong {
+  color: var(--oro);
+  font-size: 1.35rem;
 }
 
 .cuotas {
@@ -144,10 +197,10 @@
   border: none;
   border-radius: 8px;
   background: var(--grad-fuego);
-  color: #fff;
-  font-weight: 700;
+  color: var(--sobre-fuego);
+  font-weight: 800;
   font-size: 0.88rem;
-  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 2px 12px var(--fuego-sombra);
   transition: filter 0.2s ease, transform 0.15s ease;
 }
 
@@ -157,10 +210,12 @@
 }
 
 .btn-carrito:disabled {
-  background: var(--border);
+  background: var(--surface);
+  border: 1px solid var(--border);
   color: var(--muted);
   box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.85;
 }
 
 /* Teléfonos chicos: card más compacta */
@@ -191,7 +246,7 @@
   }
 
   .card-producto:active {
-    border-color: rgba(249, 115, 22, 0.5);
+    border-color: var(--fuego-borde);
   }
 
   .btn-carrito:active:not(:disabled) {

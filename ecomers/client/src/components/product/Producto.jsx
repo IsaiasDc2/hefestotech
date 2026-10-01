@@ -27,7 +27,10 @@ function Productos({ agregarAlCarrito }) {
 
   const [precioMax, setPrecioMax] = useState("");
 
-  const [orden, setOrden] = useState(params.get("orden") === "mayor" ? "mayor" : "");
+  const [orden, setOrden] = useState(() => {
+    const o = params.get("orden");
+    return o === "mayor" || o === "menor" ? o : "";
+  });
 
 
   // Si cambia la URL (ej: clic en otra categoría) se re-aplican los filtros
@@ -36,7 +39,8 @@ function Productos({ agregarAlCarrito }) {
     setCategoria(r.db);
     setSoloOfertas(r.ofertas);
     setBusqueda(params.get("q") || "");
-    setOrden(params.get("orden") === "mayor" ? "mayor" : "");
+    const o = params.get("orden");
+    setOrden(o === "mayor" || o === "menor" ? o : "");
   }, [params]);
 
 

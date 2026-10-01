@@ -87,10 +87,10 @@ function Acerca() {
         <h2>¿Listo para armar tu próxima PC?</h2>
         <p>Explorá el catálogo completo de componentes disponibles.</p>
         <div className="acerca-cta-botones">
-          <Link to="/" className="acerca-btn">
+          <Link to="/productos" className="acerca-btn">
             Ver productos
           </Link>
-          <Link to="/arma-tu-pc" className="acerca-btn acerca-btn-outline">
+          <Link to="/contactanos" className="acerca-btn acerca-btn-outline">
             🖥️ Armá tu PC
           </Link>
         </div>

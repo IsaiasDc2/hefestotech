@@ -1,5 +1,5 @@
 .footer {
-  background-color: #080605;
+  background-color: var(--bg);
   color: var(--muted);
   border-top: 1px solid var(--border);
   font-size: 0.9rem;
@@ -30,23 +30,29 @@
   color: var(--text);
   font-size: 1.1rem;
   font-weight: 800;
-  margin: 0 0 0.9rem;
+  margin: 0 0 0.6rem;
   letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
 .footer-col h4 {
-  color: var(--fuego);
-  font-size: 0.78rem;
+  color: var(--text);
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin: 0 0 1.1rem;
+  letter-spacing: 0.12em;
+  margin: 0 0 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-suave);
+  line-height: 1;
 }
 
 .footer-col p {
-  line-height: 1.6;
-  color: var(--muted-oscuro);
+  line-height: 1.65;
+  font-size: 0.88rem;
+  color: var(--muted);
   margin: 0;
+  max-width: 32ch;
 }
 
 .footer-col ul {
@@ -60,27 +66,25 @@
 
 .footer-col ul li a {
   position: relative;
+  display: inline-block;
   color: var(--muted);
   text-decoration: none;
-  transition: color 0.15s ease, padding-left 0.15s ease;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  padding: 0.15rem 0;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .footer-col ul li a:hover {
   color: var(--text);
-  padding-left: 10px;
+  transform: translateX(6px);
 }
 
-.footer-col ul li a:hover::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--fuego);
-  transform: translateY(-50%);
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.8);
+.footer-col ul li a:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 3px;
+  border-radius: 4px;
+  color: var(--text);
 }
 
 .footer-brand .redes {
@@ -93,14 +97,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background-color: var(--surface);
   border: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.95rem;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .footer-brand .redes a:hover {
@@ -109,6 +113,15 @@
   background: var(--grad-fuego);
   box-shadow: 0 2px 12px rgba(249, 115, 22, 0.4);
   transform: translateY(-2px);
+}
+
+.footer-brand .redes a:active {
+  transform: scale(0.94);
+}
+
+.footer-brand .redes a:focus-visible {
+  outline: 2px solid var(--oro);
+  outline-offset: 2px;
 }
 
 .contacto-lista li {
@@ -127,16 +140,38 @@
 
 .pagos {
   display: flex;
+  align-items: center;
   gap: 0.7rem;
   margin-top: 1.4rem;
   font-size: 1.7rem;
   color: var(--muted-oscuro);
 }
 
+.pagos svg {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.pagos svg:hover {
+  color: var(--muted);
+  transform: translateY(-1px);
+}
+
 .footer-bottom {
   border-top: 1px solid var(--border-suave);
-  padding: 1.2rem 1.5rem;
+  padding: 1.2rem 1.5rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-col ul li a,
+  .footer-brand .redes a,
+  .pagos svg {
+    transition: none;
+  }
+  .footer-col ul li a:hover,
+  .footer-brand .redes a:hover {
+    transform: none;
+  }
 }
 
 .footer-bottom p {

@@ -43,21 +43,25 @@ export default function App() {
   };
 
   const eliminarDelCarrito = (id) => {
-    setCarrito(carrito.filter(item => item.id !== id));
+    setCarrito((prev) => prev.filter((item) => item.id !== id));
   };
 
   const aumentarCantidad = (id) => {
-    setCarrito(carrito.map(item =>
-      item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item
-    ));
+    setCarrito((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item
+      )
+    );
   };
 
   const disminuirCantidad = (id) => {
-    setCarrito(carrito.map(item =>
-      item.id === id && item.cantidad > 1
-        ? { ...item, cantidad: item.cantidad - 1 }
-        : item
-    ));
+    setCarrito((prev) =>
+      prev.map((item) =>
+        item.id === id && item.cantidad > 1
+          ? { ...item, cantidad: item.cantidad - 1 }
+          : item
+      )
+    );
   };
 
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
@@ -89,7 +93,17 @@ export default function App() {
           path="producto/:id"
           element={<ProductoDetalle agregarAlCarrito={agregarAlCarrito} />}
         />
-        <Route path="carrito" element={<Carrito carrito={carrito} />} />
+        <Route
+          path="carrito"
+          element={
+            <Carrito
+              carrito={carrito}
+              eliminarDelCarrito={eliminarDelCarrito}
+              aumentarCantidad={aumentarCantidad}
+              disminuirCantidad={disminuirCantidad}
+            />
+          }
+        />
         <Route path="cuenta" element={<Cuenta />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />

@@ -12,7 +12,7 @@ const SLIDES = [
     titulo: "Potencia bruta para tu setup",
     texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
     cta: "Ver placas de video",
-    to: "/productos?categoria=Placas de video",
+    to: "/productos?categoria=placas-de-video",
     posicion: "right center",
   },
   {
@@ -68,7 +68,8 @@ export default function Banner() {
 
   const slides = SLIDES.map((s) => ({
     ...s,
-    imagen: fotos[s.categoria] || Object.values(fotos)[0] || "",
+    // Solo foto exacta de su categoría; si no hay, cae al arte CSS.
+    imagen: fotos[s.categoria] || "",
   }));
 
   const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);
@@ -180,6 +181,7 @@ export default function Banner() {
       </div>
 
       <button
+        type="button"
         className="banner-flecha ant"
         onClick={anterior}
         aria-label="Diapositiva anterior"
@@ -187,6 +189,7 @@ export default function Banner() {
         ‹
       </button>
       <button
+        type="button"
         className="banner-flecha sig"
         onClick={siguiente}
         aria-label="Diapositiva siguiente"
@@ -198,6 +201,7 @@ export default function Banner() {
         {slides.map((s, i) => (
           <button
             key={s.id}
+            type="button"
             role="tab"
             aria-selected={i === indice}
             aria-label={`Ir a la diapositiva ${i + 1}`}

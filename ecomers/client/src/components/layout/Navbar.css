@@ -33,9 +33,17 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background-color: rgba(11, 9, 8, 0.94);
+  background-color: rgba(11, 9, 8, 0.82);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.site-head.is-scrolled {
+  background-color: rgba(11, 9, 8, 0.94);
+  border-bottom-color: var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 
 .site-head-inner {
@@ -67,9 +75,20 @@
 }
 
 .logo-icon {
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   color: var(--fuego);
   filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.55));
+  flex-shrink: 0;
+}
+
+.logo:focus-visible,
+.buscador-head button:focus-visible,
+.link-cuenta:focus-visible,
+.carrito-btn:focus-visible,
+.nav-categorias-inner a:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .buscador-head {
@@ -81,10 +100,20 @@
 
 .buscador-head input {
   flex: 1;
+  min-width: 0;
   border-radius: 10px 0 0 10px;
   border-right: none;
-  background-color: #221b17;
+  background-color: var(--card-2);
+  border-color: var(--border);
   padding: 0.7rem 1rem;
+}
+
+.buscador-head:focus-within input {
+  border-color: var(--fuego);
+}
+
+.buscador-head:focus-within button {
+  filter: brightness(1.12);
 }
 
 .buscador-head button {
@@ -92,16 +121,21 @@
   align-items: center;
   justify-content: center;
   width: 52px;
+  flex-shrink: 0;
   border: none;
   border-radius: 0 10px 10px 0;
   background: var(--grad-fuego);
   color: #fff;
   font-size: 1rem;
-  transition: filter 0.2s ease;
+  transition: filter 0.2s ease, transform 0.2s ease;
 }
 
 .buscador-head button:hover {
   filter: brightness(1.12);
+}
+
+.buscador-head button:active {
+  transform: scale(0.96);
 }
 
 .nav-cuenta {
@@ -151,6 +185,15 @@
 .carrito-btn:hover {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+.carrito-btn:active {
+  transform: scale(0.95);
+}
+
+.carrito-btn:focus-visible {
+  outline: 2px solid var(--oro);
+  outline-offset: 2px;
 }
 
 .carrito-count {
@@ -219,6 +262,23 @@
 
 .nav-categorias-inner a:hover::after {
   width: 100%;
+}
+
+.nav-categorias-inner a.activo {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.nav-categorias-inner a.activo::after {
+  width: 100%;
+}
+
+.nav-ofertas {
+  color: var(--oro) !important;
+}
+
+.nav-ofertas.activo {
+  color: var(--fuego) !important;
 }
 
 .nav-ayuda {
@@ -295,5 +355,17 @@
 
   .buscador-head button {
     min-width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-head,
+  .buscador-head button,
+  .carrito-btn,
+  .nav-categorias-inner a::after {
+    transition: none;
+  }
+  .carrito-btn:hover {
+    transform: none;
   }
 }

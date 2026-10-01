@@ -176,7 +176,7 @@ function Home({ agregarAlCarrito }) {
 
           <ProductCarousel
             titulo="Ofertas de la semana"
-            verTodo="/productos?orden=mayor"
+            verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
           />

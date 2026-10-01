@@ -26,8 +26,9 @@
 .login h2 {
   font-size: 1.4rem;
   font-weight: 800;
+  line-height: 1.25;
   color: var(--text);
-  margin: 0 0 1.6rem;
+  margin: 0 0 1.4rem;
   letter-spacing: -0.01em;
 }
 
@@ -151,6 +152,17 @@
 
 .google svg {
   color: var(--fuego);
+  flex-shrink: 0;
+}
+
+.google:focus-visible,
+.github:focus-visible,
+.login > button[type="submit"]:focus-visible,
+.opciones-login a:focus-visible,
+.registro a:focus-visible {
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .registro {
@@ -188,5 +200,24 @@
   .login {
     margin: 2rem auto;
     padding: 2rem 1.5rem;
+  }
+}
+
+/* Cuando Login vive dentro de /cuenta, hereda el ritmo de la tarjeta */
+.cuenta .contenido .login {
+  margin: 0;
+  max-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login > button[type="submit"],
+  .google,
+  .github {
+    transition: none;
+  }
+  .login > button[type="submit"]:hover:not(:disabled),
+  .google:hover,
+  .github:hover {
+    transform: none;
   }
 }

@@ -42,15 +42,30 @@ function Footer() {
 
           <div className="redes">
 
-            <a href="#">
+            <a
+              href="https://facebook.com/hefestotech"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Facebook"
+            >
               <FaFacebook />
             </a>
 
-            <a href="#">
+            <a
+              href="https://instagram.com/hefestotech"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Instagram"
+            >
               <FaInstagram />
             </a>
 
-            <a href="#">
+            <a
+              href="https://wa.me/5491112345678"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="WhatsApp"
+            >
               <FaWhatsapp />
             </a>
 

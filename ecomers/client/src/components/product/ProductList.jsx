@@ -49,7 +49,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
     return (
       <div className="detalle-estado">
         <p>{error}</p>
-        <Link to="/">← Volver al catálogo</Link>
+        <Link to="/productos">← Volver al catálogo</Link>
       </div>
     );
   }
@@ -58,16 +58,26 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
   const especificaciones = producto.especificaciones || {};
   const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
+  const precio = Number(producto.precio ?? 0);
+  const precioFinal = Number(producto.precio_con_descuento ?? producto.precio ?? 0);
 
   return (
     <section className="detalle-container">
-      <Link to="/" className="volver">
+      <Link to="/productos" className="volver">
         ← Volver al catálogo
       </Link>
 
       <div className="detalle-grid">
         <div className="detalle-imagen">
-          <img src={producto.imagen} alt={producto.nombre} />
+          {producto.imagen ? (
+            <img
+              src={producto.imagen}
+              alt={producto.nombre || "Producto"}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+          ) : (
+            <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
+          )}
         </div>
 
         <div className="detalle-info">
@@ -86,14 +96,14 @@ function ProductoDetalle({ agregarAlCarrito }) {
             {tieneOferta ? (
               <>
                 <span className="precio-anterior">
-                  ${producto.precio.toLocaleString("es-AR")}
+                  ${precio.toLocaleString("es-AR")}
                 </span>
                 <strong>
-                  ${producto.precio_con_descuento.toLocaleString("es-AR")}
+                  ${precioFinal.toLocaleString("es-AR")}
                 </strong>
               </>
             ) : (
-              <strong>${producto.precio.toLocaleString("es-AR")}</strong>
+              <strong>${precio.toLocaleString("es-AR")}</strong>
             )}
             <p className="cuotas">💳 6 cuotas sin interés</p>
             {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}

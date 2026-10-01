@@ -6,6 +6,12 @@ function ProductCard({ producto, agregarAlCarrito }) {
   const [favorito, setFavorito] = useState(false);
 
   const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
+  const precio = Number(producto.precio ?? 0);
+  const precioFinal = Number(
+    producto.precio_con_descuento ?? producto.precio ?? 0
+  );
+  const imagen = producto.imagen || "";
+  const nombre = producto.nombre || "Producto";
 
   return (
     <div className="card-producto">
@@ -24,13 +30,18 @@ function ProductCard({ producto, agregarAlCarrito }) {
       </button>
 
       <Link to={`/producto/${producto.id}`} className="producto-detalle">
-        <img
-          src={producto.imagen}
-          alt={producto.nombre}
-          loading="lazy"
-          decoding="async"
-        />
-        <h3>{producto.nombre}</h3>
+        {imagen ? (
+          <img
+            src={imagen}
+            alt={nombre}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+          />
+        ) : (
+          <span className="producto-sin-imagen" aria-hidden="true">HefestoTech</span>
+        )}
+        <h3>{nombre}</h3>
       </Link>
 
       <p className="categoria">{producto.categoria}</p>
@@ -46,14 +57,14 @@ function ProductCard({ producto, agregarAlCarrito }) {
       {tieneOferta ? (
         <div className="precios">
           <span className="precio-anterior">
-            ${producto.precio.toLocaleString("es-AR")}
+            ${precio.toLocaleString("es-AR")}
           </span>
           <strong>
-            ${producto.precio_con_descuento.toLocaleString("es-AR")}
+            ${precioFinal.toLocaleString("es-AR")}
           </strong>
         </div>
       ) : (
-        <strong>${producto.precio.toLocaleString("es-AR")}</strong>
+        <strong>${precio.toLocaleString("es-AR")}</strong>
       )}
 
       <p className="cuotas">💳 6 cuotas sin interés</p>
@@ -61,9 +72,10 @@ function ProductCard({ producto, agregarAlCarrito }) {
       {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
 
       <button
+        type="button"
         className="btn-carrito"
         disabled={!producto.stock}
-        onClick={() => agregarAlCarrito(producto)}
+        onClick={() => agregarAlCarrito?.(producto)}
       >
         {producto.stock ? "🛒 Agregar al carrito" : "Sin stock"}
       </button>

@@ -2,7 +2,7 @@
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--border);
-  background: #060607;
+  background: var(--bg);
   touch-action: pan-y;
 }
 
@@ -280,32 +280,40 @@
   display: inline-block;
   font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.2em;
+  line-height: 1;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  padding: 0.35rem 0.85rem;
+  padding: 0.45rem 0.9rem;
   border-radius: 999px;
-  margin-bottom: 1rem;
-  border: 1px solid;
+  margin-bottom: 1.1rem;
+  border: 1px solid var(--border);
+  color: var(--oro);
+  border-color: var(--border);
+  background: rgba(249, 115, 22, 0.1);
 }
 
-.tema-neon .banner-eyebrow { color: #86efac; border-color: rgba(74, 222, 80, 0.45); background: rgba(74, 222, 80, 0.08); }
-.tema-magenta .banner-eyebrow { color: #f0abfc; border-color: rgba(232, 121, 249, 0.45); background: rgba(232, 121, 249, 0.08); }
-.tema-ambar .banner-eyebrow { color: #fde68a; border-color: rgba(251, 191, 36, 0.45); background: rgba(251, 191, 36, 0.08); }
+.tema-neon .banner-eyebrow { color: var(--ok); border-color: var(--border); background: rgba(74, 222, 128, 0.08); }
+.tema-magenta .banner-eyebrow { color: var(--text); border-color: var(--border); background: rgba(249, 115, 22, 0.1); }
+.tema-ambar .banner-eyebrow { color: var(--oro); border-color: var(--border); background: rgba(251, 191, 36, 0.08); }
 
 .banner-texto h2 {
   font-size: clamp(1.9rem, 4.5vw, 3.2rem);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1.05;
-  color: #fff;
-  max-width: 560px;
-  margin-bottom: 0.8rem;
+  text-wrap: balance;
+  color: var(--text);
+  max-width: 22ch;
+  margin-bottom: 0.75rem;
 }
 
 .banner-texto p {
-  color: rgba(255, 255, 255, 0.72);
-  max-width: 460px;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 46ch;
   margin-bottom: 1.6rem;
+  text-wrap: pretty;
 }
 
 .banner-cta {
@@ -314,17 +322,29 @@
   border-radius: 10px;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #060607;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: #fff;
+  background: var(--grad-fuego);
+  border: 1px solid transparent;
+  box-shadow: 0 4px 24px rgba(249, 115, 22, 0.4);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
-
-.tema-neon .banner-cta { background: linear-gradient(135deg, #4ade80, #22c55e); box-shadow: 0 4px 24px rgba(74, 222, 80, 0.4); }
-.tema-magenta .banner-cta { background: linear-gradient(135deg, #e879f9, #22d3ee); box-shadow: 0 4px 24px rgba(232, 121, 249, 0.4); }
-.tema-ambar .banner-cta { background: linear-gradient(135deg, #fde68a, #f59e0b); box-shadow: 0 4px 24px rgba(251, 191, 36, 0.4); }
 
 .banner-cta:hover {
   filter: brightness(1.08);
   transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(249, 115, 22, 0.5);
+}
+
+.banner-cta:active {
+  transform: scale(0.97);
+}
+
+.banner-cta:focus-visible {
+  outline: 2px solid var(--oro);
+  outline-offset: 3px;
 }
 
 /* Flechas y puntos */
@@ -335,16 +355,20 @@
   z-index: 2;
   width: 44px;
   height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(6, 6, 7, 0.55);
-  color: #fff;
+  border: 1px solid var(--border);
+  background: rgba(11, 9, 8, 0.6);
+  color: var(--text);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .banner:hover .banner-flecha,
@@ -353,7 +377,19 @@
 }
 
 .banner-flecha:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--card-2);
+  border-color: var(--fuego);
+  color: var(--fuego);
+}
+
+.banner-flecha:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.banner-flecha:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--fuego);
+  outline-offset: 2px;
 }
 
 .banner-flecha.ant { left: 1rem; }
@@ -374,15 +410,29 @@
   height: 4px;
   border-radius: 999px;
   border: none;
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--border);
   cursor: pointer;
   padding: 0;
-  transition: width 0.25s ease, background 0.25s ease;
+  transition: width 0.25s ease, background 0.25s ease, opacity 0.25s ease;
+  opacity: 0.8;
+}
+
+.banner-puntos button:hover {
+  background: var(--muted);
+  opacity: 1;
 }
 
 .banner-puntos button.activo {
   width: 44px;
-  background: #fff;
+  background: var(--fuego);
+  opacity: 1;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.6);
+}
+
+.banner-puntos button:focus-visible {
+  outline: 2px solid var(--oro);
+  outline-offset: 3px;
+  opacity: 1;
 }
 
 @media (max-width: 900px) {
@@ -444,6 +494,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .banner-pista { transition: none; }
+  .banner-cta:hover,
+  .banner-flecha:active { transform: none; }
+  .banner-flecha { transform: translateY(-50%); }
   .gpu-fan,
   .setup-torre::before { animation: none; }
 }
