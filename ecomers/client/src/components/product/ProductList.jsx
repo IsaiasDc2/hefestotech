@@ -57,7 +57,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
   if (!producto) return null;
 
   const especificaciones = producto.especificaciones || {};
-  const tieneOferta = (producto.descuentoPorcentaje ?? 0) > 0;
+  const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
 
   return (
     <section className="detalle-container">
@@ -89,14 +89,14 @@ function ProductoDetalle({ agregarAlCarrito }) {
                   ${producto.precio.toLocaleString("es-AR")}
                 </span>
                 <strong>
-                  ${producto.precioConDescuento.toLocaleString("es-AR")}
+                  ${producto.precio_con_descuento.toLocaleString("es-AR")}
                 </strong>
               </>
             ) : (
               <strong>${producto.precio.toLocaleString("es-AR")}</strong>
             )}
             <p className="cuotas">💳 6 cuotas sin interés</p>
-            {producto.envioGratis && <p className="envio">🚚 Envío gratis</p>}
+            {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
           </div>
 
           <div className="detalle-stock">

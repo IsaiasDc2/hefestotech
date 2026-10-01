@@ -60,7 +60,7 @@ function Home({ agregarAlCarrito }) {
             supabase
               .from("productos")
               .select("*")
-              .gt("descuentoPorcentaje", 0)
+              .gt("descuento_porcentaje", 0)
               .limit(10),
           ]);
         if (e1) throw e1;

@@ -1,39 +1,40 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 import "./Banner.css";
 
 const SLIDES = [
   {
     id: "gpu",
     tema: "neon",
+    categoria: "Placa de video",
     eyebrow: "Nueva generación",
     titulo: "Potencia bruta para tu setup",
     texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
     cta: "Ver placas de video",
     to: "/productos?categoria=Placas de video",
-    imagen: "",
     posicion: "right center",
   },
   {
     id: "setup",
     tema: "magenta",
+    categoria: "Monitor",
     eyebrow: "Todo en un lugar",
     titulo: "Armá tu setup completo",
     texto: "Monitor, gabinete, refrigeración y más para tu espacio ideal.",
     cta: "Explorar productos",
     to: "/productos",
-    imagen: "",
     posicion: "right center",
   },
   {
     id: "peris",
     tema: "ambar",
+    categoria: "Periferico",
     eyebrow: "Precisión gamer",
     titulo: "Precisión en cada clic",
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
-    to: "/productos?categoria=Periféricos",
-    imagen: "",
+    to: "/productos?categoria=Periferico",
     posicion: "right center",
   },
 ];
@@ -43,9 +44,32 @@ const AUTOPLAY_MS = 6000;
 export default function Banner() {
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
+  const [fotos, setFotos] = useState({});
   const total = SLIDES.length;
   const timer = useRef(null);
   const touchX = useRef(null);
+
+  // Fotos reales de destacados (con fallback al arte CSS si no hay)
+  useEffect(() => {
+    supabase
+      .from("productos")
+      .select("categoria,imagen")
+      .eq("destacado", true)
+      .neq("imagen", "")
+      .then(({ data }) => {
+        const mapa = {};
+        (data || []).forEach((p) => {
+          if (!mapa[p.categoria]) mapa[p.categoria] = p.imagen;
+        });
+        setFotos(mapa);
+      })
+      .catch(() => {});
+  }, []);
+
+  const slides = SLIDES.map((s) => ({
+    ...s,
+    imagen: fotos[s.categoria] || Object.values(fotos)[0] || "",
+  }));
 
   const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);
   const anterior = useCallback(() => irA(indice - 1), [indice, irA]);
@@ -86,7 +110,7 @@ export default function Banner() {
         className="banner-pista"
         style={{ transform: `translateX(-${indice * 100}%)` }}
       >
-        {SLIDES.map((s, i) => (
+        {slides.map((s, i) => (
           <article
             key={s.id}
             className={`banner-slide tema-${s.tema}`}
@@ -171,7 +195,7 @@ export default function Banner() {
       </button>
 
       <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
-        {SLIDES.map((s, i) => (
+        {slides.map((s, i) => (
           <button
             key={s.id}
             role="tab"

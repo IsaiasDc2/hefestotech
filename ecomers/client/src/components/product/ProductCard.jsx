@@ -5,7 +5,7 @@ import "./ProductCard.css";
 function ProductCard({ producto, agregarAlCarrito }) {
   const [favorito, setFavorito] = useState(false);
 
-  const tieneOferta = (producto.descuentoPorcentaje ?? 0) > 0;
+  const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
 
   return (
     <div className="card-producto">
@@ -49,7 +49,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
             ${producto.precio.toLocaleString("es-AR")}
           </span>
           <strong>
-            ${producto.precioConDescuento.toLocaleString("es-AR")}
+            ${producto.precio_con_descuento.toLocaleString("es-AR")}
           </strong>
         </div>
       ) : (
@@ -58,7 +58,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
 
       <p className="cuotas">💳 6 cuotas sin interés</p>
 
-      {producto.envioGratis && <p className="envio">🚚 Envío gratis</p>}
+      {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
 
       <button
         className="btn-carrito"
