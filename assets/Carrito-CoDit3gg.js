@@ -1,1 +1,0 @@
-import{j as r}from"./index-C85lg8s2.js";function s({carrito:t}){return r.jsxs("div",{children:[r.jsx("h1",{children:"Carrito completo"}),r.jsxs("p",{children:["Productos: ",t.length]})]})}export{s as default};
