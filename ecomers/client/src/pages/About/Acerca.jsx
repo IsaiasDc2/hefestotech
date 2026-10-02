@@ -91,7 +91,7 @@ function Acerca() {
           <h2>¿Listo para armar tu próxima PC?</h2>
           <p>Explorá el catálogo completo de componentes disponibles.</p>
           <div className="acerca-cta-botones">
-            <Link to="/productos" className="btn-fuego">
+            <Link to="/productos" className="btn-primary">
               Ver productos
             </Link>
             <Link to="/contactanos" className="btn-fantasma">

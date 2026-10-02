@@ -28,7 +28,7 @@
 }
 
 .topbar-envio svg {
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.85rem;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .topbar-links a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -105,7 +105,7 @@
 }
 
 .logo span:last-child {
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -118,15 +118,15 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.22), rgba(220, 38, 38, 0.18));
-  border: 1px solid var(--fuego-borde);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 0 18px rgba(249, 115, 22, 0.28);
+  background: linear-gradient(135deg, rgba(46, 124, 246, 0.22), rgba(220, 38, 38, 0.18));
+  border: 1px solid var(--primary-borde);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 0 18px rgba(46, 124, 246, 0.28);
 }
 
 .logo-icon {
   font-size: 1.15rem;
-  color: var(--fuego);
-  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.55));
+  color: var(--primary);
+  filter: drop-shadow(0 0 8px rgba(46, 124, 246, 0.55));
   flex-shrink: 0;
 }
 
@@ -135,7 +135,7 @@
 .link-cuenta:focus-visible,
 .carrito-btn:focus-visible,
 .nav-categorias-inner a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -171,11 +171,11 @@
 }
 
 .buscador-head:focus-within .buscador-icono {
-  color: var(--fuego);
+  color: var(--primary);
 }
 
 .buscador-head:focus-within input {
-  border-color: var(--fuego);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--anillo-foco), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   background-color: var(--surface);
 }
@@ -193,7 +193,7 @@
   flex-shrink: 0;
   border: none;
   border-radius: 0 12px 12px 0;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   font-size: 1rem;
   transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -237,7 +237,7 @@
 
 .link-cuenta svg {
   font-size: 1.05rem;
-  color: var(--fuego);
+  color: var(--primary);
 }
 
 .carrito-btn {
@@ -247,12 +247,12 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   border: none;
   border-radius: 12px;
   color: #fff;
   font-size: 1.1rem;
-  box-shadow: 0 2px 14px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 2px 14px rgba(46, 124, 246, 0.35);
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 
@@ -336,7 +336,7 @@
   right: 0.7rem;
   bottom: 2px;
   height: 2px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
@@ -355,8 +355,8 @@
 .nav-categorias-inner a.activo {
   color: var(--text);
   font-weight: 700;
-  background-color: var(--fuego-suave);
-  box-shadow: inset 0 0 0 1px var(--fuego-borde);
+  background-color: var(--primary-suave);
+  box-shadow: inset 0 0 0 1px var(--primary-borde);
 }
 
 .nav-categorias-inner a.activo::after {
@@ -368,7 +368,7 @@
 }
 
 .nav-ofertas.activo {
-  color: var(--fuego) !important;
+  color: var(--primary) !important;
 }
 
 .nav-ayuda {

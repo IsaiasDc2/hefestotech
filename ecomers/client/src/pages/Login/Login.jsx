@@ -67,7 +67,7 @@ function Login() {
           </Link>
         </div>
 
-        <button type="submit" className="btn-fuego" disabled={cargando}>
+        <button type="submit" className="btn-primary" disabled={cargando}>
           {cargando ? "Ingresando..." : "Ingresar"}
         </button>
 

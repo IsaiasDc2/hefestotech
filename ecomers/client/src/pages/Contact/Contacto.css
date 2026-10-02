@@ -5,7 +5,7 @@
   background-color: var(--bg);
   background-image: radial-gradient(
     circle at 50% 0%,
-    var(--fuego-resplandor),
+    var(--primary-resplandor),
     transparent 55%
   );
   min-height: calc(100vh - 140px);
@@ -81,9 +81,9 @@
   height: 36px;
   flex-shrink: 0;
   border-radius: 10px;
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
-  color: var(--fuego);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  color: var(--primary);
   font-size: 0.95rem;
 }
 
@@ -174,7 +174,7 @@
 
 .grupo input:focus,
 .grupo textarea:focus {
-  border-color: var(--fuego);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--anillo-foco);
 }
 

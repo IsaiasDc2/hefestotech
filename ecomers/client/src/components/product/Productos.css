@@ -51,13 +51,13 @@
 }
 
 .btn-limpiar:hover {
-  border-color: var(--fuego);
-  color: var(--fuego);
-  background: var(--fuego-suave);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-suave);
 }
 
 .btn-limpiar:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
@@ -83,8 +83,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--fuego);
-  box-shadow: 0 0 10px var(--fuego-resplandor);
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary-resplandor);
 }
 
 .grid-productos {
@@ -116,7 +116,7 @@
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(100deg, transparent 30%, var(--fuego-suave) 50%, transparent 70%),
+    linear-gradient(100deg, transparent 30%, var(--primary-suave) 50%, transparent 70%),
     var(--surface);
   background-size: 200% 100%;
   animation: estado-brillo 1.6s ease-in-out infinite;

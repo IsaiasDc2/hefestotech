@@ -47,7 +47,7 @@ function Cuenta() {
               </span>
               <p className="vacio-titulo">Te la creamos en el día</p>
               <p className="vacio-texto">Contanos qué necesitás y la dejamos lista.</p>
-              <Link to="/contactanos" className="btn-fuego">
+              <Link to="/contactanos" className="btn-primary">
                 Contactanos <FaArrowRight aria-hidden="true" />
               </Link>
             </div>

@@ -9,7 +9,7 @@
   padding: 4.5rem 1.5rem 3rem;
   background-image: radial-gradient(
     circle at 50% 0%,
-    var(--fuego-resplandor),
+    var(--primary-resplandor),
     transparent 60%
   );
 }
@@ -91,13 +91,13 @@
 }
 
 .valor-card:hover {
-  border-color: var(--fuego-borde);
+  border-color: var(--primary-borde);
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 .valor-card:focus-within {
-  border-color: var(--fuego);
+  border-color: var(--primary);
 }
 
 .valor-icono {
@@ -110,8 +110,8 @@
   font-size: 1.4rem;
   line-height: 1;
   margin-bottom: 0.9rem;
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
 }
 
 .valor-card h3 {
@@ -178,7 +178,7 @@
 
 .stat:hover {
   transform: translateY(-2px);
-  border-color: var(--fuego-borde);
+  border-color: var(--primary-borde);
 }
 
 .stat strong {
@@ -188,7 +188,7 @@
   line-height: 1.1;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  color: var(--fuego);
+  color: var(--primary);
   margin-bottom: 0.3rem;
 }
 

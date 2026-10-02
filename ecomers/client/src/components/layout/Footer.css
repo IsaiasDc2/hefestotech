@@ -13,7 +13,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--fuego), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   opacity: 0.6;
 }
 
@@ -33,7 +33,7 @@
 .footer-news {
   border-bottom: 1px solid var(--border-suave);
   background:
-    radial-gradient(600px 160px at 15% 0%, rgba(249, 115, 22, 0.1), transparent 70%),
+    radial-gradient(600px 160px at 15% 0%, rgba(46, 124, 246, 0.1), transparent 70%),
     var(--surface);
 }
 
@@ -77,7 +77,7 @@
 }
 
 .footer-news-form input:focus {
-  border-color: var(--fuego);
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--anillo-foco);
 }
 
@@ -88,12 +88,12 @@
   padding: 0.65rem 1.1rem;
   border: none;
   border-radius: 10px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   font-weight: 700;
   font-size: 0.88rem;
   white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 4px 16px rgba(46, 124, 246, 0.35);
   transition: filter 0.2s ease, transform 0.2s ease;
 }
 
@@ -189,7 +189,7 @@
 }
 
 .footer-col ul li a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
   border-radius: 4px;
   color: var(--text);
@@ -209,7 +209,7 @@
 }
 
 .footer-confianza svg {
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.85rem;
 }
 
@@ -235,9 +235,9 @@
 
 .footer-brand .redes a:hover {
   color: #fff;
-  border-color: var(--fuego);
-  background: var(--grad-fuego);
-  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.4);
+  border-color: var(--primary);
+  background: var(--grad-marca);
+  box-shadow: 0 2px 12px rgba(46, 124, 246, 0.4);
   transform: translateY(-2px);
 }
 
@@ -261,7 +261,7 @@
 .contacto-lista li svg {
   flex-shrink: 0;
   margin-top: 0.2rem;
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.85rem;
 }
 
@@ -330,7 +330,7 @@
 }
 
 .footer-bottom-sub a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;
 }

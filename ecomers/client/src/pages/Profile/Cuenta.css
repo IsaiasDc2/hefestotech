@@ -7,7 +7,7 @@
   background-color: var(--bg);
   background-image: radial-gradient(
     circle at 50% 0%,
-    var(--fuego-resplandor),
+    var(--primary-resplandor),
     transparent 55%
   );
 }
@@ -45,7 +45,7 @@
 
 .cuenta-tabs button:hover:not(.activo) {
   color: var(--text);
-  background: var(--fuego-suave);
+  background: var(--primary-suave);
   transform: translateY(-1px);
 }
 
@@ -54,10 +54,10 @@
 }
 
 .cuenta-tabs button.activo {
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   border-color: transparent;
   color: #fff;
-  box-shadow: var(--sombra-fuego);
+  box-shadow: var(--sombra-marca);
   opacity: 1;
 }
 

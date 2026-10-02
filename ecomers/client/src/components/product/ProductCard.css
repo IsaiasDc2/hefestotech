@@ -16,15 +16,15 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--fuego), var(--oro), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--oro), transparent);
   opacity: 0;
   transition: opacity var(--dur-2) var(--ease);
 }
 
 .card-producto:hover {
   transform: translateY(-5px);
-  border-color: var(--fuego-borde);
-  box-shadow: var(--sombra-media), 0 0 28px var(--fuego-resplandor);
+  border-color: var(--primary-borde);
+  box-shadow: var(--sombra-media), 0 0 28px var(--primary-resplandor);
 }
 
 .card-producto:hover::before {
@@ -42,11 +42,11 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--sobre-fuego);
-  background: var(--grad-fuego);
+  color: var(--sobre-marca);
+  background: var(--grad-marca);
   padding: 0.28rem 0.6rem;
   border-radius: 6px;
-  box-shadow: 0 2px 12px var(--fuego-sombra);
+  box-shadow: 0 2px 12px var(--primary-sombra);
 }
 
 .oferta-pct {
@@ -76,19 +76,19 @@
 
 .favorito:hover {
   transform: scale(1.12);
-  border-color: var(--fuego);
+  border-color: var(--primary);
 }
 
 .favorito.activo {
-  border-color: var(--fuego);
-  background: var(--fuego-suave);
-  box-shadow: 0 0 0 3px var(--fuego-suave), 0 0 16px var(--fuego-resplandor);
+  border-color: var(--primary);
+  background: var(--primary-suave);
+  box-shadow: 0 0 0 3px var(--primary-suave), 0 0 16px var(--primary-resplandor);
 }
 
 .favorito:focus-visible,
 .producto-detalle:focus-visible,
 .btn-carrito:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
@@ -143,7 +143,7 @@
 .producto-detalle img[src=""] {
   min-height: 180px;
   background:
-    linear-gradient(135deg, var(--fuego-suave), transparent 60%),
+    linear-gradient(135deg, var(--primary-suave), transparent 60%),
     var(--surface);
 }
 
@@ -156,7 +156,7 @@
   min-height: 100%;
   aspect-ratio: 1;
   background:
-    linear-gradient(135deg, var(--fuego-resplandor), transparent 60%),
+    linear-gradient(135deg, var(--primary-resplandor), transparent 60%),
     var(--surface);
   color: var(--muted);
   font-weight: 800;
@@ -201,7 +201,7 @@
 }
 
 .producto-detalle:hover h3 {
-  color: var(--fuego);
+  color: var(--primary);
 }
 
 .categoria {
@@ -247,7 +247,7 @@
 }
 
 .stock-linea.agotado .stock-dot {
-  background: var(--brasa);
+  background: var(--danger);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
 }
 
@@ -284,7 +284,7 @@
 .precios:has(.precio-anterior) .precio-actual {
   color: var(--oro);
   font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.6rem);
-  text-shadow: 0 2px 14px rgba(251, 191, 36, 0.25);
+  text-shadow: 0 2px 14px rgba(242, 179, 61, 0.25);
 }
 
 .cuotas {
@@ -308,18 +308,18 @@
   padding: 0.7rem;
   border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--grad-fuego);
-  color: var(--sobre-fuego);
+  background: var(--grad-marca);
+  color: var(--sobre-marca);
   font-weight: 800;
   font-size: 0.88rem;
-  box-shadow: 0 2px 12px var(--fuego-sombra);
+  box-shadow: 0 2px 12px var(--primary-sombra);
   transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
 }
 
 .btn-carrito:hover:not(:disabled) {
   filter: brightness(1.12);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--fuego-sombra), var(--sombra-suave);
+  box-shadow: 0 6px 20px var(--primary-sombra), var(--sombra-suave);
 }
 
 .btn-carrito:active:not(:disabled) {
@@ -387,7 +387,7 @@
   }
 
   .card-producto:active {
-    border-color: var(--fuego-borde);
+    border-color: var(--primary-borde);
   }
 
   .btn-carrito:active:not(:disabled) {

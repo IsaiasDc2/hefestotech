@@ -11,7 +11,7 @@
 }
 
 .carrusel-acciones a {
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
@@ -51,9 +51,9 @@
 }
 
 .carrusel-acciones button:hover {
-  border-color: var(--fuego);
-  color: var(--fuego);
-  background: var(--fuego-suave);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-suave);
 }
 
 .carrusel-acciones button:active {
@@ -62,7 +62,7 @@
 
 .carrusel-acciones a:focus-visible,
 .carrusel-acciones button:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
   opacity: 1;

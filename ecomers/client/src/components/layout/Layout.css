@@ -16,12 +16,12 @@
   z-index: 1000;
   padding: 0.6rem 1rem;
   border-radius: 10px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   font-weight: 700;
   font-size: 0.85rem;
   text-decoration: none;
-  box-shadow: var(--sombra-fuego);
+  box-shadow: var(--sombra-marca);
   transition: top 0.2s ease;
 }
 

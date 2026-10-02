@@ -133,7 +133,7 @@ function Contactanos() {
             </div>
           )}
 
-          <button type="submit" className="btn-fuego" disabled={enviando}>
+          <button type="submit" className="btn-primary" disabled={enviando}>
             {enviando ? "Enviando..." : "Enviar mensaje →"}
           </button>
 

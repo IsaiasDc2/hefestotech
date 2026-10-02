@@ -37,8 +37,8 @@
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   color: #fff;
-  background: var(--grad-fuego);
-  box-shadow: 0 2px 12px var(--fuego-resplandor);
+  background: var(--grad-marca);
+  box-shadow: 0 2px 12px var(--primary-resplandor);
 }
 
 .ver-todo {
@@ -94,8 +94,8 @@
 }
 
 .btn-limpiar:hover {
-  border-color: var(--fuego);
-  color: var(--fuego);
+  border-color: var(--primary);
+  color: var(--primary);
   transform: translateY(-1px);
 }
 
@@ -103,7 +103,7 @@
 .marca-chip:focus-visible,
 .card-categoria:focus-visible,
 .seccion-head a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
@@ -164,9 +164,9 @@
 }
 
 .marca-chip:hover {
-  border-color: var(--fuego);
+  border-color: var(--primary);
   color: var(--text);
-  background: var(--fuego-suave);
+  background: var(--primary-suave);
   transform: translateY(-2px);
 }
 
@@ -200,14 +200,14 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, var(--fuego), var(--oro));
+  background: linear-gradient(90deg, var(--primary), var(--oro));
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
 .beneficio:hover {
   transform: translateY(-2px);
-  border-color: var(--fuego-borde);
+  border-color: var(--primary-borde);
 }
 
 .beneficio:hover::before {
@@ -223,9 +223,9 @@
   padding: 0.55rem;
   font-size: 1.1rem;
   border-radius: 12px;
-  color: var(--fuego);
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
+  color: var(--primary);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
   flex-shrink: 0;
 }
 
@@ -279,7 +279,7 @@
 }
 
 .seccion-head a {
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
@@ -320,7 +320,7 @@
   top: 0.7rem;
   right: 0.9rem;
   font-size: 0.85rem;
-  color: var(--fuego);
+  color: var(--primary);
   opacity: 0;
   transform: translateX(-4px);
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -328,8 +328,8 @@
 
 .card-categoria:hover {
   transform: translateY(-4px);
-  border-color: var(--fuego-borde);
-  box-shadow: 0 10px 28px var(--fuego-resplandor);
+  border-color: var(--primary-borde);
+  box-shadow: 0 10px 28px var(--primary-resplandor);
 }
 
 .card-categoria:hover::after {
@@ -344,9 +344,9 @@
   width: 52px;
   height: 52px;
   font-size: 1.4rem;
-  color: var(--fuego);
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
+  color: var(--primary);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
   border-radius: 14px;
   transition: transform 0.18s ease;
 }
@@ -376,7 +376,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, transparent 30%, var(--fuego-suave) 50%, transparent 70%);
+  background: linear-gradient(100deg, transparent 30%, var(--primary-suave) 50%, transparent 70%);
   animation: estado-brillo 1.6s ease-in-out infinite;
 }
 

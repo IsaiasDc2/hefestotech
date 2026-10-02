@@ -23,7 +23,7 @@
 }
 
 .migajas a:hover {
-  color: var(--fuego);
+  color: var(--primary);
 }
 
 .migajas .migajas-sep {
@@ -49,7 +49,7 @@
 }
 
 .volver:hover {
-  color: var(--fuego);
+  color: var(--primary);
 }
 
 .detalle-grid {
@@ -113,11 +113,11 @@
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--sobre-fuego);
-  background: var(--grad-fuego);
+  color: var(--sobre-marca);
+  background: var(--grad-marca);
   padding: 0.32rem 0.7rem;
   border-radius: 8px;
-  box-shadow: 0 2px 12px var(--fuego-sombra);
+  box-shadow: 0 2px 12px var(--primary-sombra);
 }
 
 .detalle-miniaturas {
@@ -138,8 +138,8 @@
 }
 
 .detalle-miniaturas span:first-child {
-  border-color: var(--fuego-borde);
-  box-shadow: 0 0 0 2px var(--fuego-suave);
+  border-color: var(--primary-borde);
+  box-shadow: 0 0 0 2px var(--primary-suave);
   opacity: 1;
 }
 
@@ -151,7 +151,7 @@
   aspect-ratio: 1;
   border-radius: var(--radio);
   background:
-    linear-gradient(135deg, var(--fuego-resplandor), transparent 60%),
+    linear-gradient(135deg, var(--primary-resplandor), transparent 60%),
     var(--surface);
   border: 1px solid var(--border);
   color: var(--muted);
@@ -203,7 +203,7 @@
 .detalle-precio {
   background: linear-gradient(180deg, var(--card-2), var(--surface));
   border: 1px solid var(--border);
-  border-left: 3px solid var(--fuego);
+  border-left: 3px solid var(--primary);
   border-radius: var(--radio);
   padding: 1.2rem 1.3rem;
   box-shadow: var(--sombra-suave);
@@ -221,7 +221,7 @@
 
 .detalle-precio:has(.precio-anterior) strong {
   color: var(--oro);
-  text-shadow: 0 2px 18px rgba(251, 191, 36, 0.25);
+  text-shadow: 0 2px 18px rgba(242, 179, 61, 0.25);
 }
 
 .detalle-precio .precio-anterior {
@@ -268,7 +268,7 @@
 .volver:focus-visible,
 .detalle-estado a:focus-visible,
 .migajas a:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -301,7 +301,7 @@
 }
 
 .detalle-especificaciones tbody tr:nth-child(odd) {
-  background: rgba(251, 191, 36, 0.05);
+  background: rgba(242, 179, 61, 0.05);
 }
 
 .detalle-especificaciones tbody tr:nth-child(even) {
@@ -309,7 +309,7 @@
 }
 
 .detalle-especificaciones tbody tr:hover {
-  background: var(--fuego-suave);
+  background: var(--primary-suave);
 }
 
 .detalle-especificaciones td {
@@ -338,7 +338,7 @@
 }
 
 .detalle-estado a {
-  color: var(--fuego);
+  color: var(--primary);
   font-weight: 600;
 }
 

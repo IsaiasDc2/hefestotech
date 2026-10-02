@@ -11,7 +11,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--fuego-borde), var(--oro-borde), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-borde), var(--oro-borde), transparent);
 }
 
 .promobar-inner {
@@ -46,9 +46,9 @@
   flex-shrink: 0;
   border-radius: 12px;
   font-size: 1.05rem;
-  color: var(--fuego);
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
+  color: var(--primary);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
   transition: transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
 }
 

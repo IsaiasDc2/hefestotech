@@ -66,11 +66,11 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--fuego-suave);
-  border: 1px solid var(--fuego-borde);
-  color: var(--fuego);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  color: var(--primary);
   font-size: 0.95rem;
-  box-shadow: 0 0 14px var(--fuego-resplandor);
+  box-shadow: 0 0 14px var(--primary-resplandor);
 }
 
 .cart-header-conteo {
@@ -81,7 +81,7 @@
   height: 24px;
   padding: 0 0.45rem;
   border-radius: 999px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
@@ -104,8 +104,8 @@
 }
 
 .cart-header button:hover {
-  color: var(--fuego);
-  border-color: var(--fuego);
+  color: var(--primary);
+  border-color: var(--primary);
   transform: translateY(-1px);
 }
 
@@ -119,7 +119,7 @@
 .btnComprar:focus-visible,
 .cart-seguir:focus-visible,
 .cart-vacio-cta:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -141,7 +141,7 @@
 }
 
 .cart-envio-texto svg {
-  color: var(--fuego);
+  color: var(--primary);
   font-size: 0.95rem;
   flex-shrink: 0;
 }
@@ -158,8 +158,8 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--grad-fuego);
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+  background: var(--grad-marca);
+  box-shadow: 0 0 12px rgba(46, 124, 246, 0.5);
   transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -206,17 +206,17 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px dashed var(--fuego-borde);
+  border: 2px dashed var(--primary-borde);
   background:
-    radial-gradient(circle at 50% 40%, rgba(249, 115, 22, 0.18), transparent 65%),
+    radial-gradient(circle at 50% 40%, rgba(46, 124, 246, 0.18), transparent 65%),
     var(--card);
   animation: giro-lento 18s linear infinite;
 }
 
 .cart-vacio-icono {
   font-size: 2.2rem;
-  color: var(--fuego);
-  filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.5));
+  color: var(--primary);
+  filter: drop-shadow(0 0 12px rgba(46, 124, 246, 0.5));
 }
 
 @keyframes giro-lento {
@@ -243,11 +243,11 @@
   padding: 0.7rem 1.3rem;
   border: none;
   border-radius: 10px;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+  box-shadow: 0 4px 16px rgba(46, 124, 246, 0.35);
   transition: filter 0.2s ease, transform 0.2s ease;
 }
 
@@ -280,7 +280,7 @@
   height: 72px;
   border-radius: 10px;
   background:
-    linear-gradient(135deg, rgba(249, 115, 22, 0.14), transparent 60%),
+    linear-gradient(135deg, rgba(46, 124, 246, 0.14), transparent 60%),
     var(--card-2);
   border: 1px solid var(--border);
   flex-shrink: 0;
@@ -370,8 +370,8 @@
 }
 
 .cantidad button:hover {
-  border-color: var(--fuego);
-  color: var(--fuego);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .cantidad span {
@@ -397,7 +397,7 @@
 }
 
 .eliminar:hover {
-  color: var(--brasa);
+  color: var(--danger);
   text-decoration: underline;
 }
 
@@ -443,21 +443,21 @@
   gap: 0.6rem;
   width: 100%;
   padding: 1rem;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff;
   border: 1px solid transparent;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.45);
+  box-shadow: 0 4px 20px rgba(46, 124, 246, 0.45);
   transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .btnComprar:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(249, 115, 22, 0.55);
+  box-shadow: 0 8px 28px rgba(46, 124, 246, 0.55);
 }
 
 .btnComprar:active:not(:disabled) {
@@ -630,9 +630,9 @@
 .carrito-cta {
   margin-top: 1rem;
   padding: 0.85rem 1.6rem;
-  background: var(--grad-fuego);
+  background: var(--grad-marca);
   color: #fff !important;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 4px 20px rgba(46, 124, 246, 0.4);
 }
 
 .carrito-cta:hover,
@@ -651,13 +651,13 @@
 }
 
 .carrito-secundario:hover {
-  border-color: var(--fuego);
+  border-color: var(--primary);
 }
 
 .carrito-cta:focus-visible,
 .carrito-secundario:focus-visible,
 .carrito-item-acciones button:focus-visible {
-  outline: 2px solid var(--fuego);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
