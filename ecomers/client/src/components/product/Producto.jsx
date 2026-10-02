@@ -33,7 +33,6 @@ function Productos({ agregarAlCarrito }) {
   });
 
 
-  // Si cambia la URL (ej: clic en otra categoría) se re-aplican los filtros
   useEffect(() => {
     const r = resolverCategoria(params.get("categoria"));
     setCategoria(r.db);
@@ -76,7 +75,6 @@ function Productos({ agregarAlCarrito }) {
 
 
 
-        // Normaliza filas incompletas para que las cards nunca rompan
         const filas = (Array.isArray(data) ? data : []).map((p) => ({
           ...p,
           precio: Number(p.precio ?? 0),

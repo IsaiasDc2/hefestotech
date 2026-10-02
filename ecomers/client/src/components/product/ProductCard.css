@@ -132,7 +132,6 @@
   object-fit: cover;
   display: block;
   transition: transform var(--dur-3) var(--ease), filter var(--dur-2) var(--ease);
-  will-change: transform;
 }
 
 .producto-detalle:hover .card-media img,
@@ -251,7 +250,7 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
 }
 
-/* Sin stock: imagen atenuada */
+
 .card-producto:has(.btn-carrito:disabled) .card-media img {
   filter: grayscale(0.5) brightness(0.75);
 }
@@ -280,11 +279,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Jerarquía oferta: precio final destacado en oro */
+
 .precios:has(.precio-anterior) .precio-actual {
   color: var(--oro);
   font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.6rem);
-  text-shadow: 0 2px 14px rgba(242, 179, 61, 0.25);
+  text-shadow: 0 2px 14px rgba(201, 168, 106, 0.25);
 }
 
 .cuotas {
@@ -336,7 +335,7 @@
   opacity: 0.85;
 }
 
-/* Skeleton shimmer elegante para tarjetas */
+
 .card-skeleton {
   position: relative;
   overflow: hidden;
@@ -359,7 +358,7 @@
   to { transform: translateX(100%); }
 }
 
-/* Teléfonos chicos: card más compacta */
+
 @media (max-width: 380px) {
   .card-producto {
     padding: 0.8rem;
@@ -380,7 +379,7 @@
   }
 }
 
-/* Sin hover en táctil: feedback al tocar */
+
 @media (hover: none) {
   .card-producto:hover {
     transform: none;

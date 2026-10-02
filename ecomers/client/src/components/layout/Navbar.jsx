@@ -4,7 +4,6 @@ import { FaMicrochip, FaCartShopping, FaMagnifyingGlass, FaUser, FaTruckFast } f
 import { CATEGORIAS, linkOfertas } from "../../constants/categorias";
 import "./Navbar.css";
 
-// Subconjunto visible en la barra, resuelto contra el mapa central.
 const SLUGS_RAPIDOS = [
   "procesadores",
   "placas-de-video",
@@ -31,7 +30,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Badge animado al cambiar la cantidad (solo visual).
   useEffect(() => {
     if (primeraVez.current) {
       primeraVez.current = false;

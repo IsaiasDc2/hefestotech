@@ -1,11 +1,14 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
+import useCartStore from "./store/cartStore";
+import useAuthStore from "./store/authStore";
 
 const Home = lazy(() => import("./pages/Home/Home"));
 const Productos = lazy(() => import("./components/product/Producto"));
 const ProductoDetalle = lazy(() => import("./components/product/ProductList"));
 const Carrito = lazy(() => import("./pages/Carrito/Carrito"));
+const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
 const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
 const Acerca = lazy(() => import("./pages/About/Acerca"));
 const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
@@ -21,48 +24,23 @@ function CargandoPagina() {
 }
 
 export default function App() {
-  const [carrito, setCarrito] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const carrito = useCartStore((s) => s.carrito);
+  const isCartOpen = useCartStore((s) => s.isCartOpen);
+  const abrirCarrito = useCartStore((s) => s.abrirCarrito);
+  const cerrarCarrito = useCartStore((s) => s.cerrarCarrito);
+  const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
+  const eliminarDelCarrito = useCartStore((s) => s.eliminarDelCarrito);
+  const aumentarCantidad = useCartStore((s) => s.aumentarCantidad);
+  const disminuirCantidad = useCartStore((s) => s.disminuirCantidad);
+  const vaciarCarrito = useCartStore((s) => s.vaciarCarrito);
+  const cargarSesion = useAuthStore((s) => s.cargarSesion);
+  const suscribirseACambios = useAuthStore((s) => s.suscribirseACambios);
 
-  const abrirCarrito = () => setIsCartOpen(true);
-  const cerrarCarrito = () => setIsCartOpen(false);
-
-  const agregarAlCarrito = (producto) => {
-    setCarrito((prev) => {
-      const existe = prev.find((item) => item.id === producto.id);
-      if (existe) {
-        return prev.map((item) =>
-          item.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
-        );
-      }
-      return [...prev, { ...producto, cantidad: 1 }];
-    });
-    setIsCartOpen(true);
-  };
-
-  const eliminarDelCarrito = (id) => {
-    setCarrito((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const aumentarCantidad = (id) => {
-    setCarrito((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item
-      )
-    );
-  };
-
-  const disminuirCantidad = (id) => {
-    setCarrito((prev) =>
-      prev.map((item) =>
-        item.id === id && item.cantidad > 1
-          ? { ...item, cantidad: item.cantidad - 1 }
-          : item
-      )
-    );
-  };
+  useEffect(() => {
+    cargarSesion?.();
+    const desuscribir = suscribirseACambios?.();
+    return () => desuscribir?.();
+  }, [cargarSesion, suscribirseACambios]);
 
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
@@ -102,6 +80,12 @@ export default function App() {
               aumentarCantidad={aumentarCantidad}
               disminuirCantidad={disminuirCantidad}
             />
+          }
+        />
+        <Route
+          path="checkout"
+          element={
+            <Checkout carrito={carrito} vaciarCarrito={vaciarCarrito} />
           }
         />
         <Route path="cuenta" element={<Cuenta />} />

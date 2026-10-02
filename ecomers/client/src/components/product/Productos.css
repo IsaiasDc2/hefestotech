@@ -22,7 +22,7 @@
   margin-top: 0.4rem;
 }
 
-/* Barra de filtros tipo tienda pro */
+
 .filtros {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
@@ -62,7 +62,7 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-/* Contador de resultados */
+
 .resultados-contador {
   display: flex;
   align-items: center;
@@ -133,7 +133,7 @@
   background: var(--surface);
 }
 
-/* Sticky en desktop: la barra acompaña el scroll del catálogo */
+
 @media (min-width: 1025px) {
   .filtros {
     position: sticky;

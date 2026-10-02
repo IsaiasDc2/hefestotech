@@ -4,7 +4,7 @@
   padding: 2rem 1.5rem 3.5rem;
 }
 
-/* Breadcrumb visual */
+
 .migajas {
   display: flex;
   align-items: center;
@@ -59,7 +59,7 @@
   align-items: start;
 }
 
-/* Galería */
+
 .detalle-galeria {
   display: flex;
   flex-direction: column;
@@ -199,7 +199,7 @@
   font-size: 0.95rem;
 }
 
-/* Precio destacado */
+
 .detalle-precio {
   background: linear-gradient(180deg, var(--card-2), var(--surface));
   border: 1px solid var(--border);
@@ -221,7 +221,7 @@
 
 .detalle-precio:has(.precio-anterior) strong {
   color: var(--oro);
-  text-shadow: 0 2px 18px rgba(242, 179, 61, 0.25);
+  text-shadow: 0 2px 18px rgba(201, 168, 106, 0.25);
 }
 
 .detalle-precio .precio-anterior {
@@ -301,7 +301,7 @@
 }
 
 .detalle-especificaciones tbody tr:nth-child(odd) {
-  background: rgba(242, 179, 61, 0.05);
+  background: rgba(201, 168, 106, 0.05);
 }
 
 .detalle-especificaciones tbody tr:nth-child(even) {

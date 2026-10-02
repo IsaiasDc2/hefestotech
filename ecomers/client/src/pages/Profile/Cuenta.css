@@ -12,7 +12,7 @@
   );
 }
 
-/* Segmented control premium */
+
 .cuenta-tabs {
   display: flex;
   gap: 4px;
@@ -70,6 +70,16 @@
   border-radius: 16px;
   padding: 2.5rem 2rem;
   box-shadow: var(--sombra);
+}
+
+.cuenta-sesion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1rem;
 }
 
 .panel-cuenta .badge {

@@ -42,7 +42,7 @@
   transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
 }
 
-/* Flechas visibles al hover del carrusel */
+
 .carrusel:hover .carrusel-acciones button,
 .carrusel:focus-within .carrusel-acciones button {
   opacity: 1;
@@ -106,7 +106,7 @@
   flex: 1;
 }
 
-/* En táctil no hay hover: flechas siempre visibles */
+
 @media (hover: none) {
   .carrusel-acciones button {
     opacity: 1;

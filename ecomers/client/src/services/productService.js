@@ -1,8 +1,5 @@
 import { supabase } from "../components/lib/supabaseClient";
 
-// Normaliza una fila de `productos` para que la UI nunca rompa:
-// - `precio_con_descuento` es NULL en la DB cuando no hay oferta -> cae a `precio`.
-// - `imagen` suele venir vacía -> cae a "" (la UI decide el placeholder).
 export const normalizarProducto = (p = {}) => {
   const precio = Number(p.precio ?? 0);
   const descuento = Number(p.descuento_porcentaje ?? 0);
@@ -25,7 +22,6 @@ export const normalizarProducto = (p = {}) => {
   };
 };
 
-// Precio efectivo a cobrar/mostrar. Nunca rompe con NULLs de la DB.
 export const precioFinal = (producto = {}) => {
   if (producto.precio_con_descuento != null)
     return Number(producto.precio_con_descuento);

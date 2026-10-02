@@ -1,13 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-// Fuente de verdad del carrito en la capa de datos.
-// NOTA: App.jsx mantiene hoy su propio useState de carrito (no se puede
-// tocar en este scope). Cuando su dueño lo migre, basta con reemplazar ese
-// useState por este store: las firmas son las mismas
-// (carrito, isCartOpen, abrirCarrito, cerrarCarrito, agregarAlCarrito,
-// eliminarDelCarrito, aumentarCantidad, disminuirCantidad) más los extras
-// vaciarCarrito, cantidadTotal y total.
 const useCartStore = create(
   persist(
     (set, get) => ({

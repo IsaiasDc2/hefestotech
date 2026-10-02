@@ -90,6 +90,7 @@ function Carrito({
         </p>
         <div className="carrito-pagina-acciones">
           <Link to="/productos" className="carrito-secundario">← Seguir comprando</Link>
+          <Link to="/checkout" className="btn-primary">Finalizar compra →</Link>
         </div>
       </div>
     </div>

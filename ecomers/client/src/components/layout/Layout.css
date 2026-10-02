@@ -49,14 +49,14 @@
   grid-area: footer;
 }
 
-/* Evita scroll horizontal por elementos anchos */
+
 .layout,
 .layout-main {
   min-width: 0;
   overflow-x: clip;
 }
 
-/* Compensa el header sticky en anclas */
+
 .layout-main {
   scroll-margin-top: 120px;
 }

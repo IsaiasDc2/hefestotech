@@ -11,8 +11,6 @@ const useAuthStore = create((set) => ({
     set({ cargando: true, error: null });
     try {
       const data = await loginUsuario(email, password);
-      // La sesión la persiste Supabase (sb-*-auth-token); solo se guarda
-      // el token como respaldo para interceptores que lo lean.
       if (data.token) localStorage.setItem("token", data.token);
       set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
@@ -28,7 +26,6 @@ const useAuthStore = create((set) => ({
     try {
       const data = await registrarUsuario(datos);
       if (data.token) localStorage.setItem("token", data.token);
-      // Sin token (confirmación por email) no hay sesión todavía.
       if (data.token) {
         set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
       } else {
@@ -61,8 +58,6 @@ const useAuthStore = create((set) => ({
     }
   },
 
-  // Sincroniza el store con refresh de token / logout en otra pestaña.
-  // Llamar una vez al arrancar la app. Devuelve función para desuscribir.
   suscribirseACambios: () =>
     suscribirCambiosAuth((usuario) => {
       if (usuario) {

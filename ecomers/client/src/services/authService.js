@@ -32,15 +32,12 @@ export const registrarUsuario = async (datos) => {
     },
   });
   if (error) throw new Error(error.message);
-  // Con confirmación de email activada, session viene null: no es error.
   return {
     token: data.session?.access_token || null,
     usuario: mapearUsuario(data.user, data.session),
   };
 };
 
-// Fuente de verdad de la sesión: Supabase persiste solo en localStorage
-// (sb-<ref>-auth-token). No usar el "token" manual anterior.
 export const obtenerSesion = async () => {
   const {
     data: { session },
@@ -65,7 +62,6 @@ export const cerrarSesion = async () => {
   if (error) throw new Error(error.message);
 };
 
-// Suscripción a cambios de auth (login/logout/refresh). Devuelve unsubscribe.
 export const suscribirCambiosAuth = (callback) => {
   const {
     data: { subscription },

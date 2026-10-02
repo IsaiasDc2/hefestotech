@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FaCartShopping, FaXmark, FaTrashCan, FaMinus, FaPlus, FaTruckFast, FaCircleCheck, FaArrowRight } from "react-icons/fa6";
 import "./CarritoLateral.css";
 
-// Umbral solo visual para la barra de progreso a envío gratis.
 const UMBRAL_ENVIO_GRATIS = 150000;
 
 function CarritoLateral({
@@ -18,15 +17,38 @@ function CarritoLateral({
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     if (!isOpen) return undefined;
+    const panel = panelRef.current;
+    const previo = document.activeElement;
     const alTeclado = (e) => {
-      if (e.key === "Escape") onClose?.();
+      if (e.key === "Escape") {
+        onClose?.();
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const focos = panel.querySelectorAll(
+        'a[href], button:not(:disabled), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focos.length === 0) return;
+      const primero = focos[0];
+      const ultimo = focos[focos.length - 1];
+      if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+      }
     };
     window.addEventListener("keydown", alTeclado);
+    panel?.querySelector("button")?.focus();
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", alTeclado);
+      if (previo instanceof HTMLElement) previo.focus();
     };
   }, [isOpen, onClose]);
+
+  const panelRef = useRef(null);
 
   const total = carrito.reduce(
     (acc, item) =>
@@ -52,6 +74,7 @@ function CarritoLateral({
       ></div>
 
       <aside
+        ref={panelRef}
         className={`cart ${isOpen ? "open" : ""}`}
         role="dialog"
         aria-modal="true"
@@ -178,10 +201,17 @@ function CarritoLateral({
           </div>
           <p className="cart-nota">Impuestos incluidos. El envío se calcula al finalizar.</p>
 
-          <button type="button" className="btnComprar" disabled={carrito.length === 0}>
-            Finalizar compra
-            <FaArrowRight aria-hidden="true" />
-          </button>
+          {carrito.length === 0 ? (
+            <button type="button" className="btnComprar" disabled>
+              Finalizar compra
+              <FaArrowRight aria-hidden="true" />
+            </button>
+          ) : (
+            <Link to="/checkout" className="btnComprar" onClick={onClose}>
+              Finalizar compra
+              <FaArrowRight aria-hidden="true" />
+            </Link>
+          )}
           <Link to="/productos" className="cart-seguir" onClick={onClose}>
             Seguir comprando
           </Link>

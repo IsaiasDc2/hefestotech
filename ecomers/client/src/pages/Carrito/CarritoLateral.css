@@ -123,7 +123,7 @@
   outline-offset: 2px;
 }
 
-/* Barra de envío gratis */
+
 .cart-envio {
   padding: 0.9rem 1.4rem 1rem;
   border-bottom: 1px solid var(--border-suave);
@@ -159,7 +159,7 @@
   height: 100%;
   border-radius: 999px;
   background: var(--grad-marca);
-  box-shadow: 0 0 12px rgba(46, 124, 246, 0.5);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
   transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -182,7 +182,7 @@
   font-size: 0.95rem;
 }
 
-/* Vacío ilustrado solo con CSS */
+
 .cart-vacio {
   text-align: center;
   padding: 2.5rem 1rem;
@@ -208,7 +208,7 @@
   border-radius: 50%;
   border: 2px dashed var(--primary-borde);
   background:
-    radial-gradient(circle at 50% 40%, rgba(46, 124, 246, 0.18), transparent 65%),
+    radial-gradient(circle at 50% 40%, rgba(99, 102, 241, 0.18), transparent 65%),
     var(--card);
   animation: giro-lento 18s linear infinite;
 }
@@ -216,7 +216,7 @@
 .cart-vacio-icono {
   font-size: 2.2rem;
   color: var(--primary);
-  filter: drop-shadow(0 0 12px rgba(46, 124, 246, 0.5));
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.5));
 }
 
 @keyframes giro-lento {
@@ -247,7 +247,7 @@
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
-  box-shadow: 0 4px 16px rgba(46, 124, 246, 0.35);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
   transition: filter 0.2s ease, transform 0.2s ease;
 }
 
@@ -280,7 +280,7 @@
   height: 72px;
   border-radius: 10px;
   background:
-    linear-gradient(135deg, rgba(46, 124, 246, 0.14), transparent 60%),
+    linear-gradient(135deg, rgba(99, 102, 241, 0.14), transparent 60%),
     var(--card-2);
   border: 1px solid var(--border);
   flex-shrink: 0;
@@ -450,14 +450,15 @@
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 20px rgba(46, 124, 246, 0.45);
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
   transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .btnComprar:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 8px 28px rgba(46, 124, 246, 0.55);
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.55);
 }
 
 .btnComprar:active:not(:disabled) {
@@ -487,12 +488,12 @@
   color: var(--text);
 }
 
-/* Tablets y pantallas táctiles: blancos más grandes */
+
 @media (pointer: coarse) {
   .cantidad button {
-    width: 34px;
-    height: 34px;
-    font-size: 0.75rem;
+    width: 44px;
+    height: 44px;
+    font-size: 0.85rem;
   }
 
   .cart-header button {
@@ -505,7 +506,7 @@
   }
 }
 
-/* Landscape bajo (teléfonos apaisados) */
+
 @media (max-height: 500px) and (orientation: landscape) {
   .cart-header {
     padding: 0.7rem 1rem;
@@ -533,7 +534,7 @@
   }
 }
 
-/* Teléfonos con notch: respeta el área segura */
+
 @supports (padding: env(safe-area-inset-bottom)) {
   .cart-footer {
     padding-bottom: calc(1.1rem + env(safe-area-inset-bottom));
@@ -553,7 +554,7 @@
   }
 }
 
-/* Página /carrito: jerarquía y alineación (complementa index.css sin tocarlo) */
+
 .carrito-pagina-head {
   display: flex;
   flex-direction: column;
@@ -632,7 +633,7 @@
   padding: 0.85rem 1.6rem;
   background: var(--grad-marca);
   color: #fff !important;
-  box-shadow: 0 4px 20px rgba(46, 124, 246, 0.4);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
 }
 
 .carrito-cta:hover,
@@ -661,7 +662,7 @@
   outline-offset: 2px;
 }
 
-/* Página /carrito: miniaturas y resumen */
+
 .carrito-pagina-resumen {
   background: var(--card);
   border: 1px solid var(--border);

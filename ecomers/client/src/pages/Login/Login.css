@@ -68,7 +68,7 @@
 }
 
 .opciones-login a:hover {
-  color: #7aa9ff;
+  color: #a5b4fc;
   text-decoration: underline;
 }
 
@@ -135,6 +135,14 @@
   text-decoration: underline;
 }
 
+.registro-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+}
+
 .login-error {
   width: 100%;
   justify-content: center;
@@ -155,7 +163,7 @@
   }
 }
 
-/* Cuando Login vive dentro de /cuenta, hereda el ritmo de la tarjeta */
+
 .cuenta .contenido .login {
   margin: 0;
   max-width: none;

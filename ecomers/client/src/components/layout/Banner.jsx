@@ -16,6 +16,8 @@ const SLIDES = [
     ctaSec: "Ver ofertas",
     toSec: "/productos?categoria=ofertas",
     posicion: "right center",
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/asi-luce-la-nueva-linea-de-placas-de-video.webp",
   },
   {
     id: "setup",
@@ -29,6 +31,8 @@ const SLIDES = [
     ctaSec: "Ver periféricos",
     toSec: "/productos?categoria=perifericos",
     posicion: "right center",
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/neon-rog.webp",
   },
   {
     id: "peris",
@@ -42,6 +46,8 @@ const SLIDES = [
     ctaSec: "Explorar productos",
     toSec: "/productos",
     posicion: "right center",
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/gaming-setup-pictures-j3k8ezoqihs4xtrm.webp",
   },
 ];
 
@@ -61,7 +67,6 @@ export default function Banner() {
   const timer = useRef(null);
   const touchX = useRef(null);
 
-  // Fotos reales de destacados (con fallback al arte CSS si no hay)
   useEffect(() => {
     supabase
       .from("productos")
@@ -80,8 +85,7 @@ export default function Banner() {
 
   const slides = SLIDES.map((s) => ({
     ...s,
-    // Solo foto exacta de su categoría; si no hay, cae al arte CSS.
-    imagen: fotos[s.categoria] || "",
+    imagen: s.imagen || fotos[s.categoria] || "",
   }));
 
   const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaBoxOpen, FaHeart, FaUserPlus, FaArrowRight } from "react-icons/fa6";
+import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket } from "react-icons/fa6";
 import Login from "../Login/Login";
+import Registro from "../Login/Registro";
+import useAuthStore from "../../store/authStore";
 import "./Cuenta.css";
 
 const VISTAS = [
@@ -13,10 +15,21 @@ const VISTAS = [
 
 function Cuenta() {
   const [vista, setVista] = useState("login");
+  const usuario = useAuthStore((s) => s.usuario);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
 
   return (
     <div className="cuenta">
       <p className="badge badge-info hero-kicker">HefestoTech · Mi cuenta</p>
+      {isAuthenticated && usuario && (
+        <div className="panel-cuenta card cuenta-sesion">
+          <p className="texto-mutado">Sesión activa como <strong>{usuario.email}</strong></p>
+          <button type="button" className="btn-fantasma" onClick={logout}>
+            <FaRightFromBracket aria-hidden="true" /> Cerrar sesión
+          </button>
+        </div>
+      )}
       <nav className="cuenta-tabs" aria-label="Secciones de la cuenta" role="tablist">
         {VISTAS.map((v) => (
           <button
@@ -33,26 +46,9 @@ function Cuenta() {
         ))}
       </nav>
       <div className="contenido" role="tabpanel">
-        {vista === "login" && <Login />}
+        {vista === "login" && <Login onIrRegistro={() => setVista("registro")} />}
 
-        {vista === "registro" && (
-          <div className="panel-cuenta card anim-entrada">
-            <p className="badge badge-aviso">Registro asistido</p>
-            <h2>Crear cuenta</h2>
-            <p>El registro directo aún no está habilitado.</p>
-            <p>Escribinos y te creamos la cuenta en el día.</p>
-            <div className="vacio">
-              <span className="vacio-icono" aria-hidden="true">
-                <FaUserPlus />
-              </span>
-              <p className="vacio-titulo">Te la creamos en el día</p>
-              <p className="vacio-texto">Contanos qué necesitás y la dejamos lista.</p>
-              <Link to="/contactanos" className="btn-primary">
-                Contactanos <FaArrowRight aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-        )}
+        {vista === "registro" && <Registro />}
 
         {vista === "pedidos" && (
           <div className="panel-cuenta card anim-entrada">

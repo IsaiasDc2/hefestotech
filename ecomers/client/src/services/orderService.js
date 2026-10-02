@@ -9,8 +9,6 @@ const sesionUsuarioId = async () => {
   return user.id;
 };
 
-// Requiere tablas `ordenes` y `orden_items` (ver supabase/migrations/002_*).
-// Si aún no aplicaste la migración, estos métodos lanzan el error de PostgREST.
 export const crearOrden = async (datosOrden) => {
   const user_id = await sesionUsuarioId();
   const { items = [], ...orden } = datosOrden;

@@ -1,5 +1,3 @@
-// Mapa único entre lo que muestran los links (slug) y lo que guarda
-// la base de datos (db). Evita que "Procesadores" no matchee "Procesador".
 export const CATEGORIAS = [
   { slug: "procesadores", label: "Procesadores", db: "Procesador" },
   { slug: "placas-de-video", label: "Placas de video", db: "Placa de video" },
@@ -22,8 +20,6 @@ export const CATEGORIAS = [
 export const linkCategoria = (slug) => `/productos?categoria=${slug}`;
 export const linkOfertas = `/productos?categoria=ofertas`;
 
-// Resuelve ?categoria=slug|label|valor-db → { db, ofertas }
-// "ofertas" activa el modo solo-descuentos en vez de filtrar por texto.
 export function resolverCategoria(param) {
   if (!param) return { db: "Todas", ofertas: false };
   const p = param.trim().toLowerCase();

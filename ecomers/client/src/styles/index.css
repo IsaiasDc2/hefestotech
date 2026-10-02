@@ -1,39 +1,39 @@
 :root {
-  --bg: #05080f;
-  --surface: #0a0f1c;
-  --card: #0e1628;
-  --card-2: #131d33;
-  --border: #1c2942;
-  --border-suave: #121b30;
-  --text: #edf2fa;
-  --muted: #8fa0b8;
-  --muted-oscuro: #5a6b85;
-  --primary: #2e7cf6;
-  --primary-oscuro: #1b5bd7;
-  --acento: #22d3ee;
-  --oro: #f2b33d;
-  --ok: #34d399;
-  --danger: #f4585e;
+  --bg: #0b0e14;
+  --surface: #121724;
+  --card: #171e2d;
+  --card-2: #1e2638;
+  --border: #2a3449;
+  --border-suave: #1a2233;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --muted-oscuro: #7a8aa3;
+  --primary: #6366f1;
+  --primary-oscuro: #4338ca;
+  --acento: #0ea5e9;
+  --oro: #c9a86a;
+  --ok: #10b981;
+  --danger: #e5484d;
   --sobre-marca: #ffffff;
-  --primary-suave: rgba(46, 124, 246, 0.12);
-  --primary-borde: rgba(46, 124, 246, 0.38);
-  --primary-resplandor: rgba(46, 124, 246, 0.16);
-  --primary-sombra: rgba(46, 124, 246, 0.3);
-  --oro-suave: rgba(242, 179, 61, 0.08);
-  --oro-borde: rgba(242, 179, 61, 0.4);
-  --danger-borde: rgba(242, 88, 94, 0.4);
-  --velo: rgba(5, 8, 15, 0.75);
-  --anillo-foco: rgba(46, 124, 246, 0.45);
-  --grad-marca: linear-gradient(135deg, #2e7cf6, #22d3ee);
+  --primary-suave: rgba(99, 102, 241, 0.12);
+  --primary-borde: rgba(99, 102, 241, 0.38);
+  --primary-resplandor: rgba(99, 102, 241, 0.16);
+  --primary-sombra: rgba(99, 102, 241, 0.3);
+  --oro-suave: rgba(201, 168, 106, 0.08);
+  --oro-borde: rgba(201, 168, 106, 0.4);
+  --danger-borde: rgba(229, 72, 77, 0.4);
+  --velo: rgba(11, 14, 20, 0.75);
+  --anillo-foco: rgba(99, 102, 241, 0.45);
+  --grad-marca: linear-gradient(135deg, #6366f1, #0ea5e9);
   --radio: 12px;
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 
-  /* Tipografia: display condensada gamer/editorial + cuerpo legible */
+  
   --font-display: "Oswald", "Arial Narrow", "Impact", system-ui, sans-serif;
   --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 
-  /* Escala fluida */
+  
   --text-h1: clamp(2rem, 1.4rem + 3vw, 3.25rem);
   --text-h2: clamp(1.5rem, 1.15rem + 1.75vw, 2.25rem);
   --text-h3: clamp(1.2rem, 1.05rem + 0.75vw, 1.5rem);
@@ -42,7 +42,7 @@
   --text-body: 0.9375rem;
   --text-small: 0.8125rem;
 
-  /* Pesos y tracking */
+  
   --weight-body: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -55,7 +55,7 @@
   --leading-normal: 1.55;
   --leading-relaxed: 1.7;
 
-  /* Espaciados */
+  
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -65,29 +65,29 @@
   --space-7: 2.5rem;
   --space-8: 3.5rem;
 
-  /* Radios */
+  
   --radio-sm: 8px;
   --radio-md: 12px;
   --radio-lg: 16px;
   --radio-full: 999px;
 
-  /* Sombras */
+  
   --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.35);
   --sombra-media: 0 8px 28px rgba(0, 0, 0, 0.45);
-  --sombra-marca: 0 6px 24px rgba(46, 124, 246, 0.25);
+  --sombra-marca: 0 6px 24px rgba(99, 102, 241, 0.25);
 
-  /* Transiciones */
+  
   --dur-1: 120ms;
   --dur-2: 200ms;
   --dur-3: 350ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-rapida: ease-out;
 
-  /* Catálogo premium (aditivos, no renombran nada) */
-  --skeleton-base: #101828;
-  --skeleton-brillo: rgba(46, 124, 246, 0.14);
-  --media-velo: linear-gradient(180deg, transparent 55%, rgba(5, 8, 15, 0.55));
-  --estrella: #fbbf24;
+  
+  --skeleton-base: #151c2a;
+  --skeleton-brillo: rgba(99, 102, 241, 0.14);
+  --media-velo: linear-gradient(180deg, transparent 55%, rgba(11, 14, 20, 0.55));
+  --estrella: #f59e0b;
   --detalle-col: 520px;
 }
 
@@ -190,7 +190,7 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(46, 124, 246, 0.18);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 input::placeholder {
@@ -230,7 +230,7 @@ button,
   }
 }
 
-/* Imágenes nunca rompen el layout */
+
 img {
   max-width: 100%;
 }
@@ -290,7 +290,7 @@ img {
   background: var(--primary-oscuro);
 }
 
-/* Página /carrito (sin CSS propio): lista simple y legible */
+
 .carrito-pagina {
   max-width: 900px;
   margin: 0 auto;
@@ -340,35 +340,30 @@ img {
   font-size: 1.1rem;
 }
 
-/* ============================================================
-   HefestoTech · Sistema UI compartido (solo ADICIONES)
-   Tokens + botones + badges + card + input con icono +
-   skeleton + vacío + precio + utilidades + focus + entrada.
-   Todo con tokens, transform/opacity y reduced-motion.
-   ============================================================ */
+
 :root {
-  --info: #22d3ee;
-  --info-borde: rgba(34, 211, 238, 0.4);
-  --info-suave: rgba(34, 211, 238, 0.1);
-  --aviso: #fbbf24;
-  --aviso-borde: rgba(251, 191, 36, 0.4);
-  --aviso-suave: rgba(251, 191, 36, 0.1);
-  --ok-suave: rgba(52, 211, 153, 0.1);
-  --ok-borde: rgba(52, 211, 153, 0.35);
-  --danger: #f4585e;
-  --danger-suave: rgba(242, 88, 94, 0.1);
-  --danger-borde: rgba(242, 88, 94, 0.4);
+  --info: #0ea5e9;
+  --info-borde: rgba(14, 165, 233, 0.4);
+  --info-suave: rgba(14, 165, 233, 0.1);
+  --aviso: #f59e0b;
+  --aviso-borde: rgba(245, 158, 11, 0.4);
+  --aviso-suave: rgba(245, 158, 11, 0.1);
+  --ok-suave: rgba(16, 185, 129, 0.1);
+  --ok-borde: rgba(16, 185, 129, 0.35);
+  --danger: #e5484d;
+  --danger-suave: rgba(229, 72, 77, 0.1);
+  --danger-borde: rgba(229, 72, 77, 0.4);
   --superficie-elevada: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
 }
 
-/* Focus visible global accesible */
+
 :where(a, button, [role="button"], input, select, textarea):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* ---------- Botones del sistema ---------- */
+
 .btn-primary,
 .btn-fantasma,
 .btn-danger {
@@ -437,7 +432,7 @@ img {
   transform: scale(0.98);
 }
 
-/* ---------- Badges ---------- */
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -478,7 +473,7 @@ img {
   color: var(--aviso);
 }
 
-/* ---------- Card base ---------- */
+
 .card {
   background: var(--superficie-elevada);
   border: 1px solid var(--border);
@@ -494,12 +489,12 @@ img {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 1px;
   background: var(--grad-marca);
-  opacity: 0.9;
+  opacity: 0.6;
 }
 
-/* ---------- Input con icono ---------- */
+
 .input-con-icono {
   position: relative;
   display: flex;
@@ -527,7 +522,7 @@ img {
   opacity: 1;
 }
 
-/* ---------- Skeleton shimmer ---------- */
+
 .skeleton {
   display: block;
   width: 100%;
@@ -545,7 +540,7 @@ img {
   100% { background-position: -200% 0; opacity: 0.7; }
 }
 
-/* ---------- Vacío ilustrado ---------- */
+
 .vacio {
   text-align: center;
   padding: 2rem 1.5rem;
@@ -585,7 +580,7 @@ img {
   text-wrap: pretty;
 }
 
-/* ---------- Precio ---------- */
+
 .precio {
   display: inline-flex;
   align-items: baseline;
@@ -607,7 +602,7 @@ img {
   text-decoration: line-through;
 }
 
-/* ---------- Utilidades ---------- */
+
 .texto-mutado {
   color: var(--muted);
 }
@@ -618,7 +613,7 @@ img {
   margin-right: auto;
 }
 
-/* ---------- Hero editorial ---------- */
+
 .hero-kicker {
   margin-bottom: 1rem;
 }
@@ -630,7 +625,7 @@ img {
   color: transparent;
 }
 
-/* ---------- Entrada suave (transform/opacity) ---------- */
+
 .anim-entrada {
   animation: ht-entrada var(--dur-3) var(--ease) both;
 }
