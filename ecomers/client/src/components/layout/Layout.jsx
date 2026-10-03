@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Asistente from "./Asistente";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
 import "./Layout.css";
 
@@ -38,6 +39,7 @@ function Layout({
       </main>
 
       <Footer />
+      <Asistente />
     </div>
   );
 }

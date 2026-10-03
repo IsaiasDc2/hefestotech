@@ -1,0 +1,126 @@
+.asistente {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.asistente-bola {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid var(--primary-borde);
+  background: var(--grad-marca);
+  color: #fff;
+  font-size: 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sombra-marca);
+  position: relative;
+}
+
+.asistente-bola:hover {
+  filter: brightness(1.08);
+}
+
+.asistente-punto {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ok);
+  border: 2px solid #fff;
+}
+
+.asistente-panel {
+  width: min(320px, calc(100vw - 2.5rem));
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.asistente-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.asistente-head > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.asistente-head button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  color: var(--muted);
+}
+
+.asistente-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.asistente-estado {
+  font-size: 0.78rem;
+  color: var(--ok);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.asistente-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ok);
+}
+
+.asistente-fake {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  color: var(--muted-oscuro);
+  font-size: 0.88rem;
+}
+
+.asistente-enviar {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.asistente-aviso {
+  font-size: 0.75rem;
+  color: var(--muted-oscuro);
+  text-align: center;
+}
+
+@media (pointer: coarse) {
+  .asistente-bola {
+    width: 60px;
+    height: 60px;
+  }
+}
