@@ -72,11 +72,19 @@
   position: sticky;
   top: 0;
   z-index: 50;
+  max-width: 100%;
+  overflow-x: clip;
   background-color: rgba(11, 14, 20, 0.62);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border-bottom: 1px solid transparent;
   transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@supports not (overflow: clip) {
+  .site-head {
+    overflow-x: hidden;
+  }
 }
 
 .site-head.is-scrolled {
@@ -90,8 +98,16 @@
   align-items: center;
   gap: 1.5rem;
   max-width: 1280px;
+  min-width: 0;
   margin: 0 auto;
   padding: 0.9rem 1.5rem 0.75rem;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  .site-head-inner {
+    overflow-x: hidden;
+  }
 }
 
 .logo {
@@ -160,6 +176,19 @@
   margin: 0 auto;
 }
 
+.buscador-head input {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  border-radius: 12px 0 0 12px;
+  border-right: none;
+  background-color: var(--card-2);
+  border-color: var(--border);
+  padding: 0.7rem 1rem 0.7rem 2.5rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .buscador-icono {
   position: absolute;
   left: 0.95rem;
@@ -169,17 +198,6 @@
   font-size: 0.9rem;
   pointer-events: none;
   transition: color 0.2s ease;
-}
-
-.buscador-head input {
-  flex: 1;
-  min-width: 0;
-  border-radius: 12px 0 0 12px;
-  border-right: none;
-  background-color: var(--card-2);
-  border-color: var(--border);
-  padding: 0.7rem 1rem 0.7rem 2.5rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .buscador-head:focus-within .buscador-icono {
@@ -454,8 +472,11 @@
 
   .buscador-head {
     order: 3;
-    flex-basis: 100%;
-    max-width: none;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
   }
 
   .buscador-texto {
@@ -501,14 +522,28 @@
   }
 
   .site-head-inner {
-    padding: 0.7rem 1rem;
-    gap: 0.6rem;
+    padding: 0.7rem 0.75rem;
+    gap: 0.5rem;
   }
 
   .logo {
     flex: 1 1 auto;
     min-width: 0;
+    gap: 0.45rem;
     font-size: 1.05rem;
+  }
+
+  .nav-cuenta {
+    gap: 0.5rem;
+  }
+
+  .buscador-head button {
+    min-width: 48px;
+    padding: 0 0.75rem;
+  }
+
+  .buscador-head input {
+    padding: 0.7rem 0.75rem 0.7rem 2.4rem;
   }
 
   .logo-badge {
