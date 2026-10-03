@@ -1,6 +1,7 @@
 .layout {
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
     "header"
     "main"
@@ -34,11 +35,13 @@
 .layout > header,
 .layout > .site-head {
   grid-area: header;
+  min-width: 0;
 }
 
 .layout-main {
   grid-area: main;
   min-height: 60vh;
+  min-width: 0;
 }
 
 .layout-main:focus {
@@ -47,6 +50,7 @@
 
 .layout > footer {
   grid-area: footer;
+  min-width: 0;
 }
 
 
