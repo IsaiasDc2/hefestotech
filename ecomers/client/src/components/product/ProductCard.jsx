@@ -13,6 +13,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
   );
   const imagen = producto.imagen || "";
   const nombre = producto.nombre || "Producto";
+  const marca = (producto.marca || "").trim();
   const rating = Number(producto.rating ?? producto.promedio ?? 4.7);
   const resenas = producto.resenas ?? producto.cantidad_resenas ?? null;
 
@@ -38,6 +39,11 @@ function ProductCard({ producto, agregarAlCarrito }) {
       </button>
 
       <Link to={`/producto/${producto.id}`} className="producto-detalle">
+        {marca && (
+          <span className="card-marca" title={marca}>
+            {marca}
+          </span>
+        )}
         <span className="card-media">
           {imagen ? (
             <img
@@ -78,6 +84,9 @@ function ProductCard({ producto, agregarAlCarrito }) {
           <span className="precio-anterior">
             ${precio.toLocaleString("es-AR")}
           </span>
+          {descuento > 0 && (
+            <span className="descuento-badge">-{descuento}%</span>
+          )}
           <strong className="precio-actual">
             ${precioFinal.toLocaleString("es-AR")}
           </strong>

@@ -1,7 +1,9 @@
 .checkout {
-  max-width: 1280px;
+  max-width: min(1280px, 100%);
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .checkout-grid {
@@ -22,6 +24,8 @@
 .checkout-panel,
 .checkout-resumen {
   padding: 1.4rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .checkout-panel h2,
@@ -102,6 +106,7 @@
 .checkout-items li {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.8rem;
 }
 
@@ -171,13 +176,18 @@
 
 .tarjeta-num {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: clamp(1rem, 4vw, 1.15rem);
   letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  min-width: 0;
 }
 
 .tarjeta-pie {
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   font-size: 0.8rem;
   color: var(--muted);
   text-transform: uppercase;
@@ -212,8 +222,14 @@
 @media (max-width: 480px) {
   .checkout {
     padding: 1.6rem 1rem 2.5rem;
+    max-width: 100%;
   }
   .checkout-fila {
     grid-template-columns: 1fr;
+  }
+  .checkout-panel,
+  .checkout-resumen {
+    padding: 1rem;
+    min-width: 0;
   }
 }

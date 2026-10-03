@@ -3,8 +3,22 @@ import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import "./ProductCarousel.css";
 
+function slugId(titulo) {
+  return (
+    "carrusel-" +
+    String(titulo || "seccion")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
+}
+
 export default function ProductCarousel({
   titulo,
+  kicker = null,
+  kickerNum = null,
   verTodo = "/productos",
   productos = [],
   agregarAlCarrito,
@@ -21,16 +35,33 @@ export default function ProductCarousel({
 
   if (!productos.length) return null;
 
+  const tituloId = slugId(titulo);
+  const editorial = kicker != null || kickerNum != null;
+
   return (
-    <section className="carrusel">
-      <div className="seccion-head">
-        <h2>{titulo}</h2>
+    <section className="carrusel" aria-labelledby={tituloId}>
+      <div className="seccion-head editorial">
+        <div className="seccion-titular">
+          {editorial && (
+            <p className="kicker">
+              {kickerNum != null && (
+                <span className="kicker-num" aria-hidden="true">
+                  {kickerNum}
+                </span>
+              )}
+              {kicker}
+            </p>
+          )}
+          <h2 id={tituloId}>{titulo}</h2>
+        </div>
         <div className="carrusel-acciones">
-          <Link to={verTodo}>Ver todo →</Link>
-          <button type="button" onClick={() => desplazar(-1)} aria-label="Anterior">
+          <Link to={verTodo}>
+            Ver todo <span aria-hidden="true">→</span>
+          </Link>
+          <button type="button" onClick={() => desplazar(-1)} aria-label="Ver anteriores">
             ‹
           </button>
-          <button type="button" onClick={() => desplazar(1)} aria-label="Siguiente">
+          <button type="button" onClick={() => desplazar(1)} aria-label="Ver siguientes">
             ›
           </button>
         </div>

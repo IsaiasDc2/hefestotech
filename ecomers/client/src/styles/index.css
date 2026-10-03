@@ -105,6 +105,25 @@ html,
 body {
   background-color: var(--bg);
   color: var(--text);
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+}
+
+#root {
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  #root {
+    overflow-x: hidden;
+  }
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
 }
 
 body {

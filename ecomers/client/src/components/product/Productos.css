@@ -33,6 +33,20 @@
   padding: 1rem;
   margin-bottom: 1rem;
   box-shadow: var(--sombra-suave);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.filtros > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.filtros select,
+.filtros input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .buscador {
@@ -46,7 +60,6 @@
   color: var(--muted);
   font-weight: 600;
   padding: 0.65rem 1rem;
-  white-space: nowrap;
   transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 

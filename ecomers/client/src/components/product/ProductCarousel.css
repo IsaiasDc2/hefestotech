@@ -2,6 +2,61 @@
   max-width: 1280px;
   margin: 0 auto;
   padding: 3rem 1.5rem 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.carrusel .seccion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin-bottom: 1.4rem;
+  min-width: 0;
+}
+
+.carrusel .seccion-head.editorial {
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border-suave);
+  padding-bottom: 1rem;
+}
+
+.carrusel .seccion-titular {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.carrusel .kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+.carrusel .kicker-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--grad-marca);
+  box-shadow: 0 2px 12px var(--primary-resplandor);
+}
+
+.carrusel .seccion-head h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .carrusel-acciones {
@@ -36,19 +91,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0;
-  transform: translateY(4px);
-  pointer-events: none;
-  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
-}
-
-
-.carrusel:hover .carrusel-acciones button,
-.carrusel:focus-within .carrusel-acciones button {
   opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+  transform: none;
+  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida);
 }
+
 
 .carrusel-acciones button:hover {
   border-color: var(--primary);
@@ -65,9 +112,6 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
 }
 
 .carrusel-acciones button:disabled {

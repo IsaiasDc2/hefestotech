@@ -216,6 +216,31 @@
     grid-template-columns: 1fr;
   }
 
+  .acerca-hero,
+  .acerca-seccion,
+  .acerca-valores {
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .acerca-stats {
+    grid-template-columns: 1fr;
+    padding-inline: 1rem;
+    max-width: 100%;
+  }
+
+  .acerca-cta {
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .acerca-cta-panel {
+    padding: 2rem 1rem;
+    min-width: 0;
+  }
+
   .acerca-cta-botones .btn-fuego,
   .acerca-cta-botones .btn-fantasma {
     width: 100%;
@@ -238,5 +263,14 @@
   .acerca-stats {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .valores-grid {
+    grid-template-columns: 1fr;
+  }
+  .acerca-stats {
+    grid-template-columns: 1fr;
   }
 }

@@ -4,6 +4,8 @@
   border-top: 1px solid var(--border);
   font-size: 0.9rem;
   position: relative;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .footer::before {
@@ -52,6 +54,12 @@
   color: var(--text);
   font-size: 1.05rem;
   margin: 0 0 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.footer-news-texto {
+  min-width: 0;
+  flex: 1 1 200px;
 }
 
 .footer-news-texto p {
@@ -64,9 +72,11 @@
 
 .footer-news-form {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   flex: 1;
-  min-width: min(320px, 100%);
+  min-width: 0;
+  width: 100%;
   max-width: 440px;
 }
 
@@ -93,6 +103,8 @@
   font-weight: 700;
   font-size: 0.88rem;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
   transition: filter 0.2s ease, transform 0.2s ease;
 }
@@ -377,6 +389,13 @@
 
   .footer-news-form {
     flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .footer-news-form input {
+    width: 100%;
   }
 
   .footer-news-form button {

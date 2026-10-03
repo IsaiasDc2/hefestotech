@@ -210,13 +210,28 @@
   }
 }
 
+@media (max-width: 560px) {
+  .contacto-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .contacto-container {
-    padding: 2.5rem 1.25rem;
+    padding: 2.5rem 1rem;
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .formulario {
-    padding: 2rem 1.5rem;
+    padding: 2rem 1rem;
+    min-width: 0;
+  }
+
+  .contacto-info {
+    padding: 1.5rem 1rem;
+    min-width: 0;
   }
 }
 

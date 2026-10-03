@@ -99,6 +99,20 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  min-width: 0;
+}
+
+.card-marca {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .card-media {
@@ -275,15 +289,28 @@
   font-size: var(--text-precio);
   font-weight: var(--weight-display);
   letter-spacing: var(--tracking-display);
-  color: var(--text);
+  color: var(--oro);
   font-variant-numeric: tabular-nums;
 }
 
 
 .precios:has(.precio-anterior) .precio-actual {
-  color: var(--oro);
   font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.6rem);
   text-shadow: 0 2px 14px rgba(201, 168, 106, 0.25);
+}
+
+.descuento-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+  background: var(--ok-suave);
+  border: 1px solid var(--ok-borde);
 }
 
 .cuotas {

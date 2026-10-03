@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -43,6 +43,21 @@ function Home({ agregarAlCarrito }) {
   const [cargando, setCargando] = useState(true);
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
+  const pillsRef = useRef(null);
+
+  const pills = [
+    { label: "Todas", value: "Todas" },
+    ...CATEGORIAS.filter((c) => c.db).map((c) => ({
+      label: c.nombre,
+      value: c.db,
+    })),
+  ];
+
+  const desplazarPills = (dir) => {
+    const el = pillsRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+  };
 
   const normalizar = (data) =>
     (data || []).map((p) => ({
@@ -129,13 +144,50 @@ function Home({ agregarAlCarrito }) {
               <div className="seccion-titular">
                 <p className="kicker">
                   <span className="kicker-num" aria-hidden="true">02</span>
-                  Catálogo
+                  Destacados
                 </p>
-                <h2 id="home-catalogo">Buscá en el catálogo</h2>
+                <h2 id="home-catalogo">Conocé nuestros productos destacados</h2>
               </div>
               <span className="conteo">
                 {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
               </span>
+            </div>
+            <div className="pills-wrap">
+              <button
+                type="button"
+                className="pills-flecha"
+                onClick={() => desplazarPills(-1)}
+                aria-label="Categorías anteriores"
+              >
+                ‹
+              </button>
+              <div
+                className="pills-categorias"
+                ref={pillsRef}
+                role="tablist"
+                aria-label="Filtrá por categoría"
+              >
+                {pills.map((pill) => (
+                  <button
+                    key={pill.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={filtroCategoria === pill.value}
+                    className={`pill${filtroCategoria === pill.value ? " activa" : ""}`}
+                    onClick={() => setFiltroCategoria(pill.value)}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="pills-flecha"
+                onClick={() => desplazarPills(1)}
+                aria-label="Más categorías"
+              >
+                ›
+              </button>
             </div>
             <div className="filtros">
               <input
@@ -190,12 +242,16 @@ function Home({ agregarAlCarrito }) {
 
           <ProductCarousel
             titulo="Ofertas de la semana"
+            kicker="Botín semanal"
+            kickerNum="03"
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
           />
           <ProductCarousel
             titulo="Destacados de la forja"
+            kicker="Los más buscados"
+            kickerNum="04"
             verTodo="/productos"
             productos={destacados}
             agregarAlCarrito={agregarAlCarrito}
@@ -213,7 +269,7 @@ function Home({ agregarAlCarrito }) {
         <div className="seccion-head editorial">
           <div className="seccion-titular">
             <p className="kicker">
-              <span className="kicker-num" aria-hidden="true">03</span>
+              <span className="kicker-num" aria-hidden="true">05</span>
               Marcas
             </p>
             <h2 id="home-marcas">Nuestras marcas</h2>

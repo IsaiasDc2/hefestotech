@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaMicrochip, FaCartShopping, FaMagnifyingGlass, FaUser, FaTruckFast } from "react-icons/fa6";
-import { CATEGORIAS, linkOfertas } from "../../constants/categorias";
+import {
+  FaMicrochip,
+  FaCartShopping,
+  FaMagnifyingGlass,
+  FaUser,
+  FaUserPlus,
+  FaTruckFast,
+} from "react-icons/fa6";
+import { linkOfertas } from "../../constants/categorias";
 import "./Navbar.css";
 
-const SLUGS_RAPIDOS = [
-  "procesadores",
-  "placas-de-video",
-  "memorias",
-  "almacenamiento",
-  "perifericos",
+const FILA_CATEGORIAS = [
+  { label: "Productos", to: "/productos", clave: "productos" },
+  { label: "Notebooks", to: "/productos?q=notebook", clave: "notebook" },
+  { label: "PCs Armadas", to: "/productos?q=pc%20armada", clave: "pc armada" },
+  { label: "Armá tu PC", to: "/productos?q=combo", clave: "combo" },
+  { label: "Outlet", to: linkOfertas, clave: "outlet" },
 ];
-const ENLACES_RAPIDOS = SLUGS_RAPIDOS.map(
-  (slug) => CATEGORIAS.find((c) => c.slug === slug) || { slug, label: slug }
-);
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
@@ -42,15 +46,18 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
 
   const params = new URLSearchParams(location.search);
   const categoriaActual = (params.get("categoria") || "").toLowerCase();
+  const busquedaActual = (params.get("q") || "").toLowerCase();
   const enProductos = location.pathname === "/productos";
-  const esActivo = (slug) =>
-    enProductos && categoriaActual === slug ? "activo" : "";
-  const productosActivo =
-    enProductos && !categoriaActual ? "activo" : "";
-  const ofertasActivo =
-    enProductos && (categoriaActual === "oferta" || categoriaActual === "ofertas")
-      ? "activo"
-      : "";
+  const esOfertas =
+    enProductos &&
+    (categoriaActual === "oferta" || categoriaActual === "ofertas");
+
+  const esActiva = (clave) => {
+    if (!enProductos) return "";
+    if (clave === "productos") return !categoriaActual && !busquedaActual ? "activo" : "";
+    if (clave === "outlet") return esOfertas ? "activo" : "";
+    return busquedaActual === clave ? "activo" : "";
+  };
 
   const buscar = (e) => {
     e.preventDefault();
@@ -66,7 +73,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             <FaTruckFast aria-hidden="true" />
             Envíos a todo el país
           </span>
-          <span className="topbar-sep" aria-hidden="true" />
           <span className="topbar-links">
             <Link to="/acerca">Ayuda</Link>
             <Link to="/contactanos">Posventa</Link>
@@ -76,60 +82,81 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           </span>
         </div>
       </div>
+
       <header className={`site-head${scrolled ? " is-scrolled" : ""}`}>
-      <div className="site-head-inner">
-        <Link to="/" className="logo" aria-label="HefestoTech inicio">
-          <span className="logo-badge" aria-hidden="true">
-            <FaMicrochip className="logo-icon" />
-          </span>
-          Hefesto<span>Tech</span>
-        </Link>
-
-        <form className="buscador-head" onSubmit={buscar} role="search">
-          <FaMagnifyingGlass className="buscador-icono" aria-hidden="true" />
-          <input
-            type="text"
-            placeholder="¿Qué estás buscando?"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            aria-label="Buscar productos"
-          />
-          <button type="submit" aria-label="Buscar">
-            <FaMagnifyingGlass aria-hidden="true" />
-          </button>
-        </form>
-
-        <nav className="nav-cuenta" aria-label="Cuenta y carrito">
-          <Link to="/cuenta" className="link-cuenta" aria-label="Mi cuenta">
-            <FaUser aria-hidden="true" />
-            <span>
-              Iniciá sesión
+        <div className="site-head-inner">
+          <Link to="/" className="logo" aria-label="HefestoTech inicio">
+            <span className="logo-badge" aria-hidden="true">
+              <FaMicrochip className="logo-icon" />
+            </span>
+            <span className="logo-nombre">
+              Hefesto<span>Tech</span>
             </span>
           </Link>
 
-          <button className="carrito-btn" onClick={abrirCarrito} aria-label={`Abrir carrito, ${cantidadCarrito} productos`}>
-            <FaCartShopping aria-hidden="true" />
-            <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">{cantidadCarrito}</span>
-          </button>
-        </nav>
-      </div>
+          <form className="buscador-head" onSubmit={buscar} role="search">
+            <FaMagnifyingGlass className="buscador-icono" aria-hidden="true" />
+            <input
+              type="text"
+              placeholder="Buscá tu placa, notebook o periférico…"
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              aria-label="Buscar productos"
+            />
+            <button type="submit" aria-label="Buscar">
+              <FaMagnifyingGlass aria-hidden="true" />
+              <span className="buscador-texto">Buscar</span>
+            </button>
+          </form>
 
-      <nav className="nav-categorias" aria-label="Categorías">
-        <div className="nav-categorias-inner">
-          <Link to="/productos" className={productosActivo} aria-current={productosActivo ? "page" : undefined}>Productos</Link>
-          {ENLACES_RAPIDOS.map((c) => (
-            <Link key={c.slug} to={`/productos?categoria=${c.slug}`} className={esActivo(c.slug)} aria-current={esActivo(c.slug) ? "page" : undefined}>
-              {c.label}
+          <nav className="nav-cuenta" aria-label="Cuenta y carrito">
+            <Link to="/cuenta" className="link-cuenta link-registro">
+              <FaUserPlus aria-hidden="true" />
+              <span>Registrate</span>
             </Link>
-          ))}
-          <Link to={linkOfertas} className={`nav-ofertas ${ofertasActivo}`} aria-current={ofertasActivo ? "page" : undefined}>Ofertas</Link>
-          <span className="nav-ayuda">
-            <Link to="/acerca">Nosotros</Link>
-            <Link to="/contactanos">Contactanos</Link>
-          </span>
+            <Link to="/cuenta" className="link-cuenta" aria-label="Iniciá sesión">
+              <FaUser aria-hidden="true" />
+              <span>Iniciá sesión</span>
+            </Link>
+            <button
+              className="carrito-btn"
+              onClick={abrirCarrito}
+              aria-label={`Abrir carrito, ${cantidadCarrito} productos`}
+            >
+              <FaCartShopping aria-hidden="true" />
+              <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">
+                {cantidadCarrito}
+              </span>
+            </button>
+          </nav>
         </div>
-      </nav>
-    </header>
+
+        <nav className="nav-categorias" aria-label="Categorías">
+          <div className="nav-categorias-inner">
+            <div className="nav-categorias-lista" role="list">
+              {FILA_CATEGORIAS.map((c) => {
+                const activa = esActiva(c.clave);
+                const esOutlet = c.clave === "outlet";
+                return (
+                  <Link
+                    key={c.clave}
+                    to={c.to}
+                    role="listitem"
+                    className={`${esOutlet ? "nav-ofertas " : ""}${activa}`}
+                    aria-current={activa ? "page" : undefined}
+                  >
+                    {c.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <span className="nav-ayuda">
+              <Link to="/acerca">Ayuda</Link>
+              <Link to="/contactanos">Servicio de Posventa</Link>
+            </span>
+          </div>
+        </nav>
+      </header>
     </>
   );
 }

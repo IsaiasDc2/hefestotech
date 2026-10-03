@@ -6,14 +6,15 @@ import "./Banner.css";
 const SLIDES = [
   {
     id: "gpu",
-    tema: "neon",
+    tema: "indigo",
     categoria: "Placa de video",
     eyebrow: "Nueva generación",
-    titulo: "Potencia bruta para tu setup",
-    texto: "Placas de video con trazado de rayos y DLSS. Jugá sin límites.",
+    titulo: "Todo lo que tu setup",
+    acento: "necesita",
+    texto: "Subí de nivel con placas de última generación. Jugá en ultra, sin tirones.",
     cta: "Ver placas de video",
     to: "/productos?categoria=placas-de-video",
-    ctaSec: "Ver ofertas",
+    ctaSec: "Ver outlet",
     toSec: "/productos?categoria=ofertas",
     posicion: "right center",
     imagen:
@@ -21,11 +22,12 @@ const SLIDES = [
   },
   {
     id: "setup",
-    tema: "magenta",
+    tema: "celeste",
     categoria: "Monitor",
-    eyebrow: "Todo en un lugar",
-    titulo: "Armá tu setup completo",
-    texto: "Monitor, gabinete, refrigeración y más para tu espacio ideal.",
+    eyebrow: "Armalo a tu medida",
+    titulo: "Llevá tu setup",
+    acento: "más lejos",
+    texto: "Monitores, gabinetes y refrigeración para armar el rincón que soñás.",
     cta: "Explorar productos",
     to: "/productos",
     ctaSec: "Ver periféricos",
@@ -36,11 +38,12 @@ const SLIDES = [
   },
   {
     id: "peris",
-    tema: "ambar",
+    tema: "laton",
     categoria: "Periferico",
     eyebrow: "Precisión gamer",
-    titulo: "Precisión en cada clic",
-    texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
+    titulo: "Cada clic",
+    acento: "cuenta",
+    texto: "Teclados mecánicos y mouse de alta respuesta para competir de verdad.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
     ctaSec: "Explorar productos",
@@ -156,7 +159,7 @@ export default function Banner() {
                         <span className="gpu-fan f1" />
                         <span className="gpu-fan f2" />
                         <span className="gpu-fan f3" />
-                        <span className="gpu-logo">RTX</span>
+                        <span className="gpu-logo">HTX</span>
                       </div>
                     </div>
                   )}
@@ -191,7 +194,9 @@ export default function Banner() {
                   <span className="banner-kicker-sep" aria-hidden="true" />
                   {s.eyebrow}
                 </p>
-                <h2>{s.titulo}</h2>
+                <h2>
+                  {s.titulo} <span className="banner-acento">{s.acento}</span>
+                </h2>
                 <p className="banner-desc">{s.texto}</p>
                 <div className="banner-acciones">
                   <Link

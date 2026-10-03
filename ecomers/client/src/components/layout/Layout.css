@@ -56,6 +56,13 @@
   overflow-x: clip;
 }
 
+@supports not (overflow: clip) {
+  .layout,
+  .layout-main {
+    overflow-x: hidden;
+  }
+}
+
 
 .layout-main {
   scroll-margin-top: 120px;

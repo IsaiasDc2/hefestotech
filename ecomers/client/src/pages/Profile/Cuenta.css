@@ -121,6 +121,14 @@
 @media (max-width: 480px) {
   .cuenta {
     padding: 2rem 1rem 3rem;
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .contenido {
+    max-width: 100%;
+    min-width: 0;
   }
 
   .cuenta-tabs {
@@ -132,7 +140,13 @@
   }
 
   .panel-cuenta {
-    padding: 2rem 1.5rem;
+    padding: 2rem 1rem;
+    min-width: 0;
+  }
+
+  .cuenta-tabla-scroll {
+    overflow-x: auto;
+    max-width: 100%;
   }
 }
 
