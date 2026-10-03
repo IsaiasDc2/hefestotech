@@ -146,6 +146,43 @@
   line-height: 1.5;
 }
 
+.pago-tarjeta {
+  margin-top: 1rem;
+}
+
+.tarjeta-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radio-md);
+  background: linear-gradient(135deg, #1e2638, #121724 60%, #4338ca33);
+  border: 1px solid var(--primary-borde);
+  font-variant-numeric: tabular-nums;
+}
+
+.tarjeta-marca {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--oro);
+}
+
+.tarjeta-num {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+}
+
+.tarjeta-pie {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
 .checkout-exito,
 .checkout-bloqueo {
   max-width: 560px;
