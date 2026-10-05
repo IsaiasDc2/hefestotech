@@ -1,0 +1,245 @@
+.contacto-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  background-color: var(--bg);
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    var(--primary-resplandor),
+    transparent 55%
+  );
+  min-height: calc(100vh - 140px);
+}
+
+.contacto-hero {
+  text-align: center;
+  padding-bottom: 2.5rem;
+}
+
+.contacto-hero .hero-kicker {
+  display: inline-flex;
+}
+
+.contacto-hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  color: var(--text);
+  margin: 0 0 0.8rem;
+}
+
+.contacto-hero p {
+  max-width: 52ch;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.contacto-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.contacto-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border-radius: 16px;
+  padding: 2rem 1.6rem;
+  box-shadow: var(--sombra);
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-suave);
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.info-item:hover {
+  transform: translateX(2px);
+}
+
+.info-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.info-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+.info-item h3 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+}
+
+.info-item p {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+
+.formulario {
+  border-radius: 16px;
+  padding: 2.5rem 2.2rem;
+  box-shadow: var(--sombra);
+}
+
+.formulario .badge {
+  margin-bottom: 0.8rem;
+}
+
+.formulario h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+  margin: 0 0 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.grupo label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.grupo input,
+.grupo textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.grupo .input-con-icono input {
+  padding-left: 2.6rem;
+}
+
+.grupo .input-con-icono-area {
+  align-items: flex-start;
+}
+
+.grupo .input-con-icono-area .input-icono {
+  top: 0.85rem;
+}
+
+.grupo .input-con-icono-area textarea {
+  padding-left: 2.6rem;
+  min-height: 120px;
+}
+
+.grupo input::placeholder,
+.grupo textarea::placeholder {
+  color: var(--muted-oscuro);
+}
+
+.grupo input:focus,
+.grupo textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--anillo-foco);
+}
+
+.formulario .btn-fuego {
+  width: 100%;
+  margin-top: 0.6rem;
+}
+
+.contacto-cargando {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.mensaje-exito {
+  width: 100%;
+  justify-content: center;
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-align: center;
+  white-space: normal;
+}
+
+@media (max-width: 768px) {
+  .contacto-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .contacto-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .contacto-container {
+    padding: 2.5rem 1rem;
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .formulario {
+    padding: 2rem 1rem;
+    min-width: 0;
+  }
+
+  .contacto-info {
+    padding: 1.5rem 1rem;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-item {
+    transition: none;
+  }
+  .info-item:hover {
+    transform: none;
+  }
+}

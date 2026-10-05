@@ -1,0 +1,194 @@
+.login-pagina {
+  width: 100%;
+}
+
+.login {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  margin: 4rem auto;
+  padding: 2.5rem 2.2rem;
+  background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+
+.login h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--text);
+  margin: 0 0 1.4rem;
+  letter-spacing: -0.01em;
+}
+
+.login .hero-kicker {
+  align-self: flex-start;
+}
+
+.login .input-con-icono {
+  margin-bottom: 0.9rem;
+}
+
+.opciones-login {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.4rem 0 1.4rem;
+  font-size: 0.82rem;
+}
+
+.opciones-login label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.opciones-login input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.opciones-login a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.opciones-login a:hover {
+  color: #a5b4fc;
+  text-decoration: underline;
+}
+
+.icono-link {
+  font-size: 0.85rem;
+}
+
+.login .btn-fuego {
+  width: 100%;
+}
+
+.login .btn-fantasma {
+  width: 100%;
+  margin-bottom: 0.7rem;
+}
+
+.login .btn-fantasma svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.separador {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--muted-oscuro);
+  font-size: 0.78rem;
+  margin: 1.4rem 0;
+}
+
+.separador::before,
+.separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--border);
+}
+
+.separador span {
+  padding: 0 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.registro {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 1.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.87rem;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.registro strong {
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.registro strong:hover {
+  text-decoration: underline;
+}
+
+.registro-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+}
+
+.login-error {
+  width: 100%;
+  justify-content: center;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.6rem;
+  margin: 0 0 0.9rem;
+  text-align: center;
+  white-space: normal;
+}
+
+@media (max-width: 480px) {
+  .login-pagina {
+    padding-inline: 1rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .login {
+    margin: 2rem auto;
+    padding: 2rem 1.5rem;
+    padding-inline: 1rem;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  .opciones-login {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+}
+
+
+.cuenta .contenido .login {
+  margin: 0;
+  max-width: none;
+}
+
+.cuenta .contenido .login-pagina {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login .btn-fuego,
+  .login .btn-fantasma {
+    transition: none;
+  }
+}

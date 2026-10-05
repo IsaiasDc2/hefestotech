@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -6,7 +7,11 @@ import {
   FaEnvelope,
   FaFacebook,
   FaInstagram,
-  FaWhatsapp
+  FaWhatsapp,
+  FaPaperPlane,
+  FaCircleCheck,
+  FaShieldHalved,
+  FaTruckFast,
 } from "react-icons/fa6";
 
 import {
@@ -18,11 +23,58 @@ import "./Footer.css";
 
 
 function Footer() {
+  const [email, setEmail] = useState("");
+  const [suscrito, setSuscrito] = useState(false);
+
+  const suscribir = (e) => {
+    e.preventDefault();
+    if (email.trim().length > 3 && email.includes("@")) {
+      setSuscrito(true);
+    }
+  };
 
   return (
 
     <footer className="footer">
 
+
+      <div className="footer-news">
+        <div className="footer-news-inner">
+          <div className="footer-news-texto">
+            <h3>
+              Recibí ofertas y novedades
+            </h3>
+            <p>
+              Componentes, periféricos y PCs armadas con garantía oficial.
+              Equipá tu setup con productos de calidad.
+            </p>
+          </div>
+          {suscrito ? (
+            <p className="footer-news-ok" role="status">
+              <FaCircleCheck aria-hidden="true" />
+              ¡Listo! Revisá tu correo para confirmar la suscripción.
+            </p>
+          ) : (
+            <form className="footer-news-form" onSubmit={suscribir}>
+              <label className="sr-only" htmlFor="newsletter-email">
+                Correo electrónico
+              </label>
+              <input
+                id="newsletter-email"
+                type="email"
+                required
+                placeholder="tu@correo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <button type="submit">
+                <FaPaperPlane aria-hidden="true" />
+                Suscribirme
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
 
       <div className="footer-content">
 
@@ -39,18 +91,44 @@ function Footer() {
             Equipá tu setup con productos de calidad.
           </p>
 
+          <ul className="footer-confianza">
+            <li>
+              <FaShieldHalved aria-hidden="true" />
+              Garantía oficial
+            </li>
+            <li>
+              <FaTruckFast aria-hidden="true" />
+              Envíos a todo el país
+            </li>
+          </ul>
+
 
           <div className="redes">
 
-            <a href="#">
+            <a
+              href="https://facebook.com/hefestotech"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Facebook"
+            >
               <FaFacebook />
             </a>
 
-            <a href="#">
+            <a
+              href="https://instagram.com/hefestotech"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Instagram"
+            >
               <FaInstagram />
             </a>
 
-            <a href="#">
+            <a
+              href="https://wa.me/5491112345678"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="WhatsApp"
+            >
               <FaWhatsapp />
             </a>
 
@@ -58,7 +136,6 @@ function Footer() {
 
 
         </div>
-
 
 
 
@@ -80,21 +157,21 @@ function Footer() {
 
 
             <li>
-              <Link to="/acerca">
-                Nosotros
+              <Link to="/productos">
+                Productos
+              </Link>
+            </li>
+
+
+            <li>
+              <Link to="/cuenta">
+                Mi cuenta
               </Link>
             </li>
 
 
             <li>
               <Link to="/contactanos">
-                Contacto
-              </Link>
-            </li>
-
-
-            <li>
-              <Link to="/arma-tu-pc">
                 Armá tu PC
               </Link>
             </li>
@@ -104,7 +181,6 @@ function Footer() {
 
 
         </div>
-
 
 
 
@@ -119,21 +195,21 @@ function Footer() {
           <ul>
 
             <li>
-              <Link to="/envios">
+              <Link to="/contactanos">
                 Envíos
               </Link>
             </li>
 
 
             <li>
-              <Link to="/cambios-devoluciones">
+              <Link to="/contactanos">
                 Cambios y devoluciones
               </Link>
             </li>
 
 
             <li>
-              <Link to="/preguntas-frecuentes">
+              <Link to="/acerca">
                 Preguntas frecuentes
               </Link>
             </li>
@@ -143,8 +219,6 @@ function Footer() {
 
 
         </div>
-
-
 
 
 
@@ -195,12 +269,14 @@ function Footer() {
 
 
 
+          <div className="pagos" aria-label="Métodos de pago">
 
-          <div className="pagos">
+            <FaCcVisa aria-label="Visa" />
 
-            <FaCcVisa />
+            <FaCcMastercard aria-label="Mastercard" />
 
-            <FaCcMastercard />
+            <span className="pago-pill">Mercado Pago</span>
+            <span className="pago-pill">Transferencia</span>
 
           </div>
 
@@ -215,11 +291,17 @@ function Footer() {
 
 
 
-
       <div className="footer-bottom">
 
         <p>
           © {new Date().getFullYear()} Tienda de Hardware • Todos los derechos reservados
+        </p>
+        <p className="footer-bottom-sub">
+          <Link to="/acerca">Nosotros</Link>
+          <span aria-hidden="true">•</span>
+          <Link to="/contactanos">Contactanos</Link>
+          <span aria-hidden="true">•</span>
+          <span>Hecho en Argentina</span>
         </p>
 
       </div>

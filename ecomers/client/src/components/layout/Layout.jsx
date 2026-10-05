@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Asistente from "./Asistente";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
 import "./Layout.css";
 
@@ -16,6 +17,9 @@ function Layout({
 }) {
   return (
     <div className="layout">
+      <a className="skip-link" href="#contenido">
+        Saltar al contenido
+      </a>
       <Navbar
         cantidadCarrito={cantidadCarrito}
         abrirCarrito={abrirCarrito}
@@ -30,11 +34,12 @@ function Layout({
         disminuirCantidad={disminuirCantidad}
       />
 
-      <main className="layout-main">
+      <main className="layout-main" id="contenido" tabIndex={-1}>
         <Outlet />
       </main>
 
       <Footer />
+      <Asistente />
     </div>
   );
 }

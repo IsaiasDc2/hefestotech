@@ -1,39 +1,53 @@
-import { useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import Home from "./pages/Home/Home";
-import Carrito from "./pages/Carrito/Carrito";
-import Cuenta from "./pages/Profile/Cuenta";
+import useCartStore from "./store/cartStore";
+import useAuthStore from "./store/authStore";
+
+const Home = lazy(() => import("./pages/Home/Home"));
+const Productos = lazy(() => import("./components/product/Producto"));
+const ProductoDetalle = lazy(() => import("./components/product/ProductList"));
+const Carrito = lazy(() => import("./pages/Carrito/Carrito"));
+const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
+const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
+const Admin = lazy(() => import("./pages/Admin/Admin"));
+const Acerca = lazy(() => import("./pages/About/Acerca"));
+const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
+
+function CargandoPagina() {
+  return (
+    <div className="cargando-pagina" role="status" aria-label="Cargando página">
+      <span className="cargando-punto" />
+      <span className="cargando-punto" />
+      <span className="cargando-punto" />
+    </div>
+  );
+}
 
 export default function App() {
-  const [carrito, setCarrito] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const carrito = useCartStore((s) => s.carrito);
+  const isCartOpen = useCartStore((s) => s.isCartOpen);
+  const abrirCarrito = useCartStore((s) => s.abrirCarrito);
+  const cerrarCarrito = useCartStore((s) => s.cerrarCarrito);
+  const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
+  const eliminarDelCarrito = useCartStore((s) => s.eliminarDelCarrito);
+  const aumentarCantidad = useCartStore((s) => s.aumentarCantidad);
+  const disminuirCantidad = useCartStore((s) => s.disminuirCantidad);
+  const vaciarCarrito = useCartStore((s) => s.vaciarCarrito);
+  const cargarSesion = useAuthStore((s) => s.cargarSesion);
+  const suscribirseACambios = useAuthStore((s) => s.suscribirseACambios);
 
-  const abrirCarrito = () => setIsCartOpen(true);
-  const cerrarCarrito = () => setIsCartOpen(false);
-
-  const eliminarDelCarrito = (id) => {
-    setCarrito(carrito.filter(item => item.id !== id));
-  };
-
-  const aumentarCantidad = (id) => {
-    setCarrito(carrito.map(item =>
-      item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item
-    ));
-  };
-
-  const disminuirCantidad = (id) => {
-    setCarrito(carrito.map(item =>
-      item.id === id && item.cantidad > 1
-        ? { ...item, cantidad: item.cantidad - 1 }
-        : item
-    ));
-  };
+  useEffect(() => {
+    cargarSesion?.();
+    const desuscribir = suscribirseACambios?.();
+    return () => desuscribir?.();
+  }, [cargarSesion, suscribirseACambios]);
 
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
-    <Routes>
+    <Suspense fallback={<CargandoPagina />}>
+      <Routes>
       <Route
         path="/"
         element={
@@ -49,10 +63,39 @@ export default function App() {
           />
         }
       >
-        <Route index element={<Home />} />
-        <Route path="carrito" element={<Carrito carrito={carrito} />} />
+        <Route index element={<Home agregarAlCarrito={agregarAlCarrito} />} />
+        <Route
+          path="productos"
+          element={<Productos agregarAlCarrito={agregarAlCarrito} />}
+        />
+        <Route
+          path="producto/:id"
+          element={<ProductoDetalle agregarAlCarrito={agregarAlCarrito} />}
+        />
+        <Route
+          path="carrito"
+          element={
+            <Carrito
+              carrito={carrito}
+              eliminarDelCarrito={eliminarDelCarrito}
+              aumentarCantidad={aumentarCantidad}
+              disminuirCantidad={disminuirCantidad}
+            />
+          }
+        />
+        <Route
+          path="checkout"
+          element={
+            <Checkout carrito={carrito} vaciarCarrito={vaciarCarrito} />
+          }
+        />
         <Route path="cuenta" element={<Cuenta />} />
+        <Route path="admin" element={<Admin />} />
+        <Route path="acerca" element={<Acerca />} />
+        <Route path="contactanos" element={<Contactanos />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
