@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import imgPlaca from "../../assets/banner-gpu.jpg";
+import imgSetup from "../../assets/banner-setup.jpg";
+import imgPeris from "../../assets/banner-peris.jpg";
 import "./Banner.css";
 
 const SLIDES = [
@@ -17,8 +20,7 @@ const SLIDES = [
     ctaSec: "Ver outlet",
     toSec: "/productos?categoria=ofertas",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/asi-luce-la-nueva-linea-de-placas-de-video.webp",
+    imagen: imgPlaca,
   },
   {
     id: "setup",
@@ -33,8 +35,7 @@ const SLIDES = [
     ctaSec: "Ver periféricos",
     toSec: "/productos?categoria=perifericos",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/neon-rog.webp",
+    imagen: imgSetup,
   },
   {
     id: "peris",
@@ -49,8 +50,7 @@ const SLIDES = [
     ctaSec: "Explorar productos",
     toSec: "/productos",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/gaming-setup-pictures-j3k8ezoqihs4xtrm.webp",
+    imagen: imgPeris,
   },
 ];
 
