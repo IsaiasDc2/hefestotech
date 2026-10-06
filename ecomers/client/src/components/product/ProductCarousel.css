@@ -66,10 +66,15 @@
 }
 
 .carrusel-acciones a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
   color: var(--primary);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
+  text-underline-offset: 3px;
   white-space: nowrap;
 }
 
@@ -77,15 +82,21 @@
   text-decoration: underline;
 }
 
+.carrusel-flecha {
+  font-size: 0.8rem;
+}
+
 .carrusel-acciones button {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: 1px solid var(--border);
   background: var(--velo);
   backdrop-filter: blur(6px);
   color: var(--text);
-  font-size: 1.35rem;
+  font-size: 0.95rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -108,7 +119,8 @@
 }
 
 .carrusel-acciones a:focus-visible,
-.carrusel-acciones button:focus-visible {
+.carrusel-acciones button:focus-visible,
+.carrusel-pista:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
@@ -148,6 +160,47 @@
 
 .carrusel-item > * {
   flex: 1;
+  min-width: 0;
+}
+
+.carrusel-vacio {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.carrusel-vacio-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  color: var(--primary);
+  font-size: 1.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.carrusel-vacio-titulo {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.015em;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.4rem;
+}
+
+.carrusel-vacio-texto {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin: 0;
+  text-wrap: pretty;
 }
 
 

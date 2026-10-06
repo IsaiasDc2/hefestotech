@@ -1,5 +1,8 @@
 .productos-container {
   max-width: 1280px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
 }
@@ -25,7 +28,7 @@
 
 .filtros {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 0.7rem;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -102,9 +105,14 @@
 
 .grid-productos {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.1rem;
   align-items: stretch;
+}
+
+.grid-productos > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .grid-productos h2 {
@@ -150,27 +158,35 @@
 @media (min-width: 1025px) {
   .filtros {
     position: sticky;
-    top: 0.75rem;
+    top: calc(72px + 0.75rem);
     z-index: 20;
     backdrop-filter: blur(8px);
+    background: var(--surface);
   }
 }
 
 @media (max-width: 1024px) {
   .filtros {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .grid-productos {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
   .filtros {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .grid-productos {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .grid-productos {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -1,9 +1,18 @@
-import { useState } from "react";
-import { FaRobot, FaXmark } from "react-icons/fa6";
+import { useEffect, useState } from "react";
+import { FaRobot, FaXmark, FaArrowRight } from "react-icons/fa6";
 import "./Asistente.css";
 
 function Asistente() {
   const [abierto, setAbierto] = useState(false);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const alTeclear = (e) => {
+      if (e.key === "Escape") setAbierto(false);
+    };
+    window.addEventListener("keydown", alTeclear);
+    return () => window.removeEventListener("keydown", alTeclear);
+  }, [abierto]);
 
   return (
     <div className="asistente">
@@ -27,7 +36,9 @@ function Asistente() {
           <p className="texto-mutado">Hola, ¿en qué te ayudo con tu setup?</p>
           <div className="asistente-fake">
             <span>Escribí tu consulta…</span>
-            <span className="asistente-enviar" aria-hidden="true">→</span>
+            <span className="asistente-enviar" aria-hidden="true">
+              <FaArrowRight />
+            </span>
           </div>
           <p className="asistente-aviso">Vista previa sin función</p>
         </div>

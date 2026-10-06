@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaCreditCard,
+  FaTruckFast,
+  FaCartPlus,
+} from "react-icons/fa6";
 import "./ProductCard.css";
 
 function ProductCard({ producto, agregarAlCarrito }) {
@@ -35,7 +42,11 @@ function ProductCard({ producto, agregarAlCarrito }) {
           favorito ? "Quitar de favoritos" : "Agregar a favoritos"
         }
       >
-        {favorito ? "❤️" : "🤍"}
+        {favorito ? (
+          <FaHeart aria-hidden="true" />
+        ) : (
+          <FaRegHeart aria-hidden="true" />
+        )}
       </button>
 
       <Link to={`/producto/${producto.id}`} className="producto-detalle">
@@ -95,17 +106,34 @@ function ProductCard({ producto, agregarAlCarrito }) {
         <strong className="precio-actual">${precio.toLocaleString("es-AR")}</strong>
       )}
 
-      <p className="cuotas">💳 6 cuotas sin interés</p>
+      <p className="cuotas">
+        <FaCreditCard aria-hidden="true" /> 6 cuotas sin interés
+      </p>
 
-      {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
+      {producto.envio_gratis && (
+        <p className="envio">
+          <FaTruckFast aria-hidden="true" /> Envío gratis
+        </p>
+      )}
 
       <button
         type="button"
         className="btn-carrito"
         disabled={!producto.stock}
         onClick={() => agregarAlCarrito?.(producto)}
+        aria-label={
+          producto.stock
+            ? `Agregar ${nombre} al carrito`
+            : `${nombre} sin stock`
+        }
       >
-        {producto.stock ? "🛒 Agregar al carrito" : "Sin stock"}
+        {producto.stock ? (
+          <>
+            <FaCartPlus aria-hidden="true" /> Agregar al carrito
+          </>
+        ) : (
+          "Sin stock"
+        )}
       </button>
     </div>
   );

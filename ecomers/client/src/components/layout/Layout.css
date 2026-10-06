@@ -28,7 +28,7 @@
 
 .skip-link:focus-visible {
   top: 0.75rem;
-  outline: 2px solid var(--oro);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 

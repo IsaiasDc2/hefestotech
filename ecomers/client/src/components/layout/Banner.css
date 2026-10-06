@@ -20,13 +20,13 @@
 
 .banner-pista {
   display: flex;
-  transition: transform 0.6s cubic-bezier(0.32, 0.72, 0.35, 1);
+  transition: transform var(--dur-3) var(--ease);
 }
 
 .banner-slide {
   position: relative;
   flex: 0 0 100%;
-  min-height: 480px;
+  min-height: min(480px, 92svh);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -442,7 +442,7 @@
 
 .banner-cta:focus-visible,
 .banner-cta-sec:focus-visible {
-  outline: 2px solid var(--oro);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 
@@ -591,8 +591,8 @@
   position: relative;
   flex: 1;
   min-width: 44px;
-  min-height: 24px;
-  height: 24px;
+  min-height: 44px;
+  height: 44px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -619,29 +619,37 @@
 .banner-progreso {
   position: absolute;
   left: 0;
+  right: 0;
   top: 10px;
   height: 4px;
-  width: 0;
+  width: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #6366f1, #0ea5e9);
+  background: var(--grad-marca);
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+  transform: scaleX(0);
+  transform-origin: left center;
 }
 
 button.activo .banner-progreso {
-  animation: banner-progreso 6s linear forwards;
+  animation: banner-progreso-escala 6s linear forwards;
+}
+
+@keyframes banner-progreso-escala {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @keyframes banner-progreso {
-  from { width: 0; }
-  to { width: 100%; }
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 .banner-puntos button:focus-visible {
-  outline: 2px solid var(--oro);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .banner-slide { min-height: 440px; }
   .banner-visual {
     right: 0;
@@ -737,7 +745,7 @@ button.activo .banner-progreso {
   .banner-cta-sec:hover,
   .banner-flecha:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
-  button.activo .banner-progreso { animation: none; width: 100%; }
+  button.activo .banner-progreso { animation: none; transform: scaleX(1); }
   .gpu-fan,
   .setup-torre::before { animation: none; }
 }

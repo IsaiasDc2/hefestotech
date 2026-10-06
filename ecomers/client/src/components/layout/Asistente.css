@@ -13,6 +13,8 @@
 .asistente-bola {
   width: 56px;
   height: 56px;
+  min-width: 56px;
+  min-height: 56px;
   border-radius: 999px;
   border: 1px solid var(--primary-borde);
   background: var(--grad-marca);
@@ -21,12 +23,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--sombra-marca);
+  box-shadow: var(--sombra-media);
   position: relative;
+  transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
 }
 
 .asistente-bola:hover {
   filter: brightness(1.08);
+  box-shadow: var(--sombra-marca);
+}
+
+.asistente-bola:active {
+  transform: scale(0.96);
+}
+
+.asistente-bola:focus-visible,
+.asistente-head button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
 .asistente-punto {
@@ -37,7 +52,7 @@
   height: 10px;
   border-radius: 999px;
   background: var(--ok);
-  border: 2px solid #fff;
+  border: 2px solid var(--text);
 }
 
 .asistente-panel {
@@ -61,11 +76,22 @@
 }
 
 .asistente-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.35rem 0.5rem;
   color: var(--muted);
+  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+
+.asistente-head button:hover {
+  border-color: var(--primary-borde);
+  color: var(--text);
 }
 
 .asistente-avatar {
@@ -100,15 +126,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.6rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.65rem 0.9rem;
+  min-height: 44px;
   color: var(--muted-oscuro);
   font-size: 0.88rem;
 }
 
 .asistente-enviar {
+  display: inline-flex;
+  align-items: center;
   color: var(--primary);
   font-weight: 700;
 }
@@ -123,5 +153,27 @@
   .asistente-bola {
     width: 60px;
     height: 60px;
+    min-width: 60px;
+    min-height: 60px;
+  }
+
+  .asistente-head button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asistente-bola,
+  .asistente-head button {
+    transition: none;
+  }
+
+  .asistente-bola:hover {
+    box-shadow: var(--sombra-media);
+  }
+
+  .asistente-bola:active {
+    transform: none;
   }
 }

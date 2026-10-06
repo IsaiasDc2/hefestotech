@@ -4,14 +4,17 @@
   padding: 2.5rem 1.5rem 3.5rem;
   overflow-x: hidden;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .checkout-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
   gap: 1.2rem;
   align-items: start;
   margin-top: 1.4rem;
+  min-width: 0;
 }
 
 .checkout-col {
@@ -49,12 +52,21 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
+  min-width: 0;
+}
+
+.checkout-campos input,
+.checkout-campos select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .checkout-fila {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .checkout-opciones {
@@ -213,7 +225,7 @@
 
 @media (max-width: 900px) {
   .checkout-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .checkout-resumen {
     position: static;
@@ -226,11 +238,22 @@
     max-width: 100%;
   }
   .checkout-fila {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .checkout-panel,
   .checkout-resumen {
     padding: 1rem;
     min-width: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .checkout-opciones label {
+    min-height: 44px;
+  }
+
+  .checkout-acciones .btn-primary,
+  .checkout-acciones .btn-fantasma {
+    min-height: 44px;
   }
 }

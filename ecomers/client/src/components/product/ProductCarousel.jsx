@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
+import { FaChevronLeft, FaChevronRight, FaArrowRight, FaBoxOpen } from "react-icons/fa6";
 import ProductCard from "./ProductCard";
 import "./ProductCarousel.css";
 
@@ -30,13 +31,36 @@ export default function ProductCarousel({
     if (!el) return;
     const tarjeta = el.querySelector(":scope > *");
     const paso = tarjeta ? tarjeta.offsetWidth + 18 : 300;
-    el.scrollBy({ left: dir * paso * 2, behavior: "smooth" });
+    const movimientoReducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * paso * 2, behavior: movimientoReducido ? "auto" : "smooth" });
   };
-
-  if (!productos.length) return null;
 
   const tituloId = slugId(titulo);
   const editorial = kicker != null || kickerNum != null;
+
+  if (!productos.length) {
+    return (
+      <section className="carrusel" aria-labelledby={tituloId}>
+        <div className="seccion-head editorial">
+          <div className="seccion-titular">
+            <h2 id={tituloId}>{titulo}</h2>
+          </div>
+          <div className="carrusel-acciones">
+            <Link to={verTodo}>
+              Ver todo <FaArrowRight aria-hidden="true" className="carrusel-flecha" />
+            </Link>
+          </div>
+        </div>
+        <div className="carrusel-vacio">
+          <span className="carrusel-vacio-icono" aria-hidden="true">
+            <FaBoxOpen />
+          </span>
+          <p className="carrusel-vacio-titulo">Nada por acá todavía</p>
+          <p className="carrusel-vacio-texto">Volvé en un rato o explorá el catálogo completo.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="carrusel" aria-labelledby={tituloId}>
@@ -56,17 +80,17 @@ export default function ProductCarousel({
         </div>
         <div className="carrusel-acciones">
           <Link to={verTodo}>
-            Ver todo <span aria-hidden="true">→</span>
+            Ver todo <FaArrowRight aria-hidden="true" className="carrusel-flecha" />
           </Link>
-          <button type="button" onClick={() => desplazar(-1)} aria-label="Ver anteriores">
-            ‹
+          <button type="button" onClick={() => desplazar(-1)} aria-label="Ver productos anteriores">
+            <FaChevronLeft aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => desplazar(1)} aria-label="Ver siguientes">
-            ›
+          <button type="button" onClick={() => desplazar(1)} aria-label="Ver productos siguientes">
+            <FaChevronRight aria-hidden="true" />
           </button>
         </div>
       </div>
-      <div className="carrusel-pista" ref={pista}>
+      <div className="carrusel-pista" ref={pista} role="region" aria-label={`${titulo}: lista desplazable`} tabIndex="0">
         {productos.map((p) => (
           <div key={p.id} className="carrusel-item">
             <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />
