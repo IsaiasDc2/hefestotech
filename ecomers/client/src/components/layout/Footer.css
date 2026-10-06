@@ -87,6 +87,7 @@
 .footer-news-form input {
   flex: 1;
   min-width: 0;
+  min-height: 44px;
   background-color: var(--card-2);
 }
 
@@ -98,8 +99,10 @@
 .footer-news-form button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1.1rem;
+  min-height: 44px;
   border: none;
   border-radius: 10px;
   background: var(--grad-marca);
@@ -375,8 +378,9 @@
   border-radius: 4px;
 }
 
-@media (pointer: coarse) {
-  .footer-col ul li a {
+@media (pointer: coarse), (max-width: 900px) {
+  .footer-col ul li a,
+  .footer-bottom-sub a {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
