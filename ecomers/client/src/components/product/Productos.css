@@ -87,6 +87,9 @@
   border: 1px solid var(--border);
   border-radius: var(--radio-sm);
   padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  padding: 0.65rem 0.9rem;
   color: var(--text);
   font-size: 0.9rem;
   transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
@@ -273,6 +276,9 @@
 @media (max-width: 1024px) {
   .filtros {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .filtros .buscador {
+    grid-column: 1 / -1;
   }
   .grid-productos {
     grid-template-columns: repeat(2, minmax(0, 1fr));

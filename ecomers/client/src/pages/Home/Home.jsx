@@ -214,7 +214,7 @@ function Home({ agregarAlCarrito }) {
               <input
                 className="buscador"
                 type="text"
-                placeholder="🔍 Buscar por nombre o marca..."
+                placeholder="Buscar por nombre o marca..."
                 value={filtroTexto}
                 onChange={(e) => setFiltroTexto(e.target.value)}
                 aria-label="Buscar productos"

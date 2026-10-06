@@ -355,7 +355,7 @@ function Productos({ agregarAlCarrito }) {
 
           type="text"
 
-          placeholder="🔍 Buscar producto..."
+          placeholder="Buscar producto..."
 
           aria-label="Buscar producto"
 
