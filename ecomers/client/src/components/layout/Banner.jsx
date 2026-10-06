@@ -16,7 +16,7 @@ const SLIDES = [
     to: "/productos?categoria=placas-de-video",
     ctaSec: "Ver outlet",
     toSec: "/productos?categoria=ofertas",
-    posicion: "right center",
+    posicion: "68% 50%",
     imagen:
       "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/placa%20de%20video.webp",
   },
@@ -32,7 +32,7 @@ const SLIDES = [
     to: "/productos",
     ctaSec: "Ver periféricos",
     toSec: "/productos?categoria=perifericos",
-    posicion: "right center",
+    posicion: "72% 38%",
     imagen:
       "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/escritorio.webp",
   },
@@ -48,7 +48,7 @@ const SLIDES = [
     to: "/productos?categoria=perifericos",
     ctaSec: "Explorar productos",
     toSec: "/productos",
-    posicion: "right center",
+    posicion: "70% 50%",
     imagen:
       "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/neon-rog.webp",
   },
@@ -116,7 +116,7 @@ export default function Banner() {
 
   return (
     <section
-      className="banner"
+      className={`banner${pausado ? " esta-pausado" : ""}`}
       aria-roledescription="carrusel"
       aria-label="Promociones destacadas"
       onMouseEnter={() => setPausado(true)}
@@ -125,6 +125,10 @@ export default function Banner() {
       onBlur={() => setPausado(false)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowLeft") anterior();
+        if (e.key === "ArrowRight") siguiente();
+      }}
     >
       <div
         className="banner-pista"
@@ -135,6 +139,7 @@ export default function Banner() {
           return (
             <article
               key={s.id}
+              data-slide={s.id}
               className={`banner-slide tema-${s.tema}${activo ? " es-activa" : ""}`}
               aria-hidden={!activo}
               aria-roledescription="diapositiva"
@@ -256,14 +261,13 @@ export default function Banner() {
           {String(indice + 1).padStart(2, "0")}
           <span className="banner-contador-total"> / {String(total).padStart(2, "0")}</span>
         </span>
-        <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
+        <div className="banner-puntos" role="group" aria-label="Elegir diapositiva">
           {slides.map((s, i) => (
             <button
               key={s.id}
               type="button"
-              role="tab"
-              aria-selected={i === indice}
-              aria-label={`Ir a la diapositiva ${i + 1}`}
+              aria-current={i === indice ? "true" : undefined}
+              aria-label={`Ir a la diapositiva ${i + 1} de ${total}`}
               className={i === indice ? "activo" : ""}
               onClick={() => irA(i)}
             >

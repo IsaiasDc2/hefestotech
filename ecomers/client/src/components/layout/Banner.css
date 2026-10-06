@@ -21,12 +21,13 @@
 .banner-pista {
   display: flex;
   transition: transform var(--dur-3) var(--ease);
+  will-change: transform;
 }
 
 .banner-slide {
   position: relative;
   flex: 0 0 100%;
-  min-height: min(480px, 92svh);
+  min-height: min(520px, 92svh);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -288,8 +289,8 @@
 
 .banner-texto > * {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translateY(var(--reveal-y));
+  transition: opacity var(--dur-3) var(--ease), transform var(--dur-3) var(--ease);
 }
 
 .banner-slide.es-activa .banner-texto > * {
@@ -297,11 +298,12 @@
   transform: none;
 }
 
-.banner-slide.es-activa .banner-texto > *:nth-child(1) { transition-delay: 0.15s; }
-.banner-slide.es-activa .banner-texto > *:nth-child(2) { transition-delay: 0.22s; }
-.banner-slide.es-activa .banner-texto > *:nth-child(3) { transition-delay: 0.3s; }
-.banner-slide.es-activa .banner-texto > *:nth-child(4) { transition-delay: 0.38s; }
-.banner-slide.es-activa .banner-texto > *:nth-child(5) { transition-delay: 0.46s; }
+/* Stagger kicker → título → desc → CTAs → confianza */
+.banner-slide.es-activa .banner-texto > *:nth-child(1) { transition-delay: var(--dur-1); }
+.banner-slide.es-activa .banner-texto > *:nth-child(2) { transition-delay: calc(var(--dur-1) + var(--stagger)); }
+.banner-slide.es-activa .banner-texto > *:nth-child(3) { transition-delay: calc(var(--dur-1) + var(--stagger) * 2); }
+.banner-slide.es-activa .banner-texto > *:nth-child(4) { transition-delay: calc(var(--dur-1) + var(--stagger) * 3); }
+.banner-slide.es-activa .banner-texto > *:nth-child(5) { transition-delay: calc(var(--dur-1) + var(--stagger) * 4); }
 
 .banner-foto {
   position: absolute;
@@ -321,6 +323,11 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* Dirección de arte desktop: sujeto a la derecha del texto */
+.banner-slide[data-slide="gpu"] .banner-foto img { object-position: 68% 50%; }
+.banner-slide[data-slide="setup"] .banner-foto img { object-position: 72% 38%; }
+.banner-slide[data-slide="peris"] .banner-foto img { object-position: 70% 50%; }
 
 .banner-kicker {
   display: inline-flex;
@@ -385,7 +392,7 @@
 }
 
 .banner-desc {
-  color: var(--muted);
+  color: #cbd5e1;
   font-size: clamp(0.95rem, 1vw + 0.7rem, 1.08rem);
   line-height: 1.6;
   max-width: 46ch;
@@ -406,6 +413,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 44px;
   padding: 1rem 2rem;
   border-radius: 10px;
   font-weight: 700;
@@ -417,13 +425,13 @@
   background: linear-gradient(135deg, #6366f1, #0ea5e9);
   border: 1px solid transparent;
   box-shadow: 0 4px 24px rgba(99, 102, 241, 0.4);
-  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+  transition: transform var(--dur-2) var(--ease), filter var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
 .banner-cta::after {
   content: "→";
   font-weight: 700;
-  transition: transform 0.18s ease;
+  transition: transform var(--dur-2) var(--ease);
 }
 
 .banner-cta:hover {
@@ -501,6 +509,12 @@
   gap: 0.5rem;
 }
 
+/* El lift hover solo existe donde hay hover real (tacto: sin falsos positivos) */
+@media (hover: none) {
+  .banner-cta:hover,
+  .banner-cta-sec:hover { transform: none; }
+}
+
 .banner-check {
   width: 1.05rem;
   height: 1.05rem;
@@ -534,7 +548,7 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
-  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: opacity var(--dur-2) var(--ease), background var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 
 .banner:hover .banner-flecha,
@@ -619,7 +633,7 @@
   height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.16);
-  transition: background 0.25s ease;
+  transition: background var(--dur-2) var(--ease);
 }
 
 .banner-puntos button:hover::before {
@@ -644,6 +658,13 @@ button.activo .banner-progreso {
   animation: banner-progreso-escala 6s linear forwards;
 }
 
+/* La pausa del autoplay (hover/foco/estado) también congela la barra */
+.banner:hover .banner-progreso,
+.banner:focus-within .banner-progreso,
+.banner.esta-pausado .banner-progreso {
+  animation-play-state: paused;
+}
+
 @keyframes banner-progreso-escala {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -652,10 +673,17 @@ button.activo .banner-progreso {
 .banner-puntos button:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ≥1280: foto contenida a la derecha, texto sin recorte */
+@media (min-width: 1280px) {
+  .banner-slide { min-height: min(560px, 92svh); }
+  .banner-foto { width: min(54%, 100%); }
 }
 
 @media (max-width: 1024px) {
-  .banner-slide { min-height: 440px; }
+  .banner-slide { min-height: min(480px, 88svh); }
   .banner-visual {
     right: 0;
     left: auto;
@@ -665,8 +693,16 @@ button.activo .banner-progreso {
     transform-origin: right center;
   }
   .banner-texto {
+    max-width: 42rem;
+    margin-left: 0;
     text-shadow: 0 2px 22px rgba(0, 0, 0, 0.9);
   }
+  /* RTX horizontal: se corre al centro-derecha para no chocar con el texto */
+  .banner-slide[data-slide="gpu"] .banner-foto img { object-position: 62% 50%; }
+  /* Setup 4:3: se baja el encuadre para conservar monitores sobre el velo inferior */
+  .banner-slide[data-slide="setup"] .banner-foto img { object-position: 55% 30%; }
+  /* Neón 16:9: se centra el glow para que el texto respire a la izquierda */
+  .banner-slide[data-slide="peris"] .banner-foto img { object-position: 60% 45%; }
   .banner-foto {
     width: 100%;
     opacity: 0.32;
@@ -680,17 +716,40 @@ button.activo .banner-progreso {
 }
 
 @media (max-width: 768px) {
-  .banner-slide { min-height: 420px; }
-  .banner-flecha { display: none; }
+  .banner-slide { min-height: min(520px, 90svh); align-items: flex-end; }
+  .banner-texto { padding-bottom: 5.5rem; }
+  /* Flechas: ocultas al tacto pero siempre enfocables con teclado */
+  .banner-flecha { opacity: 0; pointer-events: none; }
+  .banner:hover .banner-flecha,
+  .banner:focus-within .banner-flecha,
+  .banner-flecha:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
   .banner-visual { right: 0; opacity: 0.28; }
   .mouse { display: none; }
+  /* Sujeto arriba, texto abajo: el velo inferior sostiene el contraste */
+  .banner-slide[data-slide="gpu"] .banner-foto img { object-position: 50% 22%; }
+  .banner-slide[data-slide="setup"] .banner-foto img { object-position: 50% 18%; }
+  .banner-slide[data-slide="peris"] .banner-foto img { object-position: 50% 25%; }
+  .banner-foto {
+    inset: 0;
+    width: 100%;
+    opacity: 0.4;
+    mask-image: linear-gradient(180deg, black 30%, transparent 95%);
+    -webkit-mask-image: linear-gradient(180deg, black 30%, transparent 95%);
+  }
+  .banner-velo {
+    background:
+      linear-gradient(0deg, rgba(11, 14, 20, 0.94) 30%, rgba(11, 14, 20, 0.5) 62%, rgba(11, 14, 20, 0.18) 100%);
+  }
   .banner-confianza { display: none; }
 }
 
 @media (max-width: 480px) {
   .banner-slide {
-    min-height: 0;
-    align-items: flex-start;
+    min-height: min(640px, 94svh);
+    align-items: flex-end;
   }
 
   .banner-visual {
@@ -698,7 +757,7 @@ button.activo .banner-progreso {
   }
 
   .banner-texto {
-    padding: 2.5rem 1rem 4.4rem;
+    padding: 2.5rem 1rem 5.2rem;
     width: 100%;
     max-width: 100%;
   }
@@ -733,9 +792,19 @@ button.activo .banner-progreso {
   }
 
   .banner-foto {
-    right: 0;
+    inset: 0;
     width: 100%;
-    opacity: 0.22;
+    opacity: 0.34;
+  }
+
+  /* 360/390: recorte superior, sujeto nunca bajo el texto */
+  .banner-slide[data-slide="gpu"] .banner-foto img { object-position: 50% 15%; }
+  .banner-slide[data-slide="setup"] .banner-foto img { object-position: 50% 12%; }
+  .banner-slide[data-slide="peris"] .banner-foto img { object-position: 50% 18%; }
+
+  .banner-velo {
+    background:
+      linear-gradient(0deg, rgba(11, 14, 20, 0.96) 34%, rgba(11, 14, 20, 0.62) 62%, rgba(11, 14, 20, 0.22) 100%);
   }
 
   .banner-barra {
@@ -746,8 +815,13 @@ button.activo .banner-progreso {
 @media (prefers-reduced-motion: reduce) {
   .banner-pista { transition: none; }
   .banner-texto > * { opacity: 1; transform: none; transition: none; }
+  .banner-cta,
+  .banner-cta-sec,
+  .banner-flecha { transition: opacity var(--dur-1) var(--ease); }
   .banner-cta:hover,
   .banner-cta-sec:hover,
+  .banner-cta:active,
+  .banner-cta-sec:active,
   .banner-flecha:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
   button.activo .banner-progreso { animation: none; transform: scaleX(1); }
