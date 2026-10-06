@@ -40,7 +40,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
       return;
     }
     setPop(true);
-    const t = setTimeout(() => setPop(false), 450);
+    const t = setTimeout(() => setPop(false), 200);
     return () => clearTimeout(t);
   }, [cantidadCarrito]);
 
@@ -66,7 +66,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   };
 
   return (
-    <>
+    <header className="site-head-wrap">
       <div className="topbar">
         <div className="topbar-inner">
           <span className="topbar-envio">
@@ -83,7 +83,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         </div>
       </div>
 
-      <header className={`site-head${scrolled ? " is-scrolled" : ""}`}>
+      <div className={`site-head${scrolled ? " is-scrolled" : ""}`}>
         <div className="site-head-inner">
           <Link to="/" className="logo" aria-label="HefestoTech inicio">
             <span className="logo-badge" aria-hidden="true">
@@ -156,8 +156,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             </span>
           </div>
         </nav>
-      </header>
-    </>
+      </div>
+    </header>
   );
 }
 

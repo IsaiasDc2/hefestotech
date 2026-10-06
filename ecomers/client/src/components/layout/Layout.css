@@ -33,8 +33,13 @@
 }
 
 .layout > header,
-.layout > .site-head {
+.layout > .site-head,
+.layout > .site-head-wrap {
   grid-area: header;
+  min-width: 0;
+}
+
+.site-head-wrap {
   min-width: 0;
 }
 

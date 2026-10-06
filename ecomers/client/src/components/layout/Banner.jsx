@@ -194,9 +194,9 @@ export default function Banner() {
                   <span className="banner-kicker-sep" aria-hidden="true" />
                   {s.eyebrow}
                 </p>
-                <h2>
+                <h1 className="banner-titulo">
                   {s.titulo} <span className="banner-acento">{s.acento}</span>
-                </h2>
+                </h1>
                 <p className="banner-desc">{s.texto}</p>
                 <div className="banner-acciones">
                   <Link

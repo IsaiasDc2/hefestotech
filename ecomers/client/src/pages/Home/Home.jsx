@@ -56,7 +56,8 @@ function Home({ agregarAlCarrito }) {
   const desplazarPills = (dir) => {
     const el = pillsRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * 220, behavior: suave ? "smooth" : "auto" });
   };
 
   const normalizar = (data) =>
