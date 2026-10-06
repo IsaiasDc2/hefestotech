@@ -27,6 +27,12 @@ function Productos({ agregarAlCarrito }) {
 
   const [precioMax, setPrecioMax] = useState("");
 
+  const [busquedaDif, setBusquedaDif] = useState(busqueda);
+
+  const [precioMinDif, setPrecioMinDif] = useState(precioMin);
+
+  const [precioMaxDif, setPrecioMaxDif] = useState(precioMax);
+
   const [orden, setOrden] = useState(() => {
     const o = params.get("orden");
     return o === "mayor" || o === "menor" ? o : "";
@@ -43,6 +49,22 @@ function Productos({ agregarAlCarrito }) {
     const o = params.get("orden");
     setOrden(o === "mayor" || o === "menor" ? o : "");
   }, [params]);
+
+
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDif(busqueda), 250);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMinDif(precioMin), 250);
+    return () => clearTimeout(t);
+  }, [precioMin]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMaxDif(precioMax), 250);
+    return () => clearTimeout(t);
+  }, [precioMax]);
 
 
 
@@ -186,7 +208,7 @@ function Productos({ agregarAlCarrito }) {
 
 
       const texto =
-      busqueda
+      busquedaDif
       .toLowerCase();
 
 
@@ -214,22 +236,22 @@ function Productos({ agregarAlCarrito }) {
 
 
       const coincideMin =
-      precioMin===""
+      precioMinDif===""
 
       ||
 
-      producto.precio >= Number(precioMin);
+      producto.precio >= Number(precioMinDif);
 
 
 
 
 
       const coincideMax =
-      precioMax===""
+      precioMaxDif===""
 
       ||
 
-      producto.precio <= Number(precioMax);
+      producto.precio <= Number(precioMaxDif);
 
 
 
@@ -278,11 +300,11 @@ function Productos({ agregarAlCarrito }) {
 
   },[
     productos,
-    busqueda,
+    busquedaDif,
     categoria,
     soloOfertas,
-    precioMin,
-    precioMax,
+    precioMinDif,
+    precioMaxDif,
     orden
   ]);
 
@@ -335,6 +357,8 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="🔍 Buscar producto..."
 
+          aria-label="Buscar producto"
+
           value={busqueda}
 
           onChange={
@@ -350,6 +374,8 @@ function Productos({ agregarAlCarrito }) {
         <select
 
           value={categoria}
+
+          aria-label="Filtrar por categoría"
 
           onChange={
             e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
@@ -392,6 +418,12 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="Precio mínimo"
 
+          aria-label="Precio mínimo"
+
+          min="0"
+
+          inputMode="numeric"
+
           value={precioMin}
 
           onChange={
@@ -410,6 +442,12 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="Precio máximo"
 
+          aria-label="Precio máximo"
+
+          min="0"
+
+          inputMode="numeric"
+
           value={precioMax}
 
           onChange={
@@ -427,6 +465,8 @@ function Productos({ agregarAlCarrito }) {
         <select
 
           value={orden}
+
+          aria-label="Ordenar por precio"
 
           onChange={
             e=>setOrden(e.target.value)

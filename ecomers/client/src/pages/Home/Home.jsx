@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -44,6 +44,7 @@ function Home({ agregarAlCarrito }) {
   const [error, setError] = useState(false);
   const [reintento, setReintento] = useState(0);
   const [filtroTexto, setFiltroTexto] = useState("");
+  const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const pillsRef = useRef(null);
 
@@ -98,7 +99,7 @@ function Home({ agregarAlCarrito }) {
     .slice(0, 10);
 
   const filtrados = productos.filter((p) => {
-    const texto = filtroTexto.trim().toLowerCase();
+    const texto = filtroTextoDif.trim().toLowerCase();
     const coincideTexto =
       !texto ||
       p.nombre.toLowerCase().includes(texto) ||

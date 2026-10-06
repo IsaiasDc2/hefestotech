@@ -151,7 +151,13 @@
 }
 
 .btn-limpiar:active {
-  transform: scale(0.97);
+  transform: scale(.98);
+}
+
+.btn-limpiar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-limpiar:focus-visible {
@@ -304,7 +310,8 @@
     animation: none;
   }
   .btn-limpiar:hover,
-  .btn-limpiar:active {
+  .btn-limpiar:active,
+  .btn-limpiar:disabled {
     transform: none;
   }
 }

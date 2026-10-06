@@ -13,6 +13,7 @@
 | `.env.local` versionado con publishable key | Medio | secreto en git | ✅ `ff393a5` (untrack, archivo conservado) |
 | `frontend/general`: merge directo imposible (node_modules versionado + renames) | Bajo | historia con ruido | ✅ resuelto: solo `.nojekyll` + ignores |
 | `frontend/navbar-cuenta`: sin commits sobre main | — | ya integrada o vacía | ✅ nada que traer |
+| Typo URL Supabase (`ewqwmzwtrsjlrnrotcm`, una sola r) → productos no cargan | Crítica | URL mal copiada en env; además `throw` a import-time en `supabaseClient.js` rompía TODA la app | ✅ corregido local (`.env.local` doble-r `ewqwmzwtrsjlrrnrotcm` verificado con `curl.exe`; `supabaseClient.js` diferido + `console.error`; `.env.example` actualizado) |
 
 Servicios `product_service.py`, `category_service.py`, schema `category.py`: limpios.
 Gates: `py_compile` ✅, `eslint` ✅, `vite build` ✅.

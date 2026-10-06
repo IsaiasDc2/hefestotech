@@ -88,12 +88,12 @@ function Login({ onIrRegistro }) {
           <span>o</span>
         </div>
 
-        <button type="button" className="btn-fantasma" title="Disponible próximamente">
+        <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">
           <FaGoogle aria-hidden="true" />
           Continuar con Google
         </button>
 
-        <button type="button" className="btn-fantasma" title="Disponible próximamente">
+        <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">
           <FaGithub aria-hidden="true" />
           Continuar con GitHub
         </button>

@@ -106,7 +106,7 @@
   min-width: 0;
   max-width: 100%;
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
-  transition: filter 0.2s ease, transform 0.2s ease;
+  transition: filter var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 
 .footer-news-form button:hover {
@@ -160,12 +160,25 @@
   line-height: 1.3;
 }
 
+.footer-logo {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+}
+
+.footer-logo span {
+  background: var(--grad-marca);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .footer-col h4 {
   color: var(--text);
   font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-humo);
   margin: 0 0 1rem;
   padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--border-suave);
@@ -197,7 +210,7 @@
   font-size: 0.88rem;
   line-height: 1.5;
   padding: 0.15rem 0;
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition: color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 
 .footer-col ul li a:hover {
@@ -247,7 +260,7 @@
   border: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.95rem;
-  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--dur-2) var(--ease), color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
 }
 
 .footer-brand .redes a:hover {
@@ -295,7 +308,7 @@
 }
 
 .pagos svg {
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition: color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 
 .pagos svg:hover {
@@ -345,7 +358,7 @@
 .footer-bottom-sub a {
   color: var(--muted);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color var(--dur-1) var(--ease);
 }
 
 .footer-bottom-sub a:hover {
@@ -356,6 +369,14 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+@media (pointer: coarse) {
+  .footer-col ul li a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

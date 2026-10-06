@@ -204,7 +204,7 @@
 }
 
 .card-rating .rating-count {
-  color: var(--muted-oscuro);
+  color: var(--muted);
 }
 
 .producto-detalle h3 {
@@ -383,6 +383,14 @@
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.85;
+}
+
+.card-producto button {
+  min-height: 44px;
+}
+
+.card-rating-vacio .rating-count {
+  color: var(--muted);
 }
 
 

@@ -74,8 +74,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             Envíos a todo el país
           </span>
           <span className="topbar-links">
-            <Link to="/acerca">Ayuda</Link>
-            <Link to="/contactanos">Posventa</Link>
             <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
               WhatsApp
             </a>

@@ -81,8 +81,8 @@ function Footer() {
 
         <div className="footer-col footer-brand">
 
-          <h3>
-            Tienda de Hardware
+          <h3 className="footer-logo">
+            Hefesto<span>Tech</span>
           </h3>
 
 
@@ -195,6 +195,18 @@ function Footer() {
           <ul>
 
             <li>
+              <Link to="/acerca">
+                Ayuda
+              </Link>
+            </li>
+
+            <li>
+              <Link to="/contactanos">
+                Posventa
+              </Link>
+            </li>
+
+            <li>
               <Link to="/contactanos">
                 Envíos
               </Link>
@@ -237,7 +249,7 @@ function Footer() {
 
             <li>
 
-              <FaLocationDot />
+              <FaLocationDot aria-hidden="true" />
 
               Salta Capital, Argentina
 
@@ -247,7 +259,7 @@ function Footer() {
 
             <li>
 
-              <FaPhone />
+              <FaPhone aria-hidden="true" />
 
               +54 11 1234-5678
 
@@ -258,7 +270,7 @@ function Footer() {
 
             <li>
 
-              <FaEnvelope />
+              <FaEnvelope aria-hidden="true" />
 
               contacto@hefestotech.com
 
