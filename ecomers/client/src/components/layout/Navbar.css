@@ -233,6 +233,7 @@
   gap: 0.55rem;
   flex: 0 1 auto;
   min-width: 0;
+  min-height: 44px;
   font-size: 1.3rem;
   font-weight: 800;
   color: var(--text);
@@ -338,6 +339,7 @@
   justify-content: center;
   gap: 0.45rem;
   min-width: 52px;
+  min-height: 44px;
   padding: 0 1rem;
   flex-shrink: 0;
   border: none;
@@ -373,8 +375,9 @@
 .link-cuenta {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  min-width: 0;
+  min-width: 44px;
   min-height: 44px;
   color: var(--muted);
   text-decoration: none;
@@ -506,6 +509,9 @@
   position: relative;
   flex-shrink: 0;
   scroll-snap-align: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--muted);
   text-decoration: none;
   font-size: 0.88rem;
@@ -567,6 +573,9 @@
 }
 
 .nav-ayuda a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--muted);
   text-decoration: none;
   font-size: 0.85rem;
