@@ -58,26 +58,99 @@
 
 
 .filtro-home .filtros {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
   gap: 0.7rem;
   align-items: center;
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--card-2), var(--surface));
   border: 1px solid var(--border);
-  border-radius: var(--radio);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-suave);
   padding: 1rem;
   margin-bottom: 1.4rem;
   min-width: 0;
   overflow: hidden;
+  animation: ht-entrada var(--dur-3) var(--ease) both;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.filtro-home .filtros::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 1px;
+  background: var(--grad-marca);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.filtro-home .filtros:focus-within {
+  border-color: var(--primary-borde);
+  box-shadow: var(--sombra-marca);
 }
 
 .filtro-home .filtros > * {
   min-width: 0;
   max-width: 100%;
+  animation: ht-entrada var(--dur-2) var(--ease) both;
 }
+
+.filtro-home .filtros > *:nth-child(2) { animation-delay: var(--stagger); }
+.filtro-home .filtros > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
 
 .filtro-home .buscador {
   min-width: 0;
+  min-height: 44px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-sm);
+  padding: 0.65rem 0.9rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.filtro-home .buscador:hover {
+  border-color: var(--primary-borde);
+}
+
+.filtro-home .buscador:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--anillo-foco);
+}
+
+.filtro-home .filtros select {
+  min-height: 44px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.2rem;
+  cursor: pointer;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radio-sm);
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  padding-left: 0.9rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.filtro-home .filtros select:hover {
+  border-color: var(--primary-borde);
+}
+
+.filtro-home .filtros select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--anillo-foco);
 }
 
 .filtro-home .conteo {
@@ -87,6 +160,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--bg);
+  font-variant-numeric: tabular-nums;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -113,6 +187,8 @@
   padding: 0.25rem 0.1rem;
   flex: 1;
   min-width: 0;
+  -webkit-mask-image: linear-gradient(90deg, black calc(100% - 2.5rem), transparent 100%);
+  mask-image: linear-gradient(90deg, black calc(100% - 2.5rem), transparent 100%);
 }
 
 .pills-categorias::-webkit-scrollbar {
@@ -150,6 +226,13 @@
   border-color: transparent;
   color: #fff;
   box-shadow: 0 2px 12px var(--primary-sombra);
+  animation: pill-pop var(--dur-2) var(--ease);
+}
+
+@keyframes pill-pop {
+  0% { transform: scale(0.92); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
 
 .pill:focus-visible,
@@ -191,13 +274,24 @@
   color: var(--muted);
   font-weight: 600;
   padding: 0.65rem 1rem;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
 }
 
 .btn-limpiar:hover {
   border-color: var(--primary);
   color: var(--primary);
+  background: var(--primary-suave);
   transform: translateY(-1px);
+}
+
+.btn-limpiar:active {
+  transform: scale(0.97);
 }
 
 .btn-limpiar:focus-visible,
@@ -514,7 +608,18 @@
 @media (prefers-reduced-motion: reduce) {
   .estado-carga::after { animation: none; }
   .seccion,
-  .grid-destacados > * { animation: none; }
+  .grid-destacados > *,
+  .filtro-home .filtros,
+  .filtro-home .filtros > * {
+    animation: none;
+  }
+  .pill.activa {
+    animation: none;
+  }
+  .btn-limpiar:hover,
+  .btn-limpiar:active {
+    transform: none;
+  }
   .card-categoria:hover,
   .marca-chip:hover,
   .beneficio:hover,
