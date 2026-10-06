@@ -1,4 +1,4 @@
-const { chromium } = require("playwright");
+const { chromium } = require("C:/Users/isaia/OneDrive/Desktop/hefestotech/ecomers/client/node_modules/playwright");
 
 (async () => {
   const browser = await chromium.launch();

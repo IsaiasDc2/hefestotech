@@ -50,9 +50,13 @@
   flex-wrap: wrap;
 }
 
+.footer-news-texto h2.footer-news-titulo,
 .footer-news-texto h3 {
   color: var(--text);
   font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
   margin: 0 0 0.3rem;
   overflow-wrap: anywhere;
 }

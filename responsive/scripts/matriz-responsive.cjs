@@ -1,5 +1,5 @@
-const { chromium } = require("playwright");
-const { AxeBuilder } = require("@axe-core/playwright");
+const { chromium } = require("C:/Users/isaia/OneDrive/Desktop/hefestotech/ecomers/client/node_modules/playwright");
+const { AxeBuilder } = require("C:/Users/isaia/OneDrive/Desktop/hefestotech/ecomers/client/node_modules/@axe-core/playwright");
 const fs = require("fs");
 const path = require("path");
 

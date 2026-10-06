@@ -15,7 +15,10 @@
   left: 1rem;
   top: -100px;
   z-index: 1000;
-  padding: 0.6rem 1rem;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   border-radius: 10px;
   background: var(--grad-marca);
   color: #fff;

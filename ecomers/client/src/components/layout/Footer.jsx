@@ -43,9 +43,9 @@ function Footer() {
       <div className="footer-news">
         <div className="footer-news-inner">
           <div className="footer-news-texto">
-            <h3>
+            <h2 className="footer-news-titulo">
               {t(idioma, "ft.newsTitulo")}
-            </h3>
+            </h2>
             <p>
               {t(idioma, "ft.newsTexto")}
             </p>
