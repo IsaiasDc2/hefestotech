@@ -9,6 +9,8 @@
 .opencode/skills/slides/
 .opencode/skills/ui-styling/
 .opencode/skills/ui-ux-pro-max/
+# skills de agentes locales (no versionar)
+ecomers/client/.agents/
 node_modules/
 **/node_modules/
 dist/
