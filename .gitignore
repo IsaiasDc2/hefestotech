@@ -1,14 +1,8 @@
 *.env
 .env.local
 **/.env.local
-# skills locales ui-ux-pro-max (no versionar)
-.opencode/skills/banner-design/
-.opencode/skills/brand/
-.opencode/skills/design/
-.opencode/skills/design-system/
-.opencode/skills/slides/
-.opencode/skills/ui-styling/
-.opencode/skills/ui-ux-pro-max/
+# tooling local (no versionar)
+.opencode/
 # skills de agentes locales (no versionar)
 ecomers/client/.agents/
 node_modules/
