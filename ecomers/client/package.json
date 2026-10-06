@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist --nojekyll"
+    "deploy": "gh-pages -d dist --nojekyll",
+    "test": "node --test \"src/utils/__tests__/**/*.test.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
