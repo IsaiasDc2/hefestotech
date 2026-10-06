@@ -37,19 +37,19 @@
   background:
     radial-gradient(ellipse 55% 90% at 78% 50%, rgba(99, 102, 241, 0.22), transparent 65%),
     radial-gradient(ellipse 70% 60% at 15% 100%, rgba(14, 165, 233, 0.1), transparent 60%),
-    linear-gradient(100deg, #0b0e14 30%, #101527 70%, #0b0e14);
+    linear-gradient(100deg, var(--bg) 30%, #101527 70%, var(--bg));
 }
 .tema-celeste {
   background:
     radial-gradient(ellipse 50% 85% at 78% 30%, rgba(14, 165, 233, 0.22), transparent 65%),
     radial-gradient(ellipse 60% 55% at 10% 100%, rgba(99, 102, 241, 0.12), transparent 60%),
-    linear-gradient(100deg, #0b0e14 30%, #0e1626 70%, #0b0e14);
+    linear-gradient(100deg, var(--bg) 30%, #0e1626 70%, var(--bg));
 }
 .tema-laton {
   background:
     radial-gradient(ellipse 55% 90% at 78% 50%, rgba(201, 168, 106, 0.16), transparent 65%),
     radial-gradient(ellipse 65% 60% at 12% 0%, rgba(99, 102, 241, 0.14), transparent 60%),
-    linear-gradient(100deg, #0b0e14 30%, #141a29 70%, #0b0e14);
+    linear-gradient(100deg, var(--bg) 30%, #141a29 70%, var(--bg));
 }
 
 .banner-velo {
@@ -331,7 +331,7 @@
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.6;
-  letter-spacing: 0.22em;
+  letter-spacing: var(--tracking-humo);
   text-transform: uppercase;
   padding: 0.55rem 1rem 0.55rem 0.7rem;
   border-radius: 999px;
@@ -353,7 +353,7 @@
   min-width: 2rem;
   padding: 0.3rem 0.45rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  background: var(--grad-marca);
   color: #fff;
   letter-spacing: 0.08em;
   text-shadow: none;
@@ -450,24 +450,34 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 1.7rem;
-  border-radius: 10px;
-  font-weight: 600;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.6rem 0.2rem;
+  font-weight: 700;
   font-size: 0.92rem;
   line-height: 1;
-  text-decoration: none;
+  text-decoration: underline;
+  text-decoration-color: var(--primary-borde);
+  text-underline-offset: 4px;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  background: transparent;
+  border: none;
+  transition: color var(--dur-2) var(--ease), text-decoration-color var(--dur-2) var(--ease);
+}
+
+.banner-cta-sec::after {
+  content: "→";
+  font-weight: 700;
+  transition: transform var(--dur-2) var(--ease);
 }
 
 .banner-cta-sec:hover {
-  border-color: var(--primary-borde);
-  background: var(--primary-suave);
-  transform: translateY(-2px);
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+
+.banner-cta-sec:hover::after {
+  transform: translateX(3px);
 }
 
 .banner-cta-sec:active {
@@ -635,11 +645,6 @@ button.activo .banner-progreso {
 }
 
 @keyframes banner-progreso-escala {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@keyframes banner-progreso {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }

@@ -139,6 +139,10 @@ Fría y contenida: el índigo manda en la acción, el latón solo aparece donde 
 **The Two-Ammo Rule.** Solo el índigo actúa y solo el latón celebra. Ningún otro tono reclama una región o un rol.
 **The Night-Only Rule.** No existe tema claro. Diseñar en oscuro siempre; derivar el texto secundario del fondo, jamás grises genéricos lavados.
 
+### Divergencias documentadas (accesibilidad primero)
+- `--grad-marca` es índigo→índigo-profundo (`#6366F1→#4338CA`), no índigo→celeste: el blanco sobre índigo→celeste no llega a 4.5:1 en texto chico de CTA.
+- `input::placeholder` usa Niebla (`#94A3B8`) en vez de Niebla Profunda: el placeholder chico en `#7A8AA3` no llega a 4.5:1.
+
 ## Typography
 
 **Display Font:** Oswald (con Arial Narrow, Impact de respaldo)
