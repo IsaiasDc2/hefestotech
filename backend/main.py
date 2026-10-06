@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 from pydantic import BaseModel
 import pandas as pd
 import urllib.parse
@@ -17,19 +18,31 @@ app = FastAPI(title="Hefesto Tech API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://isaiasdc2.github.io",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- 1. CONFIGURACIÓN DE IA (Nueva Librería Oficial google-genai) ---
-api_key_segura = os.getenv("GEMINI_API_KEY")
-cliente_ia = genai.Client(api_key=api_key_segura)
+# NOTA: init diferido para que la API levante sin .env (los endpoints
+# que usan IA/MP devuelven 503 con mensaje claro si falta la key).
+def _cliente_ia():
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
 
-# --- 2. CONFIGURACIÓN DE MERCADO PAGO ---
-mp_access_token = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
-sdk = mercadopago.SDK(mp_access_token)
+
+def _sdk_mp():
+    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
+    if not token:
+        return None
+    return mercadopago.SDK(token)
 
 @app.get("/")
 def estado_api():
@@ -37,8 +50,9 @@ def estado_api():
 
 @app.get("/api/productos")
 def obtener_productos():
+    csv_path = Path(__file__).resolve().parent / "datos" / "Inventario_Stock_Ecommerce.csv"
     try:
-        df = pd.read_csv("datos/Inventario_Stock_Ecommerce.csv")
+        df = pd.read_csv(csv_path)
     except FileNotFoundError:
         return {"error": "Archivo CSV no encontrado."}
 
@@ -57,6 +71,9 @@ class MensajeUsuario(BaseModel):
 
 @app.post("/api/chat")
 async def asistente_ia(mensaje: MensajeUsuario):
+    cliente_ia = _cliente_ia()
+    if cliente_ia is None:
+        return {"respuesta": "Mis circuitos están en mantenimiento. Intenta de nuevo más tarde."}
     try:
         instrucciones = """Eres Hefesto, el técnico experto de Hefesto Tech. REGLA DE ORO: Tus respuestas deben ser EXTREMADAMENTE CORTAS, DIRECTAS Y AL GRANO. Cero rodeos, cero falsa empatía y sin saludos largos. El cliente quiere soluciones rápidas.
 
@@ -90,6 +107,9 @@ class OrdenCompra(BaseModel):
 
 @app.post("/api/crear-preferencia")
 def generar_link_pago(orden: OrdenCompra):
+    sdk = _sdk_mp()
+    if sdk is None:
+        raise HTTPException(status_code=503, detail="Pagos no configurados (falta MERCADOPAGO_ACCESS_TOKEN).")
     try:
         preference_data = {
             "items": [

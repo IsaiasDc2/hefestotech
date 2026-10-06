@@ -20,7 +20,8 @@ function Asistente() {
 
     try {
       // Hacemos la petición a tu servidor FastAPI
-      const respuesta = await fetch("http://127.0.0.1:8000/api/chat", {
+      const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+      const respuesta = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: mensaje }),
