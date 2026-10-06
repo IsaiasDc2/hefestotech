@@ -211,7 +211,10 @@
 
 .footer-col ul li a {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
   color: var(--muted);
   text-decoration: none;
   font-size: 0.88rem;
@@ -379,7 +382,6 @@
 }
 
 @media (pointer: coarse), (max-width: 900px) {
-  .footer-col ul li a,
   .footer-bottom-sub a {
     min-height: 44px;
     display: inline-flex;
