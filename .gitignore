@@ -36,3 +36,7 @@ Thumbs.db
 
 # Skills locales de agentes (no versionar)
 .agents/
+
+# tooling local (no versionar)
+.opencode/
+.impeccable/
