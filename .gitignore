@@ -1,29 +1,15 @@
-# Dependencias
+*.env
 node_modules/
+.venv
 venv/
-.venv/
-__pycache__/
-*.py[cod]
-
-# Builds
-dist/
-build/
-
-# Variables de entorno (los .env.example si se versionan)
-.env
-.env.local
-.env.*.local
-
-# Logs
 *.log
 npm-debug.log*
-yarn-error.log*
-
-# Sistema / editores
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Skills locales de agentes (no versionar)
-.agents/
+.mypy_cache/
+__pycache__/
+secrets.json
+config.json
+*.sqlite
+*.sqlite3
+*.db
+.env
+node_modules
