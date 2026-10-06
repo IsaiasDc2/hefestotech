@@ -55,6 +55,105 @@
   transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
 }
 
+.topbar-idioma {
+  position: relative;
+  display: inline-flex;
+}
+
+.topbar-idioma-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+
+.topbar-idioma-btn:hover {
+  border-color: var(--primary-borde);
+}
+
+.topbar-idioma-btn:active {
+  transform: scale(0.96);
+}
+
+.topbar-idioma-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+.topbar-idioma-btn svg:last-child {
+  font-size: 0.7rem;
+  color: var(--muted);
+  transition: transform var(--dur-2) var(--ease);
+}
+
+.topbar-idioma-btn svg:last-child.gira {
+  transform: rotate(180deg);
+}
+
+.topbar-idioma-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 200;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  min-width: 160px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--sombra-media);
+  animation: ht-entrada var(--dur-2) var(--ease) both;
+}
+
+.topbar-idioma-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar-idioma-menu button:hover {
+  background: var(--primary-suave);
+}
+
+.topbar-idioma-menu button svg {
+  color: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-idioma-btn,
+  .topbar-idioma-menu {
+    transition: none;
+    animation: none;
+  }
+
+  .topbar-idioma-btn:active {
+    transform: none;
+  }
+}
+
 .topbar-links a + a {
   border-left: 1px solid var(--border-suave);
   border-radius: 0 999px 999px 0;

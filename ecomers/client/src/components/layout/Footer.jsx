@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 
 import {
   FaLocationDot,
@@ -25,6 +26,7 @@ import "./Footer.css";
 function Footer() {
   const [email, setEmail] = useState("");
   const [suscrito, setSuscrito] = useState(false);
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   const suscribir = (e) => {
     e.preventDefault();
@@ -42,22 +44,21 @@ function Footer() {
         <div className="footer-news-inner">
           <div className="footer-news-texto">
             <h3>
-              Recibí ofertas y novedades
+              {t(idioma, "ft.newsTitulo")}
             </h3>
             <p>
-              Componentes, periféricos y PCs armadas con garantía oficial.
-              Equipá tu setup con productos de calidad.
+              {t(idioma, "ft.newsTexto")}
             </p>
           </div>
           {suscrito ? (
             <p className="footer-news-ok" role="status">
               <FaCircleCheck aria-hidden="true" />
-              ¡Listo! Revisá tu correo para confirmar la suscripción.
+              {t(idioma, "ft.newsOk")}
             </p>
           ) : (
             <form className="footer-news-form" onSubmit={suscribir}>
               <label className="sr-only" htmlFor="newsletter-email">
-                Correo electrónico
+                {t(idioma, "ft.newsEmail")}
               </label>
               <input
                 id="newsletter-email"
@@ -69,7 +70,7 @@ function Footer() {
               />
               <button type="submit">
                 <FaPaperPlane aria-hidden="true" />
-                Suscribirme
+                {t(idioma, "ft.suscribir")}
               </button>
             </form>
           )}
@@ -87,18 +88,17 @@ function Footer() {
 
 
           <p>
-            Componentes, periféricos y PCs armadas con garantía oficial.
-            Equipá tu setup con productos de calidad.
+            {t(idioma, "ft.marcaTexto")}
           </p>
 
           <ul className="footer-confianza">
             <li>
               <FaShieldHalved aria-hidden="true" />
-              Garantía oficial
+              {t(idioma, "ft.garantia")}
             </li>
             <li>
               <FaTruckFast aria-hidden="true" />
-              Envíos a todo el país
+              {t(idioma, "ft.envioPais")}
             </li>
           </ul>
 
@@ -143,36 +143,37 @@ function Footer() {
         <div className="footer-col">
 
           <h4>
-            Navegación
+            {t(idioma, "ft.nav")}
           </h4>
 
 
           <ul>
 
+
             <li>
               <Link to="/">
-                Inicio
+                {t(idioma, "ft.inicio")}
               </Link>
             </li>
 
 
             <li>
               <Link to="/productos">
-                Productos
+                {t(idioma, "ft.productos")}
               </Link>
             </li>
 
 
             <li>
               <Link to="/cuenta">
-                Mi cuenta
+                {t(idioma, "ft.cuenta")}
               </Link>
             </li>
 
 
             <li>
               <Link to="/contactanos">
-                Armá tu PC
+                {t(idioma, "ft.arma")}
               </Link>
             </li>
 
@@ -188,7 +189,7 @@ function Footer() {
         <div className="footer-col">
 
           <h4>
-            Ayuda
+            {t(idioma, "ft.ayuda")}
           </h4>
 
 
@@ -196,33 +197,33 @@ function Footer() {
 
             <li>
               <Link to="/acerca">
-                Ayuda
+                {t(idioma, "ft.ayudaLink")}
               </Link>
             </li>
 
             <li>
               <Link to="/contactanos">
-                Posventa
+                {t(idioma, "ft.posventa")}
               </Link>
             </li>
 
             <li>
               <Link to="/contactanos">
-                Envíos
+                {t(idioma, "ft.envios")}
               </Link>
             </li>
 
 
             <li>
               <Link to="/contactanos">
-                Cambios y devoluciones
+                {t(idioma, "ft.cambios")}
               </Link>
             </li>
 
 
             <li>
               <Link to="/acerca">
-                Preguntas frecuentes
+                {t(idioma, "ft.faq")}
               </Link>
             </li>
 
@@ -239,7 +240,7 @@ function Footer() {
 
 
           <h4>
-            Contacto
+            {t(idioma, "ft.contacto")}
           </h4>
 
 
@@ -281,7 +282,7 @@ function Footer() {
 
 
 
-          <div className="pagos" aria-label="Métodos de pago">
+          <div className="pagos" aria-label={t(idioma, "ft.pagos")}>
 
             <FaCcVisa aria-label="Visa" />
 
@@ -306,14 +307,14 @@ function Footer() {
       <div className="footer-bottom">
 
         <p>
-          © {new Date().getFullYear()} Tienda de Hardware • Todos los derechos reservados
+          © {new Date().getFullYear()} Tienda de Hardware • {t(idioma, "ft.derechos")}
         </p>
         <p className="footer-bottom-sub">
-          <Link to="/acerca">Nosotros</Link>
+          <Link to="/acerca">{t(idioma, "ft.nosotros")}</Link>
           <span aria-hidden="true">•</span>
-          <Link to="/contactanos">Contactanos</Link>
+          <Link to="/contactanos">{t(idioma, "ft.contactanos")}</Link>
           <span aria-hidden="true">•</span>
-          <span>Hecho en Argentina</span>
+          <span>{t(idioma, "ft.hechoEn")}</span>
         </p>
 
       </div>

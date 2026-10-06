@@ -7,22 +7,35 @@ import {
   FaUser,
   FaUserPlus,
   FaTruckFast,
+  FaGlobe,
+  FaChevronDown,
+  FaCheck,
 } from "react-icons/fa6";
 import { linkOfertas } from "../../constants/categorias";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Navbar.css";
 
 const FILA_CATEGORIAS = [
-  { label: "Productos", to: "/productos", clave: "productos" },
-  { label: "Notebooks", to: "/productos?q=notebook", clave: "notebook" },
-  { label: "PCs Armadas", to: "/productos?q=pc%20armada", clave: "pc armada" },
-  { label: "Armá tu PC", to: "/productos?q=combo", clave: "combo" },
-  { label: "Outlet", to: linkOfertas, clave: "outlet" },
+  { labelKey: "cat.productos", to: "/productos", clave: "productos" },
+  { labelKey: "cat.notebooks", to: "/productos?q=notebook", clave: "notebook" },
+  { labelKey: "cat.pcs", to: "/productos?q=pc%20armada", clave: "pc armada" },
+  { labelKey: "cat.arma", to: "/productos?q=combo", clave: "combo" },
+  { labelKey: "cat.outlet", to: linkOfertas, clave: "outlet" },
+];
+
+const IDIOMAS = [
+  { codigo: "es", etiqueta: "Español" },
+  { codigo: "en", etiqueta: "English" },
 ];
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [pop, setPop] = useState(false);
+  const [idiomaAbierto, setIdiomaAbierto] = useState(false);
+  const idiomaRef = useRef(null);
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const setIdioma = useIdiomaStore((s) => s.setIdioma);
   const primeraVez = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,6 +46,24 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!idiomaAbierto) return;
+    const alClick = (e) => {
+      if (idiomaRef.current && !idiomaRef.current.contains(e.target)) {
+        setIdiomaAbierto(false);
+      }
+    };
+    const alTeclado = (e) => {
+      if (e.key === "Escape") setIdiomaAbierto(false);
+    };
+    document.addEventListener("mousedown", alClick);
+    document.addEventListener("keydown", alTeclado);
+    return () => {
+      document.removeEventListener("mousedown", alClick);
+      document.removeEventListener("keydown", alTeclado);
+    };
+  }, [idiomaAbierto]);
 
   useEffect(() => {
     if (primeraVez.current) {
@@ -71,9 +102,41 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         <div className="topbar-inner">
           <span className="topbar-envio">
             <FaTruckFast aria-hidden="true" />
-            Envíos a todo el país
+            {t(idioma, "topbar.envio")}
           </span>
           <span className="topbar-links">
+            <span className="topbar-idioma" ref={idiomaRef}>
+              <button
+                type="button"
+                className="topbar-idioma-btn"
+                onClick={() => setIdiomaAbierto((v) => !v)}
+                aria-expanded={idiomaAbierto}
+                aria-haspopup="listbox"
+                aria-label={t(idioma, "topbar.idioma")}
+              >
+                <FaGlobe aria-hidden="true" />
+                <span>{idioma.toUpperCase()}</span>
+                <FaChevronDown aria-hidden="true" className={idiomaAbierto ? "gira" : ""} />
+              </button>
+              {idiomaAbierto && (
+                <ul className="topbar-idioma-menu" role="listbox" aria-label={t(idioma, "topbar.idioma")}>
+                  {IDIOMAS.map((op) => (
+                    <li key={op.codigo} role="option" aria-selected={idioma === op.codigo}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIdioma(op.codigo);
+                          setIdiomaAbierto(false);
+                        }}
+                      >
+                        {idioma === op.codigo && <FaCheck aria-hidden="true" />}
+                        {op.etiqueta}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </span>
             <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
               WhatsApp
             </a>
@@ -96,30 +159,30 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             <FaMagnifyingGlass className="buscador-icono" aria-hidden="true" />
             <input
               type="text"
-              placeholder="Buscá tu placa, notebook o periférico…"
+              placeholder={t(idioma, "nav.buscarPh")}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
-              aria-label="Buscar productos"
+              aria-label={t(idioma, "nav.buscarAria")}
             />
-            <button type="submit" aria-label="Buscar">
+            <button type="submit" aria-label={t(idioma, "nav.buscar")}>
               <FaMagnifyingGlass aria-hidden="true" />
-              <span className="buscador-texto">Buscar</span>
+              <span className="buscador-texto">{t(idioma, "nav.buscar")}</span>
             </button>
           </form>
 
-          <nav className="nav-cuenta" aria-label="Cuenta y carrito">
+          <nav className="nav-cuenta" aria-label={`${t(idioma, "nav.sesion")} / ${t(idioma, "nav.carrito")}`}>
             <Link to="/cuenta" className="link-cuenta link-registro">
               <FaUserPlus aria-hidden="true" />
-              <span>Registrate</span>
+              <span>{t(idioma, "nav.registrate")}</span>
             </Link>
-            <Link to="/cuenta" className="link-cuenta" aria-label="Iniciá sesión">
+            <Link to="/cuenta" className="link-cuenta" aria-label={t(idioma, "nav.sesion")}>
               <FaUser aria-hidden="true" />
-              <span>Iniciá sesión</span>
+              <span>{t(idioma, "nav.sesion")}</span>
             </Link>
             <button
               className="carrito-btn"
               onClick={abrirCarrito}
-              aria-label={`Abrir carrito, ${cantidadCarrito} productos`}
+              aria-label={`${t(idioma, "nav.carrito")}, ${cantidadCarrito} ${t(idioma, "nav.productos")}`}
             >
               <FaCartShopping aria-hidden="true" />
               <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">
@@ -129,7 +192,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           </nav>
         </div>
 
-        <nav className="nav-categorias" aria-label="Categorías">
+        <nav className="nav-categorias" aria-label={t(idioma, "nav.categorias")}>
           <div className="nav-categorias-inner">
             <div className="nav-categorias-lista" role="list">
               {FILA_CATEGORIAS.map((c) => {
@@ -143,14 +206,14 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
                     className={`${esOutlet ? "nav-ofertas " : ""}${activa}`}
                     aria-current={activa ? "page" : undefined}
                   >
-                    {c.label}
+                    {t(idioma, c.labelKey)}
                   </Link>
                 );
               })}
             </div>
             <span className="nav-ayuda">
-              <Link to="/acerca">Ayuda</Link>
-              <Link to="/contactanos">Servicio de Posventa</Link>
+              <Link to="/acerca">{t(idioma, "nav.ayuda")}</Link>
+              <Link to="/contactanos">{t(idioma, "nav.posventa")}</Link>
             </span>
           </div>
         </nav>
