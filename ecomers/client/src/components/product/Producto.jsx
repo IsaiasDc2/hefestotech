@@ -77,6 +77,8 @@ function Productos({ agregarAlCarrito }) {
     async function cargarProductos(){
 
 
+      const controlador = new AbortController();
+      const limite = setTimeout(() => controlador.abort(), 12000);
       try {
 
 
@@ -88,7 +90,8 @@ function Productos({ agregarAlCarrito }) {
 
         const { data, error } = await supabase
           .from("productos")
-          .select("*");
+          .select("*")
+          .abortSignal(controlador.signal);
 
 
 
@@ -122,6 +125,8 @@ function Productos({ agregarAlCarrito }) {
 
       } finally{
 
+
+        clearTimeout(limite);
 
         setCargando(false);
 

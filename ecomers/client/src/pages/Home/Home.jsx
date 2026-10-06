@@ -75,11 +75,14 @@ function Home({ agregarAlCarrito }) {
 
   useEffect(() => {
     async function cargar() {
+      const controlador = new AbortController();
+      const limite = setTimeout(() => controlador.abort(), 12000);
       try {
         setError(false);
         const { data, error } = await supabase
           .from("productos")
           .select("*")
+          .abortSignal(controlador.signal)
           .limit(100);
         if (error) throw error;
         setProductos(normalizar(data));
@@ -87,6 +90,7 @@ function Home({ agregarAlCarrito }) {
         setProductos([]);
         setError(true);
       } finally {
+        clearTimeout(limite);
         setCargando(false);
       }
     }
