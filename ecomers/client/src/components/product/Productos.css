@@ -197,7 +197,7 @@
   border-radius: 50%;
   background: var(--primary);
   box-shadow: 0 0 10px var(--primary-resplandor);
-  animation: contador-pulso 2s var(--ease-in-out, ease-in-out) infinite;
+  animation: contador-pulso 2s var(--ease-in-out) infinite;
 }
 
 @keyframes contador-pulso {
