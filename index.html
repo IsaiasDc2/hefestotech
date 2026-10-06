@@ -4,8 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/hefestotech/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#05080f" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#05080f" id="meta-tema" />
+    <meta name="color-scheme" content="dark light" />
+    <script>
+      try {
+        var m = localStorage.getItem("ht-tema");
+        var modo = m === "claro" || m === "oscuro" || m === "sistema" ? m : "sistema";
+        var claro = modo === "claro" || (modo === "sistema" && window.matchMedia("(prefers-color-scheme: light)").matches);
+        var root = document.documentElement;
+        var meta = document.getElementById("meta-tema");
+        if (claro) {
+          root.dataset.theme = "light";
+          root.style.colorScheme = "light";
+          if (meta) meta.setAttribute("content", "#edf1f7");
+        } else {
+          root.style.colorScheme = "dark";
+          if (meta) meta.setAttribute("content", "#05080f");
+        }
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,8 +30,8 @@
       rel="stylesheet"
     />
     <title>Hefestotech</title>
-    <script type="module" crossorigin src="/hefestotech/assets/index-BUr-QVHj.js"></script>
-    <link rel="stylesheet" crossorigin href="/hefestotech/assets/index-Dsfj_SIB.css">
+    <script type="module" crossorigin src="/hefestotech/assets/index-DgJGGqtQ.js"></script>
+    <link rel="stylesheet" crossorigin href="/hefestotech/assets/index-SrDTXFb7.css">
   </head>
   <body>
     <div id="root"></div>
