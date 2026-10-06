@@ -1,5 +1,6 @@
 import { lazy, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { MotionConfig } from "framer-motion";
 import Layout from "./components/layout/Layout";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
@@ -36,6 +37,7 @@ export default function App() {
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
+    <MotionConfig reducedMotion="user">
     <Routes>
       <Route
         path="/"
@@ -85,5 +87,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
       </Routes>
+    </MotionConfig>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import ProductCard from "./ProductCard";
@@ -572,7 +573,7 @@ function Productos({ agregarAlCarrito }) {
         !error &&
 
 
-        <div className="grid-productos">
+        <motion.div className="grid-productos" layout>
 
 
           {
@@ -593,27 +594,36 @@ function Productos({ agregarAlCarrito }) {
           :
 
 
-          productosOrdenados.map(producto=>(
+          <AnimatePresence mode="popLayout">
+          {productosOrdenados.map(producto=>(
 
 
-            <ProductCard
-
+            <motion.div
               key={producto.id}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+            <ProductCard
 
               producto={producto}
 
               agregarAlCarrito={agregarAlCarrito}
 
             />
+            </motion.div>
 
 
-          ))
+          ))}
+          </AnimatePresence>
 
 
           }
 
 
-        </div>
+        </motion.div>
 
 
       }

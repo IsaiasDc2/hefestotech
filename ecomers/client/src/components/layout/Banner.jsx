@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import "./Banner.css";
 
@@ -186,7 +187,13 @@ export default function Banner() {
                 </>
               )}
               <div className="banner-velo" aria-hidden="true" />
-              <div className="banner-texto">
+              <motion.div
+                className="banner-texto"
+                key={activo ? `texto-${indice}` : `texto-idle-${s.id}`}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <p className="banner-kicker">
                   <span className="banner-kicker-num">
                     {String(i + 1).padStart(2, "0")}
@@ -222,7 +229,7 @@ export default function Banner() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </motion.div>
             </article>
           );
         })}
