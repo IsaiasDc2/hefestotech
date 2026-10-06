@@ -46,6 +46,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-height: 44px;
 }
 
 .ver-todo span {
@@ -499,7 +500,7 @@
 }
 
 .seccion-head a {
-  color: var(--primary);
+  color: var(--link);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;

@@ -5,13 +5,14 @@
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-3) var(--ease), visibility 0s linear var(--dur-3);
   z-index: 998;
 }
 
 .overlay.show {
   opacity: 1;
   visibility: visible;
+  transition: opacity var(--dur-3) var(--ease), visibility 0s;
 }
 
 .cart {
@@ -26,7 +27,8 @@
   display: flex;
   flex-direction: column;
   transform: translateX(102%);
-  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.35, 1);
+  visibility: hidden;
+  transition: transform var(--dur-3) var(--ease), visibility 0s linear var(--dur-3);
   z-index: 999;
   border-left: 1px solid var(--border);
   border-radius: 16px 0 0 16px;
@@ -35,6 +37,8 @@
 
 .cart.open {
   transform: translateX(0);
+  visibility: visible;
+  transition: transform var(--dur-3) var(--ease), visibility 0s;
 }
 
 .cart-header {

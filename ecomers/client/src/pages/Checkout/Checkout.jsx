@@ -277,7 +277,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     return (
       <div className="checkout centrado">
         <div className="vacio anim-entrada">
-          <p className="vacio-titulo">Tu carrito está vacío</p>
+          <h1 className="vacio-titulo">Tu carrito está vacío</h1>
           <p className="vacio-texto">Sumá productos antes de finalizar la compra.</p>
           <Link to="/productos" className="btn-primary">Ver productos</Link>
         </div>

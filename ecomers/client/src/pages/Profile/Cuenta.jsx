@@ -21,6 +21,7 @@ function Cuenta() {
 
   return (
     <div className="cuenta">
+      <h1 className="sr-only">Mi cuenta</h1>
       <p className="badge badge-info hero-kicker">HefestoTech · Mi cuenta</p>
       {isAuthenticated && usuario && (
         <div className="panel-cuenta card cuenta-sesion">

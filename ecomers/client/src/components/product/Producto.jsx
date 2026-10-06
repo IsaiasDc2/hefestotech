@@ -573,6 +573,7 @@ function Productos({ agregarAlCarrito }) {
 
 
         <div className="grid-productos">
+          <h2 className="sr-only">Resultados</h2>
 
 
           {

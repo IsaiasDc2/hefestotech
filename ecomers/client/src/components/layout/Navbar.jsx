@@ -205,7 +205,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
 
         <nav className="nav-categorias" aria-label={t(idioma, "nav.categorias")}>
           <div className="nav-categorias-inner">
-            <div className="nav-categorias-lista" role="list">
+            <div className="nav-categorias-lista">
               {FILA_CATEGORIAS.map((c) => {
                 const activa = esActiva(c.clave);
                 const esOutlet = c.clave === "outlet";
@@ -213,7 +213,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
                   <Link
                     key={c.clave}
                     to={c.to}
-                    role="listitem"
                     className={`${esOutlet ? "nav-ofertas " : ""}${activa}`}
                     aria-current={activa ? "page" : undefined}
                   >
