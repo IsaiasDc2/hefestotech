@@ -29,7 +29,7 @@
 .filtros {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.7rem;
   align-items: center;
   background: linear-gradient(180deg, var(--card-2), var(--surface));
@@ -127,6 +127,10 @@
 
 .buscador {
   min-width: 0;
+}
+
+.filtros .buscador {
+  grid-column: 1 / -1;
 }
 
 .btn-limpiar {
