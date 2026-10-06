@@ -14,6 +14,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
   const [producto, setProducto] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [reintento, setReintento] = useState(0);
 
   useEffect(() => {
     async function cargarProducto() {
@@ -39,17 +40,27 @@ function ProductoDetalle({ agregarAlCarrito }) {
     }
 
     cargarProducto();
-  }, [id]);
+  }, [id, reintento]);
 
   if (cargando) {
     return <p className="detalle-estado">Cargando producto...</p>;
   }
 
   if (error) {
+    const esConexion = error !== "Producto no encontrado";
     return (
-      <div className="detalle-estado">
-        <p>{error}</p>
-        <Link to="/productos">← Volver al catálogo</Link>
+      <div className="detalle-estado" role="alert">
+        <p>{esConexion ? "No pudimos cargar el producto. Revisá tu conexión." : error}</p>
+        <div className="detalle-acciones-error">
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => setReintento((n) => n + 1)}
+          >
+            ↻ Reintentar
+          </button>
+          <Link to="/productos">← Volver al catálogo</Link>
+        </div>
       </div>
     );
   }

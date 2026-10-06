@@ -41,6 +41,8 @@ const CATEGORIAS = [
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
+  const [reintento, setReintento] = useState(0);
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const pillsRef = useRef(null);
@@ -73,6 +75,7 @@ function Home({ agregarAlCarrito }) {
   useEffect(() => {
     async function cargar() {
       try {
+        setError(false);
         const { data, error } = await supabase
           .from("productos")
           .select("*")
@@ -81,12 +84,13 @@ function Home({ agregarAlCarrito }) {
         setProductos(normalizar(data));
       } catch {
         setProductos([]);
+        setError(true);
       } finally {
         setCargando(false);
       }
     }
     cargar();
-  }, []);
+  }, [reintento]);
 
   const destacados = productos.slice(0, 8);
   const ofertas = productos
@@ -138,6 +142,21 @@ function Home({ agregarAlCarrito }) {
 
       {cargando ? (
         <p className="estado-carga">Calentando la forja...</p>
+      ) : error ? (
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar los destacados</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => {
+              setCargando(true);
+              setReintento((n) => n + 1);
+            }}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
       ) : (
         <>
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">

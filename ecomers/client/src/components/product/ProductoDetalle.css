@@ -359,6 +359,15 @@
   font-weight: 600;
 }
 
+.detalle-acciones-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
 @media (max-width: 1024px) {
   .detalle-grid {
     grid-template-columns: 1fr;

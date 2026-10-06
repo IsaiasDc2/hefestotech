@@ -32,6 +32,8 @@ function Productos({ agregarAlCarrito }) {
     return o === "mayor" || o === "menor" ? o : "";
   });
 
+  const [reintento, setReintento] = useState(0);
+
 
   useEffect(() => {
     const r = resolverCategoria(params.get("categoria"));
@@ -110,7 +112,7 @@ function Productos({ agregarAlCarrito }) {
     cargarProductos();
 
 
-  }, []);
+  }, [reintento]);
 
 
 
@@ -494,12 +496,17 @@ function Productos({ agregarAlCarrito }) {
       {
         error && !cargando &&
 
-        <p className="estado-error">
-
-          Error:
-          {error}
-
-        </p>
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar el catálogo</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => setReintento((n) => n + 1)}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
 
       }
 
