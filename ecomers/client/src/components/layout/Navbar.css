@@ -142,6 +142,21 @@
   color: var(--primary);
 }
 
+.topbar-tema {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted-oscuro);
+  font-size: 0.95rem;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .topbar-idioma-btn,
   .topbar-idioma-menu {

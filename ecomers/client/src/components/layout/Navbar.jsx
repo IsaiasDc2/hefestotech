@@ -10,6 +10,7 @@ import {
   FaGlobe,
   FaChevronDown,
   FaCheck,
+  FaMoon,
 } from "react-icons/fa6";
 import { linkOfertas } from "../../constants/categorias";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
@@ -140,6 +141,16 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
               WhatsApp
             </a>
+            <button
+              type="button"
+              className="topbar-tema"
+              disabled
+              aria-disabled="true"
+              title="Disponible próximamente"
+              aria-label="Cambiar tema (disponible próximamente)"
+            >
+              <FaMoon aria-hidden="true" />
+            </button>
           </span>
         </div>
       </div>
