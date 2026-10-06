@@ -24,3 +24,6 @@ config.json
 node_modules
 # estado local impeccable (no versionar)
 .impeccable/
+
+# manifiesto local de skills (no versionar)
+ecomers/client/skills-lock.json
