@@ -95,6 +95,44 @@
   background: var(--primary-suave);
 }
 
+.pago-logo {
+  height: 22px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.pago-mp-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  animation: ht-entrada var(--dur-2) var(--ease) both;
+}
+
+.pago-mp-panel .texto-mutado {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.pago-logo-lg {
+  height: 40px;
+  width: auto;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.3rem 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pago-mp-panel {
+    animation: none;
+  }
+}
+
 .checkout-nota {
   font-size: 0.82rem;
 }

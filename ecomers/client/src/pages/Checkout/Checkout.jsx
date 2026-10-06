@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FaLock, FaTruckFast, FaCreditCard, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
 import { crearOrden } from "../../services/orderService";
+import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
@@ -109,8 +110,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     return "";
   };
 
-  const procesarPagoSimulado = async () => {
-    const pasos = ["Validando datos…", "Contactando banco simulado…", "Autorizando…"];
+  const procesarPagoSimulado = async () => {    const pasos = ["Validando datos…", "Contactando banco simulado…", "Autorizando…"];
     for (const p of pasos) {
       setPasoPago(p);
       await new Promise((r) => setTimeout(r, 650));
@@ -128,6 +128,24 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     };
   };
 
+  const generarLinkMP = async () => {
+    const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+    setPasoPago("Generando link de Mercado Pago…");
+    const respuesta = await fetch(`${API_URL}/api/crear-preferencia`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        titulo: `Pedido HefestoTech (${carrito.length} productos)`,
+        cantidad: 1,
+        precio_unitario: total,
+      }),
+    });
+    if (!respuesta.ok) throw new Error("preferencia");
+    const data = await respuesta.json();
+    if (!data.link_pago) throw new Error("preferencia");
+    return data.link_pago;
+  };
+
   const confirmar = async (e) => {
     e.preventDefault();
     setError("");
@@ -142,8 +160,18 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     setEnviando(true);
     try {
       let info = null;
+      let linkMP = null;
       if (pago === "tarjeta") {
         info = await procesarPagoSimulado();
+        setPagoInfo(info);
+      }
+      if (pago === "mercadopago") {
+        try {
+          linkMP = await generarLinkMP();
+        } catch {
+          throw new Error("No se pudo generar el link de Mercado Pago. Revisá que el servidor esté corriendo.");
+        }
+        info = { marca: "Mercado Pago", mp: true };
         setPagoInfo(info);
       }
       const datos = {
@@ -158,7 +186,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         subtotal,
         costo_envio: costoEnvio,
         total,
-        estado: pago === "tarjeta" ? "pagado_simulado" : "pendiente",
+        estado: pago === "tarjeta" ? "pagado_simulado" : pago === "mercadopago" ? "pendiente_mp" : "pendiente",
         items: carrito.map((item) => ({
           producto_id: item.producto_id ?? item.id,
           cantidad: Number(item.cantidad ?? 1),
@@ -188,6 +216,9 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         });
       }
       vaciarCarrito?.();
+      if (linkMP) {
+        window.location.href = linkMP;
+      }
     } catch (err) {
       setError(err?.message || "No se pudo procesar el pago simulado.");
     } finally {
@@ -209,9 +240,13 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             Orden <strong>{String(orden.id || "").slice(0, 8)}</strong> por{" "}
             <strong>${Number(orden.total ?? total).toLocaleString("es-AR")}</strong>.
             {p ? (
-              <> Pagaste con {p.marca} terminada en <strong>•••• {p.ultimos4}</strong> en {p.cuotas} cuota(s) de <strong>${valorCuota.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</strong>. Código <strong>{p.codigo}</strong>.</>
+              p.ultimos4 ? (
+                <> Pagaste con {p.marca} terminada en <strong>•••• {p.ultimos4}</strong> en {p.cuotas} cuota(s) de <strong>${valorCuota.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</strong>. Código <strong>{p.codigo}</strong>.</>
+              ) : (
+                <> Método elegido: <strong>{p.marca}</strong>. Te redirigimos para completar el pago.</>
+              )
             ) : (
-              <> Método elegido: <strong>{pago}</strong>.</>
+              <> Método elegido: <strong>{pago === "mercadopago" ? "Mercado Pago" : pago}</strong>.</>
             )}{" "}
             Nada se cobró, es demostración.
           </p>
@@ -306,13 +341,30 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             <h2><FaCreditCard aria-hidden="true" /> Pago (simulado)</h2>
             <p className="texto-mutado checkout-nota">Demostración: no ingreses datos reales, nada se cobra. Aprobada: <code>4242 4242 4242 4242</code> · Rechazada: <code>4000 0000 0000 0002</code></p>
             <div className="checkout-opciones" role="radiogroup" aria-label="Método de pago">
-              {["tarjeta", "transferencia", "efectivo"].map((m) => (
-                <label key={m} className={pago === m ? "activo" : ""}>
-                  <input type="radio" name="pago" value={m} checked={pago === m} onChange={() => setPago(m)} />
-                  {m === "tarjeta" ? "Tarjeta" : m === "transferencia" ? "Transferencia (10% off simulado)" : "Efectivo al retirar"}
-                </label>
-              ))}
+              <label className={pago === "tarjeta" ? "activo" : ""}>
+                <input type="radio" name="pago" value="tarjeta" checked={pago === "tarjeta"} onChange={() => setPago("tarjeta")} />
+                Tarjeta
+              </label>
+              <label className={pago === "mercadopago" ? "activo" : ""}>
+                <input type="radio" name="pago" value="mercadopago" checked={pago === "mercadopago"} onChange={() => setPago("mercadopago")} />
+                <img src={logoMP} alt="" aria-hidden="true" className="pago-logo" />
+                Mercado Pago
+              </label>
+              <label className={pago === "transferencia" ? "activo" : ""}>
+                <input type="radio" name="pago" value="transferencia" checked={pago === "transferencia"} onChange={() => setPago("transferencia")} />
+                Transferencia (10% off simulado)
+              </label>
+              <label className={pago === "efectivo" ? "activo" : ""}>
+                <input type="radio" name="pago" value="efectivo" checked={pago === "efectivo"} onChange={() => setPago("efectivo")} />
+                Efectivo al retirar
+              </label>
             </div>
+            {pago === "mercadopago" && (
+              <div className="pago-mp-panel">
+                <img src={logoMP} alt="Mercado Pago" className="pago-logo-lg" />
+                <p className="texto-mutado">Al confirmar te redirigimos a Mercado Pago para completar el pago de forma segura con tarjeta, débito o dinero en cuenta.</p>
+              </div>
+            )}
             {pago === "tarjeta" && (
               <div className="checkout-campos pago-tarjeta">
                 <div className="tarjeta-preview" aria-hidden="true">
@@ -367,7 +419,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
           {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
           {enviando && pasoPago && <p className="badge badge-info" role="status">{pasoPago}</p>}
           <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? "Procesando pago simulado…" : `Pagar $${total.toLocaleString("es-AR")} (simulado)`}
+            {enviando ? (pago === "mercadopago" ? "Generando link…" : "Procesando pago simulado…") : pago === "mercadopago" ? `Pagar $${total.toLocaleString("es-AR")} con Mercado Pago` : `Pagar $${total.toLocaleString("es-AR")} (simulado)`}
           </button>
           <Link to="/carrito" className="btn-fantasma">Volver al carrito</Link>
         </aside>
