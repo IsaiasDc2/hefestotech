@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import imgPlaca from "../../assets/banner-gpu.jpg";
-import imgSetup from "../../assets/banner-setup.jpg";
-import imgPeris from "../../assets/banner-peris.jpg";
 import "./Banner.css";
 
 const SLIDES = [
@@ -20,7 +17,8 @@ const SLIDES = [
     ctaSec: "Ver outlet",
     toSec: "/productos?categoria=ofertas",
     posicion: "right center",
-    imagen: imgPlaca,
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/placa%20de%20video.webp",
   },
   {
     id: "setup",
@@ -35,7 +33,8 @@ const SLIDES = [
     ctaSec: "Ver periféricos",
     toSec: "/productos?categoria=perifericos",
     posicion: "right center",
-    imagen: imgSetup,
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/escritorio.webp",
   },
   {
     id: "peris",
@@ -50,7 +49,8 @@ const SLIDES = [
     ctaSec: "Explorar productos",
     toSec: "/productos",
     posicion: "right center",
-    imagen: imgPeris,
+    imagen:
+      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/neon-rog.webp",
   },
 ];
 
