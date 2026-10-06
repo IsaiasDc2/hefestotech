@@ -1,6 +1,14 @@
 *.env
 .env.local
 **/.env.local
+# skills locales ui-ux-pro-max (no versionar)
+.opencode/skills/banner-design/
+.opencode/skills/brand/
+.opencode/skills/design/
+.opencode/skills/design-system/
+.opencode/skills/slides/
+.opencode/skills/ui-styling/
+.opencode/skills/ui-ux-pro-max/
 node_modules/
 **/node_modules/
 dist/

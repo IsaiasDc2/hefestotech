@@ -7,11 +7,9 @@ import urllib.parse
 import os
 from dotenv import load_dotenv
 
-# --- NUEVAS LIBRERÍAS ---
 from google import genai
 import mercadopago
 
-# Cargar el archivo .env
 load_dotenv()
 
 app = FastAPI(title="Hefesto Tech API")
@@ -28,9 +26,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 1. CONFIGURACIÓN DE IA (Nueva Librería Oficial google-genai) ---
-# NOTA: init diferido para que la API levante sin .env (los endpoints
-# que usan IA/MP devuelven 503 con mensaje claro si falta la key).
 def _cliente_ia():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -65,7 +60,6 @@ def obtener_productos():
 
     return {"total_stock": len(productos_lista), "productos": productos_lista}
 
-# --- RUTAS DE LA IA ---
 class MensajeUsuario(BaseModel):
     texto: str
 
@@ -87,7 +81,6 @@ Sigue estas 6 reglas:
         
         prompt_completo = f"{instrucciones}\n\nConsulta del usuario: {mensaje.texto}"
         
-   # Llamada con la nueva sintaxis nativa
         respuesta = cliente_ia.models.generate_content(
             model="gemini-3.8-flash",
             contents=prompt_completo
@@ -99,7 +92,6 @@ Sigue estas 6 reglas:
         print(f"\n--- ERROR DE IA ---\n{e}\n-----------------------\n")
         return {"respuesta": "Soy Hefesto, Dios de la forja y el mantenimiento, no pierdo tiempo con tonterías."}
 
-# --- RUTAS DE MERCADO PAGO ---
 class OrdenCompra(BaseModel):
     titulo: str
     cantidad: int

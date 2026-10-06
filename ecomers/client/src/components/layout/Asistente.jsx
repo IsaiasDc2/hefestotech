@@ -13,13 +13,11 @@ function Asistente() {
     e.preventDefault();
     if (!mensaje.trim()) return;
 
-    // Agregamos lo que el usuario escribió al chat visualmente
     const nuevoChat = [...chat, { rol: "usuario", texto: mensaje }];
     setChat(nuevoChat);
-    setMensaje(""); // Limpiamos la barra de texto
+    setMensaje("");
 
     try {
-      // Hacemos la petición a tu servidor FastAPI
       const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
       const respuesta = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
@@ -29,7 +27,6 @@ function Asistente() {
 
       const data = await respuesta.json();
 
-      // Agregamos la respuesta real de OpenAI al chat
       setChat([...nuevoChat, { rol: "ia", texto: data.respuesta }]);
     } catch (error) {
       setChat([
