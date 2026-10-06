@@ -24,7 +24,8 @@
   --danger-borde: rgba(229, 72, 77, 0.4);
   --velo: rgba(11, 14, 20, 0.75);
   --anillo-foco: rgba(99, 102, 241, 0.45);
-  --grad-marca: linear-gradient(135deg, #6366f1, #0ea5e9);
+  --grad-marca: linear-gradient(135deg, #6366f1, #4338ca);
+  --grad-oro: linear-gradient(135deg, #c9a86a, #8c7146);
   --radio: 12px;
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -77,11 +78,16 @@
   --sombra-marca: 0 6px 24px rgba(99, 102, 241, 0.25);
 
   
+  --dur-0: 100ms;
   --dur-1: 120ms;
   --dur-2: 200ms;
   --dur-3: 350ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-rapida: ease-out;
+  --stagger: 60ms;
+  --reveal-y: 12px;
 
   
   --skeleton-base: #151c2a;
@@ -91,7 +97,6 @@
   --detalle-col: 520px;
 }
 
-* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -213,7 +218,7 @@ textarea:focus {
 }
 
 input::placeholder {
-  color: var(--muted-oscuro);
+  color: var(--muted);
 }
 
 html {
@@ -246,6 +251,12 @@ button,
   select,
   textarea {
     font-size: 16px;
+  }
+
+  .btn-primary,
+  .btn-fantasma,
+  .btn-danger {
+    min-height: 44px;
   }
 }
 
@@ -312,6 +323,9 @@ img {
 
 .carrito-pagina {
   max-width: 900px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
   display: flex;
@@ -340,6 +354,13 @@ img {
   border: 1px solid var(--border);
   border-radius: var(--radio);
   padding: 0.9rem 1.1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.carrito-item > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .carrito-item-acciones {
@@ -617,7 +638,7 @@ img {
 
 .precio-anterior {
   font-size: var(--text-small);
-  color: var(--muted-oscuro);
+  color: var(--muted);
   text-decoration: line-through;
 }
 
@@ -649,6 +670,34 @@ img {
   animation: ht-entrada var(--dur-3) var(--ease) both;
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--reveal-y));
+  transition: opacity var(--dur-3) var(--ease), transform var(--dur-3) var(--ease);
+}
+
+.reveal.es-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.stagger > * {
+  opacity: 0;
+  transform: translateY(var(--reveal-y));
+  transition: opacity var(--dur-3) var(--ease), transform var(--dur-3) var(--ease);
+}
+
+.stagger.es-visible > * {
+  opacity: 1;
+  transform: none;
+}
+
+.stagger.es-visible > *:nth-child(2) { transition-delay: var(--stagger); }
+.stagger.es-visible > *:nth-child(3) { transition-delay: calc(var(--stagger) * 2); }
+.stagger.es-visible > *:nth-child(4) { transition-delay: calc(var(--stagger) * 3); }
+.stagger.es-visible > *:nth-child(5) { transition-delay: calc(var(--stagger) * 4); }
+.stagger.es-visible > *:nth-child(n + 6) { transition-delay: calc(var(--stagger) * 5); }
+
 @keyframes ht-entrada {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -670,8 +719,16 @@ img {
     transform: none;
   }
   .skeleton,
-  .anim-entrada {
+  .anim-entrada,
+  .reveal,
+  .stagger > * {
     animation: none;
+  }
+  .reveal,
+  .stagger > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
   .skeleton {
     opacity: 1;

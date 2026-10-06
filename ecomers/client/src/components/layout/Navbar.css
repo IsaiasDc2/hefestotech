@@ -47,9 +47,126 @@
 .topbar-links a {
   color: var(--muted);
   text-decoration: none;
-  padding: 0.15rem 0.55rem;
+  padding: 0.6rem 0.55rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+
+.topbar-idioma {
+  position: relative;
+  display: inline-flex;
+}
+
+.topbar-idioma-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+
+.topbar-idioma-btn:hover {
+  border-color: var(--primary-borde);
+}
+
+.topbar-idioma-btn:active {
+  transform: scale(0.96);
+}
+
+.topbar-idioma-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+.topbar-idioma-btn svg:last-child {
+  font-size: 0.7rem;
+  color: var(--muted);
+  transition: transform var(--dur-2) var(--ease);
+}
+
+.topbar-idioma-btn svg:last-child.gira {
+  transform: rotate(180deg);
+}
+
+.topbar-idioma-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 200;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  min-width: 160px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--sombra-media);
+  animation: ht-entrada var(--dur-2) var(--ease) both;
+}
+
+.topbar-idioma-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.topbar-idioma-menu button:hover {
+  background: var(--primary-suave);
+}
+
+.topbar-idioma-menu button svg {
+  color: var(--primary);
+}
+
+.topbar-tema {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--muted-oscuro);
+  font-size: 0.95rem;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-idioma-btn,
+  .topbar-idioma-menu {
+    transition: none;
+    animation: none;
+  }
+
+  .topbar-idioma-btn:active {
+    transform: none;
+  }
 }
 
 .topbar-links a + a {
@@ -258,6 +375,7 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  min-height: 44px;
   color: var(--muted);
   text-decoration: none;
   font-size: 0.88rem;
@@ -265,7 +383,7 @@
   padding: 0.5rem 0.7rem;
   border-radius: 10px;
   border: 1px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
 }
 
 .link-cuenta span {
@@ -324,7 +442,7 @@
 }
 
 .carrito-btn:focus-visible {
-  outline: 2px solid var(--oro);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -514,6 +632,16 @@
   .topbar-inner {
     padding: 0.38rem 1rem;
     gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .topbar-envio {
+    flex: 1 1 auto;
+  }
+
+  .topbar-links {
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .topbar-links a + a {
@@ -562,6 +690,17 @@
   .carrito-btn {
     width: 44px;
     height: 44px;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar-links a:last-child {
+    display: none;
+  }
+
+  .topbar-envio {
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
   }
 }
 

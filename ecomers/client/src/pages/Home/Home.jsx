@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -41,7 +41,10 @@ const CATEGORIAS = [
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
+  const [reintento, setReintento] = useState(0);
   const [filtroTexto, setFiltroTexto] = useState("");
+  const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const pillsRef = useRef(null);
 
@@ -56,7 +59,8 @@ function Home({ agregarAlCarrito }) {
   const desplazarPills = (dir) => {
     const el = pillsRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * 220, behavior: suave ? "smooth" : "auto" });
   };
 
   const normalizar = (data) =>
@@ -71,21 +75,27 @@ function Home({ agregarAlCarrito }) {
 
   useEffect(() => {
     async function cargar() {
+      const controlador = new AbortController();
+      const limite = setTimeout(() => controlador.abort(), 12000);
       try {
+        setError(false);
         const { data, error } = await supabase
           .from("productos")
           .select("*")
+          .abortSignal(controlador.signal)
           .limit(100);
         if (error) throw error;
         setProductos(normalizar(data));
       } catch {
         setProductos([]);
+        setError(true);
       } finally {
+        clearTimeout(limite);
         setCargando(false);
       }
     }
     cargar();
-  }, []);
+  }, [reintento]);
 
   const destacados = productos.slice(0, 8);
   const ofertas = productos
@@ -93,7 +103,7 @@ function Home({ agregarAlCarrito }) {
     .slice(0, 10);
 
   const filtrados = productos.filter((p) => {
-    const texto = filtroTexto.trim().toLowerCase();
+    const texto = filtroTextoDif.trim().toLowerCase();
     const coincideTexto =
       !texto ||
       p.nombre.toLowerCase().includes(texto) ||
@@ -137,6 +147,21 @@ function Home({ agregarAlCarrito }) {
 
       {cargando ? (
         <p className="estado-carga">Calentando la forja...</p>
+      ) : error ? (
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar los destacados</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => {
+              setCargando(true);
+              setReintento((n) => n + 1);
+            }}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
       ) : (
         <>
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">

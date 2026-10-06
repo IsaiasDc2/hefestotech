@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import ProductCard from "./ProductCard";
@@ -27,10 +28,18 @@ function Productos({ agregarAlCarrito }) {
 
   const [precioMax, setPrecioMax] = useState("");
 
+  const [busquedaDif, setBusquedaDif] = useState(busqueda);
+
+  const [precioMinDif, setPrecioMinDif] = useState(precioMin);
+
+  const [precioMaxDif, setPrecioMaxDif] = useState(precioMax);
+
   const [orden, setOrden] = useState(() => {
     const o = params.get("orden");
     return o === "mayor" || o === "menor" ? o : "";
   });
+
+  const [reintento, setReintento] = useState(0);
 
 
   useEffect(() => {
@@ -43,6 +52,22 @@ function Productos({ agregarAlCarrito }) {
   }, [params]);
 
 
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDif(busqueda), 250);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMinDif(precioMin), 250);
+    return () => clearTimeout(t);
+  }, [precioMin]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMaxDif(precioMax), 250);
+    return () => clearTimeout(t);
+  }, [precioMax]);
+
+
 
 
 
@@ -52,6 +77,8 @@ function Productos({ agregarAlCarrito }) {
     async function cargarProductos(){
 
 
+      const controlador = new AbortController();
+      const limite = setTimeout(() => controlador.abort(), 12000);
       try {
 
 
@@ -63,7 +90,8 @@ function Productos({ agregarAlCarrito }) {
 
         const { data, error } = await supabase
           .from("productos")
-          .select("*");
+          .select("*")
+          .abortSignal(controlador.signal);
 
 
 
@@ -98,6 +126,8 @@ function Productos({ agregarAlCarrito }) {
       } finally{
 
 
+        clearTimeout(limite);
+
         setCargando(false);
 
 
@@ -110,7 +140,7 @@ function Productos({ agregarAlCarrito }) {
     cargarProductos();
 
 
-  }, []);
+  }, [reintento]);
 
 
 
@@ -184,7 +214,7 @@ function Productos({ agregarAlCarrito }) {
 
 
       const texto =
-      busqueda
+      busquedaDif
       .toLowerCase();
 
 
@@ -212,22 +242,22 @@ function Productos({ agregarAlCarrito }) {
 
 
       const coincideMin =
-      precioMin===""
+      precioMinDif===""
 
       ||
 
-      producto.precio >= Number(precioMin);
+      producto.precio >= Number(precioMinDif);
 
 
 
 
 
       const coincideMax =
-      precioMax===""
+      precioMaxDif===""
 
       ||
 
-      producto.precio <= Number(precioMax);
+      producto.precio <= Number(precioMaxDif);
 
 
 
@@ -276,11 +306,11 @@ function Productos({ agregarAlCarrito }) {
 
   },[
     productos,
-    busqueda,
+    busquedaDif,
     categoria,
     soloOfertas,
-    precioMin,
-    precioMax,
+    precioMinDif,
+    precioMaxDif,
     orden
   ]);
 
@@ -333,6 +363,8 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="🔍 Buscar producto..."
 
+          aria-label="Buscar producto"
+
           value={busqueda}
 
           onChange={
@@ -348,6 +380,8 @@ function Productos({ agregarAlCarrito }) {
         <select
 
           value={categoria}
+
+          aria-label="Filtrar por categoría"
 
           onChange={
             e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
@@ -390,6 +424,12 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="Precio mínimo"
 
+          aria-label="Precio mínimo"
+
+          min="0"
+
+          inputMode="numeric"
+
           value={precioMin}
 
           onChange={
@@ -408,6 +448,12 @@ function Productos({ agregarAlCarrito }) {
 
           placeholder="Precio máximo"
 
+          aria-label="Precio máximo"
+
+          min="0"
+
+          inputMode="numeric"
+
           value={precioMax}
 
           onChange={
@@ -425,6 +471,8 @@ function Productos({ agregarAlCarrito }) {
         <select
 
           value={orden}
+
+          aria-label="Ordenar por precio"
 
           onChange={
             e=>setOrden(e.target.value)
@@ -494,12 +542,17 @@ function Productos({ agregarAlCarrito }) {
       {
         error && !cargando &&
 
-        <p className="estado-error">
-
-          Error:
-          {error}
-
-        </p>
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar el catálogo</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => setReintento((n) => n + 1)}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
 
       }
 
@@ -525,7 +578,7 @@ function Productos({ agregarAlCarrito }) {
         !error &&
 
 
-        <div className="grid-productos">
+        <motion.div className="grid-productos" layout>
 
 
           {
@@ -546,27 +599,36 @@ function Productos({ agregarAlCarrito }) {
           :
 
 
-          productosOrdenados.map(producto=>(
+          <AnimatePresence mode="popLayout">
+          {productosOrdenados.map(producto=>(
 
 
-            <ProductCard
-
+            <motion.div
               key={producto.id}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+            <ProductCard
 
               producto={producto}
 
               agregarAlCarrito={agregarAlCarrito}
 
             />
+            </motion.div>
 
 
-          ))
+          ))}
+          </AnimatePresence>
 
 
           }
 
 
-        </div>
+        </motion.div>
 
 
       }

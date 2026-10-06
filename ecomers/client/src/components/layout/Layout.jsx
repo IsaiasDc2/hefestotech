@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -35,7 +36,17 @@ function Layout({
       />
 
       <main className="layout-main" id="contenido" tabIndex={-1}>
-        <Outlet />
+        <Suspense
+          fallback={
+            <div className="cargando-pagina" role="status" aria-label="Cargando página">
+              <span className="cargando-punto" />
+              <span className="cargando-punto" />
+              <span className="cargando-punto" />
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
 
       <Footer />

@@ -48,7 +48,14 @@ function Carrito({
             ? "¡Tenés envío gratis!"
             : `Te faltan $${faltante.toLocaleString("es-AR")} para el envío gratis`}
         </p>
-        <div className="cart-envio-barra">
+        <div
+          className="cart-envio-barra"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progreso * 100)}
+          aria-label="Progreso hacia el envío gratis"
+        >
           <span
             className="cart-envio-relleno"
             style={{ width: `${Math.round(progreso * 100)}%` }}
@@ -56,13 +63,16 @@ function Carrito({
         </div>
       </div>
       <ul className="carrito-lista">
-        {carrito.map((item) => (
+        {carrito.map((item) => {
+          const nombreItem = item.nombre || "Producto";
+          const cantidadItem = Number(item.cantidad ?? 1);
+          return (
           <li key={item.id} className="carrito-item">
             {item.imagen ? (
               <span className="carrito-thumb">
                 <img
                   src={item.imagen}
-                  alt=""
+                  alt={item.nombre || "Producto"}
                   onError={(e) => { e.currentTarget.style.display = "none"; }}
                 />
               </span>
@@ -77,12 +87,13 @@ function Carrito({
               ).toLocaleString("es-AR")}
             </span>
             <span className="carrito-item-acciones">
-              <button type="button" onClick={() => disminuirCantidad?.(item.id)} aria-label="Quitar uno">−</button>
-              <button type="button" onClick={() => aumentarCantidad?.(item.id)} aria-label="Agregar uno">+</button>
-              <button type="button" onClick={() => eliminarDelCarrito?.(item.id)}>Eliminar</button>
+              <button type="button" onClick={() => disminuirCantidad?.(item.id)} aria-label={`Quitar un ${nombreItem}`} disabled={cantidadItem <= 1}>−</button>
+              <button type="button" onClick={() => aumentarCantidad?.(item.id)} aria-label={`Agregar un ${nombreItem}`}>+</button>
+              <button type="button" onClick={() => eliminarDelCarrito?.(item.id)} aria-label={`Eliminar ${nombreItem} del carrito`}>Eliminar</button>
             </span>
           </li>
-        ))}
+          );
+        })}
       </ul>
       <div className="carrito-pagina-resumen">
         <p className="carrito-subtotal">

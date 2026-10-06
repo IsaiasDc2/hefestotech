@@ -79,8 +79,10 @@
   justify-content: center;
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   flex-shrink: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--primary-suave);
   border: 1px solid var(--primary-borde);
   color: var(--primary);
@@ -138,6 +140,7 @@
 .grupo input,
 .grupo textarea {
   width: 100%;
+  min-height: 44px;
   padding: 0.75rem 0.9rem;
   background-color: var(--bg);
   border: 1px solid var(--border);
@@ -178,8 +181,28 @@
   box-shadow: 0 0 0 3px var(--anillo-foco);
 }
 
-.formulario .btn-fuego {
+.grupo input:focus-visible,
+.grupo textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+.grupo input:user-invalid,
+.grupo textarea:user-invalid {
+  border-color: var(--danger-borde);
+}
+
+.grupo input:user-invalid:focus,
+.grupo textarea:user-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-suave);
+}
+
+.formulario .btn-primary {
   width: 100%;
+  min-height: 44px;
   margin-top: 0.6rem;
 }
 
@@ -205,12 +228,6 @@
 }
 
 @media (max-width: 768px) {
-  .contacto-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 560px) {
   .contacto-grid {
     grid-template-columns: 1fr;
   }
