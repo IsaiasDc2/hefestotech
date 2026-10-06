@@ -22,3 +22,5 @@ config.json
 *.db
 .env
 node_modules
+# estado local impeccable (no versionar)
+.impeccable/
