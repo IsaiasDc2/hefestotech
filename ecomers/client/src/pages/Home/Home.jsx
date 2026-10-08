@@ -11,7 +11,7 @@ import {
   FaShieldHalved,
   FaCreditCard,
 } from "react-icons/fa6";
-import { supabase } from "../../components/lib/supabaseClient";
+import { supabase, supabaseConfigurada } from "../../components/lib/supabaseClient";
 import ProductCard from "../../components/product/ProductCard";
 import ProductCarousel from "../../components/product/ProductCarousel";
 import PromoBar from "../../components/layout/PromoBar";
@@ -72,6 +72,10 @@ function Home({ agregarAlCarrito }) {
   useEffect(() => {
     async function cargar() {
       try {
+        if (!supabaseConfigurada) {
+          setProductos([]);
+          return;
+        }
         const { data, error } = await supabase
           .from("productos")
           .select("*")
@@ -259,7 +263,11 @@ function Home({ agregarAlCarrito }) {
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
               <p>El catálogo se está forjando.</p>
-              <span>Volvé pronto para ver los destacados.</span>
+              <span>
+                {supabaseConfigurada
+                  ? "Volvé pronto para ver los destacados."
+                  : "Falta conectar Supabase: copiá .env.example a .env.local y completá las claves."}
+              </span>
             </div>
           )}
         </>

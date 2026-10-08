@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { supabaseConfigurada, exigirSupabase } from "../lib/supabaseClient";
 import "./Banner.css";
 
 const SLIDES = [
@@ -71,7 +71,8 @@ export default function Banner() {
   const touchX = useRef(null);
 
   useEffect(() => {
-    supabase
+    if (!supabaseConfigurada) return;
+    exigirSupabase()
       .from("productos")
       .select("categoria,imagen")
       .eq("destacado", true)

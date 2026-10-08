@@ -10,6 +10,7 @@ const ProductoDetalle = lazy(() => import("./components/product/ProductList"));
 const Carrito = lazy(() => import("./pages/Carrito/Carrito"));
 const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
 const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
+const ArmaTuPc = lazy(() => import("./pages/Armador/ArmaTuPc"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const Acerca = lazy(() => import("./pages/About/Acerca"));
 const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
@@ -90,6 +91,7 @@ export default function App() {
           }
         />
         <Route path="cuenta" element={<Cuenta />} />
+        <Route path="arma-tu-pc" element={<ArmaTuPc />} />
         <Route path="admin" element={<Admin />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />

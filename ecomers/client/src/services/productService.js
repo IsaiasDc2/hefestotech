@@ -1,4 +1,4 @@
-import { supabase } from "../components/lib/supabaseClient";
+import { exigirSupabase } from "../components/lib/supabaseClient";
 
 export const normalizarProducto = (p = {}) => {
   const precio = Number(p.precio ?? 0);
@@ -32,7 +32,7 @@ export const precioFinal = (producto = {}) => {
 };
 
 export const obtenerProductos = async () => {
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("productos")
     .select("*")
     .eq("activo", true);
@@ -41,7 +41,7 @@ export const obtenerProductos = async () => {
 };
 
 export const obtenerProductoPorId = async (id) => {
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("productos")
     .select("*")
     .eq("id", id)
@@ -53,7 +53,7 @@ export const obtenerProductoPorId = async (id) => {
 export const buscarProductos = async (query) => {
   const q = String(query ?? "").replace(/[%_,]/g, "").trim();
   if (!q) return obtenerProductos();
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("productos")
     .select("*")
     .eq("activo", true)
@@ -63,7 +63,7 @@ export const buscarProductos = async (query) => {
 };
 
 export const obtenerProductosDestacados = async (limite = 8) => {
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("productos")
     .select("*")
     .eq("activo", true)
@@ -74,7 +74,7 @@ export const obtenerProductosDestacados = async (limite = 8) => {
 };
 
 export const obtenerOfertas = async (limite = 10) => {
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("productos")
     .select("*")
     .eq("activo", true)
@@ -85,7 +85,7 @@ export const obtenerOfertas = async (limite = 10) => {
 };
 
 export const obtenerCategorias = async () => {
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("categorias")
     .select("*")
     .order("nombre");

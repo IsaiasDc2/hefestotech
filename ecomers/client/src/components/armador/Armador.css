@@ -1,0 +1,210 @@
+.armador {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.armador__head-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.armador__ayuda {
+  color: var(--muted);
+  font-size: var(--text-body);
+}
+
+.armador__limpiar {
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--radio-md);
+  background: transparent;
+  border: 1px solid var(--danger-borde);
+  color: var(--danger);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.armador__limpiar:hover {
+  background: rgba(229, 72, 77, 0.08);
+}
+
+.armador__limpiar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.armador__layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.armador__stepper {
+  position: sticky;
+  top: 1rem;
+}
+
+.armador__catalogo-col {
+  min-width: 0;
+}
+
+.armador__resumen-col {
+  position: sticky;
+  top: 1rem;
+}
+
+/* Clon que vuela al resumen: solo transform/opacity/scale */
+.pieza-voladora {
+  overflow: hidden;
+}
+
+/* Botón flotante y sheet: solo mobile */
+.btn-flotante,
+.sheet,
+.sheet__backdrop {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .armador__layout {
+    grid-template-columns: 200px minmax(0, 1fr) 300px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .armador__layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+
+  .armador__resumen-col {
+    grid-column: 1 / -1;
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .armador__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .armador__stepper {
+    position: static;
+  }
+
+  /* En mobile el resumen desktop se oculta y vive en el sheet */
+  .armador__resumen-col {
+    display: none;
+  }
+
+  .btn-flotante {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    min-height: 56px;
+    border-radius: var(--radio-md);
+    border: none;
+    background: var(--grad-marca);
+    color: var(--sobre-marca);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-body);
+    cursor: pointer;
+    z-index: 60;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  }
+
+  .btn-flotante:active {
+    transform: scale(0.98);
+  }
+
+  .sheet__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 70;
+  }
+
+  .sheet {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--bg);
+    border-radius: 16px 16px 0 0;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 1rem 1rem 2rem;
+    z-index: 71;
+    transform: translateY(100%);
+    transition: transform var(--dur-3) var(--ease);
+    visibility: hidden;
+  }
+
+  .sheet.is-abierto {
+    transform: translateY(0);
+    visibility: visible;
+  }
+
+  .sheet .resumen {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
+/* Impresión: solo el resumen */
+@media print {
+  .topbar,
+  .site-head,
+  .nav-categorias,
+  .footer,
+  .armador__head-acciones,
+  .armador__stepper,
+  .armador__catalogo-col,
+  .btn-flotante,
+  .sheet,
+  .sheet__backdrop,
+  .alertas {
+    display: none !important;
+  }
+
+  .armador__layout {
+    display: block;
+  }
+
+  .armador__resumen-col {
+    display: block;
+    position: static;
+  }
+
+  .resumen,
+  .resumen__fila {
+    break-inside: avoid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .armador *,
+  .armador *::before,
+  .armador *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .sheet {
+    transition: none;
+  }
+}

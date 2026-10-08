@@ -1,0 +1,235 @@
+.pieza-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  border: 1px solid var(--border);
+  border-radius: var(--radio-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  box-shadow: var(--sombra-media);
+  animation: carta-in var(--dur-3) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+  transition:
+    transform var(--dur-2) var(--ease),
+    box-shadow var(--dur-2) var(--ease),
+    border-color var(--dur-1) var(--ease-rapida);
+}
+
+@keyframes carta-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pieza-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary), 0 8px 32px -8px rgba(99, 102, 241, 0.45);
+}
+
+.pieza-card.is-seleccionada {
+  border-color: var(--primary);
+}
+
+.pieza-card.is-incompatible {
+  opacity: 0.9;
+}
+
+.pieza-card__descuento {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-humo);
+  color: #1a1206;
+  background: linear-gradient(135deg, var(--oro), #e8cf9a);
+  border-radius: var(--radio-lg) 0 var(--radio-md) 0;
+  padding: 0.3rem 0.65rem;
+}
+
+.pieza-card__cuerpo {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.pieza-card__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  flex-shrink: 0;
+  border-radius: var(--radio-md);
+  background: var(--surface);
+  border: 1px solid var(--border-suave);
+}
+
+.pieza-card__icono {
+  font-size: 2rem;
+  color: var(--acento);
+}
+
+.pieza-card.is-incompatible .pieza-card__icono {
+  color: var(--muted-oscuro);
+}
+
+.pieza-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.pieza-card__marca {
+  font-size: var(--text-small);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-humo);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pieza-card__nombre {
+  font-size: 0.95rem;
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.pieza-card__specs {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pieza-card__specs li {
+  font-size: var(--text-small);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border-suave);
+  border-radius: var(--radio-full);
+  padding: 0.2rem 0.6rem;
+}
+
+.pieza-card__pie {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-top: 1px solid var(--border-suave);
+  padding-top: 0.6rem;
+  margin-top: auto;
+}
+
+.pieza-card__precios {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pieza-card__precio-ant {
+  font-size: var(--text-small);
+  color: var(--muted-oscuro);
+  text-decoration: line-through;
+}
+
+.pieza-card__precio {
+  font-family: var(--font-display);
+  font-size: var(--text-precio);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--oro);
+}
+
+.pieza-card__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.estado--ok {
+  color: var(--ok);
+}
+
+.estado--bajo {
+  color: var(--estrella);
+}
+
+.estado--no,
+.estado--agotado {
+  color: var(--danger);
+}
+
+.pieza-card__motivo {
+  font-size: var(--text-small);
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+  border: 1px solid var(--danger-borde);
+  border-radius: var(--radio-sm);
+  padding: 0.45rem 0.6rem;
+  line-height: 1.4;
+}
+
+.pieza-card__btn {
+  min-height: 44px;
+  border-radius: var(--radio-md);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    transform var(--dur-1) var(--ease),
+    box-shadow var(--dur-2) var(--ease),
+    border-color var(--dur-1) var(--ease-rapida);
+}
+
+.btn--agregar {
+  background: var(--grad-marca);
+  color: var(--sobre-marca);
+}
+
+.btn--agregar:hover:not(:disabled) {
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.5);
+}
+
+.btn--cambiar {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--primary-borde);
+}
+
+.btn--cambiar:hover:not(:disabled) {
+  border-color: var(--primary);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+}
+
+.btn--quitar {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger-borde);
+}
+
+.pieza-card__btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pieza-card__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pieza-card__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

@@ -1,10 +1,10 @@
-import { supabase } from "../components/lib/supabaseClient";
+import { exigirSupabase } from "../components/lib/supabaseClient";
 import { precioFinal } from "./productService";
 
 const sesionUsuarioId = async () => {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await exigirSupabase().auth.getUser();
   if (!user) throw new Error("Sin sesion activa");
   return user.id;
 };
@@ -13,7 +13,7 @@ export const crearOrden = async (datosOrden) => {
   const user_id = await sesionUsuarioId();
   const { items = [], ...orden } = datosOrden;
 
-  const { data: creada, error } = await supabase
+  const { data: creada, error } = await exigirSupabase()
     .from("ordenes")
     .insert({ ...orden, user_id })
     .select()
@@ -27,7 +27,7 @@ export const crearOrden = async (datosOrden) => {
       cantidad: item.cantidad ?? 1,
       precio: Number(item.precio ?? precioFinal(item)),
     }));
-    const { error: errorItems } = await supabase
+    const { error: errorItems } = await exigirSupabase()
       .from("orden_items")
       .insert(filas);
     if (errorItems) throw new Error(errorItems.message);
@@ -38,7 +38,7 @@ export const crearOrden = async (datosOrden) => {
 
 export const obtenerMisOrdenes = async () => {
   const user_id = await sesionUsuarioId();
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("ordenes")
     .select("*, orden_items(*)")
     .eq("user_id", user_id)
@@ -49,7 +49,7 @@ export const obtenerMisOrdenes = async () => {
 
 export const obtenerOrdenPorId = async (id) => {
   const user_id = await sesionUsuarioId();
-  const { data, error } = await supabase
+  const { data, error } = await exigirSupabase()
     .from("ordenes")
     .select("*, orden_items(*)")
     .eq("id", id)

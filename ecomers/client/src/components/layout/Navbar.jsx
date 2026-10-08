@@ -15,7 +15,7 @@ const FILA_CATEGORIAS = [
   { label: "Productos", to: "/productos", clave: "productos" },
   { label: "Notebooks", to: "/productos?q=notebook", clave: "notebook" },
   { label: "PCs Armadas", to: "/productos?q=pc%20armada", clave: "pc armada" },
-  { label: "Armá tu PC", to: "/productos?q=combo", clave: "combo" },
+  { label: "Armá tu PC", to: "/arma-tu-pc", clave: "arma-tu-pc" },
   { label: "Outlet", to: linkOfertas, clave: "outlet" },
 ];
 
@@ -48,11 +48,13 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const categoriaActual = (params.get("categoria") || "").toLowerCase();
   const busquedaActual = (params.get("q") || "").toLowerCase();
   const enProductos = location.pathname === "/productos";
+  const enArmador = location.pathname === "/arma-tu-pc";
   const esOfertas =
     enProductos &&
     (categoriaActual === "oferta" || categoriaActual === "ofertas");
 
   const esActiva = (clave) => {
+    if (clave === "arma-tu-pc") return enArmador ? "activo" : "";
     if (!enProductos) return "";
     if (clave === "productos") return !categoriaActual && !busquedaActual ? "activo" : "";
     if (clave === "outlet") return esOfertas ? "activo" : "";

@@ -1,0 +1,177 @@
+.riel ol {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.casilla__btn {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border-suave);
+  border-radius: var(--radio-lg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color var(--dur-1) var(--ease-rapida),
+    transform var(--dur-2) var(--ease),
+    background var(--dur-1) var(--ease-rapida),
+    box-shadow var(--dur-2) var(--ease);
+}
+
+.casilla__btn:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.casilla__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.casilla__icono {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radio-md);
+  background: var(--card-2);
+  color: var(--muted);
+  font-size: 1.6rem;
+  transition: color var(--dur-1) var(--ease-rapida);
+}
+
+.casilla__check,
+.casilla__alerta {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  border: 2px solid var(--surface);
+}
+
+.casilla__check {
+  background: var(--ok);
+  color: #06110d;
+}
+
+.casilla__alerta {
+  background: var(--danger);
+  color: #fff;
+}
+
+.casilla__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.25;
+}
+
+.casilla__nombre {
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+}
+
+.casilla__elegido {
+  font-size: 0.7rem;
+  color: var(--muted-oscuro);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.casilla--completo .casilla__btn {
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.casilla--completo .casilla__icono {
+  color: var(--ok);
+}
+
+.casilla--completo .casilla__elegido {
+  color: var(--ok);
+}
+
+.casilla--error .casilla__btn {
+  border-color: var(--danger-borde);
+  animation: sacudir 300ms var(--ease);
+}
+
+.casilla--error .casilla__icono {
+  color: var(--danger);
+}
+
+.casilla--actual .casilla__btn {
+  border-color: var(--primary);
+  background: var(--card-2);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.casilla--actual .casilla__icono {
+  color: var(--primary);
+}
+
+.casilla.is-actual .casilla__btn {
+  box-shadow: 0 0 0 1px var(--primary), 0 6px 24px rgba(99, 102, 241, 0.25);
+}
+
+.casilla--vacio .casilla__btn {
+  border-style: dashed;
+}
+
+@keyframes sacudir {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+@media (max-width: 900px) {
+  .riel {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.4rem;
+  }
+
+  .riel ol {
+    display: flex;
+    grid-template-columns: none;
+  }
+
+  .casilla {
+    scroll-snap-align: start;
+  }
+
+  .casilla__btn {
+    min-width: 108px;
+  }
+
+  .casilla__btn:hover {
+    transform: none;
+  }
+}

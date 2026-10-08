@@ -1,4 +1,4 @@
-import { supabase } from "../components/lib/supabaseClient";
+import { supabase, exigirSupabase } from "../components/lib/supabaseClient";
 
 const mapearUsuario = (user, session = null) => {
   if (!user) return null;
@@ -11,7 +11,7 @@ const mapearUsuario = (user, session = null) => {
 };
 
 export const loginUsuario = async (email, password) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await exigirSupabase().auth.signInWithPassword({
     email,
     password,
   });
@@ -24,7 +24,7 @@ export const loginUsuario = async (email, password) => {
 };
 
 export const registrarUsuario = async (datos) => {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await exigirSupabase().auth.signUp({
     email: datos.email,
     password: datos.password,
     options: {
@@ -42,7 +42,7 @@ export const obtenerSesion = async () => {
   const {
     data: { session },
     error,
-  } = await supabase.auth.getSession();
+  } = await exigirSupabase().auth.getSession();
   if (error) throw new Error(error.message);
   if (!session) return null;
   return {
@@ -58,11 +58,12 @@ export const obtenerUsuarioActual = async () => {
 };
 
 export const cerrarSesion = async () => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await exigirSupabase().auth.signOut();
   if (error) throw new Error(error.message);
 };
 
 export const suscribirCambiosAuth = (callback) => {
+  if (!supabase) return () => {};
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_evento, session) => {
