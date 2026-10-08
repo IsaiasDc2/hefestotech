@@ -24,3 +24,13 @@ config.json
 node_modules
 # estado local impeccable (no versionar)
 .impeccable/
+.agents/
+.claude/
+.codex/
+.cursor/
+skills/
+stop-slop/
+humanizer/
+taste-skill/
+skills-lock.json
+ecomers/client/skills-lock.json
