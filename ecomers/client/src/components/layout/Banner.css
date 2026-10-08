@@ -325,53 +325,6 @@
   background: var(--surface-elevated-2);
 }
 
-/* Composiciones distintas por diapositiva */
-.banner-slide.layout-centro .banner-foto {
-  width: 100%;
-  mask-image: linear-gradient(180deg, transparent 0%, black 45%);
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, black 45%);
-  opacity: 0.55;
-}
-
-.banner-slide.layout-centro .banner-texto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.banner-slide.layout-centro .banner-desc {
-  text-align: center;
-}
-
-.banner-slide.layout-derecha .banner-foto {
-  right: auto;
-  left: 0;
-  mask-image: linear-gradient(-90deg, transparent, black 28%);
-  -webkit-mask-image: linear-gradient(-90deg, transparent, black 28%);
-}
-
-.banner-slide.layout-derecha .banner-texto {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
-}
-
-.banner-slide.layout-derecha .banner-desc {
-  text-align: right;
-}
-
-.banner-slide.layout-derecha .banner-acciones,
-.banner-slide.layout-derecha .banner-confianza {
-  justify-content: flex-end;
-}
-
-.banner-slide.layout-centro .banner-acciones,
-.banner-slide.layout-centro .banner-confianza {
-  justify-content: center;
-}
-
 .banner-kicker {
   display: inline-flex;
   flex-wrap: wrap;
@@ -492,10 +445,49 @@
   transform: scale(0.97);
 }
 
-.banner-cta:focus-visible {
+.banner-cta:focus-visible,
+.banner-cta-sec:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+.banner-cta-sec {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.6rem 0.2rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1;
+  text-decoration: underline;
+  text-decoration-color: var(--primary-borde);
+  text-underline-offset: 4px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  transition: color var(--dur-2) var(--ease), text-decoration-color var(--dur-2) var(--ease);
+}
+
+.banner-cta-sec::after {
+  content: "→";
+  font-weight: 700;
+  transition: transform var(--dur-2) var(--ease);
+}
+
+.banner-cta-sec:hover {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+
+.banner-cta-sec:hover::after {
+  transform: translateX(3px);
+}
+
+.banner-cta-sec:active {
+  transform: scale(0.97);
 }
 
 .banner-confianza {
@@ -745,7 +737,8 @@ button.activo .banner-progreso {
     align-items: stretch;
   }
 
-  .banner-cta {
+  .banner-cta,
+  .banner-cta-sec {
     text-align: center;
     width: 100%;
     min-height: 44px;
@@ -766,6 +759,7 @@ button.activo .banner-progreso {
   .banner-pista { transition: none; }
   .banner-texto > * { opacity: 1; transform: none; transition: none; }
   .banner-cta:hover,
+  .banner-cta-sec:hover,
   .banner-flecha:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
   button.activo .banner-progreso { animation: none; transform: scaleX(1); }

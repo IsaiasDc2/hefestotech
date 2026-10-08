@@ -10,7 +10,6 @@ const SLIDES = [
   {
     id: "gpu",
     tema: "indigo",
-    layout: "izquierda",
     categoria: "Placa de video",
     eyebrow: "Nueva generación",
     titulo: "Todo lo que tu setup",
@@ -18,13 +17,14 @@ const SLIDES = [
     texto: "Subí de nivel con placas de última generación. Jugá en ultra, sin tirones.",
     cta: "Ver placas de video",
     to: "/productos?categoria=placas-de-video",
+    ctaSec: "Ver outlet",
+    toSec: "/productos?categoria=ofertas",
     posicion: "right center",
     imagen: imgPlaca,
   },
   {
     id: "setup",
     tema: "celeste",
-    layout: "centro",
     categoria: "Monitor",
     eyebrow: "Armalo a tu medida",
     titulo: "Llevá tu setup",
@@ -32,13 +32,14 @@ const SLIDES = [
     texto: "Monitores, gabinetes y refrigeración para armar el rincón que soñás.",
     cta: "Explorar productos",
     to: "/productos",
-    posicion: "center center",
+    ctaSec: "Ver periféricos",
+    toSec: "/productos?categoria=perifericos",
+    posicion: "right center",
     imagen: imgSetup,
   },
   {
     id: "peris",
     tema: "laton",
-    layout: "derecha",
     categoria: "Periferico",
     eyebrow: "Precisión gamer",
     titulo: "Cada clic",
@@ -46,7 +47,9 @@ const SLIDES = [
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
-    posicion: "left center",
+    ctaSec: "Explorar productos",
+    toSec: "/productos",
+    posicion: "right center",
     imagen: imgPeris,
   },
 ];
@@ -133,7 +136,7 @@ export default function Banner() {
           return (
             <article
               key={s.id}
-              className={`banner-slide tema-${s.tema} layout-${s.layout}${activo ? " es-activa" : ""}`}
+              className={`banner-slide tema-${s.tema}${activo ? " es-activa" : ""}`}
               aria-hidden={!activo}
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
@@ -210,6 +213,13 @@ export default function Banner() {
                     tabIndex={activo ? 0 : -1}
                   >
                     {s.cta}
+                  </Link>
+                  <Link
+                    to={s.toSec}
+                    className="banner-cta-sec"
+                    tabIndex={activo ? 0 : -1}
+                  >
+                    {s.ctaSec}
                   </Link>
                 </div>
                 <ul className="banner-confianza" aria-label="Beneficios destacados">
