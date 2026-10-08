@@ -166,7 +166,7 @@
 }
 
 .cart-envio-relleno.is-completo {
-  background: linear-gradient(135deg, var(--ok), #22c55e);
+  background: linear-gradient(135deg, var(--ok), var(--success));
   box-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
 }
 
