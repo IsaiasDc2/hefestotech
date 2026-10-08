@@ -138,15 +138,15 @@ function ProductoDetalle({ agregarAlCarrito }) {
             ) : (
               <strong>${precio.toLocaleString("es-AR")}</strong>
             )}
-            <p className="cuotas">💳 6 cuotas sin interés</p>
-            {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
+            <p className="cuotas">6 cuotas sin interés</p>
+            {producto.envio_gratis && <p className="envio">Envío gratis</p>}
           </div>
 
           <div className="detalle-stock">
             {producto.stock ? (
-              <span className="disponible"><span className="stock-dot" aria-hidden="true" />🟢 Disponible</span>
+              <span className="disponible"><span className="stock-dot" aria-hidden="true" />Disponible</span>
             ) : (
-              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />🔴 Sin stock</span>
+              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />Sin stock</span>
             )}
           </div>
 
@@ -155,7 +155,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
             disabled={!producto.stock}
             onClick={() => agregarAlCarrito?.(producto)}
           >
-            {producto.stock ? "🛒 Agregar al carrito" : "Sin stock"}
+            {producto.stock ? "Agregar al carrito" : "Sin stock"}
           </button>
 
           {Object.keys(especificaciones).length > 0 && (

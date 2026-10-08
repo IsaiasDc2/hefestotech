@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  FaMicrochip,
   FaCartShopping,
   FaMagnifyingGlass,
   FaUser,
@@ -11,9 +10,12 @@ import {
   FaChevronDown,
   FaCheck,
   FaMoon,
+  FaSun,
 } from "react-icons/fa6";
+import Marca from "../brand/Marca";
 import { linkOfertas } from "../../constants/categorias";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import useTema from "../../hooks/useTema";
 import "./Navbar.css";
 
 const FILA_CATEGORIAS = [
@@ -37,6 +39,10 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const idiomaRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const setIdioma = useIdiomaStore((s) => s.setIdioma);
+  const { tema, alternar } = useTema();
+  const etiquetaTema = idioma === "en"
+    ? (tema === "light" ? "Switch to dark mode" : "Switch to light mode")
+    : (tema === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
   const primeraVez = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -144,12 +150,12 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             <button
               type="button"
               className="topbar-tema"
-              disabled
-              aria-disabled="true"
-              title="Disponible próximamente"
-              aria-label="Cambiar tema (disponible próximamente)"
+              onClick={alternar}
+              aria-pressed={tema === "light"}
+              aria-label={etiquetaTema}
+              title={etiquetaTema}
             >
-              <FaMoon aria-hidden="true" />
+              {tema === "light" ? <FaSun aria-hidden="true" /> : <FaMoon aria-hidden="true" />}
             </button>
           </span>
         </div>
@@ -157,10 +163,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
 
       <div className={`site-head${scrolled ? " is-scrolled" : ""}`}>
         <div className="site-head-inner">
-          <Link to="/" className="logo" aria-label="HefestoTech inicio">
-            <span className="logo-badge" aria-hidden="true">
-              <FaMicrochip className="logo-icon" />
-            </span>
+          <Link to="/" className="logo" aria-label="HefestoTech, ir al inicio">
+            <Marca variante="simbolo" ancho={36} alto={36} eager alt="HefestoTech" />
             <span className="logo-nombre">
               Hefesto<span>Tech</span>
             </span>

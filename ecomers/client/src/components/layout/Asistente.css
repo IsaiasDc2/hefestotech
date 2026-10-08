@@ -1,6 +1,6 @@
 .asistente {
   position: fixed;
-  right: 1.25rem;
+  right: calc(1.25rem + env(safe-area-inset-right, 0px));
   bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 900;
   display: flex;
@@ -16,19 +16,27 @@
   min-width: 56px;
   min-height: 56px;
   border-radius: 999px;
-  border: 1px solid var(--primary-borde);
-  background: var(--grad-marca);
-  color: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 1.35rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 6px;
   box-shadow: var(--sombra-media);
   position: relative;
-  transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
+  transition: border-color var(--dur-2) var(--ease), filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
+}
+
+.asistente-bola .marca img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .asistente-bola:hover {
+  border-color: var(--primary-borde);
   filter: brightness(1.08);
   box-shadow: var(--sombra-marca);
 }
@@ -61,6 +69,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  transform-origin: bottom right;
+  animation: asistente-entrada var(--dur-2) var(--ease-out) both;
+}
+
+.asistente-panel:focus {
+  outline: none;
+}
+
+@keyframes asistente-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .asistente-head {
@@ -101,10 +126,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-suave);
-  border: 1px solid var(--primary-borde);
-  color: var(--primary);
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.asistente-avatar .marca img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .asistente-estado {
@@ -146,6 +179,34 @@
   background: var(--card-2);
   border: 1px solid var(--border);
   color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.asistente-msg-avatar {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  line-height: 0;
+}
+
+.asistente-msg-avatar .marca img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.asistente-msg-texto {
+  flex: 1;
+  min-width: 0;
 }
 
 .asistente-msg.es-usuario {
@@ -237,10 +298,15 @@
 
 @media (pointer: coarse) {
   .asistente-bola {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    min-height: 60px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+  }
+
+  .asistente-bola .marca img {
+    width: 30px;
+    height: 30px;
   }
 
   .asistente-head button {
@@ -252,7 +318,8 @@
 @media (prefers-reduced-motion: reduce) {
   .asistente-bola,
   .asistente-head button,
-  .asistente-msg {
+  .asistente-msg,
+  .asistente-panel {
     transition: none;
     animation: none;
   }

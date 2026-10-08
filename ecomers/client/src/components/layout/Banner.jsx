@@ -44,7 +44,7 @@ const SLIDES = [
     eyebrow: "Precisión gamer",
     titulo: "Cada clic",
     acento: "cuenta",
-    texto: "Teclados mecánicos y mouse de alta respuesta para competir de verdad.",
+    texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
     ctaSec: "Explorar productos",

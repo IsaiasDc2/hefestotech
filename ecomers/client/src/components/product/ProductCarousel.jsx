@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight, FaArrowRight, FaBoxOpen } from "react-icons/fa6";
+import Marca from "../brand/Marca";
 import ProductCard from "./ProductCard";
 import "./ProductCarousel.css";
 
@@ -52,6 +53,9 @@ export default function ProductCarousel({
           </div>
         </div>
         <div className="carrusel-vacio">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={40} alto={40} decorativa />
+          </span>
           <span className="carrusel-vacio-icono" aria-hidden="true">
             <FaBoxOpen />
           </span>

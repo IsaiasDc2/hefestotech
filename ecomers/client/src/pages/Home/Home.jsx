@@ -142,10 +142,10 @@ function Home({ agregarAlCarrito }) {
       </section>
 
       {cargando ? (
-        <p className="estado-carga">Calentando la forja...</p>
+        <p className="estado-carga">Cargando productos…</p>
       ) : error ? (
         <div className="vacio" role="alert">
-          <p className="vacio-titulo">No pudimos cargar los destacados</p>
+          <p className="vacio-titulo">No pudimos cargar los productos</p>
           <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
           <button
             type="button"
@@ -167,7 +167,7 @@ function Home({ agregarAlCarrito }) {
                   <span className="kicker-num" aria-hidden="true">02</span>
                   Destacados
                 </p>
-                <h2 id="home-catalogo">Conocé nuestros productos destacados</h2>
+                <h2 id="home-catalogo">Explorá el catálogo</h2>
               </div>
               <span className="conteo">
                 {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
@@ -262,16 +262,16 @@ function Home({ agregarAlCarrito }) {
           </section>
 
           <ProductCarousel
-            titulo="Ofertas de la semana"
-            kicker="Botín semanal"
+            titulo="En oferta"
+            kicker="Precios rebajados"
             kickerNum="03"
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
           />
           <ProductCarousel
-            titulo="Destacados de la forja"
-            kicker="Los más buscados"
+            titulo="Destacados"
+            kicker="Selección"
             kickerNum="04"
             verTodo="/productos"
             productos={destacados}
@@ -279,8 +279,8 @@ function Home({ agregarAlCarrito }) {
           />
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
-              <p>El catálogo se está forjando.</p>
-              <span>Volvé pronto para ver los destacados.</span>
+              <p>El catálogo está vacío por ahora.</p>
+              <span>Volvé pronto o explorá el catálogo completo.</span>
             </div>
           )}
         </>
@@ -293,7 +293,7 @@ function Home({ agregarAlCarrito }) {
               <span className="kicker-num" aria-hidden="true">05</span>
               Marcas
             </p>
-            <h2 id="home-marcas">Nuestras marcas</h2>
+            <h2 id="home-marcas">Marcas</h2>
           </div>
           <Link to="/productos" className="ver-todo">
             Ver todo <span aria-hidden="true">→</span>

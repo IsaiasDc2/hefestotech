@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaGoogle, FaGithub, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
+import Marca from "../../components/brand/Marca";
 import "./Login.css";
 
 function Login({ onIrRegistro }) {
@@ -33,8 +34,9 @@ function Login({ onIrRegistro }) {
   return (
     <div className="login-pagina">
       <form className="login card anim-entrada" onSubmit={handleSubmit}>
-        <p className="badge badge-info hero-kicker">
-          <FaLock aria-hidden="true" /> HefestoTech
+        <p className="badge badge-info hero-kicker kicker-marca">
+          <Marca variante="simbolo" ancho={22} alto={22} decorativa />
+          HefestoTech
         </p>
         <h2>Iniciar sesión</h2>
 
@@ -88,9 +90,9 @@ function Login({ onIrRegistro }) {
           <span>o</span>
         </div>
 
-        <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">
+          <button type="button" className="btn-fantasma" title="Solo email por ahora" disabled aria-disabled="true">
           <FaGoogle aria-hidden="true" />
-          Continuar con Google
+          Continuar con Google (solo email por ahora)
         </button>
 
         <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaLock, FaTruckFast, FaCreditCard, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
+import Marca from "../../components/brand/Marca";
 import { crearOrden } from "../../services/orderService";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
@@ -232,8 +233,11 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     return (
       <div className="checkout centrado">
         <div className="card anim-entrada checkout-exito">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={44} alto={44} decorativa />
+          </span>
           <p className="badge badge-ok hero-kicker">
-            <FaCircleCheck aria-hidden="true" /> Pago simulado aprobado
+            <FaCircleCheck aria-hidden="true" /> Pago de prueba aprobado
           </p>
           <h1>¡Gracias{nombre ? `, ${nombre.split(" ")[0]}` : ""}!</h1>
           <p className="texto-mutado">
@@ -248,7 +252,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             ) : (
               <> Método elegido: <strong>{pago === "mercadopago" ? "Mercado Pago" : pago}</strong>.</>
             )}{" "}
-            Nada se cobró, es demostración.
+            Nada se cobró, es una prueba.
           </p>
           {orden._local && !orden._invitado && (
             <p className="badge badge-aviso" role="note">
@@ -277,6 +281,9 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     return (
       <div className="checkout centrado">
         <div className="vacio anim-entrada">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={44} alto={44} decorativa />
+          </span>
           <p className="vacio-titulo">Tu carrito está vacío</p>
           <p className="vacio-texto">Sumá productos antes de finalizar la compra.</p>
           <Link to="/productos" className="btn-primary">Ver productos</Link>
@@ -289,7 +296,10 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     <div className="checkout">
       <header className="seccion-head editorial">
         <div className="seccion-titular">
-          <p className="kicker"><span className="kicker-num">Pago simulado</span> Checkout</p>
+          <p className="kicker kicker-marca">
+            <Marca variante="simbolo" ancho={20} alto={20} decorativa />
+            <span><span className="kicker-num">Pago simulado</span> Checkout</span>
+          </p>
           <h1>Finalizar compra</h1>
         </div>
         <span className="badge badge-info"><FaLock aria-hidden="true" /> Compra protegida</span>
@@ -338,8 +348,8 @@ function Checkout({ carrito = [], vaciarCarrito }) {
           </section>
 
           <section className="card checkout-panel" aria-label="Pago simulado">
-            <h2><FaCreditCard aria-hidden="true" /> Pago (simulado)</h2>
-            <p className="texto-mutado checkout-nota">Demostración: no ingreses datos reales, nada se cobra. Aprobada: <code>4242 4242 4242 4242</code> · Rechazada: <code>4000 0000 0000 0002</code></p>
+            <h2><FaCreditCard aria-hidden="true" /> Pago de prueba</h2>
+            <p className="texto-mutado checkout-nota">Pago de prueba, no se cobra. No uses datos reales. Aprobada: <code>4242 4242 4242 4242</code> · Rechazada: <code>4000 0000 0000 0002</code></p>
             <div className="checkout-opciones" role="radiogroup" aria-label="Método de pago">
               <label className={pago === "tarjeta" ? "activo" : ""}>
                 <input type="radio" name="pago" value="tarjeta" checked={pago === "tarjeta"} onChange={() => setPago("tarjeta")} />

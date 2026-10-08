@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket } from "react-icons/fa6";
 import Login from "../Login/Login";
 import Registro from "../Login/Registro";
+import Marca from "../../components/brand/Marca";
 import useAuthStore from "../../store/authStore";
 import "./Cuenta.css";
 
@@ -56,6 +57,9 @@ function Cuenta() {
             <h2>Mis pedidos</h2>
             <p>Todavía no tenés pedidos realizados.</p>
             <div className="vacio">
+              <span className="marca-centrada" aria-hidden="true">
+                <Marca variante="simbolo" ancho={40} alto={40} decorativa />
+              </span>
               <span className="vacio-icono" aria-hidden="true">
                 <FaBoxOpen />
               </span>
@@ -74,6 +78,9 @@ function Cuenta() {
             <h2>Mis favoritos</h2>
             <p>No tenés productos favoritos.</p>
             <div className="vacio">
+              <span className="marca-centrada" aria-hidden="true">
+                <Marca variante="simbolo" ancho={40} alto={40} decorativa />
+              </span>
               <span className="vacio-icono" aria-hidden="true">
                 <FaHeart />
               </span>

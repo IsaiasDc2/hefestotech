@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
-import { FaRobot, FaXmark, FaArrowRight } from "react-icons/fa6";
+import { useEffect, useRef, useState } from "react";
+import { FaXmark, FaArrowRight } from "react-icons/fa6";
+import Marca from "../brand/Marca.jsx";
 import "./Asistente.css";
 
 function Asistente() {
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const botonRef = useRef(null);
+  const panelRef = useRef(null);
   const [chat, setChat] = useState([
     { rol: "ia", texto: "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?" },
   ]);
@@ -34,11 +37,21 @@ function Asistente() {
         {
           rol: "ia",
           texto:
-            "Mis circuitos están en mantenimiento. Intenta de nuevo más tarde.",
+            "Mis circuitos están en mantenimiento. Intentá de nuevo más tarde.",
         },
       ]);
     }
   };
+
+  const yaMonto = useRef(false);
+  useEffect(() => {
+    if (abierto) {
+      panelRef.current?.focus();
+    } else if (yaMonto.current) {
+      botonRef.current?.focus();
+    }
+    yaMonto.current = true;
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -54,15 +67,19 @@ function Asistente() {
       {abierto && (
         <div
           className="asistente-panel card"
+          id="asistente-panelo"
           role="dialog"
-          aria-label="Asistente IA"
+          aria-modal="false"
+          aria-labelledby="asistente-titulo"
+          ref={panelRef}
+          tabIndex={-1}
         >
           <div className="asistente-head">
             <span className="asistente-avatar" aria-hidden="true">
-              <FaRobot />
+              <Marca variante="simbolo" ancho={28} alto={28} decorativa />
             </span>
             <div>
-              <strong>Asistente Hefesto</strong>
+              <strong id="asistente-titulo">Asistente de HefestoTech</strong>
               <span className="asistente-estado">
                 <span className="asistente-dot" aria-hidden="true" />
                 En línea
@@ -87,7 +104,12 @@ function Asistente() {
                 key={i}
                 className={`asistente-msg${msg.rol === "ia" ? " es-ia" : " es-usuario"}`}
               >
-                {msg.texto}
+                {msg.rol === "ia" && (
+                  <span className="asistente-msg-avatar" aria-hidden="true">
+                    <Marca variante="simbolo" ancho={20} alto={20} decorativa />
+                  </span>
+                )}
+                <span className="asistente-msg-texto">{msg.texto}</span>
               </div>
             ))}
           </div>
@@ -114,13 +136,15 @@ function Asistente() {
         type="button"
         className={`asistente-bola${abierto ? " es-abierto" : ""}`}
         onClick={() => setAbierto((v) => !v)}
-        aria-label={abierto ? "Cerrar asistente IA" : "Abrir asistente IA"}
+        ref={botonRef}
+        aria-label={abierto ? "Cerrar asistente de HefestoTech" : "Abrir asistente de HefestoTech"}
         aria-expanded={abierto}
+        aria-controls="asistente-panelo"
       >
         {abierto ? (
           <FaXmark aria-hidden="true" />
         ) : (
-          <FaRobot aria-hidden="true" />
+          <Marca variante="simbolo" ancho={32} alto={32} decorativa />
         )}
         {!abierto && <span className="asistente-punto" aria-hidden="true" />}
       </button>

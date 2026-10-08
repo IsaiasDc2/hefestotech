@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import Marca from "../brand/Marca";
 
 import {
   FaLocationDot,
@@ -82,9 +83,10 @@ function Footer() {
 
         <div className="footer-col footer-brand">
 
-          <h3 className="footer-logo">
-            Hefesto<span>Tech</span>
-          </h3>
+          <p className="footer-marca">
+            <Marca variante="lockup" ancho={190} alto={148} alt="HefestoTech" />
+            <span className="sr-only">HefestoTech</span>
+          </p>
 
 
           <p>

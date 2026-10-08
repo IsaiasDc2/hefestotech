@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { FaCartShopping } from "react-icons/fa6";
+import Marca from "../../components/brand/Marca";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
 
@@ -22,6 +23,9 @@ function Carrito({
   if (carrito.length === 0) {
     return (
       <div className="carrito-pagina carrito-vacio-pagina">
+        <span className="marca-centrada" aria-hidden="true">
+          <Marca variante="simbolo" ancho={56} alto={56} decorativa />
+        </span>
         <div className="cart-vacio-ilustra" aria-hidden="true">
           <span className="cart-vacio-anillo" />
           <FaCartShopping className="cart-vacio-icono" />
