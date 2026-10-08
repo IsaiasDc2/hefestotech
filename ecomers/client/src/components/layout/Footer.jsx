@@ -171,7 +171,7 @@ function Footer() {
 
 
             <li>
-              <Link to="/contactanos">
+              <Link to="/armar-pc">
                 Armá tu PC
               </Link>
             </li>

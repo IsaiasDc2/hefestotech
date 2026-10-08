@@ -91,7 +91,8 @@ export default function App() {
           }
         />
         <Route path="cuenta" element={<Cuenta />} />
-        <Route path="arma-tu-pc" element={<ArmaTuPc />} />
+        <Route path="armar-pc" element={<ArmaTuPc />} />
+        <Route path="arma-tu-pc" element={<Navigate to="/armar-pc" replace />} />
         <Route path="admin" element={<Admin />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
