@@ -1,11 +1,14 @@
 ---
 name: HefestoTech
-description: Ecommerce gaming oscuro de alto contraste, acentos índigo y latón, voz rioplatense.
+description: Ecommerce gaming de alto contraste, acentos índigo y latón, voz rioplatense. Doble tema (noche + día propio).
 colors:
   primary: "#6366F1"
   primary-deep: "#4338CA"
+  primary-day: "#4F46E5"
   accent-sky: "#0EA5E9"
+  accent-sky-day: "#0284C7"
   loot-brass: "#C9A86A"
+  loot-brass-day: "#8C7146"
   night-bg: "#0B0E14"
   surface: "#121724"
   card: "#171E2D"
@@ -15,9 +18,20 @@ colors:
   ink: "#F1F5F9"
   muted: "#94A3B8"
   muted-deep: "#7A8AA3"
+  day-bg: "#F4F6FB"
+  day-surface: "#FFFFFF"
+  day-elevated: "#EAF0F8"
+  day-ink: "#0F172A"
+  day-muted: "#475569"
+  day-faint: "#64748B"
+  day-line: "#D7DEE9"
+  day-line-soft: "#E5EAF2"
   signal: "#10B981"
+  signal-day: "#047857"
   alert: "#E5484D"
+  alert-day: "#DC2626"
   warning: "#F59E0B"
+  warning-day: "#B45309"
 typography:
   display:
     fontFamily: "Oswald, Arial Narrow, Impact, system-ui, sans-serif"
@@ -62,7 +76,7 @@ components:
     rounded: "{rounded.md}"
     padding: "0.8rem 1.4rem"
   button-primary-hover:
-    backgroundColor: "{colors.primary}"
+    backgroundColor: "{colors.primary-deep}"
     textColor: "#ffffff"
     rounded: "{rounded.md}"
     padding: "0.8rem 1.4rem"
@@ -101,10 +115,11 @@ components:
 
 HefestoTech se ve como un arsenal nocturno: superficies de grafito profundo, instrumentación precisa y dos municiones de color — índigo para la acción, latón para el botín. Nada decora por decorar; cada brillo señala algo comprable, seleccionable o alcanzable. La densidad es de catálogo (grillas de 4, carruseles, chips de marca), pero el ritmo lo marcan picos editoriales — banner, titulares condensados en mayúsculas — que separan las zonas de exploración.
 
-La voz visual es rioplatense y directa, igual que el copy. El sistema vive solo en modo oscuro: la noche es la escena de uso (gaming después del trabajo), no una preferencia temática.
+La voz visual es rioplatense y directa, igual que el copy. El sistema vive en dos temas: noche táctica (default, escena de uso gaming) y día propio (papel frío con acento índigo ajustado, no negativo del oscuro).
 
 **Key Characteristics:**
-- Oscuro táctico con dos acentos disciplinados (índigo acción, latón precio/trofeo).
+- Doble tema con tokens semánticos (`data-theme` en `<html>`): oscuro táctico + claro diurno propio.
+- Dos acentos disciplinados (índigo acción, latón precio/trofeo) en ambos temas.
 - Tipografía condensada en mayúsculas para titulares, Inter legible para todo lo demás.
 - Cards elevadas con borde de 1px y glow solo como respuesta a hover/foco.
 - Ritmo por picos: banner editorial, grillas densas, beneficios en fila.
@@ -137,7 +152,33 @@ Fría y contenida: el índigo manda en la acción, el latón solo aparece donde 
 
 ### Named Rules
 **The Two-Ammo Rule.** Solo el índigo actúa y solo el latón celebra. Ningún otro tono reclama una región o un rol.
-**The Night-Only Rule.** No existe tema claro. Diseñar en oscuro siempre; derivar el texto secundario del fondo, jamás grises genéricos lavados.
+**Theme Rule (reemplaza Night-Only).** Diseñar en ambos temas desde el inicio; el claro es diseño propio (acento índigo-600, bordes visibles, sombras suaves tintadas), jamás inversión automática del oscuro.
+
+### Tokens semánticos finales (contrato light/dark)
+
+Capas: primitiva (`--primitive-*`, crudos) → semántica (esta tabla) → componente. En componentes usar siempre la columna semántica. Aliases legacy (`--bg`, `--surface`, `--card`, `--muted`, `--primary`, `--oro`, etc.) apuntan a la semántica por compatibilidad.
+
+| Semántico | Oscuro (`dark`) | Claro (`light`) | Rol |
+|---|---|---|---|
+| `--background` | `#0B0E14` | `#F4F6FB` | fondo de página |
+| `--surface` | `#121724` | `#FFFFFF` | superficies (inputs, header) |
+| `--surface-elevated` | `#171E2D` | `#FFFFFF` | cards |
+| `--surface-elevated-2` | `#1E2638` | `#EAF0F8` | medios / skeleton |
+| `--text` | `#F1F5F9` | `#0F172A` | texto principal |
+| `--text-muted` | `#94A3B8` | `#475569` | texto secundario |
+| `--text-faint` | `#7A8AA3` | `#64748B` | placeholders / metadatos |
+| `--border` | `#2A3449` | `#D7DEE9` | bordes (1px visible en ambos) |
+| `--border-soft` | `#1A2233` | `#E5EAF2` | separadores |
+| `--accent` | `#6366F1` | `#4F46E5` | acción |
+| `--accent-hover` | `#4338CA` | `#4338CA` | hover / pressed |
+| `--accent-sky` | `#0EA5E9` | `#0284C7` | info / progreso |
+| `--gold` | `#C9A86A` | `#8C7146` | ofertas / precio / trofeo |
+| `--success` | `#10B981` | `#047857` | stock / éxito |
+| `--warning` | `#F59E0B` | `#B45309` | avisos / rating |
+| `--danger` | `#E5484D` | `#DC2626` | errores / destructivo |
+| `--focus-ring` | `rgba(99,102,241,.45)` | `rgba(79,70,229,.35)` | anillo de foco |
+
+Pares de contraste verificados (AA): oscuro `ink/bg` 17.6:1, `muted/bg` 7.5:1; claro `day-ink/day-surface` ~15:1, `day-muted/white` ~7:1, `primary-day` con blanco ~6.9:1 (botón), `brass-day` sobre blanco ~4.9:1 (precio en oferta), `success-day`/`warning-day`/`danger-day` ≥4.5:1 sobre blanco.
 
 ### Divergencias documentadas (accesibilidad primero)
 - `--grad-marca` es índigo→índigo-profundo (`#6366F1→#4338CA`), no índigo→celeste: el blanco sobre índigo→celeste no llega a 4.5:1 en texto chico de CTA.
@@ -209,6 +250,36 @@ Bordes redondeados en tres pasos (8/12/16px) más píldora total (999px) para ba
 
 ### Banner Carousel (signature)
 - Tres diapositivas fotográficas con velo para legibilidad, autoplay de 6s que se pausa en hover/foco y respeta `prefers-reduced-motion`. Flechas, puntos con progreso y contador numérico, todo operable por teclado y táctil (`touch-action: pan-y`).
+
+## Marca
+
+- **Logo:** original intacto en `ecomers/client/public/brand/logo-original.jpeg` (JPEG sin alfa, no se recorta ni se redibuja). Derivados con alfa: `logo-symbol.png/.webp` (chip, header/badges/estados) y `logo-lockup.png/.webp` (símbolo + texto, footer/OG/404). Componente `Marca` (`variante="simbolo"|"lockup"`, `width/height` siempre definidos, CLS=0, `eager` + `fetchPriority` solo en header).
+- **Variantes:** `simbolo` legible desde 30–36px (header); `lockup` solo ≥150px de ancho (footer, OG, 404).
+- **Zona de seguridad:** padding propio del derivado + aire mínimo equivalente a 1/4 del ancho del símbolo alrededor; nada invade ese aire (texto, bordes, iconos).
+- **Tamaño mínimo:** símbolo 24px digital (30px recomendado en header móvil); lockup 150px de ancho. Debajo de eso, usar solo wordmark en texto.
+- **Qué no hacer:** no estirar/comprimir, no rotar, no cambiar colores del logo, no ponerlo sobre fondos que maten su contraste sin velo, no agregar glows/sombras permanentes (Flat-At-Rest), no recortar el JPEG original, no inventar un tercer lockup.
+
+## Tema (mecánica)
+
+- `data-theme="dark"|"light"` en `<html>`; default `dark`. Sin preferencia guardada se respeta `prefers-color-scheme`. La preferencia se guarda en `localStorage("ht-tema")` y los cambios del sistema solo aplican si no hay preferencia guardada.
+- Script anti-flash inline en `index.html` (antes del primer render) + `color-scheme: dark light` y dos `theme-color` por esquema (`#0B0E14` / `#F4F6FB`).
+- Control único accesible: botón `.topbar-tema` en `Navbar` (hook `useTema`), con `aria-pressed`, `aria-label` bilingüe y Sol/Luna según tema. No duplicar toggles en otras vistas.
+
+## Section (tono fijo + mapa de alternancia)
+
+Componente `src/components/layout/Section.jsx` (+ `Section.css`), prop `tono="dark"|"light"` (default `dark`). El tono es absoluto: `section--dark` siempre noche (`#0B0E14`/`#F1F5F9`), `section--light` siempre papel (`#F4F6FB`/`#0F172A`), independiente del `data-theme` global. Estructura: `<section class="section section--{tono}"><div class="section__inner">{children}</div></section>`, prop `labelledBy` para accesibilidad.
+
+| Orden en página | Tono | Uso |
+|---|---|---|
+| 1. Hero / banner impacto | `dark` | editorial nocturno, titulares display, CTA primario |
+| 2. Listados / catálogo / exploración | `light` | grillas densas, lectura larga, precio latón-day |
+| 3. Beneficios / confianza / cierre | `dark` | garantías, envíos, testimonios, CTA final |
+
+Regla: nunca dos claras seguidas ni más de dos oscuras seguidas; una sola inversión fuerte por viewport. Eyebrow max 1 cada 3 secciones (Section no impone eyebrow).
+
+## Estructura futura propuesta (SIN aplicar — requiere aprobación)
+
+No reorganizar carpetas ahora. Propuesta a aprobar: colapsar `src/components/layout/` + `src/components/brand/` en `src/components/ui/` con subcarpetas `layout/` y `brand/`, y mover tokens a `src/styles/tokens.css` importado por `index.css`; `Section` sería el primer habitante de `ui/layout/`. Sin cambios de imports hasta aprobación.
 
 ## Do's and Don'ts
 

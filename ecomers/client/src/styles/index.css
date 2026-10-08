@@ -1,20 +1,73 @@
 :root {
-  --bg: #0b0e14;
-  --surface: #121724;
-  --card: #171e2d;
-  --card-2: #1e2638;
-  --border: #2a3449;
-  --border-suave: #1a2233;
-  --text: #f1f5f9;
-  --muted: #94a3b8;
-  --muted-oscuro: #7a8aa3;
-  --primary: #6366f1;
-  --primary-oscuro: #4338ca;
-  --acento: #0ea5e9;
-  --oro: #c9a86a;
-  --ok: #10b981;
-  --danger: #e5484d;
-  --sobre-marca: #ffffff;
+  color-scheme: dark;
+
+  /* Capa primitiva (valores crudos, no usar directo en componentes) */
+  --primitive-night: #0b0e14;
+  --primitive-graphite: #121724;
+  --primitive-armor: #171e2d;
+  --primitive-armor-elevated: #1e2638;
+  --primitive-line: #2a3449;
+  --primitive-line-soft: #1a2233;
+  --primitive-ink: #f1f5f9;
+  --primitive-fog: #94a3b8;
+  --primitive-fog-deep: #7a8aa3;
+  --primitive-indigo: #6366f1;
+  --primitive-indigo-deep: #4338ca;
+  --primitive-indigo-bright: #4f46e5;
+  --primitive-sky: #0ea5e9;
+  --primitive-sky-deep: #0284c7;
+  --primitive-brass: #c9a86a;
+  --primitive-brass-deep: #8c7146;
+  --primitive-green: #10b981;
+  --primitive-green-deep: #047857;
+  --primitive-red: #e5484d;
+  --primitive-red-deep: #dc2626;
+  --primitive-amber: #f59e0b;
+  --primitive-amber-deep: #b45309;
+  --primitive-paper: #f4f6fb;
+  --primitive-paper-surface: #ffffff;
+  --primitive-paper-elevated: #eaf0f8;
+  --primitive-day-ink: #0f172a;
+  --primitive-day-muted: #475569;
+  --primitive-day-faint: #64748b;
+  --primitive-day-line: #d7dee9;
+  --primitive-day-line-soft: #e5eaf2;
+  --primitive-brass-day: #8c7146;
+  --primitive-on-brand: #ffffff;
+
+  /* Capa semantica (contrato light/dark, usar siempre via var()) */
+  --background: var(--primitive-night);
+  --surface: var(--primitive-graphite);
+  --surface-elevated: var(--primitive-armor);
+  --surface-elevated-2: var(--primitive-armor-elevated);
+  --text: var(--primitive-ink);
+  --text-muted: var(--primitive-fog);
+  --text-faint: var(--primitive-fog-deep);
+  --border: var(--primitive-line);
+  --border-soft: var(--primitive-line-soft);
+  --accent: var(--primitive-indigo);
+  --accent-hover: var(--primitive-indigo-deep);
+  --accent-sky: var(--primitive-sky);
+  --gold: var(--primitive-brass);
+  --success: var(--primitive-green);
+  --warning: var(--primitive-amber);
+  --danger: var(--primitive-red);
+  --focus-ring: rgba(99, 102, 241, 0.45);
+
+  /* Aliases legacy (compat con CSS de componentes existente) */
+  --bg: var(--background);
+  --card: var(--surface-elevated);
+  --card-2: var(--surface-elevated-2);
+  --border-suave: var(--border-soft);
+  --muted: var(--text-muted);
+  --muted-oscuro: var(--text-faint);
+  --primary: var(--accent);
+  --primary-oscuro: var(--accent-hover);
+  --acento: var(--accent-sky);
+  --oro: var(--gold);
+  --ok: var(--success);
+  --sobre-marca: var(--primitive-on-brand);
+  --on-accent: var(--primitive-on-brand);
   --primary-suave: rgba(99, 102, 241, 0.12);
   --primary-borde: rgba(99, 102, 241, 0.38);
   --primary-resplandor: rgba(99, 102, 241, 0.16);
@@ -23,9 +76,9 @@
   --oro-borde: rgba(201, 168, 106, 0.4);
   --danger-borde: rgba(229, 72, 77, 0.4);
   --velo: rgba(11, 14, 20, 0.75);
-  --anillo-foco: rgba(99, 102, 241, 0.45);
-  --grad-marca: linear-gradient(135deg, #6366f1, #4338ca);
-  --grad-oro: linear-gradient(135deg, #c9a86a, #8c7146);
+  --anillo-foco: var(--focus-ring);
+  --grad-marca: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  --grad-oro: linear-gradient(135deg, var(--gold), var(--primitive-brass-deep));
   --radio: 12px;
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -90,13 +143,61 @@
   --reveal-y: 12px;
 
   
-  --skeleton-base: #151c2a;
+  --skeleton-base: var(--surface-elevated-2);
   --skeleton-brillo: rgba(99, 102, 241, 0.14);
   --media-velo: linear-gradient(180deg, transparent 55%, rgba(11, 14, 20, 0.55));
-  --estrella: #f59e0b;
+  --estrella: var(--warning);
   --detalle-col: 520px;
 }
 
+/* Tema oscuro explicito (default nocturno, igual que :root). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Tema claro: diseno propio diurno, no negativo del oscuro.
+   Acento indigo-600 (contraste AA), bordes visibles, sombras suaves
+   tintadas al fondo. Texto slate sobre papel frio. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --background: var(--primitive-paper);
+  --surface: var(--primitive-paper-surface);
+  --surface-elevated: var(--primitive-paper-surface);
+  --surface-elevated-2: var(--primitive-paper-elevated);
+  --text: var(--primitive-day-ink);
+  --text-muted: var(--primitive-day-muted);
+  --text-faint: var(--primitive-day-faint);
+  --border: var(--primitive-day-line);
+  --border-soft: var(--primitive-day-line-soft);
+  --accent: var(--primitive-indigo-bright);
+  --accent-hover: var(--primitive-indigo-deep);
+  --accent-sky: var(--primitive-sky-deep);
+  --gold: var(--primitive-brass-day);
+  --success: var(--primitive-green-deep);
+  --warning: var(--primitive-amber-deep);
+  --danger: var(--primitive-red-deep);
+  --focus-ring: rgba(79, 70, 229, 0.35);
+
+  --primary-suave: rgba(79, 70, 229, 0.1);
+  --primary-borde: rgba(79, 70, 229, 0.4);
+  --primary-resplandor: rgba(79, 70, 229, 0.12);
+  --primary-sombra: rgba(79, 70, 229, 0.22);
+  --oro-suave: rgba(140, 113, 70, 0.1);
+  --oro-borde: rgba(140, 113, 70, 0.45);
+  --danger-borde: rgba(220, 38, 38, 0.4);
+  --velo: rgba(244, 246, 251, 0.8);
+  --anillo-foco: var(--focus-ring);
+  --sombra: 0 8px 28px rgba(15, 23, 42, 0.08);
+  --sombra-suave: 0 2px 10px rgba(15, 23, 42, 0.08);
+  --sombra-media: 0 8px 28px rgba(15, 23, 42, 0.1);
+  --sombra-marca: 0 6px 24px rgba(79, 70, 229, 0.18);
+  --skeleton-base: var(--primitive-paper-elevated);
+  --skeleton-brillo: rgba(79, 70, 229, 0.12);
+  --media-velo: linear-gradient(180deg, transparent 55%, rgba(15, 23, 42, 0.45));
+}
+
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -382,18 +483,27 @@ img {
 
 
 :root {
-  --info: #0ea5e9;
+  --info: var(--accent-sky);
   --info-borde: rgba(14, 165, 233, 0.4);
   --info-suave: rgba(14, 165, 233, 0.1);
-  --aviso: #f59e0b;
+  --aviso: var(--warning);
   --aviso-borde: rgba(245, 158, 11, 0.4);
   --aviso-suave: rgba(245, 158, 11, 0.1);
   --ok-suave: rgba(16, 185, 129, 0.1);
   --ok-borde: rgba(16, 185, 129, 0.35);
-  --danger: #e5484d;
   --danger-suave: rgba(229, 72, 77, 0.1);
-  --danger-borde: rgba(229, 72, 77, 0.4);
-  --superficie-elevada: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%);
+  --superficie-elevada: linear-gradient(180deg, var(--surface-elevated) 0%, var(--surface) 100%);
+}
+
+:root[data-theme="light"] {
+  --info-borde: rgba(2, 132, 199, 0.4);
+  --info-suave: rgba(2, 132, 199, 0.1);
+  --aviso-borde: rgba(180, 83, 9, 0.4);
+  --aviso-suave: rgba(180, 83, 9, 0.1);
+  --ok-suave: rgba(4, 120, 87, 0.1);
+  --ok-borde: rgba(4, 120, 87, 0.35);
+  --danger-suave: rgba(220, 38, 38, 0.08);
+  --danger-borde: rgba(220, 38, 38, 0.4);
 }
 
 
@@ -423,7 +533,7 @@ img {
 
 .btn-primary {
   background: var(--grad-marca);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: var(--sombra-marca);
 }
 
@@ -733,4 +843,24 @@ img {
   .skeleton {
     opacity: 1;
   }
+}
+
+/* Control unico de tema (topbar): estado habilitado.
+   Vive aca (no en Navbar.css) para no tocar CSS de componentes. */
+.topbar-tema:not(:disabled) {
+  cursor: pointer;
+  opacity: 1;
+  border-style: solid;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.topbar-tema:not(:disabled):hover {
+  border-color: var(--primary-borde);
+  transform: translateY(-1px);
+}
+
+.topbar-tema:not(:disabled):active {
+  transform: scale(0.96);
 }
