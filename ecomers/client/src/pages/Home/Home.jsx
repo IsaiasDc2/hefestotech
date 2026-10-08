@@ -30,13 +30,15 @@ const MARCAS = [
 ];
 
 const CATEGORIAS = [
-  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip /> },
-  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop /> },
-  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory /> },
-  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive /> },
-  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard /> },
-  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire /> },
+  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip />, imagen: "procesador" },
+  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop />, imagen: "placa" },
+  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory />, imagen: "ram" },
+  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive />, imagen: "almacenamiento" },
+  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard />, imagen: "periferico" },
+  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire />, imagen: "oferta" },
 ];
+
+const BASE = import.meta.env.BASE_URL || "/";
 
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
@@ -134,7 +136,20 @@ function Home({ agregarAlCarrito }) {
               to={`/productos?categoria=${c.slug}`}
               className="card-categoria"
             >
-              <span className="cat-icono" aria-hidden="true">{c.icono}</span>
+              <span className="cat-icono" aria-hidden="true">
+                {c.icono}
+                <img
+                  src={`${BASE}banners/${c.imagen}.webp`}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width="64"
+                  height="64"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </span>
               <span>{c.nombre}</span>
             </Link>
           ))}
