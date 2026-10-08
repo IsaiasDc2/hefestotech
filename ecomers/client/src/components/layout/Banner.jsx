@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import imgPlaca from "../../assets/banner-gpu.jpg";
+import imgSetup from "../../assets/banner-setup.jpg";
+import imgPeris from "../../assets/banner-peris.jpg";
 import "./Banner.css";
 
 const SLIDES = [
@@ -17,8 +20,7 @@ const SLIDES = [
     ctaSec: "Ver outlet",
     toSec: "/productos?categoria=ofertas",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/asi-luce-la-nueva-linea-de-placas-de-video.webp",
+    imagen: imgPlaca,
   },
   {
     id: "setup",
@@ -33,8 +35,7 @@ const SLIDES = [
     ctaSec: "Ver periféricos",
     toSec: "/productos?categoria=perifericos",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/neon-rog.webp",
+    imagen: imgSetup,
   },
   {
     id: "peris",
@@ -43,14 +44,13 @@ const SLIDES = [
     eyebrow: "Precisión gamer",
     titulo: "Cada clic",
     acento: "cuenta",
-    texto: "Teclados mecánicos y mouse de alta respuesta para competir de verdad.",
+    texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
     ctaSec: "Explorar productos",
     toSec: "/productos",
     posicion: "right center",
-    imagen:
-      "https://ewqwmzwtrsjlrrnrotcm.supabase.co/storage/v1/object/public/productos/gaming-setup-pictures-j3k8ezoqihs4xtrm.webp",
+    imagen: imgPeris,
   },
 ];
 
@@ -66,6 +66,7 @@ export default function Banner() {
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
   const [fotos, setFotos] = useState({});
+  const [fotoRota, setFotoRota] = useState({});
   const total = SLIDES.length;
   const timer = useRef(null);
   const touchX = useRef(null);
@@ -140,7 +141,7 @@ export default function Banner() {
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
             >
-              {s.imagen ? (
+              {s.imagen && !fotoRota[s.id] ? (
                 <div className="banner-foto" aria-hidden="true">
                   <img
                     src={s.imagen}
@@ -149,6 +150,7 @@ export default function Banner() {
                     loading={i === 0 ? "eager" : "lazy"}
                     decoding="async"
                     style={{ objectPosition: s.posicion }}
+                    onError={() => setFotoRota((prev) => ({ ...prev, [s.id]: true }))}
                   />
                 </div>
               ) : (
@@ -194,9 +196,15 @@ export default function Banner() {
                   <span className="banner-kicker-sep" aria-hidden="true" />
                   {s.eyebrow}
                 </p>
-                <h2>
-                  {s.titulo} <span className="banner-acento">{s.acento}</span>
-                </h2>
+                {activo ? (
+                  <h1 className="banner-titulo">
+                    {s.titulo} <span className="banner-acento">{s.acento}</span>
+                  </h1>
+                ) : (
+                  <h2 className="banner-titulo" aria-hidden="true">
+                    {s.titulo} <span className="banner-acento">{s.acento}</span>
+                  </h2>
+                )}
                 <p className="banner-desc">{s.texto}</p>
                 <div className="banner-acciones">
                   <Link

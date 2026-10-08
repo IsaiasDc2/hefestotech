@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -41,7 +41,10 @@ const CATEGORIAS = [
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
+  const [reintento, setReintento] = useState(0);
   const [filtroTexto, setFiltroTexto] = useState("");
+  const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const pillsRef = useRef(null);
 
@@ -56,7 +59,8 @@ function Home({ agregarAlCarrito }) {
   const desplazarPills = (dir) => {
     const el = pillsRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
+    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: dir * 220, behavior: suave ? "smooth" : "auto" });
   };
 
   const normalizar = (data) =>
@@ -72,6 +76,7 @@ function Home({ agregarAlCarrito }) {
   useEffect(() => {
     async function cargar() {
       try {
+        setError(false);
         const { data, error } = await supabase
           .from("productos")
           .select("*")
@@ -80,12 +85,13 @@ function Home({ agregarAlCarrito }) {
         setProductos(normalizar(data));
       } catch {
         setProductos([]);
+        setError(true);
       } finally {
         setCargando(false);
       }
     }
     cargar();
-  }, []);
+  }, [reintento]);
 
   const destacados = productos.slice(0, 8);
   const ofertas = productos
@@ -93,7 +99,7 @@ function Home({ agregarAlCarrito }) {
     .slice(0, 10);
 
   const filtrados = productos.filter((p) => {
-    const texto = filtroTexto.trim().toLowerCase();
+    const texto = filtroTextoDif.trim().toLowerCase();
     const coincideTexto =
       !texto ||
       p.nombre.toLowerCase().includes(texto) ||
@@ -136,7 +142,22 @@ function Home({ agregarAlCarrito }) {
       </section>
 
       {cargando ? (
-        <p className="estado-carga">Calentando la forja...</p>
+        <p className="estado-carga">Cargando productos…</p>
+      ) : error ? (
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar los productos</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => {
+              setCargando(true);
+              setReintento((n) => n + 1);
+            }}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
       ) : (
         <>
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">
@@ -146,7 +167,7 @@ function Home({ agregarAlCarrito }) {
                   <span className="kicker-num" aria-hidden="true">02</span>
                   Destacados
                 </p>
-                <h2 id="home-catalogo">Conocé nuestros productos destacados</h2>
+                <h2 id="home-catalogo">Explorá el catálogo</h2>
               </div>
               <span className="conteo">
                 {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
@@ -193,7 +214,7 @@ function Home({ agregarAlCarrito }) {
               <input
                 className="buscador"
                 type="text"
-                placeholder="🔍 Buscar por nombre o marca..."
+                placeholder="Buscar por nombre o marca..."
                 value={filtroTexto}
                 onChange={(e) => setFiltroTexto(e.target.value)}
                 aria-label="Buscar productos"
@@ -241,16 +262,16 @@ function Home({ agregarAlCarrito }) {
           </section>
 
           <ProductCarousel
-            titulo="Ofertas de la semana"
-            kicker="Botín semanal"
+            titulo="En oferta"
+            kicker="Precios rebajados"
             kickerNum="03"
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
           />
           <ProductCarousel
-            titulo="Destacados de la forja"
-            kicker="Los más buscados"
+            titulo="Destacados"
+            kicker="Selección"
             kickerNum="04"
             verTodo="/productos"
             productos={destacados}
@@ -258,8 +279,8 @@ function Home({ agregarAlCarrito }) {
           />
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
-              <p>El catálogo se está forjando.</p>
-              <span>Volvé pronto para ver los destacados.</span>
+              <p>El catálogo está vacío por ahora.</p>
+              <span>Volvé pronto o explorá el catálogo completo.</span>
             </div>
           )}
         </>
@@ -272,7 +293,7 @@ function Home({ agregarAlCarrito }) {
               <span className="kicker-num" aria-hidden="true">05</span>
               Marcas
             </p>
-            <h2 id="home-marcas">Nuestras marcas</h2>
+            <h2 id="home-marcas">Marcas</h2>
           </div>
           <Link to="/productos" className="ver-todo">
             Ver todo <span aria-hidden="true">→</span>

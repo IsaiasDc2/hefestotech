@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  FaHeart,
+  FaRegHeart,
+  FaCreditCard,
+  FaTruckFast,
+  FaCartPlus,
+} from "react-icons/fa6";
 import "./ProductCard.css";
 
 function ProductCard({ producto, agregarAlCarrito }) {
   const [favorito, setFavorito] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
   const descuento = Math.round(Number(producto.descuento_porcentaje ?? 0));
@@ -14,7 +22,13 @@ function ProductCard({ producto, agregarAlCarrito }) {
   const imagen = producto.imagen || "";
   const nombre = producto.nombre || "Producto";
   const marca = (producto.marca || "").trim();
-  const rating = Number(producto.rating ?? producto.promedio ?? 4.7);
+  const ratingRaw = producto.rating ?? producto.promedio ?? null;
+  const tieneRating =
+    ratingRaw !== null &&
+    ratingRaw !== undefined &&
+    ratingRaw !== "" &&
+    !Number.isNaN(Number(ratingRaw));
+  const rating = tieneRating ? Number(ratingRaw) : null;
   const resenas = producto.resenas ?? producto.cantidad_resenas ?? null;
 
   return (
@@ -35,7 +49,11 @@ function ProductCard({ producto, agregarAlCarrito }) {
           favorito ? "Quitar de favoritos" : "Agregar a favoritos"
         }
       >
-        {favorito ? "❤️" : "🤍"}
+        {favorito ? (
+          <FaHeart aria-hidden="true" />
+        ) : (
+          <FaRegHeart aria-hidden="true" />
+        )}
       </button>
 
       <Link to={`/producto/${producto.id}`} className="producto-detalle">
@@ -45,23 +63,29 @@ function ProductCard({ producto, agregarAlCarrito }) {
           </span>
         )}
         <span className="card-media">
-          {imagen ? (
+          {imagen && !imgError ? (
             <img
               src={imagen}
               alt={nombre}
               loading="lazy"
               decoding="async"
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
+              onError={() => { setImgError(true); }}
             />
           ) : (
             <span className="producto-sin-imagen" aria-hidden="true">HefestoTech</span>
           )}
         </span>
+        {tieneRating ? (
         <span className="card-rating" aria-label={`Calificación ${rating} de 5`}>
           <span className="estrellas" aria-hidden="true">★★★★★</span>
           <span className="rating-num">{rating.toFixed(1)}</span>
           {resenas != null && <span className="rating-count">({resenas})</span>}
         </span>
+        ) : (
+        <span className="card-rating card-rating-vacio">
+          <span className="rating-count">Sin calificaciones</span>
+        </span>
+        )}
         <h3>{nombre}</h3>
       </Link>
 
@@ -95,17 +119,34 @@ function ProductCard({ producto, agregarAlCarrito }) {
         <strong className="precio-actual">${precio.toLocaleString("es-AR")}</strong>
       )}
 
-      <p className="cuotas">💳 6 cuotas sin interés</p>
+      <p className="cuotas">
+        <FaCreditCard aria-hidden="true" /> 6 cuotas sin interés
+      </p>
 
-      {producto.envio_gratis && <p className="envio">🚚 Envío gratis</p>}
+      {producto.envio_gratis && (
+        <p className="envio">
+          <FaTruckFast aria-hidden="true" /> Envío gratis
+        </p>
+      )}
 
       <button
         type="button"
         className="btn-carrito"
         disabled={!producto.stock}
         onClick={() => agregarAlCarrito?.(producto)}
+        aria-label={
+          producto.stock
+            ? `Agregar ${nombre} al carrito`
+            : `${nombre} sin stock`
+        }
       >
-        {producto.stock ? "🛒 Agregar al carrito" : "Sin stock"}
+        {producto.stock ? (
+          <>
+            <FaCartPlus aria-hidden="true" /> Agregar al carrito
+          </>
+        ) : (
+          "Sin stock"
+        )}
       </button>
     </div>
   );

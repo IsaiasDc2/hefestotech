@@ -20,11 +20,11 @@ function Contactanos() {
   return (
     <div className="contacto-container">
       <header className="contacto-hero anim-entrada">
-        <p className="badge badge-info hero-kicker">Respuesta en menos de 24hs</p>
+        <p className="badge badge-info hero-kicker">Respondemos en menos de 24 hs</p>
         <h1>Contactanos</h1>
         <p>
-          ¿Tenés dudas sobre un producto o necesitás ayuda para armar tu
-          PC? Escribinos, te respondemos en menos de 24hs.
+          ¿Tenés dudas sobre un producto o querés armar tu PC?
+          Escribinos y te respondemos en menos de 24 hs.
         </p>
       </header>
 
@@ -34,7 +34,7 @@ function Contactanos() {
             <FaEnvelope className="info-icono" aria-hidden="true" />
             <div>
               <h3>Email</h3>
-              <p>soporte@hefestotech.com</p>
+              <p>contacto@hefestotech.com</p>
             </div>
           </div>
 
@@ -42,7 +42,7 @@ function Contactanos() {
             <FaPhone className="info-icono" aria-hidden="true" />
             <div>
               <h3>Teléfono</h3>
-              <p>+54 11 4000-0000</p>
+              <p>+54 11 1234-5678</p>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ function Contactanos() {
             <FaLocationDot className="info-icono" aria-hidden="true" />
             <div>
               <h3>Ubicación</h3>
-              <p>Buenos Aires, Argentina</p>
+              <p>Salta Capital, Argentina</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ function Contactanos() {
 
           {enviado && (
             <p className="badge badge-ok mensaje-exito" role="status">
-              ¡Gracias! Tu mensaje fue enviado correctamente.
+              ¡Listo! Recibimos tu mensaje y te respondemos en menos de 24 hs.
             </p>
           )}
         </form>

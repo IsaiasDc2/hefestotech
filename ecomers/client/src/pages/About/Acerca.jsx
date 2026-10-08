@@ -5,13 +5,13 @@ function Acerca() {
   return (
     <div className="acerca">
       <header className="acerca-hero anim-entrada">
-        <p className="badge badge-info hero-kicker">Desde 2020 · Buenos Aires</p>
+        <p className="badge badge-info hero-kicker">Desde 2020 · Salta Capital</p>
         <h1>
-          Acerca de <span className="titulo-degradado">Nosotros</span>
+          Acerca de <span className="titulo-degradado">HefestoTech</span>
         </h1>
         <p>
-          Armamos y recomendamos componentes de PC con la misma exigencia
-          con la que armaríamos nuestra propia máquina.
+          Probamos cada componente antes de publicarlo. Si no lo usaríamos
+          en nuestra propia PC, no lo vendemos.
         </p>
       </header>
 
@@ -49,7 +49,7 @@ function Acerca() {
 
         <div className="valores-grid">
           <div className="valor-card card">
-            <span className="valor-icono" aria-hidden="true">🔧</span>
+            <span className="valor-icono" aria-hidden="true">01</span>
             <h3>Calidad verificada</h3>
             <p>
               Cada producto pasa control de stock real y garantía oficial
@@ -58,25 +58,23 @@ function Acerca() {
           </div>
 
           <div className="valor-card card">
-            <span className="valor-icono" aria-hidden="true">🚚</span>
+            <span className="valor-icono" aria-hidden="true">02</span>
             <h3>Envíos rápidos</h3>
             <p>
-              Despachamos en 24-48hs y ofrecemos envío gratis en compras
-              seleccionadas.
+              Despachamos en 24-48 hs.
             </p>
           </div>
 
           <div className="valor-card card">
-            <span className="valor-icono" aria-hidden="true">💬</span>
+            <span className="valor-icono" aria-hidden="true">03</span>
             <h3>Soporte real</h3>
             <p>
-              Te ayudamos a elegir la pieza correcta antes de comprar, no
-              solo a resolver problemas después.
+              Te ayudamos a elegir la pieza correcta antes de comprar.
             </p>
           </div>
 
           <div className="valor-card card">
-            <span className="valor-icono" aria-hidden="true">💳</span>
+            <span className="valor-icono" aria-hidden="true">04</span>
             <h3>Precios claros</h3>
             <p>
               Cuotas sin interés y sin letra chica: el precio que ves es
@@ -95,7 +93,7 @@ function Acerca() {
               Ver productos
             </Link>
             <Link to="/contactanos" className="btn-fantasma">
-              🖥️ Armá tu PC
+              Armá tu PC
             </Link>
           </div>
         </div>

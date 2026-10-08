@@ -1,42 +1,37 @@
-# Dependencias
-node_modules/
-venv/
-.venv/
-.venv
-__pycache__/
-*.py[cod]
-.mypy_cache/
-
-# Builds
-dist/
-build/
-
-# Variables de entorno (los .env.example si se versionan)
-.env
 *.env
 .env.local
-.env.*.local
-
-# Secretos y bases de datos locales
+**/.env.local
+# tooling local (no versionar)
+.opencode/
+# skills de agentes locales (no versionar)
+ecomers/client/.agents/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.venv
+venv/
+*.log
+npm-debug.log*
+.mypy_cache/
+__pycache__/
 secrets.json
+config.json
 *.sqlite
 *.sqlite3
 *.db
-
-# Logs
-*.log
-npm-debug.log*
-yarn-error.log*
-
-# Sistema / editores
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Skills locales de agentes (no versionar)
-.agents/
-
-# tooling local (no versionar)
-.opencode/
+.env
+node_modules
+# estado local impeccable (no versionar)
 .impeccable/
+.agents/
+.claude/
+.codex/
+.cursor/
+skills/
+stop-slop/
+humanizer/
+taste-skill/
+skills-lock.json
+ecomers/client/skills-lock.json
+>>>>>>> night/2026-10-06

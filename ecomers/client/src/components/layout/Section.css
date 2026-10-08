@@ -1,0 +1,38 @@
+/* Section: contenedor de pagina con tono fijo.
+   Los tonos son absolutos (no heredan data-theme) para que la
+   alternancia oscuro/claro funcione en ambos temas globales. */
+
+.section {
+  width: 100%;
+  padding: var(--space-8) 1.5rem;
+}
+
+.section__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.section--dark {
+  background-color: #0b0e14;
+  color: #f1f5f9;
+}
+
+.section--dark .texto-mutado {
+  color: #94a3b8;
+}
+
+.section--light {
+  background-color: #f4f6fb;
+  color: #0f172a;
+}
+
+.section--light .texto-mutado {
+  color: #475569;
+}
+
+@media (max-width: 560px) {
+  .section {
+    padding: var(--space-6) 1rem;
+  }
+}

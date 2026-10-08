@@ -1,6 +1,6 @@
 .asistente {
   position: fixed;
-  right: 1.25rem;
+  right: calc(1.25rem + env(safe-area-inset-right, 0px));
   bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 900;
   display: flex;
@@ -13,20 +13,43 @@
 .asistente-bola {
   width: 56px;
   height: 56px;
+  min-width: 56px;
+  min-height: 56px;
   border-radius: 999px;
-  border: 1px solid var(--primary-borde);
-  background: var(--grad-marca);
-  color: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 1.35rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--sombra-marca);
+  padding: 6px;
+  box-shadow: var(--sombra-media);
   position: relative;
+  transition: border-color var(--dur-2) var(--ease), filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
+}
+
+.asistente-bola .marca img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .asistente-bola:hover {
+  border-color: var(--primary-borde);
   filter: brightness(1.08);
+  box-shadow: var(--sombra-marca);
+}
+
+.asistente-bola:active {
+  transform: scale(0.96);
+}
+
+.asistente-bola:focus-visible,
+.asistente-head button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
 .asistente-punto {
@@ -37,7 +60,7 @@
   height: 10px;
   border-radius: 999px;
   background: var(--ok);
-  border: 2px solid #fff;
+  border: 2px solid var(--text);
 }
 
 .asistente-panel {
@@ -46,6 +69,23 @@
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  transform-origin: bottom right;
+  animation: asistente-entrada var(--dur-2) var(--ease-out) both;
+}
+
+.asistente-panel:focus {
+  outline: none;
+}
+
+@keyframes asistente-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .asistente-head {
@@ -61,11 +101,22 @@
 }
 
 .asistente-head button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.35rem 0.5rem;
   color: var(--muted);
+  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+}
+
+.asistente-head button:hover {
+  border-color: var(--primary-borde);
+  color: var(--text);
 }
 
 .asistente-avatar {
@@ -75,10 +126,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-suave);
-  border: 1px solid var(--primary-borde);
-  color: var(--primary);
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.asistente-avatar .marca img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .asistente-estado {
@@ -96,19 +155,137 @@
   background: var(--ok);
 }
 
+.asistente-mensajes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: 250px;
+  overflow-y: auto;
+  padding: 0.2rem 0.1rem;
+  scrollbar-width: thin;
+}
+
+.asistente-msg {
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  max-width: 85%;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  animation: ht-entrada var(--dur-2) var(--ease) both;
+}
+
+.asistente-msg.es-ia {
+  align-self: flex-start;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.asistente-msg-avatar {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  line-height: 0;
+}
+
+.asistente-msg-avatar .marca img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.asistente-msg-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.asistente-msg.es-usuario {
+  align-self: flex-end;
+  background: var(--grad-marca);
+  color: #fff;
+}
+
+.asistente-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  min-height: 44px;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.asistente-form:focus-within {
+  border-color: var(--primary-borde);
+  box-shadow: 0 0 0 3px var(--anillo-foco);
+}
+
+.asistente-form input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  min-height: 44px;
+}
+
+.asistente-form input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+.asistente-form input::placeholder {
+  color: var(--muted);
+}
+
+.asistente-form .asistente-enviar {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 1.05rem;
+  transition: background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+
+.asistente-form .asistente-enviar:hover {
+  background: var(--primary-suave);
+}
+
+.asistente-form .asistente-enviar:active {
+  transform: scale(0.94);
+}
+
 .asistente-fake {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.6rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 0.65rem 0.9rem;
+  min-height: 44px;
   color: var(--muted-oscuro);
   font-size: 0.88rem;
 }
 
 .asistente-enviar {
+  display: inline-flex;
+  align-items: center;
   color: var(--primary);
   font-weight: 700;
 }
@@ -121,7 +298,37 @@
 
 @media (pointer: coarse) {
   .asistente-bola {
-    width: 60px;
-    height: 60px;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+  }
+
+  .asistente-bola .marca img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .asistente-head button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asistente-bola,
+  .asistente-head button,
+  .asistente-msg,
+  .asistente-panel {
+    transition: none;
+    animation: none;
+  }
+
+  .asistente-bola:hover {
+    box-shadow: var(--sombra-media);
+  }
+
+  .asistente-bola:active {
+    transform: none;
   }
 }

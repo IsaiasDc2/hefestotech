@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, useEffect } from "react";
+import { Route, Routes } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
@@ -13,16 +13,7 @@ const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const Acerca = lazy(() => import("./pages/About/Acerca"));
 const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
-
-function CargandoPagina() {
-  return (
-    <div className="cargando-pagina" role="status" aria-label="Cargando página">
-      <span className="cargando-punto" />
-      <span className="cargando-punto" />
-      <span className="cargando-punto" />
-    </div>
-  );
-}
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 export default function App() {
   const carrito = useCartStore((s) => s.carrito);
@@ -46,8 +37,7 @@ export default function App() {
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
-    <Suspense fallback={<CargandoPagina />}>
-      <Routes>
+    <Routes>
       <Route
         path="/"
         element={
@@ -93,9 +83,8 @@ export default function App() {
         <Route path="admin" element={<Admin />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
-    </Suspense>
   );
 }
