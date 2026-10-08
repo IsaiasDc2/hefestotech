@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import imgPlaca from "../../assets/banner-gpu.jpg";
-import imgSetup from "../../assets/banner-setup.jpg";
-import imgPeris from "../../assets/banner-peris.jpg";
+const BASE = import.meta.env.BASE_URL || "/";
+const imgPlaca = `${BASE}banners/placa.webp`;
+const imgSetup = `${BASE}banners/oferta.webp`;
+const imgPeris = `${BASE}banners/periferico.webp`;
 import "./Banner.css";
 
 const SLIDES = [
