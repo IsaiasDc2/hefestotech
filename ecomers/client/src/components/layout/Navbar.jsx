@@ -11,6 +11,7 @@ import {
   FaCheck,
   FaMoon,
   FaSun,
+  FaWhatsapp,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca";
 import { linkOfertas } from "../../constants/categorias";
@@ -112,6 +113,12 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             {t(idioma, "topbar.envio")}
           </span>
           <span className="topbar-links">
+            <Link to="/acerca" className="topbar-util">
+              {t(idioma, "nav.ayuda")}
+            </Link>
+            <Link to="/contactanos" className="topbar-util">
+              {t(idioma, "nav.posventa")}
+            </Link>
             <span className="topbar-idioma" ref={idiomaRef}>
               <button
                 type="button"
@@ -145,6 +152,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               )}
             </span>
             <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
+              <FaWhatsapp aria-hidden="true" />
               WhatsApp
             </a>
             <button
@@ -226,10 +234,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
                 );
               })}
             </div>
-            <span className="nav-ayuda">
-              <Link to="/acerca">{t(idioma, "nav.ayuda")}</Link>
-              <Link to="/contactanos">{t(idioma, "nav.posventa")}</Link>
-            </span>
           </div>
         </nav>
       </div>

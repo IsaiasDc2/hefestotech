@@ -10,6 +10,7 @@ const SLIDES = [
   {
     id: "gpu",
     tema: "indigo",
+    layout: "izquierda",
     categoria: "Placa de video",
     eyebrow: "Nueva generación",
     titulo: "Todo lo que tu setup",
@@ -17,14 +18,13 @@ const SLIDES = [
     texto: "Subí de nivel con placas de última generación. Jugá en ultra, sin tirones.",
     cta: "Ver placas de video",
     to: "/productos?categoria=placas-de-video",
-    ctaSec: "Ver outlet",
-    toSec: "/productos?categoria=ofertas",
     posicion: "right center",
     imagen: imgPlaca,
   },
   {
     id: "setup",
     tema: "celeste",
+    layout: "centro",
     categoria: "Monitor",
     eyebrow: "Armalo a tu medida",
     titulo: "Llevá tu setup",
@@ -32,14 +32,13 @@ const SLIDES = [
     texto: "Monitores, gabinetes y refrigeración para armar el rincón que soñás.",
     cta: "Explorar productos",
     to: "/productos",
-    ctaSec: "Ver periféricos",
-    toSec: "/productos?categoria=perifericos",
-    posicion: "right center",
+    posicion: "center center",
     imagen: imgSetup,
   },
   {
     id: "peris",
     tema: "laton",
+    layout: "derecha",
     categoria: "Periferico",
     eyebrow: "Precisión gamer",
     titulo: "Cada clic",
@@ -47,9 +46,7 @@ const SLIDES = [
     texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
     cta: "Ver periféricos",
     to: "/productos?categoria=perifericos",
-    ctaSec: "Explorar productos",
-    toSec: "/productos",
-    posicion: "right center",
+    posicion: "left center",
     imagen: imgPeris,
   },
 ];
@@ -66,6 +63,7 @@ export default function Banner() {
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
   const [fotos, setFotos] = useState({});
+  const [fotoRota, setFotoRota] = useState({});
   const total = SLIDES.length;
   const timer = useRef(null);
   const touchX = useRef(null);
@@ -135,12 +133,12 @@ export default function Banner() {
           return (
             <article
               key={s.id}
-              className={`banner-slide tema-${s.tema}${activo ? " es-activa" : ""}`}
+              className={`banner-slide tema-${s.tema} layout-${s.layout}${activo ? " es-activa" : ""}`}
               aria-hidden={!activo}
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
             >
-              {s.imagen ? (
+              {s.imagen && !fotoRota[s.id] ? (
                 <div className="banner-foto" aria-hidden="true">
                   <img
                     src={s.imagen}
@@ -149,6 +147,7 @@ export default function Banner() {
                     loading={i === 0 ? "eager" : "lazy"}
                     decoding="async"
                     style={{ objectPosition: s.posicion }}
+                    onError={() => setFotoRota((prev) => ({ ...prev, [s.id]: true }))}
                   />
                 </div>
               ) : (
@@ -211,13 +210,6 @@ export default function Banner() {
                     tabIndex={activo ? 0 : -1}
                   >
                     {s.cta}
-                  </Link>
-                  <Link
-                    to={s.toSec}
-                    className="banner-cta-sec"
-                    tabIndex={activo ? 0 : -1}
-                  >
-                    {s.ctaSec}
                   </Link>
                 </div>
                 <ul className="banner-confianza" aria-label="Beneficios destacados">

@@ -1,7 +1,7 @@
 .carrusel {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 3rem 1.5rem 0;
+  padding: var(--space-6) 1.5rem 0;
   min-width: 0;
   width: 100%;
 }
@@ -49,7 +49,7 @@
   border-radius: 999px;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
-  color: #fff;
+  color: var(--on-accent);
   background: var(--grad-marca);
   box-shadow: 0 2px 12px var(--primary-resplandor);
 }
@@ -115,7 +115,7 @@
 }
 
 .carrusel-acciones button:active {
-  transform: scale(0.94);
+  transform: scale(0.97);
 }
 
 .carrusel-acciones a:focus-visible,
@@ -169,6 +169,16 @@
   border: 1px dashed var(--border);
   border-radius: 12px;
   background: var(--surface);
+}
+
+.carrusel-vacio.is-error {
+  border-color: var(--danger-borde);
+  background: var(--danger-suave);
+}
+
+.carrusel-pista[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .carrusel-vacio-icono {

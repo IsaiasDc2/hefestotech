@@ -43,15 +43,19 @@
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: var(--sobre-marca);
+  color: var(--on-accent);
   background: var(--grad-marca);
   padding: 0.28rem 0.6rem;
   border-radius: 8px;
   box-shadow: 0 2px 12px var(--primary-sombra);
 }
 
+.card-producto:active {
+  transform: scale(0.99);
+}
+
 .oferta-pct {
-  background: rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--primitive-night) 35%, transparent);
   border-radius: 999px;
   padding: 0.05rem 0.35rem;
   font-variant-numeric: tabular-nums;
@@ -150,7 +154,8 @@
   aspect-ratio: 1;
   object-fit: cover;
   display: block;
-  transition: transform var(--dur-3) var(--ease), filter var(--dur-2) var(--ease);
+  background: var(--surface-elevated-2);
+  transition: transform 250ms var(--ease), opacity var(--dur-2) var(--ease);
 }
 
 .producto-detalle:hover .card-media img,
@@ -246,8 +251,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--muted-oscuro);
-  box-shadow: 0 0 0 3px rgba(168, 162, 158, 0.15);
+  background: var(--text-faint);
+  box-shadow: 0 0 0 3px var(--border-soft);
   flex: none;
 }
 
@@ -256,8 +261,8 @@
 }
 
 .stock-linea.disponible .stock-dot {
-  background: var(--ok);
-  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18), 0 0 10px rgba(74, 222, 128, 0.6);
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--ok-suave), 0 0 10px var(--ok-borde);
 }
 
 .stock-linea.agotado {
@@ -266,7 +271,7 @@
 
 .stock-linea.agotado .stock-dot {
   background: var(--danger);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
+  box-shadow: 0 0 0 3px var(--danger-suave);
 }
 
 
@@ -283,7 +288,7 @@
 
 .precio-anterior {
   font-size: 0.85rem;
-  color: var(--muted-oscuro);
+  color: var(--text-faint);
   text-decoration: line-through;
   text-decoration-thickness: 1px;
   font-variant-numeric: tabular-nums;
@@ -301,7 +306,7 @@
 
 .precios:has(.precio-anterior) .precio-actual {
   font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.6rem);
-  text-shadow: 0 2px 14px rgba(201, 168, 106, 0.25);
+  text-shadow: 0 2px 14px var(--oro-suave);
 }
 
 .descuento-badge {
@@ -358,22 +363,22 @@
   border: 1px solid transparent;
   border-radius: 8px;
   background: var(--grad-marca);
-  color: var(--sobre-marca);
+  color: var(--on-accent);
   font-weight: 800;
   font-size: 0.88rem;
-  box-shadow: 0 2px 12px var(--primary-sombra);
-  transition: filter var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease);
+  white-space: nowrap;
+  box-shadow: var(--sombra-marca);
+  transition: background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
 }
 
 .btn-carrito:hover:not(:disabled) {
-  filter: brightness(1.12);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px var(--primary-sombra), var(--sombra-suave);
+  box-shadow: var(--sombra-media), var(--sombra-marca);
+  opacity: 0.98;
 }
 
 .btn-carrito:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-  filter: brightness(0.96);
+  transform: scale(0.97);
 }
 
 .btn-carrito:disabled {
@@ -383,6 +388,20 @@
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.85;
+}
+
+.btn-carrito[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.card-producto.is-error {
+  border-color: var(--danger-borde);
+}
+
+.card-producto.is-error .card-media {
+  border-color: var(--danger-borde);
 }
 
 .card-producto button {
