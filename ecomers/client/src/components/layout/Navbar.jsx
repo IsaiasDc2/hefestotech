@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaCartShopping,
-  FaCircleQuestion,
+  FaEllipsis,
   FaMagnifyingGlass,
   FaUser,
   FaUserPlus,
@@ -129,10 +129,10 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               onClick={abrirMenu}
               aria-expanded={menuAbierto}
               aria-controls="menu-movil"
-              aria-label={t(idioma, "nav.ayuda")}
+              aria-label={idioma === "en" ? "More options" : "Más opciones"}
+              title={idioma === "en" ? "More options" : "Más opciones"}
             >
-              <FaCircleQuestion aria-hidden="true" />
-              <span>{t(idioma, "nav.ayuda")}</span>
+              <FaEllipsis aria-hidden="true" />
             </button>
             <Link to="/cuenta?modo=registro" className="link-cuenta link-registro">
               <FaUserPlus aria-hidden="true" />
