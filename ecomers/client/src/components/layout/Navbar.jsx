@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+  FaBars,
   FaCartShopping,
   FaMagnifyingGlass,
   FaUser,
@@ -10,33 +11,23 @@ import {
   FaChevronDown,
   FaCheck,
   FaMoon,
+  FaScrewdriverWrench,
   FaSun,
   FaWhatsapp,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca";
-import { linkOfertas } from "../../constants/categorias";
+import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
+import MobileDrawer from "./MobileDrawer";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
 import "./Navbar.css";
-
-const FILA_CATEGORIAS = [
-  { labelKey: "cat.productos", to: "/productos", clave: "productos" },
-  { labelKey: "cat.notebooks", to: "/productos?q=notebook", clave: "notebook" },
-  { labelKey: "cat.pcs", to: "/productos?q=pc%20armada", clave: "pc armada" },
-  { labelKey: "cat.arma", to: "/productos?q=combo", clave: "combo" },
-  { labelKey: "cat.outlet", to: linkOfertas, clave: "outlet" },
-];
-
-const IDIOMAS = [
-  { codigo: "es", etiqueta: "Español" },
-  { codigo: "en", etiqueta: "English" },
-];
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [pop, setPop] = useState(false);
   const [idiomaAbierto, setIdiomaAbierto] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const idiomaRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const setIdioma = useIdiomaStore((s) => s.setIdioma);
@@ -44,9 +35,13 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const etiquetaTema = idioma === "en"
     ? (tema === "light" ? "Switch to dark mode" : "Switch to light mode")
     : (tema === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
+  const etiquetaMenu = idioma === "en" ? "Open menu" : "Abrir menú";
   const primeraVez = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const abrirMenu = useCallback(() => setMenuAbierto(true), []);
+  const cerrarMenu = useCallback(() => setMenuAbierto(false), []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -83,20 +78,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     return () => clearTimeout(t);
   }, [cantidadCarrito]);
 
-  const params = new URLSearchParams(location.search);
-  const categoriaActual = (params.get("categoria") || "").toLowerCase();
-  const busquedaActual = (params.get("q") || "").toLowerCase();
-  const enProductos = location.pathname === "/productos";
-  const esOfertas =
-    enProductos &&
-    (categoriaActual === "oferta" || categoriaActual === "ofertas");
-
-  const esActiva = (clave) => {
-    if (!enProductos) return "";
-    if (clave === "productos") return !categoriaActual && !busquedaActual ? "activo" : "";
-    if (clave === "outlet") return esOfertas ? "activo" : "";
-    return busquedaActual === clave ? "activo" : "";
-  };
+  const esActiva = (clave) =>
+    esClaveActiva(location.pathname, location.search, clave) ? "activo" : "";
 
   const buscar = (e) => {
     e.preventDefault();
@@ -104,10 +87,12 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     navigate(q ? `/productos?q=${encodeURIComponent(q)}` : "/productos");
   };
 
+  const etiquetaCantidad = cantidadCarrito > 99 ? "99+" : String(cantidadCarrito);
+
   return (
     <header className="site-head-wrap">
       <div className="topbar">
-        <div className="topbar-inner">
+        <div className="topbar-inner ht-contenedor">
           <span className="topbar-envio">
             <FaTruckFast aria-hidden="true" />
             {t(idioma, "topbar.envio")}
@@ -170,7 +155,17 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
       </div>
 
       <div className={`site-head${scrolled ? " is-scrolled" : ""}`}>
-        <div className="site-head-inner">
+        <div className="site-head-inner ht-contenedor">
+          <button
+            type="button"
+            className="menu-btn"
+            onClick={abrirMenu}
+            aria-expanded={menuAbierto}
+            aria-controls="menu-movil"
+            aria-label={etiquetaMenu}
+          >
+            <FaBars aria-hidden="true" />
+          </button>
           <Link to="/" className="logo" aria-label="HefestoTech, ir al inicio">
             <Marca variante="simbolo" ancho={36} alto={36} eager alt="HefestoTech" />
             <span className="logo-nombre">
@@ -194,7 +189,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           </form>
 
           <nav className="nav-cuenta" aria-label={`${t(idioma, "nav.sesion")} / ${t(idioma, "nav.carrito")}`}>
-            <Link to="/cuenta" className="link-cuenta link-registro">
+            <Link to="/cuenta?modo=registro" className="link-cuenta link-registro">
               <FaUserPlus aria-hidden="true" />
               <span>{t(idioma, "nav.registrate")}</span>
             </Link>
@@ -205,38 +200,51 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             <button
               className="carrito-btn"
               onClick={abrirCarrito}
-              aria-label={`${t(idioma, "nav.carrito")}, ${cantidadCarrito} ${t(idioma, "nav.productos")}`}
+              aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${t(idioma, "nav.productos")}`}
+              aria-live="polite"
             >
               <FaCartShopping aria-hidden="true" />
               <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">
-                {cantidadCarrito}
+                {etiquetaCantidad}
               </span>
             </button>
           </nav>
         </div>
 
         <nav className="nav-categorias" aria-label={t(idioma, "nav.categorias")}>
-          <div className="nav-categorias-inner">
-            <div className="nav-categorias-lista" role="list">
+          <div className="nav-categorias-inner ht-contenedor">
+            <ul className="nav-categorias-lista">
               {FILA_CATEGORIAS.map((c) => {
                 const activa = esActiva(c.clave);
                 const esOutlet = c.clave === "outlet";
+                const esArma = c.clave === "combo";
+                const clase = [
+                  esOutlet ? "nav-ofertas" : "",
+                  esArma ? "nav-arma" : "",
+                  activa,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
                 return (
-                  <Link
-                    key={c.clave}
-                    to={c.to}
-                    role="listitem"
-                    className={`${esOutlet ? "nav-ofertas " : ""}${activa}`}
-                    aria-current={activa ? "page" : undefined}
-                  >
-                    {t(idioma, c.labelKey)}
-                  </Link>
+                  <li key={c.clave}>
+                    <Link
+                      to={c.to}
+                      className={clase || undefined}
+                      aria-current={activa ? "page" : undefined}
+                    >
+                      {esArma && (
+                        <FaScrewdriverWrench aria-hidden="true" className="nav-icono" />
+                      )}
+                      {t(idioma, c.labelKey)}
+                    </Link>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </div>
         </nav>
       </div>
+      <MobileDrawer abierto={menuAbierto} alCerrar={cerrarMenu} />
     </header>
   );
 }
