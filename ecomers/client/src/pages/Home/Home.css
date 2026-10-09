@@ -306,13 +306,31 @@
 .grid-destacados {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.1rem;
+  gap: var(--space-4);
+  align-items: stretch;
 }
 
 .grid-destacados > * {
   min-width: 0;
   max-width: 100%;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 300ms cubic-bezier(.2,.8,.2,1), transform 300ms cubic-bezier(.2,.8,.2,1);
 }
+
+.grid-destacados > .card-producto {
+  height: 100%;
+}
+
+.grid-destacados.is-visible > * {
+  opacity: 1;
+  transform: none;
+}
+
+.grid-destacados.is-visible > *:nth-child(2) { transition-delay: 60ms; }
+.grid-destacados.is-visible > *:nth-child(3) { transition-delay: 120ms; }
+.grid-destacados.is-visible > *:nth-child(4) { transition-delay: 180ms; }
+.grid-destacados.is-visible > *:nth-child(n + 5) { transition-delay: 240ms; }
 
 @media (max-width: 1024px) {
   .grid-destacados {
@@ -329,7 +347,7 @@
 @media (max-width: 640px) {
   .grid-destacados {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.7rem;
+    gap: var(--space-3);
   }
   .filtro-home .filtros {
     grid-template-columns: minmax(0, 1fr);
@@ -339,6 +357,32 @@
 .grid-destacados {
   overflow-x: clip;
 }
+
+.grid-categorias > *,
+.marcas-fila > *,
+.beneficios > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 300ms cubic-bezier(.2,.8,.2,1), transform 300ms cubic-bezier(.2,.8,.2,1);
+}
+
+.grid-categorias.is-visible > *,
+.marcas-fila.is-visible > *,
+.beneficios.is-visible > * {
+  opacity: 1;
+  transform: none;
+}
+
+.grid-categorias.is-visible > *:nth-child(2),
+.marcas-fila.is-visible > *:nth-child(2),
+.beneficios.is-visible > *:nth-child(2) { transition-delay: 60ms; }
+.grid-categorias.is-visible > *:nth-child(3),
+.marcas-fila.is-visible > *:nth-child(3),
+.beneficios.is-visible > *:nth-child(3) { transition-delay: 120ms; }
+.grid-categorias.is-visible > *:nth-child(4),
+.marcas-fila.is-visible > *:nth-child(4) { transition-delay: 180ms; }
+.grid-categorias.is-visible > *:nth-child(n + 5),
+.marcas-fila.is-visible > *:nth-child(n + 5) { transition-delay: 240ms; }
 
 @media (max-width: 380px) {
   .grid-destacados {
@@ -464,6 +508,137 @@
   min-width: 0;
 }
 
+/* Aviso envío: pista punteada + carrito + check (loop 5s, decorativo). */
+.beneficio-envio {
+  flex-wrap: wrap;
+}
+
+.envio-anim {
+  --recorrido: 136;
+  flex: 1 1 100%;
+  display: block;
+  height: 32px;
+  margin-top: 0.3rem;
+  color: var(--oro);
+  pointer-events: none;
+}
+
+.envio-anim svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.env-track {
+  stroke: var(--text-faint);
+  stroke-width: 2;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.env-trail {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: var(--recorrido) 200;
+  stroke-dashoffset: var(--recorrido);
+  animation: env-trail 5s cubic-bezier(.2,.8,.2,1) infinite;
+}
+
+.env-cart {
+  opacity: 0;
+  animation: env-cart 5s cubic-bezier(.2,.8,.2,1) infinite;
+}
+
+.env-wheel {
+  fill: currentColor;
+  stroke: none;
+}
+
+.env-speed {
+  opacity: 0;
+  animation: env-speed 5s linear infinite;
+}
+
+.env-check {
+  color: var(--success);
+  transform: translateX(calc(var(--recorrido) * 1px));
+}
+
+.env-check-pop {
+  opacity: 0;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: env-check 5s cubic-bezier(.2,.8,.2,1) infinite;
+}
+
+@keyframes env-cart {
+  0% { opacity: 0; transform: translateX(0); }
+  8% { opacity: 1; transform: translateX(0); }
+  55% { opacity: 1; transform: translateX(calc(var(--recorrido) * 1px)); }
+  82% { opacity: 1; transform: translateX(calc(var(--recorrido) * 1px)); }
+  95%, 99% { opacity: 0; transform: translateX(calc(var(--recorrido) * 1px)); }
+  100% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes env-trail {
+  0%, 8% { opacity: 0; stroke-dashoffset: var(--recorrido); }
+  12% { opacity: 1; }
+  55% { opacity: 1; stroke-dashoffset: 0; }
+  82% { opacity: 1; stroke-dashoffset: 0; }
+  95%, 99% { opacity: 0; stroke-dashoffset: 0; }
+  100% { opacity: 0; stroke-dashoffset: var(--recorrido); }
+}
+
+@keyframes env-speed {
+  0%, 8% { opacity: 0; }
+  20% { opacity: 1; }
+  35% { opacity: 0.35; }
+  48% { opacity: 0.9; }
+  55%, 100% { opacity: 0; }
+}
+
+@keyframes env-check {
+  0%, 55% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1); }
+  64% { opacity: 1; transform: scale(1.25); }
+  70% { opacity: 1; transform: scale(0.9); }
+  76%, 82% { opacity: 1; transform: scale(1); }
+  95%, 99% { opacity: 0; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+@media (max-width: 560px) {
+  .envio-anim {
+    --recorrido: 84;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .env-cart {
+    animation: none;
+    opacity: 1;
+    transform: translateX(calc(var(--recorrido) * 1px));
+  }
+  .env-trail {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  .env-speed {
+    animation: none;
+    opacity: 0.6;
+  }
+  .env-check-pop {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 
 .seccion {
   max-width: 1280px;
@@ -475,15 +650,6 @@
 .seccion:last-child {
   padding-bottom: 3.5rem;
 }
-
-.grid-destacados > * {
-  animation: ht-entrada var(--dur-3) var(--ease) both;
-}
-
-.grid-destacados > *:nth-child(2) { animation-delay: var(--stagger); }
-.grid-destacados > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
-.grid-destacados > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
-.grid-destacados > *:nth-child(n + 5) { animation-delay: calc(var(--stagger) * 4); }
 
 .seccion-head {
   display: flex;
@@ -518,7 +684,7 @@
 .grid-categorias {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card-categoria {
@@ -637,6 +803,14 @@
   .filtro-home .filtros > * {
     animation: none;
   }
+  .grid-destacados > *,
+  .grid-categorias > *,
+  .marcas-fila > *,
+  .beneficios > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
   .pill.activa {
     animation: none;
   }
@@ -712,7 +886,7 @@
   }
 
   .grid-categorias {
-    gap: 0.7rem;
+    gap: var(--space-3);
   }
 
   .card-categoria {

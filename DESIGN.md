@@ -180,6 +180,10 @@ Capas: primitiva (`--primitive-*`, crudos) → semántica (esta tabla) → compo
 
 Pares de contraste verificados (AA): oscuro `ink/bg` 17.6:1, `muted/bg` 7.5:1; claro `day-ink/day-surface` ~15:1, `day-muted/white` ~7:1, `primary-day` con blanco ~6.9:1 (botón), `brass-day` sobre blanco ~4.9:1 (precio en oferta), `success-day`/`warning-day`/`danger-day` ≥4.5:1 sobre blanco.
 
+### Tokens fundacionales (d) — aditivos, par dark/light
+
+Nuevos en `src/styles/index.css` (capa Fundación, no rompen aliases). Superficies: `--surface-1/2/3` → `surface`/`surface-elevated`/`surface-elevated-2` en ambos temas. Overlay/scrim: `--overlay` (dark `rgba(11,14,20,.6)` / light `rgba(15,23,42,.4)`), `--scrim` (degradado a 72%/50%). Glows solo-hover: `--glow-brand`, `--glow-gold` (Flat-At-Rest: nunca en reposo). Hairline: `--hairline-top` (gradiente índigo 1px). Radio: `--radio-card: 16px`. Sombras: `--shadow-rest/lift/pop` (dark negras + marca; light tintadas slate + marca). Gradiente primario AA-safe: `--grad-primary` = índigo→índigo-profundo (equivale a `--grad-marca`; el violeta claro no da AA en texto chico). Movimiento: `--dur-150/220/450/650` + `--ease-emil: cubic-bezier(.16,1,.3,1)`. Utilidades: `.ht-btn(-primary/-ghost)` con hover/active/focus/disabled, `.ht-badge(--brand/--gold/--ok/--danger)`. Fondo con profundidad en `body::before/after` (fijo, `pointer-events: none`, opacidad reducida en ≤560px). `::selection` índigo/blanco, scrollbar fino 8px a tono, `focus-visible` unificado (outline + `box-shadow` con `--focus-ring`). Footer: entrada `ht-footer-entrada` 650ms ease-emil (solo opacity/transform) + hovers con tokens. `prefers-reduced-motion`: sin movimiento ni fondo decorativo, se conservan cambios de color/opacidad.
+
 ### Divergencias documentadas (accesibilidad primero)
 - `--grad-marca` es índigo→índigo-profundo (`#6366F1→#4338CA`), no índigo→celeste: el blanco sobre índigo→celeste no llega a 4.5:1 en texto chico de CTA.
 - `input::placeholder` usa Niebla (`#94A3B8`) en vez de Niebla Profunda: el placeholder chico en `#7A8AA3` no llega a 4.5:1.

@@ -71,6 +71,7 @@ export default function Banner() {
   return (
     <section
       className="banner"
+      data-pausado={pausado ? "true" : "false"}
       aria-roledescription="carrusel"
       aria-label="Promociones destacadas"
       onMouseEnter={() => setPausado(true)}
@@ -85,10 +86,7 @@ export default function Banner() {
       onTouchEnd={onTouchEnd}
       onKeyDown={onKeyDown}
     >
-      <div
-        className="banner-pista"
-        style={{ transform: `translateX(-${indice * 100}%)` }}
-      >
+      <div className="banner-pista">
         {SLIDES.map((s, i) => {
           const activo = i === indice;
           return (

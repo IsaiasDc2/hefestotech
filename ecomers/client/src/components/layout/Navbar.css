@@ -337,6 +337,40 @@
   outline: 2px solid var(--primary);
   outline-offset: 3px;
   border-radius: 6px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+/* Entrada escalonada del header al cargar: solo opacity/transform,
+   micro 200ms con token existente, delays cortos 30-80ms entre piezas. */
+@keyframes ht-head-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-head-inner > * {
+  animation: ht-head-in var(--dur-2) var(--ease) both;
+}
+
+.site-head-inner > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.site-head-inner > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.site-head-inner > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.nav-categorias {
+  animation: ht-head-in var(--dur-2) var(--ease) 200ms both;
 }
 
 .buscador-head {
@@ -528,7 +562,7 @@ button.link-cuenta {
 }
 
 .carrito-count.is-pop {
-  animation: badge-pop 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: badge-pop var(--dur-2) var(--ease);
 }
 
 @keyframes badge-pop {
@@ -606,7 +640,7 @@ button.link-cuenta {
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 150ms var(--ease);
+  transition: transform var(--dur-150) var(--ease);
 }
 
 .nav-categorias-lista a:hover {
@@ -614,7 +648,8 @@ button.link-cuenta {
   background-color: var(--primary-suave);
 }
 
-.nav-categorias-lista a:hover::after {
+.nav-categorias-lista a:hover::after,
+.nav-categorias-lista a:focus-visible::after {
   transform: scaleX(1);
 }
 
@@ -838,6 +873,8 @@ button.link-cuenta {
 
 @media (prefers-reduced-motion: reduce) {
   .site-head,
+  .site-head-inner > *,
+  .nav-categorias,
   .buscador-head button,
   .buscador-head input,
   .carrito-btn,
@@ -845,6 +882,7 @@ button.link-cuenta {
   .nav-categorias-lista a,
   .nav-categorias-lista a::after {
     transition: none;
+    animation: none;
   }
   .carrito-btn:hover {
     transform: none;

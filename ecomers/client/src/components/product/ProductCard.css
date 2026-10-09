@@ -9,7 +9,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radio-md);
   padding: 0.9rem 0.9rem 1rem;
-  transition: transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  transition: transform 200ms cubic-bezier(.2,.8,.2,1), border-color 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms cubic-bezier(.2,.8,.2,1);
   overflow: hidden;
 }
 
@@ -20,11 +20,11 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--primary), var(--oro), transparent);
   opacity: 0;
-  transition: opacity var(--dur-2) var(--ease);
+  transition: opacity 200ms cubic-bezier(.2,.8,.2,1);
 }
 
 .card-producto:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   border-color: var(--primary-borde);
   box-shadow: var(--sombra-media), 0 0 28px var(--primary-resplandor);
 }
@@ -159,12 +159,12 @@
   box-sizing: border-box;
   display: block;
   background: var(--surface-elevated-2);
-  transition: transform 250ms var(--ease), opacity var(--dur-2) var(--ease);
+  transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 200ms cubic-bezier(.2,.8,.2,1);
 }
 
 .producto-detalle:hover .card-media img,
 .card-producto:hover .card-media img {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 .producto-detalle img[src=""] {
@@ -383,7 +383,7 @@
   font-size: 0.88rem;
   white-space: nowrap;
   box-shadow: var(--sombra-marca);
-  transition: background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida), box-shadow var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+  transition: background-color 200ms cubic-bezier(.2,.8,.2,1), transform 120ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms cubic-bezier(.2,.8,.2,1), opacity 200ms cubic-bezier(.2,.8,.2,1);
 }
 
 .btn-carrito:hover:not(:disabled) {
@@ -394,6 +394,24 @@
 
 .btn-carrito:active:not(:disabled) {
   transform: scale(0.97);
+}
+
+.btn-carrito.is-added:not(:disabled) {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+  box-shadow: 0 6px 24px var(--ok-borde);
+}
+
+.btn-carrito.is-added:not(:disabled) svg {
+  animation: cart-bounce 450ms cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes cart-bounce {
+  0% { transform: scale(0.6); }
+  45% { transform: scale(1.25); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
 .btn-carrito:disabled {
@@ -515,6 +533,10 @@
   .producto-detalle:hover .card-media img,
   .card-producto:hover .card-media img {
     transform: none;
+  }
+
+  .btn-carrito.is-added:not(:disabled) svg {
+    animation: none;
   }
 
   .card-skeleton::after {

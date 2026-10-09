@@ -846,3 +846,303 @@ img {
 }
 
 /* (Control unico de tema: ver components/layout/Navbar.css `.topbar-tema`.) */
+
+/* ============================================================
+   Fundacion HefestoTech (d) — capa aditiva, no reescribe base.
+   Tokens semanticos nuevos + fondo con profundidad + utilidades
+   .ht-btn-* / .ht-badge-* + seleccion/scrollbar/foco + reduced-motion.
+   Reglas: emil-design-eng (solo transform/opacity, ease-out,
+   press scale .97, hover solo en (hover:hover)), taste-skill
+   (un tema por pagina, sin glows en reposo), Flat-At-Rest.
+   ============================================================ */
+
+/* --- Tokens aditivos: par dark/light --- */
+:root {
+  /* Superficies: 3 niveles (aliases de la escala Blindaje) */
+  --surface-1: var(--surface);
+  --surface-2: var(--surface-elevated);
+  --surface-3: var(--surface-elevated-2);
+
+  /* Overlay / scrim para velos y drawers */
+  --overlay: rgba(11, 14, 20, 0.6);
+  --scrim: linear-gradient(180deg, transparent 40%, rgba(11, 14, 20, 0.72));
+
+  /* Glow SOLO hover (nunca en reposo — Flat-At-Rest) */
+  --glow-brand: 0 6px 24px rgba(99, 102, 241, 0.28);
+  --glow-gold: 0 6px 24px rgba(201, 168, 106, 0.22);
+
+  /* Hairline superior de cards (1px, sutil) */
+  --hairline-top: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.55), transparent);
+
+  /* Radio de card + sombras por estado */
+  --radio-card: 16px;
+  --shadow-rest: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.5), 0 6px 24px rgba(99, 102, 241, 0.22);
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 24px rgba(99, 102, 241, 0.28);
+
+  /* Gradiente primario AA-safe: indigo -> violeta profundo
+     (equivale a --grad-marca; el violeta claro #8B5CF6 con blanco
+     no llega a AA en texto chico, ver DESIGN.md divergencias). */
+  --grad-primary: linear-gradient(135deg, var(--accent), var(--accent-hover));
+
+  /* Duraciones + ease fundacional */
+  --dur-150: 150ms;
+  --dur-220: 220ms;
+  --dur-450: 450ms;
+  --dur-650: 650ms;
+  --ease-emil: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="light"] {
+  --surface-1: var(--surface);
+  --surface-2: var(--surface-elevated);
+  --surface-3: var(--surface-elevated-2);
+  --overlay: rgba(15, 23, 42, 0.4);
+  --scrim: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.5));
+  --glow-brand: 0 6px 24px rgba(79, 70, 229, 0.2);
+  --glow-gold: 0 6px 24px rgba(140, 113, 70, 0.2);
+  --hairline-top: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.45), transparent);
+  --shadow-rest: 0 8px 28px rgba(15, 23, 42, 0.1);
+  --shadow-lift: 0 12px 32px rgba(15, 23, 42, 0.12), 0 6px 24px rgba(79, 70, 229, 0.16);
+  --shadow-pop: 0 18px 48px rgba(15, 23, 42, 0.16), 0 6px 24px rgba(79, 70, 229, 0.2);
+}
+
+/* --- Fondo con profundidad (body::before/after) --- */
+body {
+  position: relative;
+  isolation: isolate;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Capa 1: degradado sutil de base */
+body::before {
+  background:
+    linear-gradient(180deg, rgba(99, 102, 241, 0.05), transparent 38%),
+    linear-gradient(0deg, rgba(14, 165, 233, 0.03), transparent 30%),
+    var(--background);
+}
+
+/* Capa 2: luces difusas bajisima opacidad + textura fina */
+body::after {
+  background:
+    radial-gradient(560px 280px at 12% -4%, rgba(99, 102, 241, 0.08), transparent 70%),
+    radial-gradient(480px 260px at 88% 8%, rgba(201, 168, 106, 0.05), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.025) 0 1px, transparent 1px 3px);
+  opacity: 0.9;
+}
+
+:root[data-theme="light"] body::before {
+  background:
+    linear-gradient(180deg, rgba(79, 70, 229, 0.05), transparent 38%),
+    linear-gradient(0deg, rgba(2, 132, 199, 0.04), transparent 30%),
+    var(--background);
+}
+
+:root[data-theme="light"] body::after {
+  background:
+    radial-gradient(560px 280px at 12% -4%, rgba(79, 70, 229, 0.06), transparent 70%),
+    radial-gradient(480px 260px at 88% 8%, rgba(140, 113, 70, 0.05), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.02) 0 1px, transparent 1px 3px);
+  opacity: 0.7;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 560px) {
+  body::after {
+    opacity: 0.45;
+    background:
+      radial-gradient(320px 180px at 12% -4%, rgba(99, 102, 241, 0.06), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(148, 163, 184, 0.02) 0 1px, transparent 1px 3px);
+  }
+}
+
+/* --- Botones utilitarios (sin reescribir .btn-*) --- */
+.ht-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    transform var(--dur-220) var(--ease-emil),
+    box-shadow var(--dur-220) var(--ease-emil),
+    filter var(--dur-150) var(--ease-emil),
+    border-color var(--dur-150) var(--ease-emil),
+    opacity var(--dur-150) var(--ease-emil);
+}
+
+.ht-btn-primary {
+  background: var(--grad-primary);
+  color: #fff;
+  box-shadow: var(--shadow-rest);
+}
+
+.ht-btn-ghost {
+  background: var(--surface-1);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.ht-btn:disabled,
+.ht-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ht-btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
+    box-shadow: var(--shadow-lift), var(--glow-brand);
+  }
+
+  .ht-btn-ghost:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--primary-borde);
+    box-shadow: var(--shadow-rest);
+  }
+}
+
+.ht-btn-primary:active:not(:disabled),
+.ht-btn-ghost:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: var(--dur-150);
+}
+
+.ht-btn-primary:active:not(:disabled) {
+  box-shadow: var(--shadow-rest);
+  filter: brightness(0.98);
+}
+
+/* --- Badges unificados (utilitarios, no tocan .badge base) --- */
+.ht-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: var(--radio-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-humo);
+  text-transform: uppercase;
+  line-height: 1.4;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-muted);
+}
+
+.ht-badge--brand {
+  background: var(--primary-suave);
+  border-color: var(--primary-borde);
+  color: var(--text);
+}
+
+.ht-badge--gold {
+  background: var(--oro-suave);
+  border-color: var(--oro-borde);
+  color: var(--gold);
+}
+
+.ht-badge--ok {
+  background: var(--ok-suave);
+  border-color: var(--ok-borde);
+  color: var(--success);
+}
+
+.ht-badge--danger {
+  background: var(--danger-suave);
+  border-color: var(--danger-borde);
+  color: var(--danger);
+}
+
+/* --- ::selection, scrollbar fino, focus-visible unificado --- */
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+:root[data-theme="light"] ::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-hover);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* --- Reduced-motion global (conserva color/opacity, quita movimiento) --- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body::before,
+  body::after {
+    display: none;
+  }
+
+  .ht-btn,
+  .ht-btn-primary,
+  .ht-btn-ghost,
+  .ht-badge {
+    transition: none;
+  }
+
+  .ht-btn-primary:hover:not(:disabled),
+  .ht-btn-ghost:hover:not(:disabled),
+  .ht-btn-primary:active:not(:disabled),
+  .ht-btn-ghost:active:not(:disabled) {
+    transform: none;
+    box-shadow: var(--shadow-rest);
+  }
+}

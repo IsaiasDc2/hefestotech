@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -49,6 +49,36 @@ const CATEGORIAS = [
 
 const BASE = import.meta.env.BASE_URL || "/";
 
+function usarVisibleUnaVez() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        if (entradas.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return [ref, visible];
+}
+
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -58,6 +88,10 @@ function Home({ agregarAlCarrito }) {
   const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const [marcasElegidas, setMarcasElegidas] = useState([]);
+  const [refCategorias, categoriasVisibles] = usarVisibleUnaVez();
+  const [refDestacados, destacadosVisibles] = usarVisibleUnaVez();
+  const [refMarcas, marcasVisibles] = usarVisibleUnaVez();
+  const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
 
   const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
     label: c.nombre,
@@ -132,7 +166,7 @@ function Home({ agregarAlCarrito }) {
           id="home-categorias"
           verTodo="/productos"
         />
-        <div className="grid-categorias">
+        <div ref={refCategorias} className={`grid-categorias${categoriasVisibles ? " is-visible" : ""}`}>
           {CATEGORIAS.map((c) => (
             <Link
               key={c.nombre}
@@ -219,7 +253,7 @@ function Home({ agregarAlCarrito }) {
               totalCatalogo={productos.length}
               onLimpiar={limpiarFiltros}
             />
-            <div className="grid-destacados">
+            <div ref={refDestacados} className={`grid-destacados${destacadosVisibles ? " is-visible" : ""}`}>
               {filtrados.slice(0, 8).map((p) => (
                 <ProductCard
                   key={p.id}
@@ -259,7 +293,7 @@ function Home({ agregarAlCarrito }) {
           id="home-marcas"
           verTodo="/productos"
         />
-        <div className="marcas-fila">
+        <div ref={refMarcas} className={`marcas-fila${marcasVisibles ? " is-visible" : ""}`}>
           {MARCAS.map((m) => (
             <Link
               key={m}
@@ -272,7 +306,7 @@ function Home({ agregarAlCarrito }) {
         </div>
       </section>
 
-      <section className="beneficios" aria-label="Beneficios de compra">
+      <section ref={refBeneficios} className={`beneficios${beneficiosVisibles ? " is-visible" : ""}`} aria-label="Beneficios de compra">
         <div className="beneficio">
           <FaCreditCard aria-hidden="true" />
           <div>
@@ -280,12 +314,42 @@ function Home({ agregarAlCarrito }) {
             <span>Con todas las tarjetas</span>
           </div>
         </div>
-        <div className="beneficio">
+        <div className="beneficio beneficio-envio">
           <FaTruckFast aria-hidden="true" />
           <div>
             <strong>Envío a todo el país</strong>
             <span>Gratis desde $99.999</span>
           </div>
+          <span className="envio-anim" aria-hidden="true">
+            <svg viewBox="0 0 200 32" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line className="env-track" x1="8" y1="24" x2="190" y2="24" />
+              <line className="env-trail" x1="8" y1="24" x2="190" y2="24" />
+              <g transform="translate(8,2)">
+                <g className="env-cart">
+                  <g transform="skewX(-8)">
+                    <path d="M1 3 L-4 -3" />
+                    <path d="M1 3 H17 L14.5 13 H3.5 Z" />
+                    <path d="M7 3 L8 13" />
+                    <circle className="env-wheel" cx="6" cy="16.5" r="2" />
+                    <circle className="env-wheel" cx="12.5" cy="16.5" r="2" />
+                  </g>
+                  <g className="env-speed">
+                    <path d="M-10 5 H-18" />
+                    <path d="M-11 9 H-21" />
+                    <path d="M-10 13 H-17" />
+                  </g>
+                </g>
+              </g>
+              <g transform="translate(8,15)">
+                <g className="env-check">
+                  <g className="env-check-pop">
+                    <circle r="9" />
+                    <path d="M-4 0 L-1 3.5 L4.5 -3" />
+                  </g>
+                </g>
+              </g>
+            </svg>
+          </span>
         </div>
         <div className="beneficio">
           <FaShieldHalved aria-hidden="true" />

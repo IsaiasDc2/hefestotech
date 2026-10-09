@@ -1,10 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import ProductCard from "./ProductCard";
 import "./Productos.css";
 
+
+function usarVisibleUnaVez() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        if (entradas.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return [ref, visible];
+}
 
 function Productos({ agregarAlCarrito }) {
 
@@ -39,6 +69,8 @@ function Productos({ agregarAlCarrito }) {
   });
 
   const [reintento, setReintento] = useState(0);
+
+  const [grillaRef, grillaVisible] = usarVisibleUnaVez();
 
 
   useEffect(() => {
@@ -572,7 +604,7 @@ function Productos({ agregarAlCarrito }) {
         !error &&
 
 
-        <div className="grid-productos">
+        <div ref={grillaRef} className={`grid-productos${grillaVisible ? " is-visible" : ""}`}>
 
 
           {

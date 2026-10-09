@@ -396,6 +396,54 @@
   }
 }
 
+/* ============================================================
+   Fundacion (d) — footer aditivo: entrada suave + hover con tokens.
+   Entrada solo opacity/transform (emil), glow solo en hover
+   (Flat-At-Rest), respeta reduced-motion. No toca logica.
+   ============================================================ */
+
+@keyframes ht-footer-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.footer {
+  animation: ht-footer-entrada var(--dur-650, 650ms) var(--ease-emil, cubic-bezier(0.16, 1, 0.3, 1)) both;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footer-col ul li a:hover {
+    color: var(--text);
+    border-color: var(--primary-borde, transparent);
+  }
+
+  .footer-brand .redes a:hover {
+    box-shadow: var(--glow-brand, 0 6px 24px rgba(99, 102, 241, 0.28));
+  }
+
+  .footer-news-form button:hover {
+    box-shadow: var(--shadow-lift, 0 12px 32px rgba(0, 0, 0, 0.5)), var(--glow-brand, 0 6px 24px rgba(99, 102, 241, 0.28));
+  }
+}
+
+.footer-news-form button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer {
+    animation: none;
+  }
+}
+
 @media (max-width: 900px) {
   .footer-news-inner {
     flex-direction: column;

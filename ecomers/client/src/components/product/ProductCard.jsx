@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaHeart,
@@ -6,12 +6,26 @@ import {
   FaCreditCard,
   FaTruckFast,
   FaCartPlus,
+  FaCheck,
 } from "react-icons/fa6";
 import "./ProductCard.css";
 
 function ProductCard({ producto, agregarAlCarrito }) {
   const [favorito, setFavorito] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [agregado, setAgregado] = useState(false);
+  const timerAgregado = useRef(null);
+
+  useEffect(() => () => {
+    if (timerAgregado.current) clearTimeout(timerAgregado.current);
+  }, []);
+
+  const manejarAgregar = () => {
+    agregarAlCarrito?.(producto);
+    setAgregado(true);
+    if (timerAgregado.current) clearTimeout(timerAgregado.current);
+    timerAgregado.current = setTimeout(() => setAgregado(false), 1400);
+  };
 
   const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
   const descuento = Math.round(Number(producto.descuento_porcentaje ?? 0));
@@ -133,9 +147,10 @@ function ProductCard({ producto, agregarAlCarrito }) {
 
       <button
         type="button"
-        className="btn-carrito"
+        className={`btn-carrito${agregado ? " is-added" : ""}`}
         disabled={!producto.stock}
-        onClick={() => agregarAlCarrito?.(producto)}
+        onClick={manejarAgregar}
+        aria-live="polite"
         aria-label={
           producto.stock
             ? `Agregar ${nombre} al carrito`
@@ -143,9 +158,15 @@ function ProductCard({ producto, agregarAlCarrito }) {
         }
       >
         {producto.stock ? (
-          <>
-            <FaCartPlus aria-hidden="true" /> Agregar al carrito
-          </>
+          agregado ? (
+            <>
+              <FaCheck aria-hidden="true" /> Agregado
+            </>
+          ) : (
+            <>
+              <FaCartPlus aria-hidden="true" /> Agregar al carrito
+            </>
+          )
         ) : (
           "Sin stock"
         )}

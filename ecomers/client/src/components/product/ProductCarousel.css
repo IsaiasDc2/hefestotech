@@ -156,7 +156,20 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
   display: flex;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 300ms cubic-bezier(.2,.8,.2,1), transform 300ms cubic-bezier(.2,.8,.2,1);
 }
+
+.carrusel.is-visible .carrusel-item {
+  opacity: 1;
+  transform: none;
+}
+
+.carrusel.is-visible .carrusel-item:nth-child(2) { transition-delay: 60ms; }
+.carrusel.is-visible .carrusel-item:nth-child(3) { transition-delay: 120ms; }
+.carrusel.is-visible .carrusel-item:nth-child(4) { transition-delay: 180ms; }
+.carrusel.is-visible .carrusel-item:nth-child(n + 5) { transition-delay: 240ms; }
 
 .carrusel-item > * {
   flex: 1;
@@ -231,6 +244,12 @@
 @media (prefers-reduced-motion: reduce) {
   .carrusel-pista {
     scroll-behavior: auto;
+  }
+
+  .carrusel-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 
   .carrusel-acciones button {

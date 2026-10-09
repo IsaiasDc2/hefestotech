@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaChevronLeft, FaChevronRight, FaBoxOpen } from "react-icons/fa6";
 import Marca from "../brand/Marca";
 import SectionHeader from "../ui/SectionHeader";
@@ -25,6 +25,31 @@ export default function ProductCarousel({
   agregarAlCarrito,
 }) {
   const pista = useRef(null);
+  const seccion = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = seccion.current;
+    if (!el) return;
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        if (entradas.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const desplazar = (dir) => {
     const el = pista.current;
@@ -56,7 +81,7 @@ export default function ProductCarousel({
   }
 
   return (
-    <section className="carrusel" aria-labelledby={tituloId}>
+    <section ref={seccion} className={`carrusel${visible ? " is-visible" : ""}`} aria-labelledby={tituloId}>
       <SectionHeader
         kicker={kicker}
         titulo={titulo}

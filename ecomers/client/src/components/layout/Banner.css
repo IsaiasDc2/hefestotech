@@ -18,18 +18,32 @@
   opacity: 0.9;
 }
 
+/* Crossfade: las diapositivas se apilan en la misma celda y solo
+   cambia la opacidad (transform/opacity, sin layout). */
 .banner-pista {
-  display: flex;
-  transition: transform 260ms var(--ease);
+  display: grid;
 }
 
 .banner-slide {
   position: relative;
-  flex: 0 0 100%;
+  grid-area: 1 / 1;
   max-width: 100%;
   aspect-ratio: 21 / 9;
   overflow: hidden;
   background: var(--surface-elevated-2);
+  opacity: 0;
+  visibility: hidden;
+  z-index: 0;
+  transition:
+    opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 550ms;
+}
+
+.banner-slide.es-activa {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+  transition: opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .banner-img {
@@ -40,6 +54,17 @@
   object-position: center;
   user-select: none;
   -webkit-user-drag: none;
+  transform: scale(1);
+}
+
+/* Zoom levisimo y lento, sincronizado con el autoplay de 5s. */
+.banner-slide.es-activa .banner-img {
+  animation: banner-kenburns 5200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes banner-kenburns {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
 }
 
 .banner-flecha {
@@ -62,7 +87,7 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
-  transition: opacity var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+  transition: opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .banner:hover .banner-flecha,
@@ -102,6 +127,19 @@
   display: flex;
   align-items: center;
   gap: 1.1rem;
+}
+
+/* Entrada escalonada del contenido de la barra (montaje inicial). */
+.banner-barra > * {
+  animation: banner-subida 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.banner-barra > *:nth-child(2) { animation-delay: 60ms; }
+.banner-barra > *:nth-child(3) { animation-delay: 120ms; }
+
+@keyframes banner-subida {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .banner-contador {
@@ -149,7 +187,7 @@
   height: 4px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--primitive-ink) 16%, transparent);
-  transition: background-color var(--dur-2) var(--ease);
+  transition: background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .banner-puntos button:hover::before {
@@ -172,6 +210,11 @@
 
 button.activo .banner-progreso {
   animation: banner-progreso-escala 5s linear forwards;
+}
+
+/* El progreso se congela cuando el autoplay esta pausado. */
+.banner[data-pausado="true"] button.activo .banner-progreso {
+  animation-play-state: paused;
 }
 
 @keyframes banner-progreso-escala {
@@ -200,7 +243,7 @@ button.activo .banner-progreso {
   cursor: pointer;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+  transition: border-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .banner-pausa:hover {
@@ -230,7 +273,10 @@ button.activo .banner-progreso {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .banner-pista { transition: none; }
+  .banner-slide,
+  .banner-slide.es-activa { transition: none; }
+  .banner-slide.es-activa .banner-img { animation: none; transform: none; }
+  .banner-barra > * { animation: none; }
   .banner-flecha:active,
   .banner-pausa:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
