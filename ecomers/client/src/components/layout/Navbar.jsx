@@ -85,6 +85,9 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               {tema === "light" ? <FaSun aria-hidden="true" /> : <FaMoon aria-hidden="true" />}
             </button>
           </span>
+          <span className="topbar-camion" aria-hidden="true">
+            <FaTruckFast aria-hidden="true" />
+          </span>
         </div>
       </div>
 
