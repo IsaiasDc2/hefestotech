@@ -127,7 +127,6 @@ function Home({ agregarAlCarrito }) {
 
       <section className="seccion" aria-labelledby="home-categorias">
         <SectionHeader
-          num="01"
           kicker="Explorar"
           titulo="Explorá por categoría"
           id="home-categorias"
@@ -189,7 +188,6 @@ function Home({ agregarAlCarrito }) {
           <ProductCarousel
             titulo="En oferta"
             kicker="Precios rebajados"
-            kickerNum="02"
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
@@ -202,7 +200,6 @@ function Home({ agregarAlCarrito }) {
 
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">
             <SectionHeader
-              num="03"
               kicker="Destacados"
               titulo="Explorá el catálogo"
               id="home-catalogo"
@@ -242,7 +239,6 @@ function Home({ agregarAlCarrito }) {
           <ProductCarousel
             titulo="Destacados"
             kicker="Selección"
-            kickerNum="04"
             verTodo="/productos"
             productos={destacados}
             agregarAlCarrito={agregarAlCarrito}
@@ -258,7 +254,6 @@ function Home({ agregarAlCarrito }) {
 
       <section className="seccion marcas" aria-labelledby="home-marcas">
         <SectionHeader
-          num="05"
           kicker="Marcas"
           titulo="Marcas"
           id="home-marcas"

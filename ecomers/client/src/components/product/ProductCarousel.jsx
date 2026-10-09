@@ -20,7 +20,6 @@ function slugId(titulo) {
 export default function ProductCarousel({
   titulo,
   kicker = null,
-  kickerNum = null,
   verTodo = "/productos",
   productos = [],
   agregarAlCarrito,
@@ -59,7 +58,6 @@ export default function ProductCarousel({
   return (
     <section className="carrusel" aria-labelledby={tituloId}>
       <SectionHeader
-        num={kickerNum}
         kicker={kicker}
         titulo={titulo}
         id={tituloId}
