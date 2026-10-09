@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 0.55rem;
   min-width: 0;
+  height: 100%;
   background: linear-gradient(180deg, var(--card-2), var(--card));
   border: 1px solid var(--border);
   border-radius: var(--radio-md);
@@ -23,7 +24,7 @@
 }
 
 .card-producto:hover {
-  transform: translateY(-5px);
+  transform: translateY(-2px);
   border-color: var(--primary-borde);
   box-shadow: var(--sombra-media), 0 0 28px var(--primary-resplandor);
 }
@@ -127,11 +128,12 @@
 .card-media {
   position: relative;
   display: block;
+  width: 100%;
   overflow: hidden;
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--border-suave);
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
 }
 
 .card-media::after {
@@ -151,8 +153,10 @@
 .card-media img {
   width: 100%;
   height: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  padding: 0.75rem;
+  box-sizing: border-box;
   display: block;
   background: var(--surface-elevated-2);
   transition: transform 250ms var(--ease), opacity var(--dur-2) var(--ease);
@@ -160,7 +164,7 @@
 
 .producto-detalle:hover .card-media img,
 .card-producto:hover .card-media img {
-  transform: scale(1.07);
+  transform: scale(1.04);
 }
 
 .producto-detalle img[src=""] {
@@ -177,7 +181,7 @@
   width: 100%;
   height: 100%;
   min-height: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
   background:
     linear-gradient(135deg, var(--primary-resplandor), transparent 60%),
     var(--surface);
@@ -213,6 +217,7 @@
 }
 
 .producto-detalle h3 {
+  margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.4;
@@ -228,6 +233,7 @@
 }
 
 .categoria {
+  margin: 0;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -284,6 +290,13 @@
   align-items: baseline;
   gap: 0.6rem;
   flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+.card-producto > strong.precio-actual {
+  margin-top: auto;
+  padding-top: 0.35rem;
 }
 
 .precio-anterior {
@@ -327,6 +340,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  margin: 0;
   font-size: 0.78rem;
   color: var(--ok);
   font-weight: 600;
@@ -341,6 +355,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  margin: 0;
   font-size: 0.78rem;
   color: var(--oro);
   font-weight: 700;
@@ -352,7 +367,7 @@
 }
 
 .btn-carrito {
-  margin-top: auto;
+  margin-top: 0.65rem;
   width: 100%;
   min-height: 44px;
   display: inline-flex;
@@ -459,6 +474,11 @@
 
 @media (hover: none) {
   .card-producto:hover {
+    transform: none;
+  }
+
+  .producto-detalle:hover .card-media img,
+  .card-producto:hover .card-media img {
     transform: none;
   }
 

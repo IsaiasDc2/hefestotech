@@ -13,9 +13,11 @@ import {
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
 import ProductCard from "../../components/product/ProductCard";
+import "../../components/product/ProductCard.css";
 import ProductCarousel from "../../components/product/ProductCarousel";
 import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
+import TiraBanner from "../../components/layout/TiraBanner";
 import "./Home.css";
 
 const MARCAS = [
@@ -157,7 +159,14 @@ function Home({ agregarAlCarrito }) {
       </section>
 
       {cargando ? (
-        <p className="estado-carga">Cargando productos…</p>
+        <section className="seccion" aria-label="Cargando catálogo">
+          <p className="estado-carga" role="status">Cargando productos…</p>
+          <div className="grid-destacados" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card-skeleton" />
+            ))}
+          </div>
+        </section>
       ) : error ? (
         <div className="vacio" role="alert">
           <p className="vacio-titulo">No pudimos cargar los productos</p>
@@ -175,19 +184,36 @@ function Home({ agregarAlCarrito }) {
         </div>
       ) : (
         <>
+          <ProductCarousel
+            titulo="En oferta"
+            kicker="Precios rebajados"
+            kickerNum="02"
+            verTodo="/productos?categoria=ofertas"
+            productos={ofertas}
+            agregarAlCarrito={agregarAlCarrito}
+          />
+
+          <TiraBanner
+            src={`${BASE}banners/tira-escritorio.webp`}
+            alt="Setup gamer con monitor sobre escritorio"
+          />
+
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">
             <div className="seccion-head editorial">
               <div className="seccion-titular">
                 <p className="kicker">
-                  <span className="kicker-num" aria-hidden="true">02</span>
+                  <span className="kicker-num" aria-hidden="true">03</span>
                   Destacados
                 </p>
                 <h2 id="home-catalogo">Explorá el catálogo</h2>
               </div>
-              <span className="conteo">
-                {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
-              </span>
+              <Link to="/productos" className="ver-todo">
+                Ver todo <span aria-hidden="true">→</span>
+              </Link>
             </div>
+            <p className="conteo" role="status">
+              {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
+            </p>
             <div className="pills-wrap">
               <button
                 type="button"
@@ -276,13 +302,11 @@ function Home({ agregarAlCarrito }) {
             )}
           </section>
 
-          <ProductCarousel
-            titulo="En oferta"
-            kicker="Precios rebajados"
-            kickerNum="03"
-            verTodo="/productos?categoria=ofertas"
-            productos={ofertas}
-            agregarAlCarrito={agregarAlCarrito}
+          <TiraBanner
+            src={`${BASE}banners/tira-silla.webp`}
+            alt="Silla gamer"
+            to="/productos?categoria=sillas-gamer"
+            etiqueta="Ver sillas gamer"
           />
           <ProductCarousel
             titulo="Destacados"

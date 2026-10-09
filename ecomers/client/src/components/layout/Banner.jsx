@@ -1,104 +1,46 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
-const BASE = import.meta.env.BASE_URL || "/";
-const imgPlaca = `${BASE}banners/placa.webp`;
-const imgSetup = `${BASE}banners/oferta.webp`;
-const imgPeris = `${BASE}banners/periferico.webp`;
 import "./Banner.css";
+
+const BASE = import.meta.env.BASE_URL || "/";
 
 const SLIDES = [
   {
-    id: "gpu",
-    tema: "indigo",
-    categoria: "Placa de video",
-    eyebrow: "Nueva generación",
-    titulo: "Todo lo que tu setup",
-    acento: "necesita",
-    texto: "Subí de nivel con placas de última generación. Jugá en ultra, sin tirones.",
-    cta: "Ver placas de video",
-    to: "/productos?categoria=placas-de-video",
-    ctaSec: "Ver outlet",
-    toSec: "/productos?categoria=ofertas",
-    posicion: "right center",
-    imagen: imgPlaca,
+    id: "hero-banner",
+    src: `${BASE}banners/hero-banner.webp`,
+    alt: "Teclado gamer AULA con retroiluminación RGB",
   },
   {
-    id: "setup",
-    tema: "celeste",
-    categoria: "Monitor",
-    eyebrow: "Armalo a tu medida",
-    titulo: "Llevá tu setup",
-    acento: "más lejos",
-    texto: "Monitores, gabinetes y refrigeración para armar el rincón que soñás.",
-    cta: "Explorar productos",
-    to: "/productos",
-    ctaSec: "Ver periféricos",
-    toSec: "/productos?categoria=perifericos",
-    posicion: "right center",
-    imagen: imgSetup,
+    id: "hero-neon",
+    src: `${BASE}banners/hero-neon.webp`,
+    alt: "Logo ROG neón sobre fondo oscuro",
   },
   {
-    id: "peris",
-    tema: "laton",
-    categoria: "Periferico",
-    eyebrow: "Precisión gamer",
-    titulo: "Cada clic",
-    acento: "cuenta",
-    texto: "Teclados mecánicos y mouse de alta respuesta para competir.",
-    cta: "Ver periféricos",
-    to: "/productos?categoria=perifericos",
-    ctaSec: "Explorar productos",
-    toSec: "/productos",
-    posicion: "right center",
-    imagen: imgPeris,
+    id: "hero-raro",
+    src: `${BASE}banners/hero-raro.webp`,
+    alt: "Gamer con auriculares y control en ambiente neón",
   },
 ];
 
-const CONFIANZA = [
-  "Envío a todo el país",
-  "6 cuotas sin interés",
-  "Garantía oficial",
-];
-
-const AUTOPLAY_MS = 6000;
+const AUTOPLAY_MS = 5000;
 
 export default function Banner() {
   const [indice, setIndice] = useState(0);
-  const [pausado, setPausado] = useState(false);
-  const [fotos, setFotos] = useState({});
-  const [fotoRota, setFotoRota] = useState({});
+  const [pausado, setPausado] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   const total = SLIDES.length;
   const timer = useRef(null);
   const touchX = useRef(null);
-
-  useEffect(() => {
-    supabase
-      .from("productos")
-      .select("categoria,imagen")
-      .eq("destacado", true)
-      .neq("imagen", "")
-      .then(({ data }) => {
-        const mapa = {};
-        (data || []).forEach((p) => {
-          if (!mapa[p.categoria]) mapa[p.categoria] = p.imagen;
-        });
-        setFotos(mapa);
-      })
-      .catch(() => {});
-  }, []);
-
-  const slides = SLIDES.map((s) => ({
-    ...s,
-    imagen: s.imagen || fotos[s.categoria] || "",
-  }));
 
   const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);
   const anterior = useCallback(() => irA(indice - 1), [indice, irA]);
   const siguiente = useCallback(() => irA(indice + 1), [indice, irA]);
 
   useEffect(() => {
-    if (pausado || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (pausado) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     timer.current = setTimeout(() => irA(indice + 1), AUTOPLAY_MS);
     return () => clearTimeout(timer.current);
   }, [indice, pausado, irA]);
@@ -116,123 +58,57 @@ export default function Banner() {
     touchX.current = null;
   };
 
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      anterior();
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      siguiente();
+    }
+  };
+
   return (
     <section
       className="banner"
       aria-roledescription="carrusel"
       aria-label="Promociones destacadas"
       onMouseEnter={() => setPausado(true)}
-      onMouseLeave={() => setPausado(false)}
+      onMouseLeave={() =>
+        setPausado(window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      }
       onFocus={() => setPausado(true)}
-      onBlur={() => setPausado(false)}
+      onBlur={() =>
+        setPausado(window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      }
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      onKeyDown={onKeyDown}
     >
       <div
         className="banner-pista"
         style={{ transform: `translateX(-${indice * 100}%)` }}
       >
-        {slides.map((s, i) => {
+        {SLIDES.map((s, i) => {
           const activo = i === indice;
           return (
-            <article
+            <div
               key={s.id}
-              className={`banner-slide tema-${s.tema}${activo ? " es-activa" : ""}`}
+              className={`banner-slide${activo ? " es-activa" : ""}`}
               aria-hidden={!activo}
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
             >
-              {s.imagen && !fotoRota[s.id] ? (
-                <div className="banner-foto" aria-hidden="true">
-                  <img
-                    src={s.imagen}
-                    alt=""
-                    aria-hidden="true"
-                    loading={i === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    style={{ objectPosition: s.posicion }}
-                    onError={() => setFotoRota((prev) => ({ ...prev, [s.id]: true }))}
-                  />
-                </div>
-              ) : (
-                <>
-                  {s.id === "gpu" && (
-                    <div className="banner-visual" aria-hidden="true">
-                      <div className="gpu">
-                        <span className="gpu-fan f1" />
-                        <span className="gpu-fan f2" />
-                        <span className="gpu-fan f3" />
-                        <span className="gpu-logo">HTX</span>
-                      </div>
-                    </div>
-                  )}
-                  {s.id === "setup" && (
-                    <div className="banner-visual" aria-hidden="true">
-                      <div className="setup">
-                        <span className="setup-torre" />
-                        <span className="setup-monitor" />
-                        <span className="setup-base" />
-                      </div>
-                    </div>
-                  )}
-                  {s.id === "peris" && (
-                    <div className="banner-visual" aria-hidden="true">
-                      <div className="teclado">
-                        <span className="tec-fila" />
-                        <span className="tec-fila" />
-                        <span className="tec-fila" />
-                        <span className="tec-fila corta" />
-                        <span className="mouse" />
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-              <div className="banner-velo" aria-hidden="true" />
-              <div className="banner-texto">
-                <p className="banner-kicker">
-                  <span className="banner-kicker-num">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="banner-kicker-sep" aria-hidden="true" />
-                  {s.eyebrow}
-                </p>
-                {activo ? (
-                  <h1 className="banner-titulo">
-                    {s.titulo} <span className="banner-acento">{s.acento}</span>
-                  </h1>
-                ) : (
-                  <h2 className="banner-titulo" aria-hidden="true">
-                    {s.titulo} <span className="banner-acento">{s.acento}</span>
-                  </h2>
-                )}
-                <p className="banner-desc">{s.texto}</p>
-                <div className="banner-acciones">
-                  <Link
-                    to={s.to}
-                    className="banner-cta"
-                    tabIndex={activo ? 0 : -1}
-                  >
-                    {s.cta}
-                  </Link>
-                  <Link
-                    to={s.toSec}
-                    className="banner-cta-sec"
-                    tabIndex={activo ? 0 : -1}
-                  >
-                    {s.ctaSec}
-                  </Link>
-                </div>
-                <ul className="banner-confianza" aria-label="Beneficios destacados">
-                  {CONFIANZA.map((c) => (
-                    <li key={c}>
-                      <span className="banner-check" aria-hidden="true" />
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
+              <img
+                src={s.src}
+                alt={s.alt}
+                className="banner-img"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : undefined}
+                decoding="async"
+                draggable="false"
+              />
+            </div>
           );
         })}
       </div>
@@ -260,7 +136,7 @@ export default function Banner() {
           <span className="banner-contador-total"> / {String(total).padStart(2, "0")}</span>
         </span>
         <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
-          {slides.map((s, i) => (
+          {SLIDES.map((s, i) => (
             <button
               key={s.id}
               type="button"
@@ -270,10 +146,23 @@ export default function Banner() {
               className={i === indice ? "activo" : ""}
               onClick={() => irA(i)}
             >
-              <span className="banner-progreso" key={`${s.id}-${i === indice ? indice : "x"}`} aria-hidden="true" />
+              <span
+                className="banner-progreso"
+                key={`${s.id}-${i === indice ? indice : "x"}`}
+                aria-hidden="true"
+              />
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="banner-pausa"
+          onClick={() => setPausado((p) => !p)}
+          aria-pressed={pausado}
+          aria-label={pausado ? "Reanudar carrusel" : "Pausar carrusel"}
+        >
+          <span aria-hidden="true">{pausado ? "▶" : "❚❚"}</span>
+        </button>
       </div>
     </section>
   );

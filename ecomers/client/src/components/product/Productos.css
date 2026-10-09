@@ -5,6 +5,7 @@
   box-sizing: border-box;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
+  overflow-x: clip;
 }
 
 .productos-header {
@@ -212,8 +213,13 @@
 .grid-productos {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.1rem;
+  gap: 1rem;
   align-items: stretch;
+  min-width: 0;
+}
+
+.grid-productos > .card-producto {
+  height: 100%;
 }
 
 .grid-productos > * {
@@ -285,11 +291,11 @@
     grid-column: 1 / -1;
   }
   .grid-productos {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .filtros {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
@@ -297,13 +303,7 @@
   }
   .grid-productos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.7rem;
-  }
-}
-
-@media (max-width: 380px) {
-  .grid-productos {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
   }
 }
 

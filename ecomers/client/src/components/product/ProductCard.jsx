@@ -67,6 +67,8 @@ function ProductCard({ producto, agregarAlCarrito }) {
             <img
               src={imagen}
               alt={nombre}
+              width="600"
+              height="600"
               loading="lazy"
               decoding="async"
               onError={() => { setImgError(true); }}

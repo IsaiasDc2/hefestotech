@@ -1,0 +1,50 @@
+.tira-banner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 0;
+}
+
+.tira-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radio-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-elevated-2);
+}
+
+.tira-banner__enlace {
+  display: block;
+  border-radius: var(--radio-lg);
+  transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+
+.tira-banner__enlace:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-marca);
+}
+
+.tira-banner__enlace:active {
+  transform: scale(0.99);
+}
+
+.tira-banner__enlace:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+@media (max-width: 380px) {
+  .tira-banner {
+    padding-inline: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tira-banner__enlace,
+  .tira-banner__enlace:hover,
+  .tira-banner__enlace:active {
+    transform: none;
+    transition: none;
+  }
+}

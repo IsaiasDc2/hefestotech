@@ -2,7 +2,7 @@
   position: relative;
   overflow: hidden;
   border-bottom: 1px solid var(--border);
-  background: var(--background);
+  background: var(--surface-elevated-2);
   touch-action: pan-y;
 }
 
@@ -26,498 +26,20 @@
 .banner-slide {
   position: relative;
   flex: 0 0 100%;
-  min-height: min(480px, 92svh);
-  display: flex;
-  align-items: center;
+  max-width: 100%;
+  aspect-ratio: 21 / 9;
   overflow: hidden;
-  max-width: 100%;
-}
-
-.tema-indigo {
-  background:
-    radial-gradient(ellipse 55% 90% at 78% 50%, var(--primary-resplandor), transparent 65%),
-    radial-gradient(ellipse 70% 60% at 15% 100%, var(--primary-suave), transparent 60%),
-    linear-gradient(100deg, var(--background) 30%, var(--surface-elevated-2) 70%, var(--background));
-}
-.tema-celeste {
-  background:
-    radial-gradient(ellipse 50% 85% at 78% 30%, var(--info-suave), transparent 65%),
-    radial-gradient(ellipse 60% 55% at 10% 100%, var(--primary-suave), transparent 60%),
-    linear-gradient(100deg, var(--background) 30%, var(--surface-elevated-2) 70%, var(--background));
-}
-.tema-laton {
-  background:
-    radial-gradient(ellipse 55% 90% at 78% 50%, var(--oro-suave), transparent 65%),
-    radial-gradient(ellipse 65% 60% at 12% 0%, var(--primary-suave), transparent 60%),
-    linear-gradient(100deg, var(--background) 30%, var(--surface-elevated-2) 70%, var(--background));
-}
-
-.banner-velo {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--primitive-night) 94%, transparent) 0%, color-mix(in srgb, var(--primitive-night) 74%, transparent) 42%, color-mix(in srgb, var(--primitive-night) 20%, transparent) 72%, transparent 100%),
-    linear-gradient(0deg, color-mix(in srgb, var(--primitive-night) 55%, transparent) 0%, transparent 32%);
-}
-
-.banner-visual {
-  position: absolute;
-  right: max(2rem, calc(50% - 620px));
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 0;
-  pointer-events: none;
-  max-width: 100%;
-  overflow: hidden;
-  filter: drop-shadow(0 30px 60px color-mix(in srgb, var(--primitive-night) 60%, transparent));
-}
-
-.gpu {
-  position: relative;
-  width: min(420px, calc(100vw - 2rem));
-  max-width: 100%;
-  height: 150px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, var(--surface-elevated-2) 0%, var(--surface) 60%, var(--background) 100%);
-  border: 1px solid var(--border);
-  box-shadow:
-    inset 0 1px 0 var(--primary-suave),
-    var(--sombra-marca);
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  padding: 0 70px 0 14px;
-}
-
-.gpu::after {
-  content: "";
-  position: absolute;
-  right: 14px;
-  top: 22px;
-  bottom: 22px;
-  width: 44px;
-  border-radius: 8px;
-  background:
-    repeating-linear-gradient(180deg, var(--primary-suave) 0 3px, transparent 3px 8px),
-    var(--surface);
-  border: 1px solid var(--border);
-}
-
-.gpu-fan {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, var(--background) 22%, transparent 23%),
-    repeating-conic-gradient(var(--primary-suave) 0 12deg, transparent 12deg 40deg),
-    radial-gradient(circle, var(--surface-elevated-2) 0%, var(--surface) 70%);
-  border: 3px solid var(--border);
-  animation: ventilador 5s linear infinite;
-}
-
-.gpu-fan.f2 { animation-duration: 6.5s; animation-direction: reverse; }
-.gpu-fan.f3 { animation-duration: 7.5s; }
-
-@keyframes ventilador {
-  to { transform: rotate(360deg); }
-}
-
-.gpu-logo {
-  position: absolute;
-  left: 16px;
-  bottom: 10px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  letter-spacing: 0.3em;
-  color: var(--accent);
-  text-shadow: 0 0 12px var(--primary-resplandor);
-}
-
-.setup {
-  position: relative;
-  width: min(400px, calc(100vw - 2rem));
-  max-width: 100%;
-  height: 280px;
-}
-
-.setup-monitor {
-  position: absolute;
-  left: 40px;
-  top: 10px;
-  width: 250px;
-  max-width: calc(100% - 40px);
-  height: 155px;
-  border-radius: 10px;
-  background: var(--grad-marca);
-  border: 8px solid var(--background);
-  box-shadow: var(--sombra-marca);
-  overflow: hidden;
-}
-
-.setup-monitor::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(105deg, transparent 40%, var(--primary-suave) 48%, transparent 56%),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--primitive-night) 25%, transparent) 0 2px, transparent 2px 5px);
-}
-
-.setup-base {
-  position: absolute;
-  left: 60px;
-  top: 178px;
-  width: 210px;
-  max-width: calc(100% - 60px);
-  height: 26px;
-  border-radius: 4px 4px 10px 10px;
-  background:
-    repeating-linear-gradient(90deg, var(--accent-sky) 0 8px, transparent 8px 14px),
-    var(--surface);
-  border: 1px solid var(--info-borde);
-  box-shadow: var(--sombra-marca);
-}
-
-.setup-torre {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 92px;
-  height: 220px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, var(--surface-elevated-2), var(--background));
-  border: 1px solid var(--border);
-}
-
-.setup-torre::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 14px;
-  bottom: 14px;
-  width: 10px;
-  border-radius: 999px;
-  background: var(--grad-marca);
-  box-shadow: var(--sombra-marca);
-  animation: pulso-marca 3s ease-in-out infinite alternate;
-}
-
-@keyframes pulso-marca {
-  from { opacity: 0.75; }
-  to { opacity: 1; }
-}
-
-.teclado {
-  position: relative;
-  width: min(380px, calc(100vw - 2rem));
-  max-width: 100%;
-  height: 170px;
-  transform: perspective(700px) rotateX(18deg);
-  border-radius: 14px;
-  background: linear-gradient(180deg, var(--surface-elevated-2), var(--background));
-  border: 1px solid var(--border);
-  box-shadow: var(--sombra-media);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tec-fila {
-  flex: 1;
-  border-radius: 4px;
-  background: repeating-linear-gradient(90deg, var(--border) 0 22px, transparent 22px 28px);
-  box-shadow: inset 0 -2px 0 var(--oro-borde);
-}
-
-.tec-fila.corta {
-  background: repeating-linear-gradient(90deg, var(--border) 0 22px, transparent 22px 28px);
-  margin-right: 90px;
-}
-
-.mouse {
-  position: absolute;
-  right: 0;
-  bottom: 6px;
-  width: 64px;
-  height: 100px;
-  border-radius: 32px 32px 38px 38px;
-  background: linear-gradient(180deg, var(--surface-elevated-2), var(--surface));
-  border: 1px solid var(--border);
-  box-shadow: var(--sombra-media);
-  transform: perspective(700px) rotateX(-18deg);
-}
-
-.mouse::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 42px;
-  transform: translateX(-50%);
-  background: var(--border);
-  border-radius: 2px;
-}
-
-.mouse::after {
-  content: "";
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  width: 12px;
-  height: 20px;
-  transform: translateX(-50%);
-  border-radius: 6px;
   background: var(--surface-elevated-2);
-  box-shadow: 0 0 10px 2px var(--oro-borde);
 }
 
-.banner-texto {
-  position: relative;
-  z-index: 2;
-  margin: 0 auto;
-  padding: 4rem 1.5rem 5rem;
-  width: 100%;
-  min-width: 0;
-  max-width: min(1280px, 100%);
-  text-shadow: 0 2px 18px color-mix(in srgb, var(--primitive-night) 75%, transparent);
-}
-
-.banner-texto > * {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 240ms var(--ease), transform 240ms var(--ease);
-}
-
-.banner-slide.es-activa .banner-texto > * {
-  opacity: 1;
-  transform: none;
-}
-
-.banner-slide.es-activa .banner-texto > *:nth-child(1) { transition-delay: 40ms; }
-.banner-slide.es-activa .banner-texto > *:nth-child(2) { transition-delay: 100ms; }
-.banner-slide.es-activa .banner-texto > *:nth-child(3) { transition-delay: 160ms; }
-.banner-slide.es-activa .banner-texto > *:nth-child(4) { transition-delay: 220ms; }
-.banner-slide.es-activa .banner-texto > *:nth-child(5) { transition-delay: 280ms; }
-
-.banner-foto {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: min(52%, 100%);
-  max-width: 100%;
-  z-index: 0;
-  pointer-events: none;
-  background: var(--surface-elevated-2);
-  mask-image: linear-gradient(90deg, transparent, black 28%);
-  -webkit-mask-image: linear-gradient(90deg, transparent, black 28%);
-}
-
-.banner-foto img {
+.banner-img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  background: var(--surface-elevated-2);
-}
-
-.banner-kicker {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.7rem;
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 800;
-  line-height: 1.6;
-  letter-spacing: var(--tracking-humo);
-  text-transform: uppercase;
-  padding: 0.55rem 1rem 0.55rem 0.7rem;
-  border-radius: 999px;
-  margin-bottom: 1.2rem;
-  border: 1px solid var(--primary-borde);
-  color: var(--gold);
-  background: color-mix(in srgb, var(--primitive-night) 55%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  max-width: 100%;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.banner-kicker-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  padding: 0.3rem 0.45rem;
-  border-radius: 999px;
-  background: var(--grad-marca);
-  color: var(--on-accent);
-  letter-spacing: 0.08em;
-  text-shadow: none;
-}
-
-.banner-kicker-sep {
-  width: 1.6rem;
-  height: 1px;
-  background: var(--oro-borde);
-}
-
-.banner-texto h1,
-.banner-texto h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
-  font-weight: 600;
-  letter-spacing: 0.015em;
-  text-transform: uppercase;
-  line-height: 1.02;
-  text-wrap: balance;
-  overflow-wrap: break-word;
-  color: var(--text);
-  max-width: 16ch;
-  margin-bottom: 0.9rem;
-}
-
-.banner-acento {
-  color: var(--gold);
-}
-
-.banner-desc {
-  color: var(--muted);
-  font-size: clamp(0.95rem, 1vw + 0.7rem, 1.08rem);
-  line-height: 1.6;
-  max-width: 46ch;
-  margin-bottom: 1.8rem;
-  text-wrap: pretty;
-}
-
-.banner-acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  align-items: center;
-  margin-bottom: 1.8rem;
-}
-
-.banner-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 44px;
-  padding: 1rem 2rem;
-  border-radius: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  white-space: nowrap;
-  color: var(--on-accent);
-  background: var(--grad-marca);
-  border: 1px solid transparent;
-  box-shadow: var(--sombra-marca);
-  transition: transform var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
-}
-
-.banner-cta::after {
-  content: "→";
-  font-weight: 700;
-  transition: transform var(--dur-2) var(--ease);
-}
-
-.banner-cta:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-media), var(--sombra-marca);
-  opacity: 0.98;
-}
-
-.banner-cta:hover::after {
-  transform: translateX(3px);
-}
-
-.banner-cta:active {
-  transform: scale(0.97);
-}
-
-.banner-cta:focus-visible,
-.banner-cta-sec:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 4px var(--anillo-foco);
-}
-
-.banner-cta-sec {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 44px;
-  padding: 0.6rem 0.2rem;
-  font-weight: 700;
-  font-size: 0.92rem;
-  line-height: 1;
-  text-decoration: underline;
-  text-decoration-color: var(--primary-borde);
-  text-underline-offset: 4px;
-  color: var(--text);
-  background: transparent;
-  border: none;
-  transition: color var(--dur-2) var(--ease), text-decoration-color var(--dur-2) var(--ease);
-}
-
-.banner-cta-sec::after {
-  content: "→";
-  font-weight: 700;
-  transition: transform var(--dur-2) var(--ease);
-}
-
-.banner-cta-sec:hover {
-  color: var(--primary);
-  text-decoration-color: var(--primary);
-}
-
-.banner-cta-sec:hover::after {
-  transform: translateX(3px);
-}
-
-.banner-cta-sec:active {
-  transform: scale(0.97);
-}
-
-.banner-confianza {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1.4rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.banner-confianza li {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.banner-check {
-  width: 1.05rem;
-  height: 1.05rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background:
-    linear-gradient(var(--success), var(--success)) center / 55% 2px no-repeat,
-    linear-gradient(var(--success), var(--success)) center / 2px 32% no-repeat,
-    var(--ok-suave);
-  border: 1px solid var(--ok-borde);
-  transform: rotate(45deg);
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .banner-flecha {
@@ -565,11 +87,6 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-.banner-flecha:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 .banner-flecha.ant { left: 1rem; }
 .banner-flecha.sig { right: 1rem; }
 
@@ -592,13 +109,14 @@
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: var(--text);
+  color: var(--primitive-ink);
   min-width: 3.5rem;
   flex-shrink: 0;
+  text-shadow: 0 1px 12px color-mix(in srgb, var(--primitive-night) 80%, transparent);
 }
 
 .banner-contador-total {
-  color: var(--muted-oscuro);
+  color: var(--primitive-fog-deep);
 }
 
 .banner-puntos {
@@ -653,7 +171,7 @@
 }
 
 button.activo .banner-progreso {
-  animation: banner-progreso-escala 6s linear forwards;
+  animation: banner-progreso-escala 5s linear forwards;
 }
 
 @keyframes banner-progreso-escala {
@@ -666,90 +184,46 @@ button.activo .banner-progreso {
   outline-offset: 3px;
 }
 
-@media (max-width: 1024px) {
-  .banner-slide { min-height: 440px; }
-  .banner-visual {
-    right: 0;
-    left: auto;
-    max-width: 100vw;
-    opacity: 0.35;
-    transform: translateY(-50%) scale(0.72);
-    transform-origin: right center;
-  }
-  .banner-texto {
-    text-shadow: 0 2px 22px color-mix(in srgb, var(--primitive-night) 90%, transparent);
-  }
-  .banner-foto {
-    width: 100%;
-    opacity: 0.32;
-    mask-image: linear-gradient(180deg, transparent 30%, black 75%);
-    -webkit-mask-image: linear-gradient(180deg, transparent 30%, black 75%);
-  }
-  .banner-velo {
-    background:
-      linear-gradient(0deg, color-mix(in srgb, var(--primitive-night) 92%, transparent) 20%, color-mix(in srgb, var(--primitive-night) 55%, transparent) 60%, color-mix(in srgb, var(--primitive-night) 25%, transparent) 100%);
-  }
+.banner-pausa {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primitive-night) 60%, transparent);
+  color: var(--primitive-ink);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+
+.banner-pausa:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--surface-elevated-2);
+}
+
+.banner-pausa:active {
+  transform: scale(0.97);
+}
+
+.banner-pausa:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
 @media (max-width: 768px) {
-  .banner-slide { min-height: 420px; }
-  .banner-flecha { display: none; }
-  .banner-visual { right: 0; opacity: 0.28; }
-  .mouse { display: none; }
-  .banner-confianza { display: none; }
-}
-
-@media (max-width: 480px) {
   .banner-slide {
-    min-height: 0;
-    align-items: flex-start;
+    aspect-ratio: 16 / 10;
   }
-
-  .banner-visual {
-    display: none;
-  }
-
-  .banner-texto {
-    padding: 2.5rem 1rem 4.4rem;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .banner-texto h1,
-  .banner-texto h2 {
-    font-size: clamp(1.6rem, 8vw, 2rem);
-    overflow-wrap: anywhere;
-    max-width: 100%;
-  }
-
-  .banner-desc {
-    font-size: 0.9rem;
-    max-width: 100%;
-  }
-
-  .banner-kicker {
-    font-size: 0.65rem;
-    max-width: 100%;
-  }
-
-  .banner-acciones {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .banner-cta,
-  .banner-cta-sec {
-    text-align: center;
-    width: 100%;
-    min-height: 44px;
-  }
-
-  .banner-foto {
-    right: 0;
-    width: 100%;
-    opacity: 0.22;
-  }
-
+  .banner-flecha { display: none; }
   .banner-barra {
     padding: 0 1rem 0.9rem;
   }
@@ -757,50 +231,8 @@ button.activo .banner-progreso {
 
 @media (prefers-reduced-motion: reduce) {
   .banner-pista { transition: none; }
-  .banner-texto > * { opacity: 1; transform: none; transition: none; }
-  .banner-cta:hover,
-  .banner-cta-sec:hover,
-  .banner-flecha:active { transform: none; }
+  .banner-flecha:active,
+  .banner-pausa:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }
   button.activo .banner-progreso { animation: none; transform: scaleX(1); }
-  .gpu-fan,
-  .setup-torre::before { animation: none; }
-}
-
-/* Tema claro: el banner es isla editorial oscura (tono fijo dark).
-   El velo garantiza el contraste; el texto usa primitivas claras
-   en vez de los semánticos del tema diurno. */
-:root[data-theme="light"] .tema-indigo,
-:root[data-theme="light"] .tema-celeste,
-:root[data-theme="light"] .tema-laton {
-  background:
-    radial-gradient(ellipse 55% 90% at 78% 50%, var(--primary-resplandor), transparent 65%),
-    linear-gradient(100deg, var(--primitive-night) 30%, var(--primitive-graphite) 70%, var(--primitive-night));
-}
-
-:root[data-theme="light"] .banner-texto h1,
-:root[data-theme="light"] .banner-texto h2 {
-  color: var(--primitive-ink);
-}
-
-:root[data-theme="light"] .banner-desc,
-:root[data-theme="light"] .banner-confianza {
-  color: var(--primitive-fog);
-}
-
-:root[data-theme="light"] .banner-kicker,
-:root[data-theme="light"] .banner-acento {
-  color: var(--primitive-brass);
-}
-
-:root[data-theme="light"] .banner-contador {
-  color: var(--primitive-ink);
-}
-
-:root[data-theme="light"] .banner-contador-total {
-  color: var(--primitive-fog-deep);
-}
-
-:root[data-theme="light"] .banner-flecha:hover {
-  color: var(--primitive-indigo);
 }
