@@ -455,6 +455,13 @@
   background-color: var(--surface);
 }
 
+button.link-cuenta {
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
 .link-cuenta svg {
   font-size: 1.05rem;
   color: var(--primary);

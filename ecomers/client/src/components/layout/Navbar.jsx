@@ -3,20 +3,17 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaCartShopping,
+  FaCircleQuestion,
   FaMagnifyingGlass,
   FaUser,
   FaUserPlus,
   FaTruckFast,
-  FaGlobe,
-  FaChevronDown,
-  FaCheck,
   FaMoon,
   FaScrewdriverWrench,
   FaSun,
-  FaWhatsapp,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca";
-import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
+import { FILA_CATEGORIAS, esClaveActiva } from "./navLinks";
 import MobileDrawer from "./MobileDrawer";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
@@ -26,11 +23,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [pop, setPop] = useState(false);
-  const [idiomaAbierto, setIdiomaAbierto] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const idiomaRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
-  const setIdioma = useIdiomaStore((s) => s.setIdioma);
   const { tema, alternar } = useTema();
   const etiquetaTema = idioma === "en"
     ? (tema === "light" ? "Switch to dark mode" : "Switch to light mode")
@@ -49,24 +43,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  useEffect(() => {
-    if (!idiomaAbierto) return;
-    const alClick = (e) => {
-      if (idiomaRef.current && !idiomaRef.current.contains(e.target)) {
-        setIdiomaAbierto(false);
-      }
-    };
-    const alTeclado = (e) => {
-      if (e.key === "Escape") setIdiomaAbierto(false);
-    };
-    document.addEventListener("mousedown", alClick);
-    document.addEventListener("keydown", alTeclado);
-    return () => {
-      document.removeEventListener("mousedown", alClick);
-      document.removeEventListener("keydown", alTeclado);
-    };
-  }, [idiomaAbierto]);
 
   useEffect(() => {
     if (primeraVez.current) {
@@ -98,48 +74,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             {t(idioma, "topbar.envio")}
           </span>
           <span className="topbar-links">
-            <Link to="/acerca" className="topbar-util">
-              {t(idioma, "nav.ayuda")}
-            </Link>
-            <Link to="/contactanos" className="topbar-util">
-              {t(idioma, "nav.posventa")}
-            </Link>
-            <span className="topbar-idioma" ref={idiomaRef}>
-              <button
-                type="button"
-                className="topbar-idioma-btn"
-                onClick={() => setIdiomaAbierto((v) => !v)}
-                aria-expanded={idiomaAbierto}
-                aria-haspopup="listbox"
-                aria-label={t(idioma, "topbar.idioma")}
-              >
-                <FaGlobe aria-hidden="true" />
-                <span>{idioma.toUpperCase()}</span>
-                <FaChevronDown aria-hidden="true" className={idiomaAbierto ? "gira" : ""} />
-              </button>
-              {idiomaAbierto && (
-                <ul className="topbar-idioma-menu" role="listbox" aria-label={t(idioma, "topbar.idioma")}>
-                  {IDIOMAS.map((op) => (
-                    <li key={op.codigo} role="option" aria-selected={idioma === op.codigo}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIdioma(op.codigo);
-                          setIdiomaAbierto(false);
-                        }}
-                      >
-                        {idioma === op.codigo && <FaCheck aria-hidden="true" />}
-                        {op.etiqueta}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </span>
-            <a href="https://wa.me/5491112345678" target="_blank" rel="noreferrer">
-              <FaWhatsapp aria-hidden="true" />
-              WhatsApp
-            </a>
             <button
               type="button"
               className="topbar-tema"
@@ -189,6 +123,17 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           </form>
 
           <nav className="nav-cuenta" aria-label={`${t(idioma, "nav.sesion")} / ${t(idioma, "nav.carrito")}`}>
+            <button
+              type="button"
+              className="link-cuenta"
+              onClick={abrirMenu}
+              aria-expanded={menuAbierto}
+              aria-controls="menu-movil"
+              aria-label={t(idioma, "nav.ayuda")}
+            >
+              <FaCircleQuestion aria-hidden="true" />
+              <span>{t(idioma, "nav.ayuda")}</span>
+            </button>
             <Link to="/cuenta?modo=registro" className="link-cuenta link-registro">
               <FaUserPlus aria-hidden="true" />
               <span>{t(idioma, "nav.registrate")}</span>
