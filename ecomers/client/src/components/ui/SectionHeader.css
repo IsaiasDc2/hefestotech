@@ -1,0 +1,213 @@
+/* SectionHeader — encabezado editorial unico (El Arsenal). Solo tokens semanticos. */
+.ht-sh {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: var(--space-5);
+  min-width: 0;
+}
+
+.ht-sh__titular {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.ht-sh__insignia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radio-full);
+  font-size: 0.68rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.08em;
+  color: var(--on-accent);
+  background: var(--grad-marca);
+  box-shadow:
+    inset 0 1px 0 var(--primary-borde),
+    0 2px 12px var(--primary-resplandor);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+}
+
+.ht-sh__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.ht-sh__kicker {
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-humo);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ht-sh__titulo {
+  font-size: clamp(1.5rem, 1.15rem + 3vw, 2.25rem);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-tight);
+  background: linear-gradient(115deg, var(--gold) 45%, var(--text) 135%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0;
+  transform: translateY(var(--reveal-y));
+  transition:
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+}
+
+@supports not (background-clip: text) {
+  .ht-sh__titulo {
+    color: var(--gold);
+    background: none;
+  }
+}
+
+.ht-sh__linea {
+  flex: 1 1 auto;
+  min-width: var(--space-5);
+  height: 1px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition:
+    opacity var(--dur-3) var(--ease-out),
+    transform var(--dur-3) var(--ease-out);
+  transition-delay: var(--stagger);
+}
+
+.ht-sh__acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ht-sh__acciones button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--dur-2) var(--ease),
+    color var(--dur-2) var(--ease),
+    background-color var(--dur-2) var(--ease),
+    transform var(--dur-1) var(--ease-rapida);
+}
+
+.ht-sh__acciones button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-suave);
+}
+
+.ht-sh__acciones button:active {
+  transform: scale(0.97);
+}
+
+.ht-sh__vertodo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;
+  color: var(--primary);
+  font-size: 0.88rem;
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ht-sh__vertodo:hover {
+  text-decoration: underline;
+}
+
+.ht-sh__vertodo span {
+  transition: transform var(--dur-2) var(--ease);
+}
+
+.ht-sh__vertodo:hover span {
+  transform: translateX(3px);
+}
+
+.ht-sh__acciones button:focus-visible,
+.ht-sh__vertodo:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+/* Entrada al viewport, una sola vez: rebote leve, fade-up y linea que se dibuja. */
+.ht-sh.is-visible .ht-sh__insignia {
+  opacity: 1;
+  transform: scale(1);
+  animation: ht-sh-pop var(--dur-3) var(--ease-out);
+}
+
+.ht-sh.is-visible .ht-sh__titulo {
+  opacity: 1;
+  transform: none;
+}
+
+.ht-sh.is-visible .ht-sh__linea {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+@keyframes ht-sh-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 360px) {
+  .ht-sh__linea {
+    display: none;
+  }
+
+  .ht-sh__titulo {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ht-sh__insignia,
+  .ht-sh__titulo,
+  .ht-sh__linea,
+  .ht-sh__vertodo span {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -15,6 +15,13 @@ import { supabase } from "../../components/lib/supabaseClient";
 import ProductCard from "../../components/product/ProductCard";
 import "../../components/product/ProductCard.css";
 import ProductCarousel from "../../components/product/ProductCarousel";
+import SectionHeader from "../../components/ui/SectionHeader";
+import FilterPanel from "../../components/filters/FilterPanel";
+import {
+  contarCategorias,
+  contarMarcas,
+  filtrar,
+} from "../../components/filters/filtros";
 import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
 import TiraBanner from "../../components/layout/TiraBanner";
@@ -50,22 +57,12 @@ function Home({ agregarAlCarrito }) {
   const [filtroTexto, setFiltroTexto] = useState("");
   const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
-  const pillsRef = useRef(null);
+  const [marcasElegidas, setMarcasElegidas] = useState([]);
 
-  const pills = [
-    { label: "Todas", value: "Todas" },
-    ...CATEGORIAS.filter((c) => c.db).map((c) => ({
-      label: c.nombre,
-      value: c.db,
-    })),
-  ];
-
-  const desplazarPills = (dir) => {
-    const el = pillsRef.current;
-    if (!el) return;
-    const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollBy({ left: dir * 220, behavior: suave ? "smooth" : "auto" });
-  };
+  const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
+    label: c.nombre,
+    value: c.db,
+  }));
 
   const normalizar = (data) =>
     (data || []).map((p) => ({
@@ -102,16 +99,26 @@ function Home({ agregarAlCarrito }) {
     .filter((p) => p.descuento_porcentaje > 0)
     .slice(0, 10);
 
-  const filtrados = productos.filter((p) => {
-    const texto = filtroTextoDif.trim().toLowerCase();
-    const coincideTexto =
-      !texto ||
-      p.nombre.toLowerCase().includes(texto) ||
-      (p.marca || "").toLowerCase().includes(texto);
-    const coincideCategoria =
-      filtroCategoria === "Todas" || p.categoria === filtroCategoria;
-    return coincideTexto && coincideCategoria;
+  const conteosCategoria = contarCategorias(productos, {
+    texto: filtroTextoDif,
+    marcas: marcasElegidas,
   });
+  const marcasDisponibles = Object.entries(
+    contarMarcas(productos, {
+      texto: filtroTextoDif,
+      categoria: filtroCategoria,
+    })
+  ).map(([nombre, conteo]) => ({ nombre, conteo }));
+  const filtrados = filtrar(productos, {
+    textoDif: filtroTextoDif,
+    categoria: filtroCategoria,
+    marcas: marcasElegidas,
+  });
+  const limpiarFiltros = () => {
+    setFiltroTexto("");
+    setFiltroCategoria("Todas");
+    setMarcasElegidas([]);
+  };
 
   return (
     <div className="home">
@@ -119,18 +126,13 @@ function Home({ agregarAlCarrito }) {
       <PromoBar />
 
       <section className="seccion" aria-labelledby="home-categorias">
-        <div className="seccion-head editorial">
-          <div className="seccion-titular">
-            <p className="kicker">
-              <span className="kicker-num" aria-hidden="true">01</span>
-              Explorar
-            </p>
-            <h2 id="home-categorias">Explorá por categoría</h2>
-          </div>
-          <Link to="/productos" className="ver-todo">
-            Ver todo <span aria-hidden="true">→</span>
-          </Link>
-        </div>
+        <SectionHeader
+          num="01"
+          kicker="Explorar"
+          titulo="Explorá por categoría"
+          id="home-categorias"
+          verTodo="/productos"
+        />
         <div className="grid-categorias">
           {CATEGORIAS.map((c) => (
             <Link
@@ -199,107 +201,36 @@ function Home({ agregarAlCarrito }) {
           />
 
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">
-            <div className="seccion-head editorial">
-              <div className="seccion-titular">
-                <p className="kicker">
-                  <span className="kicker-num" aria-hidden="true">03</span>
-                  Destacados
-                </p>
-                <h2 id="home-catalogo">Explorá el catálogo</h2>
-              </div>
-              <Link to="/productos" className="ver-todo">
-                Ver todo <span aria-hidden="true">→</span>
-              </Link>
+            <SectionHeader
+              num="03"
+              kicker="Destacados"
+              titulo="Explorá el catálogo"
+              id="home-catalogo"
+              verTodo="/productos"
+            />
+            <FilterPanel
+              texto={filtroTexto}
+              onTexto={setFiltroTexto}
+              categoria={filtroCategoria}
+              onCategoria={setFiltroCategoria}
+              marcas={marcasElegidas}
+              onMarcas={setMarcasElegidas}
+              categorias={categoriasPanel}
+              marcasDisponibles={marcasDisponibles}
+              conteosCategoria={conteosCategoria}
+              total={filtrados.length}
+              totalCatalogo={productos.length}
+              onLimpiar={limpiarFiltros}
+            />
+            <div className="grid-destacados">
+              {filtrados.slice(0, 8).map((p) => (
+                <ProductCard
+                  key={p.id}
+                  producto={p}
+                  agregarAlCarrito={agregarAlCarrito}
+                />
+              ))}
             </div>
-            <p className="conteo" role="status">
-              {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
-            </p>
-            <div className="pills-wrap">
-              <button
-                type="button"
-                className="pills-flecha"
-                onClick={() => desplazarPills(-1)}
-                aria-label="Categorías anteriores"
-              >
-                ‹
-              </button>
-              <div
-                className="pills-categorias"
-                ref={pillsRef}
-                role="tablist"
-                aria-label="Filtrá por categoría"
-              >
-                {pills.map((pill) => (
-                  <button
-                    key={pill.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={filtroCategoria === pill.value}
-                    className={`pill${filtroCategoria === pill.value ? " activa" : ""}`}
-                    onClick={() => setFiltroCategoria(pill.value)}
-                  >
-                    {pill.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                className="pills-flecha"
-                onClick={() => desplazarPills(1)}
-                aria-label="Más categorías"
-              >
-                ›
-              </button>
-            </div>
-            <div className="filtros">
-              <input
-                className="buscador"
-                type="text"
-                placeholder="Buscar por nombre o marca..."
-                value={filtroTexto}
-                onChange={(e) => setFiltroTexto(e.target.value)}
-                aria-label="Buscar productos"
-              />
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-                aria-label="Filtrar por categoría"
-              >
-                <option value="Todas">Todas las categorías</option>
-                {CATEGORIAS.filter((c) => c.db).map((c) => (
-                  <option key={c.slug} value={c.db}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
-              {(filtroTexto || filtroCategoria !== "Todas") && (
-                <button
-                  className="btn-limpiar"
-                  onClick={() => {
-                    setFiltroTexto("");
-                    setFiltroCategoria("Todas");
-                  }}
-                >
-                  ↻ Limpiar
-                </button>
-              )}
-            </div>
-            {filtrados.length === 0 ? (
-              <div className="vacio">
-                <p>Sin resultados con ese filtro.</p>
-                <span>Probá con otra búsqueda o categoría.</span>
-              </div>
-            ) : (
-              <div className="grid-destacados">
-                {filtrados.slice(0, 8).map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    producto={p}
-                    agregarAlCarrito={agregarAlCarrito}
-                  />
-                ))}
-              </div>
-            )}
           </section>
 
           <TiraBanner
@@ -326,18 +257,13 @@ function Home({ agregarAlCarrito }) {
       )}
 
       <section className="seccion marcas" aria-labelledby="home-marcas">
-        <div className="seccion-head editorial">
-          <div className="seccion-titular">
-            <p className="kicker">
-              <span className="kicker-num" aria-hidden="true">05</span>
-              Marcas
-            </p>
-            <h2 id="home-marcas">Marcas</h2>
-          </div>
-          <Link to="/productos" className="ver-todo">
-            Ver todo <span aria-hidden="true">→</span>
-          </Link>
-        </div>
+        <SectionHeader
+          num="05"
+          kicker="Marcas"
+          titulo="Marcas"
+          id="home-marcas"
+          verTodo="/productos"
+        />
         <div className="marcas-fila">
           {MARCAS.map((m) => (
             <Link

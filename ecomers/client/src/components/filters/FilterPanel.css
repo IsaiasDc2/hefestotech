@@ -1,0 +1,438 @@
+/* HefestoTech · FilterPanel. Panel glass para filtros del catálogo.
+   Solo tokens (cero hex): var(--...) + transparent + currentColor.
+   Movimiento: solo transform / opacity / box-shadow. */
+
+.filter-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--superficie-elevada);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--sombra-media);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Brillo superior sutil (1px, como .card). */
+.filter-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--grad-marca);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ---- Buscador ---- */
+.fp-buscador {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fp-lupa {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  pointer-events: none;
+  transition: color var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.fp-buscador:focus-within .fp-lupa {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.fp-input {
+  width: 100%;
+  padding-left: 2.6rem;
+  padding-right: 2.6rem;
+}
+
+.fp-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring), var(--sombra-marca);
+}
+
+.fp-borrar {
+  position: absolute;
+  right: 0.4rem;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--text-muted);
+  transition: transform var(--dur-1) var(--ease), opacity var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.fp-borrar:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+/* ---- Categorías (chips únicos, radiogroup) ---- */
+.fp-categorias {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: 0.2rem 0.1rem 0.5rem;
+  scrollbar-width: thin;
+}
+
+.fp-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-full);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.fp-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-marca);
+  opacity: 0.95;
+}
+
+.fp-chip--activo {
+  background: var(--primary-suave);
+  border-color: var(--primary-borde);
+  color: var(--text);
+  box-shadow: var(--sombra-marca);
+}
+
+.fp-chip--apagado {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fp-conteo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.fp-chip--activo .fp-conteo {
+  color: var(--accent);
+}
+
+/* ---- Marcas (scroll horizontal con degradado en bordes) ---- */
+.fp-etiqueta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.fp-marcas-scroll {
+  position: relative;
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: 0.2rem 0.1rem 0.5rem;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    var(--surface-elevated) 24px,
+    var(--surface-elevated) calc(100% - 24px),
+    transparent
+  );
+}
+
+.fp-marca {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.5rem 1rem 0.5rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-full);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.fp-marca:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-marca);
+  opacity: 0.95;
+}
+
+.fp-marca--activa {
+  background: var(--primary-suave);
+  border-color: var(--primary-borde);
+  color: var(--text);
+  box-shadow: var(--sombra-marca);
+}
+
+.fp-marca--apagada {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fp-monograma {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radio-full);
+  background: var(--surface-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+
+/* ---- Filtros activos + pie ---- */
+.fp-activos {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.fp-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--primary-borde);
+  border-radius: var(--radio-full);
+  background: var(--primary-suave);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.fp-activo:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.fp-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.fp-conteo-total {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.fp-limpiar {
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radio-sm);
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease), opacity var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.fp-limpiar:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-marca);
+  opacity: 0.95;
+}
+
+/* ---- Vacío ---- */
+.fp-vacio {
+  text-align: center;
+  padding: var(--space-4) var(--space-3);
+  border: 1px dashed var(--border);
+  border-radius: var(--radio-md);
+}
+
+.fp-vacio-titulo {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
+  color: var(--text);
+  margin: 0 0 var(--space-1);
+}
+
+.fp-vacio-texto {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0 0 var(--space-3);
+}
+
+/* ---- Móvil: botón + bottom sheet ---- */
+.fp-abrir {
+  display: none;
+}
+
+.fp-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--velo);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fp-dialogo {
+  position: relative;
+  width: 100%;
+  max-height: 85dvh;
+  overflow-y: auto;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  box-shadow: var(--sombra-media);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fp-dialogo-barra {
+  align-self: center;
+  width: 44px;
+  height: 4px;
+  border-radius: var(--radio-full);
+  background: var(--border);
+}
+
+.fp-cerrar {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radio-sm);
+  color: var(--text-muted);
+  transition: transform var(--dur-1) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.fp-dialogo .fp-categorias {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+
+.fp-dialogo .fp-marcas-scroll {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  mask-image: none;
+}
+
+.fp-dialogo-acciones {
+  display: flex;
+  gap: var(--space-2);
+  position: sticky;
+  bottom: 0;
+  background: var(--surface-elevated);
+  padding-top: var(--space-2);
+}
+
+.fp-ver {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.8rem 1.4rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--grad-marca);
+  color: var(--on-accent);
+  font-weight: 700;
+  box-shadow: var(--sombra-marca);
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+
+.fp-ver:hover {
+  transform: translateY(-1px);
+  opacity: 0.98;
+}
+
+@media (max-width: 640px) {
+  .fp-abrir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.7rem 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radio-md);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
+    transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+  }
+
+  .fp-abrir:hover {
+    transform: translateY(-1px);
+  }
+
+  .fp-solo-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 641px) {
+  .fp-velo {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-panel *,
+  .filter-panel *::before,
+  .filter-panel *::after {
+    transition: none;
+  }
+
+  .fp-chip:hover:not(:disabled),
+  .fp-marca:hover:not(:disabled),
+  .fp-activo:hover,
+  .fp-limpiar:hover,
+  .fp-ver:hover,
+  .fp-abrir:hover,
+  .fp-borrar:hover {
+    transform: none;
+  }
+}
