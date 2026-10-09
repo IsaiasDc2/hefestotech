@@ -23,7 +23,7 @@ function MobileDrawer({ abierto, alCerrar }) {
   const panelRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const setIdioma = useIdiomaStore((s) => s.setIdioma);
-  const { tema, alternar } = useTema();
+  const { tema, fijarTema } = useTema();
   const location = useLocation();
   const esEn = idioma === "en";
 
@@ -62,9 +62,6 @@ function MobileDrawer({ abierto, alCerrar }) {
 
   if (!abierto) return null;
 
-  const etiquetaTema = esEn
-    ? (tema === "light" ? "Switch to dark mode" : "Switch to light mode")
-    : (tema === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
   const etiquetaMenu = esEn ? "Menu" : "Menú";
   const etiquetaCerrar = esEn ? "Close menu" : "Cerrar menú";
 
@@ -157,25 +154,10 @@ function MobileDrawer({ abierto, alCerrar }) {
             </Link>
           </div>
 
-          <p className="drawer-titulo" id="drawer-titulo-prefs">
+          <p className="drawer-titulo" id="drawer-titulo-idioma">
             {t(idioma, "topbar.idioma")}
           </p>
-          <div className="drawer-grupo" aria-labelledby="drawer-titulo-prefs">
-            <button
-              type="button"
-              className="drawer-link drawer-btn"
-              onClick={alternar}
-              aria-pressed={tema === "light"}
-              aria-label={etiquetaTema}
-              title={etiquetaTema}
-            >
-              {tema === "light" ? (
-                <FaSun aria-hidden="true" />
-              ) : (
-                <FaMoon aria-hidden="true" />
-              )}
-              <span>{etiquetaTema}</span>
-            </button>
+          <div className="drawer-grupo" aria-labelledby="drawer-titulo-idioma">
             <div className="drawer-idiomas" role="group" aria-label={t(idioma, "topbar.idioma")}>
               <FaGlobe aria-hidden="true" className="drawer-idiomas-icono" />
               {IDIOMAS.map((op) => (
@@ -190,6 +172,34 @@ function MobileDrawer({ abierto, alCerrar }) {
                   {op.etiqueta}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <p className="drawer-titulo" id="drawer-titulo-tema">
+            {t(idioma, "pref.tema")}
+          </p>
+          <div className="drawer-grupo" aria-labelledby="drawer-titulo-tema">
+            <div className="drawer-idiomas" role="group" aria-label={t(idioma, "pref.tema")}>
+              <button
+                type="button"
+                className={`drawer-idioma${tema === "light" ? " activo" : ""}`}
+                aria-pressed={tema === "light"}
+                onClick={() => fijarTema("light")}
+              >
+                {tema === "light" && <FaCheck aria-hidden="true" />}
+                <FaSun aria-hidden="true" />
+                {t(idioma, "pref.claro")}
+              </button>
+              <button
+                type="button"
+                className={`drawer-idioma${tema === "dark" ? " activo" : ""}`}
+                aria-pressed={tema === "dark"}
+                onClick={() => fijarTema("dark")}
+              >
+                {tema === "dark" && <FaCheck aria-hidden="true" />}
+                <FaMoon aria-hidden="true" />
+                {t(idioma, "pref.oscuro")}
+              </button>
             </div>
           </div>
         </nav>

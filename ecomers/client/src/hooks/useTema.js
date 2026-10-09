@@ -67,7 +67,17 @@ export function useTema() {
     });
   }, []);
 
-  return { tema, alternar };
+  const fijarTema = useCallback((valor) => {
+    if (valor !== "light" && valor !== "dark") return;
+    try {
+      localStorage.setItem(CLAVE, valor);
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    setTema(valor);
+  }, []);
+
+  return { tema, alternar, fijarTema };
 }
 
 export default useTema;

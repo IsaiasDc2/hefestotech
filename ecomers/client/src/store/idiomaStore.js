@@ -4,6 +4,9 @@ const TEXTO = {
   es: {
     "topbar.envio": "Envíos a todo el país",
     "topbar.idioma": "Idioma",
+    "pref.tema": "Tema",
+    "pref.claro": "Claro",
+    "pref.oscuro": "Oscuro",
     "nav.buscarPh": "Buscá tu placa, notebook o periférico…",
     "nav.buscarAria": "Buscar productos",
     "nav.buscar": "Buscar",
@@ -48,6 +51,9 @@ const TEXTO = {
   en: {
     "topbar.envio": "Nationwide shipping",
     "topbar.idioma": "Language",
+    "pref.tema": "Theme",
+    "pref.claro": "Light",
+    "pref.oscuro": "Dark",
     "nav.buscarPh": "Search GPUs, notebooks or peripherals…",
     "nav.buscarAria": "Search products",
     "nav.buscar": "Search",
