@@ -15,6 +15,7 @@ const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const Acerca = lazy(() => import("./pages/About/Acerca"));
 const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
+const Armador = lazy(() => import("./armador/Armador"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 export default function App() {
@@ -89,6 +90,7 @@ export default function App() {
         <Route path="admin" element={<Admin />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
+        <Route path="armar" element={<Armador />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
