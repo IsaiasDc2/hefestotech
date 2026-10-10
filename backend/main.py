@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+from collections import defaultdict, deque
 import pandas as pd
 import urllib.parse
 import os
+import time
 from dotenv import load_dotenv
 
 from google import genai
@@ -25,6 +27,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ---- Rate limit simple en memoria (por IP y endpoint) ----
+_LIMITE_VENTANA_SEG = 60
+_LIMITE_CHAT = 20          # 20 req/min por IP
+_LIMITE_PREFERENCIA = 10   # 10 req/min por IP
+_registro: dict[str, deque] = defaultdict(deque)
+
+
+def _limitar(ip: str, clave: str, max_req: int) -> None:
+    ahora = time.monotonic()
+    cola = _registro[f"{clave}:{ip}"]
+    while cola and ahora - cola[0] > _LIMITE_VENTANA_SEG:
+        cola.popleft()
+    if len(cola) >= max_req:
+        raise HTTPException(
+            status_code=429,
+            detail="Demasiadas solicitudes. Esperá un momento e intentá de nuevo.",
+        )
+    cola.append(ahora)
+
+
+def _ip_cliente(request: Request) -> str:
+    if request.client is None:
+        return "desconocida"
+    return request.client.host
+
 
 def _cliente_ia():
     api_key = os.getenv("GEMINI_API_KEY")
@@ -63,8 +91,19 @@ def obtener_productos():
 class MensajeUsuario(BaseModel):
     texto: str
 
+    @field_validator("texto")
+    @classmethod
+    def _texto_valido(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("El mensaje no puede estar vacío.")
+        if len(v) > 2000:
+            raise ValueError("El mensaje es demasiado largo (máximo 2000 caracteres).")
+        return v
+
 @app.post("/api/chat")
-async def asistente_ia(mensaje: MensajeUsuario):
+async def asistente_ia(mensaje: MensajeUsuario, request: Request):
+    _limitar(_ip_cliente(request), "chat", _LIMITE_CHAT)
     cliente_ia = _cliente_ia()
     if cliente_ia is None:
         return {"respuesta": "Mis circuitos están en mantenimiento. Intenta de nuevo más tarde."}
@@ -88,8 +127,9 @@ Sigue estas 6 reglas:
         
         return {"respuesta": respuesta.text}
     
-    except Exception as e:
-        print(f"\n--- ERROR DE IA ---\n{e}\n-----------------------\n")
+    except Exception:
+        # Error genérico: sin trazas ni datos del usuario en logs ni en respuesta.
+        print("ERROR /api/chat: fallo interno del servicio de IA.")
         return {"respuesta": "Soy Hefesto, Dios de la forja y el mantenimiento, no pierdo tiempo con tonterías."}
 
 class OrdenCompra(BaseModel):
@@ -97,8 +137,37 @@ class OrdenCompra(BaseModel):
     cantidad: int
     precio_unitario: float
 
+    @field_validator("titulo")
+    @classmethod
+    def _titulo_valido(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("El título no puede estar vacío.")
+        if len(v) > 200:
+            raise ValueError("El título es demasiado largo (máximo 200 caracteres).")
+        return v
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad_valida(cls, v: int) -> int:
+        if v is None or int(v) < 1:
+            raise ValueError("La cantidad debe ser mayor a 0.")
+        if int(v) > 100:
+            raise ValueError("La cantidad máxima es 100.")
+        return int(v)
+
+    @field_validator("precio_unitario")
+    @classmethod
+    def _precio_valido(cls, v: float) -> float:
+        if v is None or float(v) <= 0:
+            raise ValueError("El precio unitario debe ser mayor a 0.")
+        if float(v) > 1_000_000_000:
+            raise ValueError("El precio unitario excede el máximo permitido.")
+        return float(v)
+
 @app.post("/api/crear-preferencia")
-def generar_link_pago(orden: OrdenCompra):
+def generar_link_pago(orden: OrdenCompra, request: Request):
+    _limitar(_ip_cliente(request), "crear-preferencia", _LIMITE_PREFERENCIA)
     sdk = _sdk_mp()
     if sdk is None:
         raise HTTPException(status_code=503, detail="Pagos no configurados (falta MERCADOPAGO_ACCESS_TOKEN).")
@@ -125,5 +194,10 @@ def generar_link_pago(orden: OrdenCompra):
 
         return {"link_pago": preferencia["init_point"]}
     
-    except Exception as e:
-        return {"error": str(e)}
+    except Exception:
+        # Error genérico: sin trazas ni detalle del proveedor en la respuesta.
+        print("ERROR /api/crear-preferencia: fallo interno al generar preferencia.")
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo generar el link de pago. Intentá de nuevo más tarde.",
+        )
