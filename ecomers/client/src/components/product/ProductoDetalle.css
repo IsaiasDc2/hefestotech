@@ -79,15 +79,25 @@
   overflow: hidden;
   border-radius: var(--radio);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--card-image-bg, var(--surface));
 }
 
 .detalle-imagen img {
   width: 100%;
   aspect-ratio: 1;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: transparent;
   transition: transform var(--dur-3) var(--ease);
+}
+
+/* Mismo manifiesto estatico que la card (nunca canvas en runtime). */
+.detalle-imagen img.img-fondo-blanco {
+  mix-blend-mode: multiply;
+}
+
+.detalle-imagen img.img-fondo-negro {
+  mix-blend-mode: screen;
 }
 
 .detalle-imagen:hover img {

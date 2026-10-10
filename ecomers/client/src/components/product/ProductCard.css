@@ -1,3 +1,14 @@
+/* Fondo del recuadro de imagen por tema (sin parpadeo: solo CSS, sin JS).
+   Claro: blanco para fundir fotos con fondo blanco. Oscuro: oscuro para
+   fundir fotos con fondo negro. Cero hex: solo tokens existentes. */
+:root {
+  --card-image-bg: var(--surface-elevated-2);
+}
+
+:root[data-theme="light"] {
+  --card-image-bg: var(--primitive-paper-surface);
+}
+
 .card-producto {
   position: relative;
   display: flex;
@@ -64,8 +75,6 @@
 
 .favorito {
   position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
   z-index: 3;
   width: 44px;
   height: 44px;
@@ -96,11 +105,28 @@
 }
 
 .favorito:focus-visible,
+.card-media-link:focus-visible,
 .producto-detalle:focus-visible,
 .btn-carrito:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+/* Envoltorio del recuadro: el favorito vive DENTRO del 1:1, sobre la zona
+   de padding (fondo del token), sin tapar el centro del producto. */
+.card-media-wrap {
+  position: relative;
+}
+
+.card-media-wrap .favorito {
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.card-media-link {
+  display: block;
+  border-radius: 14px;
 }
 
 .producto-detalle {
@@ -130,8 +156,8 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  border-radius: 12px;
-  background: var(--surface);
+  border-radius: 14px;
+  background: var(--card-image-bg);
   border: 1px solid var(--border-suave);
   aspect-ratio: 1 / 1;
 }
@@ -158,20 +184,23 @@
   padding: 0.75rem;
   box-sizing: border-box;
   display: block;
-  background: var(--surface-elevated-2);
+  background: transparent;
   transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 200ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* Fusion con el recuadro segun manifiesto estatico (nunca canvas runtime):
+   fondo blanco de la foto -> multiply, fondo negro -> screen. */
+.card-media img.img-fondo-blanco {
+  mix-blend-mode: multiply;
+}
+
+.card-media img.img-fondo-negro {
+  mix-blend-mode: screen;
 }
 
 .producto-detalle:hover .card-media img,
 .card-producto:hover .card-media img {
   transform: scale(1.06);
-}
-
-.producto-detalle img[src=""] {
-  min-height: 180px;
-  background:
-    linear-gradient(135deg, var(--primary-suave), transparent 60%),
-    var(--surface);
 }
 
 .producto-sin-imagen {
@@ -225,10 +254,12 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.6em;
+  /* 2 lineas reservadas siempre: las cards alinean aunque el titulo sea corto. */
+  min-height: 2.8em;
 }
 
-.producto-detalle:hover h3 {
+.producto-detalle:hover h3,
+.card-producto:has(.card-media-link:hover) .producto-detalle h3 {
   color: var(--primary);
 }
 
@@ -281,7 +312,8 @@
 }
 
 
-.card-producto:has(.btn-carrito:disabled) .card-media img {
+.card-producto:has(.btn-carrito:disabled) .card-media img,
+.card-producto.is-sin-stock .card-media img {
   filter: grayscale(0.5) brightness(0.75);
 }
 
@@ -290,13 +322,24 @@
   align-items: baseline;
   gap: 0.6rem;
   flex-wrap: wrap;
+  padding-top: 0.35rem;
+}
+
+/* Pie fijado abajo: el boton queda a la misma altura en toda la grilla. */
+.card-pie {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
   margin-top: auto;
   padding-top: 0.35rem;
 }
 
-.card-producto > strong.precio-actual {
-  margin-top: auto;
-  padding-top: 0.35rem;
+.card-pie > .btn-carrito {
+  margin-top: 0;
+}
+
+.card-pie > strong.precio-actual {
+  padding-top: 0;
 }
 
 .precio-anterior {
@@ -399,7 +442,7 @@
 .btn-carrito.is-added:not(:disabled) {
   background: var(--success);
   border-color: var(--success);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 6px 24px var(--ok-borde);
 }
 
@@ -439,10 +482,6 @@
 
 .card-producto button {
   min-height: 44px;
-}
-
-.card-rating-vacio .rating-count {
-  color: var(--muted);
 }
 
 
