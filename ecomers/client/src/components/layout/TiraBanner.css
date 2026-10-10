@@ -1,8 +1,17 @@
+/* TiraBanner — misma presentación que el hero (Banner.css):
+   token --banner-ratio único, radio --radio-card, borde 1px degradado
+   translúcido, sombra + resplandor de acento, viñeta ≤ 15%,
+   entrada fade + escala 0.98 → 1, barrido de luz al hover.
+   Sin textos encima de la imagen; el enlace (si hay destino) lleva aria-label. */
+:root {
+  --banner-ratio: 21 / 9;
+}
+
 .tira-banner {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 0;
-  /* Entrada: fade + escala leve al aparecer en viewport. */
+  /* Entrada: fade + escala 0.98 → 1 al aparecer en viewport. */
   opacity: 0;
   transform: translateY(12px) scale(0.98);
   transition:
@@ -15,21 +24,52 @@
   transform: none;
 }
 
-.tira-banner img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: var(--radio-lg);
-  border: 1px solid var(--border);
-  background: var(--surface-elevated-2);
-}
-
-.tira-banner__enlace {
+/* Marco tarjeta compartido (enlace o plano): misma proporción que el hero. */
+.tira-banner__marco {
   position: relative;
   display: block;
   overflow: hidden;
-  border-radius: var(--radio-lg);
-  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  aspect-ratio: var(--banner-ratio, 21 / 9);
+  border: 1px solid transparent;
+  border-radius: var(--radio-card, var(--radio-lg));
+  background:
+    linear-gradient(var(--surface-elevated-2), var(--surface-elevated-2)) padding-box,
+    linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--accent) 45%, transparent),
+        color-mix(in srgb, var(--gold) 30%, transparent) 50%,
+        color-mix(in srgb, var(--accent-sky) 35%, transparent)
+      )
+      border-box;
+  box-shadow: var(--shadow-rest, var(--sombra-media));
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tira-banner__marco img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* tira-silla (1452×720): se ancla arriba para no cortar la marca del cabezal. */
+.tira-banner__marco img[src*="tira-silla"] {
+  object-position: center 20%;
+}
+
+/* Viñeta de legibilidad ≤ 15%. */
+.tira-banner__marco::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent 62%, rgba(0, 0, 0, 0.15));
+  pointer-events: none;
+}
+
+.tira-banner__enlace {
+  text-decoration: none;
 }
 
 /* Brillo que cruza la tira al hover (solo transform/opacity). */
@@ -40,6 +80,7 @@
   bottom: -20%;
   left: 0;
   width: 34%;
+  z-index: 2;
   background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.22), transparent);
   transform: translateX(-160%) skewX(-12deg);
   opacity: 0;
@@ -49,7 +90,7 @@
 @media (hover: hover) and (pointer: fine) {
   .tira-banner__enlace:hover {
     transform: translateY(-2px);
-    box-shadow: var(--sombra-marca);
+    box-shadow: var(--shadow-lift, var(--sombra-marca));
   }
 
   .tira-banner__enlace:hover::after {
@@ -71,6 +112,12 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
+@media (max-width: 768px) {
+  :root {
+    --banner-ratio: 16 / 10;
+  }
+}
+
 @media (max-width: 380px) {
   .tira-banner {
     padding-inline: 0.9rem;
@@ -83,7 +130,7 @@
     transform: none;
     transition: none;
   }
-  .tira-banner__enlace,
+  .tira-banner__marco,
   .tira-banner__enlace:hover,
   .tira-banner__enlace:active {
     transform: none;

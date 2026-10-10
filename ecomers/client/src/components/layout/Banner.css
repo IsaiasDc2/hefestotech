@@ -1,41 +1,98 @@
+/* Banner hero — pieza publicitaria del sistema (misma presentación que TiraBanner).
+   Token propuesto --banner-ratio: única proporción hero + tiras
+   (promover a src/styles/index.css cuando se apruebe; acá vive con fallback).
+   Radio = --radio-card (16px, coherente con cards). */
+:root {
+  --banner-ratio: 21 / 9;
+}
+
 .banner {
   position: relative;
-  overflow: hidden;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-elevated-2);
+  --banner-gutter: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem var(--banner-gutter) 0;
+  background: transparent;
   touch-action: pan-y;
 }
 
-.banner::before {
+/* Marco tarjeta: borde 1px degradado translúcido + sombra en reposo. */
+.banner-pista {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--radio-card, var(--radio-lg));
+  background:
+    linear-gradient(var(--surface-elevated-2), var(--surface-elevated-2)) padding-box,
+    linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--accent) 45%, transparent),
+        color-mix(in srgb, var(--gold) 30%, transparent) 50%,
+        color-mix(in srgb, var(--accent-sky) 35%, transparent)
+      )
+      border-box;
+  box-shadow: var(--shadow-rest, var(--sombra-media));
+}
+
+/* Hairline superior de marca (1px, sutil). */
+.banner-pista::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  left: 8%;
+  right: 8%;
   height: 1px;
   z-index: 3;
-  background: var(--grad-marca);
+  background: var(--hairline-top, var(--grad-marca));
   opacity: 0.9;
+  pointer-events: none;
 }
 
-/* Crossfade: las diapositivas se apilan en la misma celda y solo
-   cambia la opacidad (transform/opacity, sin layout). */
-.banner-pista {
-  display: grid;
+/* Barrido de luz al hover (solo transform/opacity, puntero fino). */
+.banner-pista::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 34%;
+  z-index: 2;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateX(-160%) skewX(-12deg);
+  opacity: 0;
+  pointer-events: none;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .banner-pista:hover {
+    box-shadow: var(--shadow-lift, var(--sombra-marca));
+  }
+
+  .banner-pista:hover::after {
+    opacity: 1;
+    transform: translateX(340%) skewX(-12deg);
+    transition:
+      transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+/* Crossfade + escala 0.98 → 1 (solo transform/opacity, sin layout). */
 .banner-slide {
   position: relative;
   grid-area: 1 / 1;
   max-width: 100%;
-  aspect-ratio: 21 / 9;
+  aspect-ratio: var(--banner-ratio, 21 / 9);
   overflow: hidden;
   background: var(--surface-elevated-2);
   opacity: 0;
   visibility: hidden;
   z-index: 0;
+  transform: scale(0.98);
   transition:
     opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
     visibility 0s linear 550ms;
 }
 
@@ -43,7 +100,19 @@
   opacity: 1;
   visibility: visible;
   z-index: 1;
-  transition: opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: scale(1);
+  transition:
+    opacity 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Viñeta de legibilidad ≤ 15% para la barra de indicadores. */
+.banner-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 62%, rgba(0, 0, 0, 0.15));
+  pointer-events: none;
 }
 
 .banner-img {
@@ -57,9 +126,20 @@
   transform: scale(1);
 }
 
-/* Zoom levisimo y lento, sincronizado con el autoplay de 5s. */
+/* Slide 1 (AULA 1961×544, texto promo a la derecha): contain para que
+   ningún texto incrustado quede cortado en 360/768/1280. */
+.banner-slide:nth-child(1) .banner-img {
+  object-fit: contain;
+}
+
+/* Slide 3 (retrato 863×1248): se ancla al sujeto (gamer + monitor). */
+.banner-slide:nth-child(3) .banner-img {
+  object-position: center 55%;
+}
+
+/* Zoom levisimo y lento, sincronizado con el autoplay de 6s. */
 .banner-slide.es-activa .banner-img {
-  animation: banner-kenburns 5200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: banner-kenburns 6200ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes banner-kenburns {
@@ -71,7 +151,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2;
+  z-index: 4;
   width: 44px;
   height: 44px;
   display: flex;
@@ -112,18 +192,16 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-.banner-flecha.ant { left: 1rem; }
-.banner-flecha.sig { right: 1rem; }
+.banner-flecha.ant { left: calc(var(--banner-gutter) + 0.75rem); }
+.banner-flecha.sig { right: calc(var(--banner-gutter) + 0.75rem); }
 
 .banner-barra {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: var(--banner-gutter);
+  right: var(--banner-gutter);
   bottom: 0;
-  z-index: 2;
-  max-width: min(1280px, 100%);
-  margin: 0 auto;
-  padding: 0 1.5rem 1.1rem;
+  z-index: 4;
+  padding: 0 0.9rem 1rem;
   display: flex;
   align-items: center;
   gap: 1.1rem;
@@ -209,7 +287,7 @@
 }
 
 button.activo .banner-progreso {
-  animation: banner-progreso-escala 5s linear forwards;
+  animation: banner-progreso-escala 6s linear forwards;
 }
 
 /* El progreso se congela cuando el autoplay esta pausado. */
@@ -263,20 +341,33 @@ button.activo .banner-progreso {
 }
 
 @media (max-width: 768px) {
-  .banner-slide {
-    aspect-ratio: 16 / 10;
+  :root {
+    --banner-ratio: 16 / 10;
   }
+
+  .banner {
+    --banner-gutter: 1rem;
+    padding-top: 1rem;
+  }
+
   .banner-flecha { display: none; }
   .banner-barra {
-    padding: 0 1rem 0.9rem;
+    padding: 0 0.75rem 0.9rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .banner {
+    --banner-gutter: 0.9rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .banner-slide,
-  .banner-slide.es-activa { transition: none; }
+  .banner-slide.es-activa { transition: none; transform: none; }
   .banner-slide.es-activa .banner-img { animation: none; transform: none; }
   .banner-barra > * { animation: none; }
+  .banner-pista::after { display: none; }
   .banner-flecha:active,
   .banner-pausa:active { transform: none; }
   .banner-flecha { transform: translateY(-50%); }

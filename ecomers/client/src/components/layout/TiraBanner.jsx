@@ -35,13 +35,13 @@ export default function TiraBanner({ src, alt, to = null, etiqueta = null }) {
       {to ? (
         <Link
           to={to}
-          className="tira-banner__enlace"
+          className="tira-banner__enlace tira-banner__marco"
           aria-label={etiqueta || alt}
         >
           {imagen}
         </Link>
       ) : (
-        imagen
+        <span className="tira-banner__marco">{imagen}</span>
       )}
     </figure>
   );

@@ -21,7 +21,7 @@ const SLIDES = [
   },
 ];
 
-const AUTOPLAY_MS = 5000;
+const AUTOPLAY_MS = 6000;
 
 export default function Banner() {
   const [indice, setIndice] = useState(0);
