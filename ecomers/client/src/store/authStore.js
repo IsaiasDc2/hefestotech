@@ -11,7 +11,8 @@ const useAuthStore = create((set) => ({
     set({ cargando: true, error: null });
     try {
       const data = await loginUsuario(email, password);
-      if (data.token) localStorage.setItem("token", data.token);
+      // Sin copia del JWT en localStorage: supabase-js ya persiste la
+      // sesión; duplicarla amplía la superficie de robo ante XSS.
       set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
       set({
@@ -25,7 +26,6 @@ const useAuthStore = create((set) => ({
     set({ cargando: true, error: null });
     try {
       const data = await registrarUsuario(datos);
-      if (data.token) localStorage.setItem("token", data.token);
       if (data.token) {
         set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
       } else {
@@ -46,14 +46,11 @@ const useAuthStore = create((set) => ({
     try {
       const sesion = await obtenerSesion();
       if (!sesion) {
-        localStorage.removeItem("token");
         set({ usuario: null, isAuthenticated: false, cargando: false });
         return;
       }
-      if (sesion.token) localStorage.setItem("token", sesion.token);
       set({ usuario: sesion.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
-      localStorage.removeItem("token");
       set({ usuario: null, isAuthenticated: false, cargando: false, error: err.message });
     }
   },
@@ -63,7 +60,6 @@ const useAuthStore = create((set) => ({
       if (usuario) {
         set({ usuario, isAuthenticated: true });
       } else {
-        localStorage.removeItem("token");
         set({ usuario: null, isAuthenticated: false });
       }
     }),
@@ -72,7 +68,6 @@ const useAuthStore = create((set) => ({
     try {
       await cerrarSesion();
     } finally {
-      localStorage.removeItem("token");
       set({ usuario: null, isAuthenticated: false });
     }
   },

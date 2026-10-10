@@ -9,6 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "create-test-admin": "node scripts/create-test-admin.mjs",
+    "delete-test-admin": "node scripts/delete-test-admin.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist --nojekyll"
   },

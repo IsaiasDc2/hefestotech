@@ -199,6 +199,9 @@ export default function AdminLayout({
   const [colapsada, setColapsada] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [paleta, setPaleta] = useState(false);
+  const drawerRef = useRef(null);
+  const hamburguesaRef = useRef(null);
+  const focoPrevio = useRef(null);
 
   useEffect(() => {
     const atajo = (e) => {
@@ -210,6 +213,38 @@ export default function AdminLayout({
     window.addEventListener("keydown", atajo);
     return () => window.removeEventListener("keydown", atajo);
   }, []);
+
+  useEffect(() => {
+    if (!drawer) return undefined;
+    focoPrevio.current = document.activeElement;
+    drawerRef.current?.querySelector("button")?.focus();
+    const alTeclado = (e) => {
+      if (e.key === "Escape") {
+        setDrawer(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const panel = drawerRef.current;
+      if (!panel) return;
+      const focos = panel.querySelectorAll("button:not([disabled]), a[href]");
+      if (focos.length === 0) return;
+      const primero = focos[0];
+      const ultimo = focos[focos.length - 1];
+      if (e.shiftKey && document.activeElement === primero) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault();
+        primero.focus();
+      }
+    };
+    document.addEventListener("keydown", alTeclado);
+    return () => {
+      document.removeEventListener("keydown", alTeclado);
+      if (focoPrevio.current instanceof HTMLElement) focoPrevio.current.focus();
+      else hamburguesaRef.current?.focus();
+    };
+  }, [drawer]);
 
   const ir = (id, extra) => {
     setDrawer(false);
@@ -265,6 +300,7 @@ export default function AdminLayout({
       {drawer && (
         <div className="adm-velo adm-drawer-velo" onClick={() => setDrawer(false)}>
           <div
+            ref={drawerRef}
             className="adm-drawer"
             role="dialog"
             aria-modal="true"
@@ -282,6 +318,7 @@ export default function AdminLayout({
       <div className="adm-cuerpo">
         <div className="adm-topbar">
           <button
+            ref={hamburguesaRef}
             type="button"
             className="adm-icon-btn adm-hamburguesa"
             onClick={() => setDrawer(true)}

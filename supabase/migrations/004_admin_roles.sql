@@ -17,9 +17,11 @@ stable
 security definer
 set search_path = public
 as $$
+  -- owner también administra: con solo 'admin' el dueño quedaba sin
+  -- escritura directa (las policies "escritura admin" lo excluyen).
   select exists (
     select 1 from public.perfiles p
-    where p.id = auth.uid() and p.rol = 'admin'
+    where p.id = auth.uid() and p.rol in ('owner', 'admin')
   );
 $$;
 

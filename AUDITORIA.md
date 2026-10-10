@@ -62,3 +62,9 @@ Prohibido cumplido: no se tocó `src/`, no se commiteó, no se ejecutó contra p
 2. Aplicar `004_admin_roles.sql` en Dashboard → SQL Editor → Run (después de 001–003) y correr las consultas de verificación del pie del archivo.
 3. Decidir `npm audit`: `npm audit fix` (playwright, source-map-js) y evaluar los breaking (`gh-pages`, `vite`, `react-router-dom`) en rama aparte con build+tests.
 4. Seguimiento (no bloqueante): `back_urls` de MercadoPago aún apuntan a `localhost` (usar `FRONTEND_URL`); rate-limit en memoria no comparte estado entre instancias (si hay réplicas, pasar a Redis); `has_permission()` es base (`is_admin`) hasta definir matriz de permisos.
+
+## Cierre (revisores + H1/H2 + cuenta prueba)
+- Pentest: H1/H2 CERRADOS (checkout servidor + webhook MP con HMAC e idempotencia, migracion 006). 12 validaciones + XSS/IDOR/CSRF/JWT/CSRF/rate-limits corregidos y re-testeados 16/16.
+- UX/QA: aprobado; CSP con hash del script de tema; drawer admin con Esc/foco (corregidos).
+- Cuenta prueba (bloque 11): NO creada (sin service_role). Scripts + 007 + comandos npm listos.
+- Sin navegador: sin Lighthouse/capturas/Playwright. Sin push/deploy por mandato.

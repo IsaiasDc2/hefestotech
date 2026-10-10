@@ -23,7 +23,7 @@ from typing import Any, Callable, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 router = APIRouter()
 
@@ -74,6 +74,12 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("cupones", "leer"), ("banners", "leer"),
         ("notificaciones", "leer"), ("auditoria", "leer"),
         ("reportes", "leer"), ("buscar", "leer"),
+    },
+    # Clientes: solo pueden radicar reclamos propios (el formulario /reclamo
+    # es su única vía al backend). Sin esto, el reclamo público exige rol
+    # staff y la funcionalidad queda rota para su audiencia real.
+    "cliente": {
+        ("reclamos", "crear"),
     },
 }
 
@@ -358,6 +364,65 @@ class ProductoEditar(BaseModel):
     activo: Optional[bool] = None
     imagen: Optional[str] = None
 
+    @field_validator("nombre", "marca", "descripcion", "categoria")
+    @classmethod
+    def _textos(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 2000:
+            raise ValueError("Texto demasiado largo (máximo 2000 caracteres).")
+        return v
+
+    @field_validator("precio")
+    @classmethod
+    def _precio(cls, v: Optional[float]) -> Optional[float]:
+        if v is None:
+            return None
+        if float(v) < 0 or float(v) > 1_000_000_000:
+            raise ValueError("Precio inválido.")
+        return float(v)
+
+    @field_validator("stock_minimo")
+    @classmethod
+    def _stock_min(cls, v: Optional[int]) -> Optional[int]:
+        if v is None:
+            return None
+        if int(v) < 0 or int(v) > 1_000_000:
+            raise ValueError("Stock mínimo inválido.")
+        return int(v)
+
+    @field_validator("imagen")
+    @classmethod
+    def _imagen(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 2000:
+            raise ValueError("URL de imagen demasiado larga.")
+        if v and not _url_imagen_ok(v):
+            raise ValueError("URL de imagen inválida.")
+        return v
+
+
+def _url_imagen_ok(v: str) -> bool:
+    u = v.strip()
+    if u.startswith("/"):
+        return True
+    bajo = u.lower()
+    return bajo.startswith("https://") or bajo.startswith("http://")
+
+
+def _url_link_ok(v: str) -> bool:
+    """Links de banner: rutas internas o http(s). Sin javascript:/data:."""
+    u = v.strip()
+    if not u:
+        return True
+    if u.startswith("/"):
+        return len(u) <= 500
+    bajo = u.lower()
+    return (bajo.startswith("https://") or bajo.startswith("http://")) and len(u) <= 2000
+
 
 class StockAjustar(BaseModel):
     producto_id: str
@@ -372,6 +437,22 @@ class StockAjustar(BaseModel):
             raise ValueError("Delta inválido (distinto de cero, máximo ±1000000).")
         return int(v)
 
+    @field_validator("motivo")
+    @classmethod
+    def _motivo(cls, v: str) -> str:
+        v = (v or "").strip() or "ajuste"
+        if len(v) > 120:
+            raise ValueError("Motivo demasiado largo (máximo 120 caracteres).")
+        return v
+
+    @field_validator("nota")
+    @classmethod
+    def _nota(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 2000:
+            raise ValueError("Nota demasiado larga (máximo 2000 caracteres).")
+        return v
+
 
 class PedidoEstado(BaseModel):
     a: str
@@ -383,6 +464,14 @@ class PedidoEstado(BaseModel):
     def _estado(cls, v: str) -> str:
         if v not in ESTADOS_PEDIDO:
             raise ValueError("Estado inválido.")
+        return v
+
+    @field_validator("nota")
+    @classmethod
+    def _nota(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 2000:
+            raise ValueError("Nota demasiado larga (máximo 2000 caracteres).")
         return v
 
 
@@ -398,6 +487,24 @@ class ReclamoCrear(BaseModel):
         if not v or len(v) > 200:
             raise ValueError("Motivo requerido (máximo 200 caracteres).")
         return v
+
+    @field_validator("detalle")
+    @classmethod
+    def _detalle(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 2000:
+            raise ValueError("Detalle demasiado largo (máximo 2000 caracteres).")
+        return v
+
+    @field_validator("orden_id")
+    @classmethod
+    def _orden(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 60:
+            raise ValueError("Identificador de orden inválido.")
+        return v or None
 
 
 class ReclamoEstado(BaseModel):
@@ -438,9 +545,33 @@ class CuponCrear(BaseModel):
     @field_validator("valor")
     @classmethod
     def _valor(cls, v: int) -> int:
-        if v is None or int(v) <= 0:
+        if v is None or int(v) <= 0 or int(v) > 100_000_000:
             raise ValueError("Valor inválido.")
         return int(v)
+
+    @field_validator("min_compra_centavos")
+    @classmethod
+    def _min_compra(cls, v: int) -> int:
+        if v is None or int(v) < 0 or int(v) > 100_000_000_00:
+            raise ValueError("Mínimo de compra inválido.")
+        return int(v)
+
+    @field_validator("usos_max")
+    @classmethod
+    def _usos(cls, v: Optional[int]) -> Optional[int]:
+        if v is None:
+            return None
+        if int(v) <= 0 or int(v) > 10_000_000:
+            raise ValueError("Límite de usos inválido.")
+        return int(v)
+
+    @model_validator(mode="after")
+    def _porcentaje_acotado(self):
+        # Defensa en profundidad: la ruta también lo exige, pero el modelo
+        # no debe representar un cupón imposible (999% = regalar stock).
+        if self.tipo == "porcentaje" and int(self.valor) > 100:
+            raise ValueError("Porcentaje inválido (1–100).")
+        return self
 
 
 class BannerCrear(BaseModel):
@@ -450,6 +581,39 @@ class BannerCrear(BaseModel):
     orden: int = 0
     activo: bool = True
 
+    @field_validator("titulo")
+    @classmethod
+    def _titulo(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 200:
+            raise ValueError("Título demasiado largo (máximo 200 caracteres).")
+        return v
+
+    @field_validator("imagen")
+    @classmethod
+    def _imagen(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 2000:
+            raise ValueError("URL de imagen demasiado larga.")
+        if v and not _url_imagen_ok(v):
+            raise ValueError("URL de imagen inválida (https:// o ruta /...).")
+        return v
+
+    @field_validator("link")
+    @classmethod
+    def _link(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not _url_link_ok(v):
+            raise ValueError("Link inválido (ruta /... o https://).")
+        return v
+
+    @field_validator("orden")
+    @classmethod
+    def _orden(cls, v: int) -> int:
+        if v is None or abs(int(v)) > 1_000_000:
+            raise ValueError("Orden inválido.")
+        return int(v)
+
 
 class BannerEditar(BaseModel):
     titulo: Optional[str] = None
@@ -457,6 +621,47 @@ class BannerEditar(BaseModel):
     link: Optional[str] = None
     orden: Optional[int] = None
     activo: Optional[bool] = None
+
+    @field_validator("titulo")
+    @classmethod
+    def _titulo(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 200:
+            raise ValueError("Título demasiado largo (máximo 200 caracteres).")
+        return v
+
+    @field_validator("imagen")
+    @classmethod
+    def _imagen(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 2000:
+            raise ValueError("URL de imagen demasiado larga.")
+        if v and not _url_imagen_ok(v):
+            raise ValueError("URL de imagen inválida (https:// o ruta /...).")
+        return v
+
+    @field_validator("link")
+    @classmethod
+    def _link(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if not _url_link_ok(v):
+            raise ValueError("Link inválido (ruta /... o https://).")
+        return v
+
+    @field_validator("orden")
+    @classmethod
+    def _orden(cls, v: Optional[int]) -> Optional[int]:
+        if v is None:
+            return None
+        if abs(int(v)) > 1_000_000:
+            raise ValueError("Orden inválido.")
+        return int(v)
 
 
 class LoteCrear(BaseModel):
@@ -470,6 +675,24 @@ class LoteCrear(BaseModel):
         if v is None or int(v) < 0 or int(v) > 1_000_000:
             raise ValueError("Cantidad inválida.")
         return int(v)
+
+    @field_validator("codigo_lote")
+    @classmethod
+    def _codigo(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 120:
+            raise ValueError("Código de lote demasiado largo (máximo 120 caracteres).")
+        return v
+
+    @field_validator("vence_at")
+    @classmethod
+    def _vence(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 30:
+            raise ValueError("Fecha de vencimiento inválida.")
+        return v or None
 
 
 def _pag(limit: int = Query(default=50, ge=1, le=200),
@@ -521,8 +744,9 @@ def listar_productos(papelera: bool = False, q: str = "",
 
 
 @router.post("/api/admin/productos", status_code=201)
-def crear_producto(d: ProductoCrear,
+def crear_producto(d: ProductoCrear, request: Request,
                    admin: AdminActual = Depends(requiere("productos", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "producto-crear", 30)
     fila: dict[str, Any] = {
         "nombre": d.nombre, "marca": d.marca, "precio": d.precio,
         "stock": d.stock, "descripcion": d.descripcion, "categoria": d.categoria,
@@ -544,8 +768,9 @@ def crear_producto(d: ProductoCrear,
 
 
 @router.put("/api/admin/productos/{pid}")
-def editar_producto(pid: str, d: ProductoEditar,
+def editar_producto(pid: str, d: ProductoEditar, request: Request,
                     admin: AdminActual = Depends(requiere("productos", "editar"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "producto-editar", 30)
     cambios = {k: v for k, v in d.model_dump().items() if v is not None}
     if not cambios:
         raise HTTPException(status_code=400, detail="Sin cambios para aplicar.")
@@ -556,8 +781,9 @@ def editar_producto(pid: str, d: ProductoEditar,
 
 
 @router.delete("/api/admin/productos/{pid}")
-def borrar_producto(pid: str,
+def borrar_producto(pid: str, request: Request,
                     admin: AdminActual = Depends(requiere("productos", "borrar"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "producto-borrar", 20)
     """Borrado lógico: papelera (deleted_at/deleted_by). Purga a los 30 días."""
     ahora = datetime.now(timezone.utc).isoformat()
     filas = _sb_patch("productos", {"id": f"eq.{pid}", "deleted_at": "is.null"},
@@ -602,6 +828,7 @@ def ajustar_stock(d: StockAjustar, request: Request,
     nuevo = _rpc("adjust_stock", {
         "p_producto": d.producto_id, "p_delta": d.delta,
         "p_motivo": d.motivo.strip() or "ajuste", "p_nota": d.nota.strip(),
+        "p_actor": admin.user_id,
     })
     return {"producto_id": d.producto_id, "stock": nuevo}
 
@@ -643,6 +870,7 @@ def cambiar_estado(pid: str, d: PedidoEstado, request: Request,
     nueva_version = _rpc("cambiar_estado_pedido", {
         "p_id": pid, "p_a": d.a,
         "p_nota": d.nota.strip(), "p_version": d.version,
+        "p_actor": admin.user_id,
     })
     return {"id": pid, "estado": d.a, "version": nueva_version}
 
@@ -663,8 +891,21 @@ def listar_reclamos(estado: str = "",
 
 
 @router.post("/api/admin/reclamos", status_code=201)
-def crear_reclamo(d: ReclamoCrear,
+def crear_reclamo(d: ReclamoCrear, request: Request,
                   admin: AdminActual = Depends(requiere("reclamos", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "reclamo-crear", 10)
+    if d.orden_id:
+        # Anti-IDOR: la orden debe existir y ser propia, salvo staff con
+        # lectura de pedidos (radican en nombre del cliente).
+        ordenes = _sb_get("ordenes", {
+            "select": "id,user_id", "id": f"eq.{d.orden_id}", "limit": 1,
+        }) or []
+        if not ordenes:
+            raise HTTPException(status_code=404, detail="Orden inexistente.")
+        duenio = ordenes[0].get("user_id")
+        es_staff_pedidos = ("pedidos", "leer") in PERMISOS.get(admin.rol, set())
+        if duenio != admin.user_id and not es_staff_pedidos:
+            raise HTTPException(status_code=403, detail="Sin permiso sobre esa orden.")
     creados = _sb_post("reclamos", {
         "orden_id": d.orden_id, "user_id": admin.user_id,
         "motivo": d.motivo, "detalle": d.detalle.strip(),
@@ -691,8 +932,9 @@ def listar_cupones(pag: dict[str, int] = Depends(_pag),
 
 
 @router.post("/api/admin/cupones", status_code=201)
-def crear_cupon(d: CuponCrear,
+def crear_cupon(d: CuponCrear, request: Request,
                 admin: AdminActual = Depends(requiere("cupones", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "cupon-crear", 20)
     if d.tipo == "porcentaje" and d.valor > 100:
         raise HTTPException(status_code=400, detail="Porcentaje inválido (1–100).")
     creados = _sb_post("cupones", {
@@ -723,8 +965,9 @@ def listar_banners(pag: dict[str, int] = Depends(_pag),
 
 
 @router.post("/api/admin/banners", status_code=201)
-def crear_banner(d: BannerCrear,
+def crear_banner(d: BannerCrear, request: Request,
                  admin: AdminActual = Depends(requiere("banners", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "banner-crear", 20)
     creados = _sb_post("banners", d.model_dump()) or []
     return {"banner": creados[0] if creados else {}}
 
@@ -764,7 +1007,10 @@ def listar_notificaciones(pag: dict[str, int] = Depends(_pag),
 @router.get("/api/buscar")
 def buscar(q: str = Query(default="", max_length=120),
            limite: int = Query(default=20, ge=1, le=50),
+           request: Request = None,
            admin: AdminActual = Depends(requiere("buscar", "leer"))) -> dict[str, Any]:
+    if request is not None:
+        _limitar(request.client.host if request.client else "?", "buscar", 30)
     if not q.strip():
         return {"resultados": []}
     filas = _rpc("buscar_productos", {"q": q.strip(), "limite": limite}) or []
@@ -791,6 +1037,14 @@ def listar_auditoria(modulo: str = "", entidad: str = "",
 @router.get("/api/admin/reportes/ventas")
 def reporte_ventas(desde: str = "", hasta: str = "",
                    admin: AdminActual = Depends(requiere("reportes", "leer"))) -> dict[str, Any]:
+    import re as _re
+    _fecha = _re.compile(r"^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?)?$")
+    for etiqueta, valor in (("desde", desde.strip()), ("hasta", hasta.strip())):
+        # Sin validación, `desde`/`hasta` se interpolan en el filtro `and=`
+        # de PostgREST: comas/paréntesis inyectarían filtros (solo lectura,
+        # pero rompen el rango y devuelven 400 del proveedor).
+        if valor and not _fecha.match(valor):
+            raise HTTPException(status_code=400, detail=f"Fecha {etiqueta} inválida (usar AAAA-MM-DD).")
     params: dict[str, Any] = {
         "select": "id,estado,subtotal_centavos,descuento_centavos,total_centavos,subtotal,total,created_at",
         "order": "created_at.asc", "limit": 5000,

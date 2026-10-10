@@ -599,3 +599,74 @@ create trigger aud_cupones after insert or update or delete on cupones
 -- select * from purga_papelera();            -- 0,0 en base sin papelera (esperado)
 -- select pedido_transicion_ok('pendiente','pagada');   -- true (esperado)
 -- select pedido_transicion_ok('entregada','pendiente'); -- false (esperado)
+
+-- ============ 12. REVISIÓN DE SEGURIDAD (rama feat/auditoria-admin) ============
+-- 12a. is_admin() incluía solo 'admin': el owner quedaba sin escritura
+-- directa por Supabase (policies "escritura admin" de 004). Redefinición
+-- idempotente (gana esta versión si 004 ya se aplicó).
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.perfiles p
+    where p.id = auth.uid() and p.rol in ('owner', 'admin')
+  );
+$$;
+
+-- 12b. Atribución de actor: el backend opera con service_role (bypassea RLS
+-- y auth.uid() es NULL en sus RPC). Se agrega p_actor opcional (default NULL,
+-- compatible hacia atrás): el backend pasa el user_id validado del JWT.
+create or replace function public.adjust_stock(p_producto uuid, p_delta int, p_motivo text default 'ajuste', p_nota text default '', p_actor uuid default null)
+returns int
+language plpgsql
+security definer
+set search_path = public as $$
+declare v_nuevo int;
+begin
+  if p_delta = 0 then raise exception 'delta no puede ser cero'; end if;
+  update public.productos set stock = stock + p_delta
+  where id = p_producto and deleted_at is null
+  returning stock into v_nuevo;
+  if not found then raise exception 'producto inexistente o en papelera'; end if;
+  if v_nuevo < 0 then raise exception 'stock insuficiente'; end if;
+  insert into public.movimientos_stock (producto_id, tipo, cantidad, motivo, actor_id, nota)
+  values (p_producto, 'ajuste', abs(p_delta), coalesce(p_motivo, 'ajuste'), coalesce(auth.uid(), p_actor), coalesce(p_nota, ''));
+  return v_nuevo;
+end $$;
+
+create or replace function public.cambiar_estado_pedido(p_id uuid, p_a text, p_nota text default '', p_version int default null, p_actor uuid default null)
+returns int
+language plpgsql
+security definer
+set search_path = public as $$
+declare v_estado text; v_ver int; v_user uuid;
+begin
+  select estado, version, user_id into v_estado, v_ver, v_user
+  from public.ordenes where id = p_id for update;
+  if not found then raise exception 'pedido inexistente'; end if;
+  if p_version is not null and p_version <> v_ver then
+    raise exception 'conflicto de versión: recargá el pedido';
+  end if;
+  if not public.pedido_transicion_ok(v_estado, p_a) then
+    raise exception 'transición inválida: % → %', v_estado, p_a;
+  end if;
+  update public.ordenes set estado = p_a, version = version + 1 where id = p_id;
+  insert into public.pedido_history (orden_id, de, a, nota, actor_id)
+  values (p_id, v_estado, p_a, coalesce(p_nota, ''), coalesce(auth.uid(), p_actor));
+  perform public.notificar(v_user, 'Tu pedido cambió a ' || p_a,
+    'Pedido ' || p_id::text || ': ' || v_estado || ' → ' || p_a,
+    'pedido:' || p_id::text || ':' || p_a);
+  return v_ver + 1;
+end $$;
+
+-- 12c. movimientos_stock era legible por CUALQUIER authenticated (003
+-- "lectura autenticados" using(true)): motivos/notas internas y flujo de
+-- stock expuestos a clientes. Ahora solo staff con stock/leer.
+drop policy if exists "lectura autenticados" on movimientos_stock;
+drop policy if exists "movimientos lectura staff" on movimientos_stock;
+create policy "movimientos lectura staff" on movimientos_stock
+  for select to authenticated using (public.has_permission('stock', 'leer'));
