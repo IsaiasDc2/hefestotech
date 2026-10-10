@@ -110,7 +110,9 @@ class OrdenCompra(BaseModel):
     cantidad: int
     precio_unitario: float
 
-@app.post("/api/crear-preferencia")
+# LEGACY (simulado): endpoint anterior sin calculo en servidor ni orden.
+# Se mantiene solo por compatibilidad; el flujo real es /api/checkout/crear.
+@app.post("/api/crear-preferencia", deprecated=True)
 def generar_link_pago(orden: OrdenCompra):
     sdk = _sdk_mp()
     if sdk is None:

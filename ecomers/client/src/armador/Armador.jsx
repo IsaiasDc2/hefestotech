@@ -62,6 +62,13 @@ function estadoGlobal(evaluacion, cantidad) {
   return { clase: "is-ok", texto: "Compatible" };
 }
 
+function subir() {
+  const reduce = window.matchMedia?.(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+  window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+}
+
 function Armador() {
   const a = useArmador();
   const tituloRef = useRef(null);
@@ -174,7 +181,7 @@ function Armador() {
     } else {
       a.setVerResumen(true);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    subir();
   };
 
   const atras = () => {
@@ -183,7 +190,7 @@ function Armador() {
       return;
     }
     if (a.paso > 0) a.setPaso(a.paso - 1);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    subir();
   };
 
   const resumenLinea = useMemo(() => {

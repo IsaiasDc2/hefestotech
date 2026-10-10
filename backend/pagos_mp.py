@@ -65,7 +65,7 @@ def obtener_productos(ids: list[str]) -> dict:
 
 
 def calcular_totales(items: list[dict], envio: str) -> dict:
-    """Recalcula TODO en servidor. `items`: [{producto_id, cantidad}]."""
+    """Recalcula todo en servidor. `items`: [{producto_id, cantidad}]."""
     if not items:
         raise ValueError("Carrito vacío.")
     ids = [i["producto_id"] for i in items]
