@@ -136,13 +136,17 @@ insert into productos (nombre, marca, precio, stock, descripcion, categoria, esp
 on conflict do nothing;
 
 -- ============ CÓDIGOS (HT-0001…) ============
-with numerados as (
+with params as (
+  select coalesce(max(nullif(regexp_replace(codigo, '[^0-9]', '', 'g'), '')::int), 0) as base
+  from productos where codigo ~ '^HT-[0-9]+$'
+),
+numerados as (
   select id, row_number() over (order by nombre) as rn
   from productos where codigo is null
 )
 update productos p
-set codigo = 'HT-' || lpad(n.rn::text, 4, '0')
-from numerados n where n.id = p.id;
+set codigo = 'HT-' || lpad((params.base + n.rn)::text, 4, '0')
+from numerados n, params where n.id = p.id;
 
 alter table productos alter column codigo set not null;
 
