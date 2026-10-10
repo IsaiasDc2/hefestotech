@@ -12,9 +12,12 @@ from dotenv import load_dotenv
 from google import genai
 import mercadopago
 
+from admin_api import router as admin_router
+
 load_dotenv()
 
 app = FastAPI(title="Hefesto Tech API")
+app.include_router(admin_router)
 
 app.add_middleware(
     CORSMiddleware,
