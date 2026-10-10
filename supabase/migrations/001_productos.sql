@@ -132,7 +132,8 @@ insert into productos (nombre, marca, precio, stock, descripcion, categoria, esp
 ('Logitech C920 HD Pro', 'Logitech', 110000, 20, 'Webcam Full HD confiable para streaming, videollamadas y grabacion de contenido.', 'Webcam', '{"resolucion": "1920x1080 (Full HD) 30fps", "enfoque": "Autoenfoque", "microfono": "Dual estereo integrado", "campoVision": "78°", "conexion": "USB-A", "tripode": true, "colorPrincipal": "Negro"}'::jsonb),
 ('Razer Kiyo Pro', 'Razer', 220000, 11, 'Webcam con sensor de alto rango dinamico, ideal para streamers profesionales.', 'Webcam', '{"resolucion": "1920x1080 (Full HD) 60fps", "enfoque": "Autoenfoque", "sensor": "HDR de alto rango dinamico", "campoVision": "80°/90°/103° ajustable", "conexion": "USB-A", "tripode": true, "colorPrincipal": "Negro"}'::jsonb),
 ('APC Back-UPS 600VA', 'APC', 130000, 17, 'Sistema de alimentacion ininterrumpida basico para proteger PC y periféricos de cortes de luz.', 'UPS', '{"capacidad": "600VA / 330W", "tomasBateria": 4, "tomasProteccion": 2, "tiempoRespaldo": "Hasta 10 min (carga media)", "tipoOnda": "Onda escalonada", "display": false, "colorPrincipal": "Negro"}'::jsonb),
-('Eaton 3S 700VA', 'Eaton', 170000, 13, 'UPS con mayor autonomia y estabilizador de voltaje automatico (AVR), ideal para setups gamer.', 'UPS', '{"capacidad": "700VA / 420W", "tomasBateria": 4, "tomasProteccion": 2, "tiempoRespaldo": "Hasta 15 min (carga media)", "tipoOnda": "Onda escalonada", "avr": true, "display": true, "colorPrincipal": "Negro"}'::jsonb);
+('Eaton 3S 700VA', 'Eaton', 170000, 13, 'UPS con mayor autonomia y estabilizador de voltaje automatico (AVR), ideal para setups gamer.', 'UPS', '{"capacidad": "700VA / 420W", "tomasBateria": 4, "tomasProteccion": 2, "tiempoRespaldo": "Hasta 15 min (carga media)", "tipoOnda": "Onda escalonada", "avr": true, "display": true, "colorPrincipal": "Negro"}'::jsonb)
+on conflict (nombre) do nothing;
 
 -- ============ CÓDIGOS (HT-0001…) ============
 with numerados as (
