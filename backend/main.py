@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import pandas as pd
 import urllib.parse
 import os
@@ -9,6 +10,18 @@ from dotenv import load_dotenv
 
 from google import genai
 import mercadopago
+
+from pagos_mp import (
+    crear_orden,
+    crear_preferencia_mp,
+    validar_firma_mp,
+    consultar_pago_mp,
+    marcar_resultado_webhook,
+    estado_orden,
+    liberar_expiradas,
+    _sb,
+)
+from comprobantes import obtener_comprobante, comprobante_pdf
 
 load_dotenv()
 
@@ -127,3 +140,123 @@ def generar_link_pago(orden: OrdenCompra):
     
     except Exception as e:
         return {"error": str(e)}
+
+
+# ================= CHECKOUT REAL (Mercado Pago Checkout Pro) =================
+
+class ItemCheckout(BaseModel):
+    producto_id: str
+    cantidad: int = Field(ge=1, le=10)
+
+
+class Comprador(BaseModel):
+    nombre: str = Field(min_length=3, max_length=120)
+    email: str = Field(min_length=6, max_length=160)
+    telefono: str = Field(min_length=6, max_length=40)
+    documento: str = Field(min_length=7, max_length=20)  # DNI o CUIT
+    direccion: str = Field(min_length=4, max_length=200)
+    ciudad: str = Field(min_length=2, max_length=100)
+    provincia: str = Field(min_length=2, max_length=60)
+    codigo_postal: str = Field(min_length=3, max_length=12)
+
+
+class CrearOrdenBody(BaseModel):
+    comprador: Comprador
+    items: list[ItemCheckout] = Field(min_length=1)
+    envio: str = "estandar"
+
+
+@app.post("/api/checkout/crear")
+def checkout_crear(body: CrearOrdenBody):
+    if body.envio not in ("estandar", "express"):
+        raise HTTPException(status_code=422, detail="Envío inválido.")
+    try:
+        orden = crear_orden(body.comprador.model_dump(),
+                            [i.model_dump() for i in body.items], body.envio)
+        link = crear_preferencia_mp(orden["id"], orden["lineas"],
+                                    orden["costo_envio"], body.comprador.model_dump())
+        return {"orden_id": orden["id"], "token": orden["token"],
+                "total": orden["total"], "subtotal": orden["subtotal"],
+                "costo_envio": orden["costo_envio"], "link_pago": link}
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+
+@app.get("/api/pedidos/{orden_id}")
+def pedido_estado(orden_id: str, token: str = ""):
+    o = estado_orden(orden_id)
+    if not o or o.get("token_verificacion") != token:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado.")
+    return {"id": o["id"], "estado": o["estado"], "total": o["total"],
+            "mp_payment_id": o.get("mp_payment_id"),
+            "comprobante_numero": o.get("comprobante_numero", ""),
+            "expira_en": o.get("expira_en")}
+
+
+@app.post("/api/checkout/{orden_id}/reintentar")
+def checkout_reintentar(orden_id: str, body: dict = None):
+    o = estado_orden(orden_id)
+    if not o:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado.")
+    if o["estado"] == "pagado":
+        raise HTTPException(status_code=409, detail="El pedido ya está pagado.")
+    filas = _sb("ordenes", query=f"?id=eq.{orden_id}&select=nombre,email")
+    comp = filas[0] if filas else {}
+    items = _sb("orden_items", query=f"?orden_id=eq.{orden_id}&select=producto_id,cantidad,precio")
+    lineas = [{"producto_id": i["producto_id"], "nombre": "",
+               "cantidad": i["cantidad"], "precio_unitario": int(float(i["precio"]))}
+              for i in (items or [])]
+    costo = int(float(_sb("ordenes", query=f"?id=eq.{orden_id}&select=costo_envio")[0]["costo_envio"]))
+    try:
+        link = crear_preferencia_mp(orden_id, lineas, costo, comp)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+    return {"orden_id": orden_id, "link_pago": link}
+
+
+@app.post("/api/webhooks/mercadopago")
+async def webhook_mp(request: Request):
+    raw = await request.json()
+    data_id = str((raw.get("data") or {}).get("id") or raw.get("id") or "")
+    tipo = raw.get("type") or raw.get("topic") or ""
+    if tipo != "payment" or not data_id:
+        return {"ok": True, "ignorado": True}
+    if not validar_firma_mp(request.headers.get("x-signature", ""),
+                             request.headers.get("x-request-id", ""), data_id):
+        raise HTTPException(status_code=401, detail="Firma inválida.")
+    try:
+        pago = consultar_pago_mp(data_id)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"MP: {e}") from e
+    orden_id = pago.get("external_reference") or ""
+    if not orden_id:
+        return {"ok": True, "ignorado": True}
+    resultado = marcar_resultado_webhook(orden_id, data_id,
+                                         pago.get("status", ""), pago.get("transaction_amount", 0))
+    return {"ok": True, "resultado": resultado}
+
+
+@app.post("/api/checkout/liberar-expiradas")
+def checkout_liberar():
+    return {"liberadas": liberar_expiradas()}
+
+
+@app.get("/api/comprobantes/{orden_id}")
+def comprobante_ver(orden_id: str, token: str = ""):
+    c = obtener_comprobante(orden_id)
+    if not c or c.get("token_verificacion") != token:
+        raise HTTPException(status_code=404, detail="Comprobante no encontrado.")
+    return c
+
+
+@app.get("/api/comprobantes/{orden_id}/pdf")
+def comprobante_descargar(orden_id: str, token: str = ""):
+    c = obtener_comprobante(orden_id)
+    if not c or c.get("token_verificacion") != token:
+        raise HTTPException(status_code=404, detail="Comprobante no encontrado.")
+    pdf = comprobante_pdf(c)
+    nombre = (c.get("numero") or orden_id).replace("/", "-")
+    return Response(content=pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{nombre}.pdf"'})

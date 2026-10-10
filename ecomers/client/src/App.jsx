@@ -9,6 +9,8 @@ const Productos = lazy(() => import("./components/product/Producto"));
 const ProductoDetalle = lazy(() => import("./components/product/ProductList"));
 const Carrito = lazy(() => import("./pages/Carrito/Carrito"));
 const Checkout = lazy(() => import("./pages/Checkout/Checkout"));
+const PagoResultado = lazy(() => import("./pages/Checkout/PagoResultado"));
+const PedidoDetalle = lazy(() => import("./pages/Checkout/PedidoDetalle"));
 const Cuenta = lazy(() => import("./pages/Profile/Cuenta"));
 const Admin = lazy(() => import("./pages/Admin/Admin"));
 const Acerca = lazy(() => import("./pages/About/Acerca"));
@@ -80,6 +82,10 @@ export default function App() {
           }
         />
         <Route path="cuenta" element={<Cuenta />} />
+        <Route path="pago-exito" element={<PagoResultado tipo="exito" />} />
+        <Route path="pago-pendiente" element={<PagoResultado tipo="pendiente" />} />
+        <Route path="pago-fallido" element={<PagoResultado tipo="fallido" />} />
+        <Route path="pedido/:id" element={<PedidoDetalle />} />
         <Route path="admin" element={<Admin />} />
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />

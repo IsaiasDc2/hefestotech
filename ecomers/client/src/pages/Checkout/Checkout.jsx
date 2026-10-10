@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaLock, FaTruckFast, FaCreditCard, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
-import useAuthStore from "../../store/authStore";
+import { FaLock, FaTruckFast, FaCircleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
-import { crearOrden } from "../../services/orderService";
+import { crearOrdenCheckout } from "../../services/orderService";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
@@ -11,84 +10,60 @@ const UMBRAL_ENVIO_GRATIS = 150000;
 const COSTO_ENVIO_ESTANDAR = 5000;
 const COSTO_ENVIO_EXPRESS = 12000;
 
-const unitario = (item) =>
-  Number(item.precio_con_descuento ?? item.precio ?? 0);
-
-const soloDigitos = (v = "") => String(v).replace(/\D/g, "");
-const formatearTarjeta = (v = "") =>
-  soloDigitos(v).slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
-const formatearVenc = (v = "") => {
-  const d = soloDigitos(v).slice(0, 4);
-  if (d.length <= 2) return d;
-  return `${d.slice(0, 2)}/${d.slice(2)}`;
-};
-const detectarMarca = (v = "") => {
-  const d = soloDigitos(v);
-  if (/^4/.test(d)) return "Visa";
-  if (/^(5[1-5]|2[2-7])/.test(d)) return "Mastercard";
-  if (/^3[47]/.test(d)) return "Amex";
-  return d ? "Tarjeta" : "";
-};
-const pasaLuhn = (v = "") => {
-  const d = soloDigitos(v);
-  if (d.length < 15) return false;
-  let suma = 0;
-  let par = false;
-  for (let i = d.length - 1; i >= 0; i--) {
-    let n = Number(d[i]);
-    if (par) {
-      n *= 2;
-      if (n > 9) n -= 9;
-    }
-    suma += n;
-    par = !par;
-  }
-  return suma % 10 === 0;
-};
-const vencimientoValido = (v = "") => {
-  const m = String(v).match(/^(0[1-9]|1[0-2])\/(\d{2})$/);
-  if (!m) return false;
-  const mes = Number(m[1]);
-  const anio = 2000 + Number(m[2]);
-  const ahora = new Date();
-  const fin = new Date(anio, mes, 0, 23, 59, 59);
-  return fin > ahora;
-};
-
-const CUOTAS = [
-  { id: 1, label: "1 pago sin interés" },
-  { id: 3, label: "3 cuotas sin interés" },
-  { id: 6, label: "6 cuotas sin interés" },
+const PROVINCIAS = [
+  "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
+  "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
+  "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
+  "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
+  "Tierra del Fuego", "Tucumán",
 ];
 
-function Checkout({ carrito = [], vaciarCarrito }) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+const unitario = (item) =>
+  Math.round(Number(item.precio_con_descuento ?? item.precio ?? 0));
 
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [ciudad, setCiudad] = useState("");
-  const [codigoPostal, setCodigoPostal] = useState("");
+const soloDigitos = (v = "") => String(v).replace(/\D/g, "");
+
+const emailValido = (v = "") => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+
+const telefonoValido = (v = "") => {
+  const d = soloDigitos(v);
+  return d.length >= 10 && d.length <= 15;
+};
+
+const documentoValido = (v = "") => {
+  const d = soloDigitos(v);
+  if (/^\d{7,8}$/.test(d)) return true; // DNI
+  if (!/^\d{11}$/.test(d)) return false; // CUIT: valida dígito verificador
+  const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = mult.reduce((acc, m, i) => acc + m * Number(d[i]), 0);
+  const verif = (11 - (suma % 11)) % 11;
+  return verif === Number(d[10]);
+};
+
+const cpValido = (v = "") =>
+  /^\d{4}$/.test(v.trim()) || /^[A-Za-z]\d{4}[A-Za-z]{3}$/.test(v.trim());
+
+const CAMPOS = ["nombre", "email", "telefono", "documento", "direccion", "ciudad", "provincia", "codigoPostal"];
+
+function Checkout({ carrito = [], vaciarCarrito }) {
+  const [form, setForm] = useState({
+    nombre: "", email: "", telefono: "", documento: "",
+    direccion: "", ciudad: "", provincia: "", codigoPostal: "",
+  });
+  const [errores, setErrores] = useState({});
   const [envio, setEnvio] = useState("estandar");
-  const [pago, setPago] = useState("tarjeta");
-  const [titular, setTitular] = useState("");
-  const [tarjeta, setTarjeta] = useState("");
-  const [vencimiento, setVencimiento] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [cuotas, setCuotas] = useState(6);
   const [enviando, setEnviando] = useState(false);
-  const [pasoPago, setPasoPago] = useState("");
   const [error, setError] = useState("");
-  const [orden, setOrden] = useState(null);
-  const [pagoInfo, setPagoInfo] = useState(null);
+  const enviandoRef = useRef(false);
+  const refs = useRef({});
+
+  const set = (campo) => (e) => {
+    setForm((f) => ({ ...f, [campo]: e.target.value }));
+    setErrores((prev) => ({ ...prev, [campo]: "" }));
+  };
 
   const subtotal = useMemo(
-    () =>
-      carrito.reduce(
-        (acc, item) =>
-          acc + unitario(item) * Number(item.cantidad ?? 1),
-        0
-      ),
+    () => carrito.reduce((acc, item) => acc + unitario(item) * Number(item.cantidad ?? 1), 0),
     [carrito]
   );
 
@@ -99,183 +74,76 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   }, [envio, subtotal, carrito.length]);
 
   const total = subtotal + costoEnvio;
-  const valorCuota = cuotas > 0 ? total / cuotas : total;
-  const marca = detectarMarca(tarjeta);
-  const ultimos4 = soloDigitos(tarjeta).slice(-4);
 
-  const validarTarjeta = () => {
-    if (titular.trim().length < 3) return "Ingresá el nombre del titular.";
-    if (!pasaLuhn(tarjeta)) return "Número de tarjeta inválido (probá 4242 4242 4242 4242).";
-    if (!vencimientoValido(vencimiento)) return "Vencimiento inválido o vencido (MM/AA).";
-    if (!/^\d{3,4}$/.test(soloDigitos(cvv))) return "CVV inválido (3 o 4 dígitos).";
-    return "";
-  };
-
-  const procesarPagoSimulado = async () => {    const pasos = ["Validando datos…", "Contactando banco simulado…", "Autorizando…"];
-    for (const p of pasos) {
-      setPasoPago(p);
-      await new Promise((r) => setTimeout(r, 650));
-    }
-    const num = soloDigitos(tarjeta);
-    if (num.endsWith("0002") || num === "4000000000000002") {
-      throw new Error("Pago rechazado por el banco simulado (fondos insuficientes). Probá con 4242 4242 4242 4242.");
-    }
-    return {
-      autorizado: true,
-      codigo: `SIM-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-      marca,
-      ultimos4,
-      cuotas,
-    };
-  };
-
-  const generarLinkMP = async () => {
-    const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
-    setPasoPago("Generando link de Mercado Pago…");
-    const respuesta = await fetch(`${API_URL}/api/crear-preferencia`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        titulo: `Pedido HefestoTech (${carrito.length} productos)`,
-        cantidad: 1,
-        precio_unitario: total,
-      }),
-    });
-    if (!respuesta.ok) throw new Error("preferencia");
-    const data = await respuesta.json();
-    if (!data.link_pago) throw new Error("preferencia");
-    return data.link_pago;
+  const validar = () => {
+    const e = {};
+    if (form.nombre.trim().length < 3) e.nombre = "Ingresá tu nombre completo.";
+    if (!emailValido(form.email)) e.email = "Ingresá un email válido.";
+    if (!telefonoValido(form.telefono)) e.telefono = "Ingresá un teléfono válido (ej. 11 5555 5555).";
+    if (!documentoValido(form.documento)) e.documento = "DNI (7-8 dígitos) o CUIT válido.";
+    if (form.direccion.trim().length < 4) e.direccion = "Ingresá tu dirección.";
+    if (form.ciudad.trim().length < 2) e.ciudad = "Ingresá tu ciudad.";
+    if (!PROVINCIAS.includes(form.provincia)) e.provincia = "Elegí tu provincia.";
+    if (!cpValido(form.codigoPostal)) e.codigoPostal = "CP de 4 dígitos o CPA.";
+    return e;
   };
 
   const confirmar = async (e) => {
     e.preventDefault();
+    if (enviandoRef.current) return; // anti-doble-clic
     setError("");
     if (carrito.length === 0) return;
-    if (pago === "tarjeta") {
-      const msg = validarTarjeta();
-      if (msg) {
-        setError(msg);
-        return;
-      }
+    const e2 = validar();
+    setErrores(e2);
+    if (Object.keys(e2).length > 0) {
+      const primero = CAMPOS.find((c) => e2[c]);
+      refs.current[primero]?.focus();
+      return;
     }
+    enviandoRef.current = true;
     setEnviando(true);
     try {
-      let info = null;
-      let linkMP = null;
-      if (pago === "tarjeta") {
-        info = await procesarPagoSimulado();
-        setPagoInfo(info);
-      }
-      if (pago === "mercadopago") {
-        try {
-          linkMP = await generarLinkMP();
-        } catch {
-          throw new Error("No se pudo generar el link de Mercado Pago. Revisá que el servidor esté corriendo.");
-        }
-        info = { marca: "Mercado Pago", mp: true };
-        setPagoInfo(info);
-      }
-      const datos = {
-        nombre: nombre.trim(),
-        email: email.trim(),
-        direccion: direccion.trim(),
-        ciudad: ciudad.trim(),
-        codigo_postal: codigoPostal.trim(),
-        envio,
-        pago_mock: pago,
-        tarjeta_ultimos4: pago === "tarjeta" ? ultimos4 : null,
-        subtotal,
-        costo_envio: costoEnvio,
-        total,
-        estado: pago === "tarjeta" ? "pagado_simulado" : pago === "mercadopago" ? "pendiente_mp" : "pendiente",
+      const data = await crearOrdenCheckout({
+        comprador: {
+          nombre: form.nombre.trim(),
+          email: form.email.trim(),
+          telefono: soloDigitos(form.telefono),
+          documento: soloDigitos(form.documento),
+          direccion: form.direccion.trim(),
+          ciudad: form.ciudad.trim(),
+          provincia: form.provincia,
+          codigo_postal: form.codigoPostal.trim().toUpperCase(),
+        },
         items: carrito.map((item) => ({
           producto_id: item.producto_id ?? item.id,
           cantidad: Number(item.cantidad ?? 1),
-          precio: unitario(item),
         })),
-      };
-      if (isAuthenticated) {
-        try {
-          const creada = await crearOrden(datos);
-          setOrden({ ...creada, _pago: info });
-        } catch (err) {
-          setOrden({
-            id: `demo-${Date.now().toString(36)}`,
-            total,
-            _local: true,
-            _detalle: err?.message || "",
-            _pago: info,
-          });
-        }
-      } else {
-        setOrden({
-          id: `invitado-${Date.now().toString(36)}`,
-          total,
-          _local: true,
-          _invitado: true,
-          _pago: info,
-        });
-      }
+        envio,
+      });
       vaciarCarrito?.();
-      if (linkMP) {
-        window.location.href = linkMP;
-      }
+      window.location.href = data.link_pago;
     } catch (err) {
-      setError(err?.message || "No se pudo procesar el pago simulado.");
-    } finally {
+      setError(err?.message || "No se pudo crear el pedido. Probá de nuevo.");
+      enviandoRef.current = false;
       setEnviando(false);
-      setPasoPago("");
     }
   };
 
-  if (orden) {
-    const p = orden._pago || pagoInfo;
-    return (
-      <div className="checkout centrado">
-        <div className="card anim-entrada checkout-exito">
-          <span className="marca-centrada" aria-hidden="true">
-            <Marca variante="simbolo" ancho={44} alto={44} decorativa />
-          </span>
-          <p className="badge badge-ok hero-kicker">
-            <FaCircleCheck aria-hidden="true" /> Pago de prueba aprobado
-          </p>
-          <h1>¡Gracias{nombre ? `, ${nombre.split(" ")[0]}` : ""}!</h1>
-          <p className="texto-mutado">
-            Orden <strong>{String(orden.id || "").slice(0, 8)}</strong> por{" "}
-            <strong>${Number(orden.total ?? total).toLocaleString("es-AR")}</strong>.
-            {p ? (
-              p.ultimos4 ? (
-                <> Pagaste con {p.marca} terminada en <strong>•••• {p.ultimos4}</strong> en {p.cuotas} cuota(s) de <strong>${valorCuota.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</strong>. Código <strong>{p.codigo}</strong>.</>
-              ) : (
-                <> Método elegido: <strong>{p.marca}</strong>. Te redirigimos para completar el pago.</>
-              )
-            ) : (
-              <> Método elegido: <strong>{pago === "mercadopago" ? "Mercado Pago" : pago}</strong>.</>
-            )}{" "}
-            Nada se cobró, es una prueba.
-          </p>
-          {orden._local && !orden._invitado && (
-            <p className="badge badge-aviso" role="note">
-              <FaTriangleExclamation aria-hidden="true" /> Demo local: aplicá 002_ordenes.sql para guardar en Supabase.
-            </p>
-          )}
-          {orden._invitado && (
-            <p className="texto-mutado" role="note">
-              Compraste como invitado. <Link to="/cuenta">Creá tu cuenta</Link> para ver tu historial.
-            </p>
-          )}
-          <div className="checkout-acciones">
-            <Link to="/productos" className="btn-fantasma">Seguir comprando</Link>
-            {isAuthenticated ? (
-              <Link to="/cuenta" className="btn-primary">Ver mis pedidos</Link>
-            ) : (
-              <Link to="/cuenta" className="btn-primary">Crear cuenta</Link>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const campo = (id, label, props, type = "text") => (
+    <label>
+      {label}
+      <input
+        ref={(el) => { refs.current[id] = el; }}
+        type={type}
+        value={form[id]}
+        onChange={set(id)}
+        aria-invalid={Boolean(errores[id])}
+        aria-describedby={errores[id] ? `err-${id}` : undefined}
+        {...props}
+      />
+      {errores[id] && <span className="campo-error" id={`err-${id}`} role="alert">{errores[id]}</span>}
+    </label>
+  );
 
   if (carrito.length === 0) {
     return (
@@ -298,41 +166,44 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         <div className="seccion-titular">
           <p className="kicker kicker-marca">
             <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-            <span><span className="kicker-num">Pago simulado</span> Checkout</span>
+            <span>Checkout</span>
           </p>
           <h1>Finalizar compra</h1>
         </div>
         <span className="badge badge-info"><FaLock aria-hidden="true" /> Compra protegida</span>
       </header>
 
-      {!isAuthenticated && (
-        <p className="texto-mutado" role="note">
-          Comprás como invitado. Si <Link to="/cuenta">iniciás sesión</Link>, tu pedido queda guardado en tu cuenta.
-        </p>
-      )}
-
-      <form className="checkout-grid" onSubmit={confirmar}>
+      <form className="checkout-grid" onSubmit={confirmar} noValidate>
         <div className="checkout-col">
           <section className="card checkout-panel" aria-label="Datos de contacto y envío">
             <h2>Datos y envío</h2>
             <div className="checkout-campos">
-              <label>Nombre completo
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} required autoComplete="name" />
-              </label>
-              <label>Email
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-              </label>
-              <label>Dirección
-                <input value={direccion} onChange={(e) => setDireccion(e.target.value)} required autoComplete="street-address" />
-              </label>
+              {campo("nombre", "Nombre completo", { autoComplete: "name", placeholder: "Juan Pérez" })}
+              {campo("email", "Email", { autoComplete: "email", placeholder: "juan@mail.com" }, "email")}
               <div className="checkout-fila">
-                <label>Ciudad
-                  <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
-                </label>
-                <label>Código postal
-                  <input value={codigoPostal} onChange={(e) => setCodigoPostal(e.target.value)} required inputMode="numeric" />
-                </label>
+                {campo("telefono", "Teléfono", { autoComplete: "tel", inputMode: "tel", placeholder: "11 5555 5555" })}
+                {campo("documento", "DNI o CUIT", { autoComplete: "off", inputMode: "numeric", placeholder: "20123456789" })}
               </div>
+              {campo("direccion", "Dirección", { autoComplete: "street-address", placeholder: "Av. Siempreviva 123" })}
+              <div className="checkout-fila">
+                {campo("ciudad", "Ciudad", { autoComplete: "address-level2", placeholder: "Rosario" })}
+                {campo("codigoPostal", "Código postal", { autoComplete: "postal-code", inputMode: "text", placeholder: "2000" })}
+              </div>
+              <label>
+                Provincia
+                <select
+                  ref={(el) => { refs.current.provincia = el; }}
+                  value={form.provincia}
+                  onChange={set("provincia")}
+                  autoComplete="address-level1"
+                  aria-invalid={Boolean(errores.provincia)}
+                  aria-describedby={errores.provincia ? "err-provincia" : undefined}
+                >
+                  <option value="">Elegí tu provincia…</option>
+                  {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                {errores.provincia && <span className="campo-error" id="err-provincia" role="alert">{errores.provincia}</span>}
+              </label>
             </div>
 
             <div className="checkout-opciones" role="radiogroup" aria-label="Método de envío">
@@ -347,67 +218,27 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             </div>
           </section>
 
-          <section className="card checkout-panel" aria-label="Pago simulado">
-            <h2><FaCreditCard aria-hidden="true" /> Pago de prueba</h2>
-            <p className="texto-mutado checkout-nota">Pago de prueba, no se cobra. No uses datos reales. Aprobada: <code>4242 4242 4242 4242</code> · Rechazada: <code>4000 0000 0000 0002</code></p>
+          <section className="card checkout-panel" aria-label="Método de pago">
+            <h2>Pago</h2>
             <div className="checkout-opciones" role="radiogroup" aria-label="Método de pago">
-              <label className={pago === "tarjeta" ? "activo" : ""}>
-                <input type="radio" name="pago" value="tarjeta" checked={pago === "tarjeta"} onChange={() => setPago("tarjeta")} />
-                Tarjeta
-              </label>
-              <label className={pago === "mercadopago" ? "activo" : ""}>
-                <input type="radio" name="pago" value="mercadopago" checked={pago === "mercadopago"} onChange={() => setPago("mercadopago")} />
+              <label className="activo">
+                <input type="radio" name="pago" value="mercadopago" checked readOnly />
                 <img src={logoMP} alt="" aria-hidden="true" className="pago-logo" />
                 Mercado Pago
               </label>
-              <label className={pago === "transferencia" ? "activo" : ""}>
-                <input type="radio" name="pago" value="transferencia" checked={pago === "transferencia"} onChange={() => setPago("transferencia")} />
-                Transferencia (10% off simulado)
+              <label className="opcion-deshabilitada" aria-disabled="true" title="Próximamente: datos de transferencia no disponibles">
+                <input type="radio" name="pago" value="transferencia" disabled />
+                Transferencia <span className="badge badge-aviso">Próximamente</span>
               </label>
-              <label className={pago === "efectivo" ? "activo" : ""}>
-                <input type="radio" name="pago" value="efectivo" checked={pago === "efectivo"} onChange={() => setPago("efectivo")} />
-                Efectivo al retirar
+              <label className="opcion-deshabilitada" aria-disabled="true" title="Próximamente: pago en efectivo no disponible">
+                <input type="radio" name="pago" value="efectivo" disabled />
+                Efectivo al retirar <span className="badge badge-aviso">Próximamente</span>
               </label>
             </div>
-            {pago === "mercadopago" && (
-              <div className="pago-mp-panel">
-                <img src={logoMP} alt="Mercado Pago" className="pago-logo-lg" />
-                <p className="texto-mutado">Al confirmar te redirigimos a Mercado Pago para completar el pago de forma segura con tarjeta, débito o dinero en cuenta.</p>
-              </div>
-            )}
-            {pago === "tarjeta" && (
-              <div className="checkout-campos pago-tarjeta">
-                <div className="tarjeta-preview" aria-hidden="true">
-                  <span className="tarjeta-marca">{marca || "••••"}</span>
-                  <span className="tarjeta-num">{tarjeta || "•••• •••• •••• ••••"}</span>
-                  <span className="tarjeta-pie">
-                    <span>{titular || "TITULAR"}</span>
-                    <span>{vencimiento || "MM/AA"}</span>
-                  </span>
-                </div>
-                <label>Titular
-                  <input value={titular} onChange={(e) => setTitular(e.target.value)} placeholder="Como figura en la tarjeta" autoComplete="cc-name" required />
-                </label>
-                <label>Número (simulado)
-                  <input value={tarjeta} onChange={(e) => setTarjeta(formatearTarjeta(e.target.value))} inputMode="numeric" placeholder="4242 4242 4242 4242" autoComplete="cc-number" required />
-                </label>
-                <div className="checkout-fila">
-                  <label>Vencimiento
-                    <input value={vencimiento} onChange={(e) => setVencimiento(formatearVenc(e.target.value))} placeholder="MM/AA" inputMode="numeric" autoComplete="cc-exp" required />
-                  </label>
-                  <label>CVV
-                    <input value={cvv} onChange={(e) => setCvv(soloDigitos(e.target.value).slice(0, 4))} inputMode="numeric" placeholder="123" autoComplete="cc-csc" required />
-                  </label>
-                </div>
-                <label>Cuotas
-                  <select value={cuotas} onChange={(e) => setCuotas(Number(e.target.value))} aria-label="Cuotas">
-                    {CUOTAS.map((c) => (
-                      <option key={c.id} value={c.id}>{c.label} · ${(total / c.id).toLocaleString("es-AR", { maximumFractionDigits: 0 })} c/u</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
+            <div className="pago-mp-panel">
+              <img src={logoMP} alt="Mercado Pago" className="pago-logo-lg" />
+              <p className="texto-mutado">Al confirmar te redirigimos a Mercado Pago para pagar de forma segura con tarjeta, débito o dinero en cuenta.</p>
+            </div>
           </section>
         </div>
 
@@ -426,10 +257,11 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             <div><dt>Envío</dt><dd>{costoEnvio === 0 ? "Gratis" : `$${costoEnvio.toLocaleString("es-AR")}`}</dd></div>
             <div className="total"><dt>Total</dt><dd>${total.toLocaleString("es-AR")}</dd></div>
           </dl>
-          {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
-          {enviando && pasoPago && <p className="badge badge-info" role="status">{pasoPago}</p>}
+          <p className="texto-mutado checkout-nota">Totales estimados: el servidor recalcula precios, stock y envío antes de cobrar.</p>
+          {error && <p className="badge badge-peligro checkout-error" role="alert"><FaCircleExclamation aria-hidden="true" /> {error}</p>}
+          {enviando && <p className="badge badge-info" role="status">Creando tu pedido…</p>}
           <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? (pago === "mercadopago" ? "Generando link…" : "Procesando pago simulado…") : pago === "mercadopago" ? `Pagar $${total.toLocaleString("es-AR")} con Mercado Pago` : `Pagar $${total.toLocaleString("es-AR")} (simulado)`}
+            {enviando ? "Creando pedido…" : `Pagar $${total.toLocaleString("es-AR")} con Mercado Pago`}
           </button>
           <Link to="/carrito" className="btn-fantasma">Volver al carrito</Link>
         </aside>
