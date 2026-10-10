@@ -2,11 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./SectionHeader.css";
 
-/**
- * Encabezado editorial unificado de seccion (El Arsenal).
- * Uso: <SectionHeader num="01" kicker="Explorar" titulo="..." id="home-x" verTodo="/productos" accionExtra={...} />
- * La seccion padre conserva aria-labelledby={id}; este componente pinta el h2 con ese id.
- */
+
 function SectionHeader({ num = null, kicker = null, titulo, id, verTodo = null, accionExtra = null }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);

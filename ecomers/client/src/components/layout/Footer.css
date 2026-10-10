@@ -396,11 +396,6 @@
   }
 }
 
-/* ============================================================
-   Fundacion (d) — footer aditivo: entrada suave + hover con tokens.
-   Entrada solo opacity/transform (emil), glow solo en hover
-   (Flat-At-Rest), respeta reduced-motion. No toca logica.
-   ============================================================ */
 
 @keyframes ht-footer-entrada {
   from {

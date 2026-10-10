@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
 
-  /* Capa primitiva (valores crudos, no usar directo en componentes) */
+
   --primitive-night: #0b0e14;
   --primitive-graphite: #121724;
   --primitive-armor: #171e2d;
@@ -35,7 +35,7 @@
   --primitive-brass-day: #8c7146;
   --primitive-on-brand: #ffffff;
 
-  /* Capa semantica (contrato light/dark, usar siempre via var()) */
+
   --background: var(--primitive-night);
   --surface: var(--primitive-graphite);
   --surface-elevated: var(--primitive-armor);
@@ -54,7 +54,7 @@
   --danger: var(--primitive-red);
   --focus-ring: rgba(99, 102, 241, 0.45);
 
-  /* Aliases legacy (compat con CSS de componentes existente) */
+
   --bg: var(--background);
   --card: var(--surface-elevated);
   --card-2: var(--surface-elevated-2);
@@ -83,11 +83,11 @@
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fuente: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 
-  
+
   --font-display: "Oswald", "Arial Narrow", "Impact", system-ui, sans-serif;
   --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 
-  
+
   --text-h1: clamp(2rem, 1.4rem + 3vw, 3.25rem);
   --text-h2: clamp(1.5rem, 1.15rem + 1.75vw, 2.25rem);
   --text-h3: clamp(1.2rem, 1.05rem + 0.75vw, 1.5rem);
@@ -96,7 +96,7 @@
   --text-body: 0.9375rem;
   --text-small: 0.8125rem;
 
-  
+
   --weight-body: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -109,7 +109,7 @@
   --leading-normal: 1.55;
   --leading-relaxed: 1.7;
 
-  
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -119,18 +119,18 @@
   --space-7: 2.5rem;
   --space-8: 3.5rem;
 
-  
+
   --radio-sm: 8px;
   --radio-md: 12px;
   --radio-lg: 16px;
   --radio-full: 999px;
 
-  
+
   --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.35);
   --sombra-media: 0 8px 28px rgba(0, 0, 0, 0.45);
   --sombra-marca: 0 6px 24px rgba(99, 102, 241, 0.25);
 
-  
+
   --dur-0: 100ms;
   --dur-1: 120ms;
   --dur-2: 200ms;
@@ -142,7 +142,7 @@
   --stagger: 60ms;
   --reveal-y: 12px;
 
-  
+
   --skeleton-base: var(--surface-elevated-2);
   --skeleton-brillo: rgba(99, 102, 241, 0.14);
   --media-velo: linear-gradient(180deg, transparent 55%, rgba(11, 14, 20, 0.55));
@@ -150,14 +150,12 @@
   --detalle-col: 520px;
 }
 
-/* Tema oscuro explicito (default nocturno, igual que :root). */
+
 :root[data-theme="dark"] {
   color-scheme: dark;
 }
 
-/* Tema claro: diseno propio diurno, no negativo del oscuro.
-   Acento indigo-600 (contraste AA), bordes visibles, sombras suaves
-   tintadas al fondo. Texto slate sobre papel frio. */
+
 :root[data-theme="light"] {
   color-scheme: light;
 
@@ -845,47 +843,34 @@ img {
   }
 }
 
-/* (Control unico de tema: ver components/layout/Navbar.css `.topbar-tema`.) */
 
-/* ============================================================
-   Fundacion HefestoTech (d) — capa aditiva, no reescribe base.
-   Tokens semanticos nuevos + fondo con profundidad + utilidades
-   .ht-btn-* / .ht-badge-* + seleccion/scrollbar/foco + reduced-motion.
-   Reglas: emil-design-eng (solo transform/opacity, ease-out,
-   press scale .97, hover solo en (hover:hover)), taste-skill
-   (un tema por pagina, sin glows en reposo), Flat-At-Rest.
-   ============================================================ */
-
-/* --- Tokens aditivos: par dark/light --- */
 :root {
-  /* Superficies: 3 niveles (aliases de la escala Blindaje) */
+
   --surface-1: var(--surface);
   --surface-2: var(--surface-elevated);
   --surface-3: var(--surface-elevated-2);
 
-  /* Overlay / scrim para velos y drawers */
+
   --overlay: rgba(11, 14, 20, 0.6);
   --scrim: linear-gradient(180deg, transparent 40%, rgba(11, 14, 20, 0.72));
 
-  /* Glow SOLO hover (nunca en reposo — Flat-At-Rest) */
+
   --glow-brand: 0 6px 24px rgba(99, 102, 241, 0.28);
   --glow-gold: 0 6px 24px rgba(201, 168, 106, 0.22);
 
-  /* Hairline superior de cards (1px, sutil) */
+
   --hairline-top: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.55), transparent);
 
-  /* Radio de card + sombras por estado */
+
   --radio-card: 16px;
   --shadow-rest: 0 8px 28px rgba(0, 0, 0, 0.45);
   --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.5), 0 6px 24px rgba(99, 102, 241, 0.22);
   --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 24px rgba(99, 102, 241, 0.28);
 
-  /* Gradiente primario AA-safe: indigo -> violeta profundo
-     (equivale a --grad-marca; el violeta claro #8B5CF6 con blanco
-     no llega a AA en texto chico, ver DESIGN.md divergencias). */
+
   --grad-primary: linear-gradient(135deg, var(--accent), var(--accent-hover));
 
-  /* Duraciones + ease fundacional */
+
   --dur-150: 150ms;
   --dur-220: 220ms;
   --dur-450: 450ms;
@@ -907,7 +892,7 @@ img {
   --shadow-pop: 0 18px 48px rgba(15, 23, 42, 0.16), 0 6px 24px rgba(79, 70, 229, 0.2);
 }
 
-/* --- Fondo con profundidad (body::before/after) --- */
+
 body {
   position: relative;
   isolation: isolate;
@@ -922,7 +907,7 @@ body::after {
   pointer-events: none;
 }
 
-/* Capa 1: degradado sutil de base */
+
 body::before {
   background:
     linear-gradient(180deg, rgba(99, 102, 241, 0.05), transparent 38%),
@@ -930,7 +915,7 @@ body::before {
     var(--background);
 }
 
-/* Capa 2: luces difusas bajisima opacidad + textura fina */
+
 body::after {
   background:
     radial-gradient(560px 280px at 12% -4%, rgba(99, 102, 241, 0.08), transparent 70%),
@@ -968,7 +953,7 @@ body::after {
   }
 }
 
-/* --- Botones utilitarios (sin reescribir .btn-*) --- */
+
 .ht-btn {
   display: inline-flex;
   align-items: center;
@@ -1034,7 +1019,7 @@ body::after {
   filter: brightness(0.98);
 }
 
-/* --- Badges unificados (utilitarios, no tocan .badge base) --- */
+
 .ht-badge {
   display: inline-flex;
   align-items: center;
@@ -1075,7 +1060,7 @@ body::after {
   color: var(--danger);
 }
 
-/* --- ::selection, scrollbar fino, focus-visible unificado --- */
+
 ::selection {
   background: var(--accent);
   color: #fff;
@@ -1120,7 +1105,7 @@ body::after {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
-/* --- Reduced-motion global (conserva color/opacity, quita movimiento) --- */
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

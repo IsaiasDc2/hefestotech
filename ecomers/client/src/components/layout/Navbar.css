@@ -26,7 +26,7 @@
   min-height: 2rem;
 }
 
-/* Camioncito que viaja hasta la luna (decorativo, no tapa nada fijo). */
+
 .topbar-camion {
   position: absolute;
   top: 50%;
@@ -185,8 +185,7 @@
   color: var(--primary);
 }
 
-/* Control unico de tema: boton normal (N1). Sin not-allowed/dashed/opacity;
-   color texto en reposo, acento en hover, `aria-pressed` en JSX. */
+
 .topbar-tema {
   display: inline-flex;
   align-items: center;
@@ -367,8 +366,7 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-/* Entrada escalonada del header al cargar: solo opacity/transform,
-   micro 200ms con token existente, delays cortos 30-80ms entre piezas. */
+
 @keyframes ht-head-in {
   from {
     opacity: 0;

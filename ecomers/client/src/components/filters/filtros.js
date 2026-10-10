@@ -1,6 +1,4 @@
-/* HefestoTech · filtros puros del catálogo (sin React, sin estado).
-   Regla de visibilidad: (categoría "Todas" o igual) Y (sin marcas o incluida)
-   Y texto incluido en nombre+marca, case y acento-insensible (NFD). */
+
 
 export function normalizar(texto) {
   return (texto ?? "")
@@ -17,7 +15,7 @@ function coincideTexto(producto, consulta) {
   return hay.includes(q);
 }
 
-/* Subconjunto visible según los tres filtros combinados. */
+
 export function filtrar(productos = [], { textoDif = "", categoria = "Todas", marcas = [] } = {}) {
   const set = new Set(Array.isArray(marcas) ? marcas : []);
   return (productos ?? []).filter((p) => {
@@ -27,8 +25,7 @@ export function filtrar(productos = [], { textoDif = "", categoria = "Todas", ma
   });
 }
 
-/* Conteos por categoría IGNORANDO la categoría elegida (aplican texto+marcas).
-   Clave: valor de categoría tal cual viene en producto.categoria. */
+
 export function contarCategorias(productos = [], { texto = "", marcas = [] } = {}) {
   const set = new Set(Array.isArray(marcas) ? marcas : []);
   const conteos = {};
@@ -41,8 +38,7 @@ export function contarCategorias(productos = [], { texto = "", marcas = [] } = {
   return conteos;
 }
 
-/* Conteos por marca IGNORANDO las marcas elegidas (aplican texto+categoría).
-   Clave: producto.marca. Las marcas vacías no se cuentan. */
+
 export function contarMarcas(productos = [], { texto = "", categoria = "Todas" } = {}) {
   const conteos = {};
   for (const p of productos ?? []) {
@@ -55,7 +51,7 @@ export function contarMarcas(productos = [], { texto = "", categoria = "Todas" }
   return conteos;
 }
 
-/* Todas las marcas del catálogo con su conteo, ordenadas desc (empate: A-Z es). */
+
 export function extraerMarcas(productos = []) {
   const conteos = {};
   for (const p of productos ?? []) {

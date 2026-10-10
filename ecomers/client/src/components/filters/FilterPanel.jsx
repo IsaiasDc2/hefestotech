@@ -12,8 +12,7 @@ import {
 } from "react-icons/fa6";
 import "./FilterPanel.css";
 
-/* Diccionario editable: valor de categoría (DB) → ícono fa6.
-   "Todas" usa el genérico. Lo no listado cae al genérico. */
+
 export const ICONOS_CATEGORIA = {
   Todas: FaBoxesStacked,
   Procesador: FaMicrochip,
@@ -35,9 +34,7 @@ function monograma(nombre) {
   return limpio ? limpio.charAt(0).toUpperCase() : "?";
 }
 
-/* Panel de filtros controlado. Todo el estado vive en el padre;
-   acá solo hay un borrador con debounce para el buscador.
-   `totalCatalogo` es opcional: si llega, el contador dice "Mostrando X de Y". */
+
 function FilterPanel({
   texto,
   onTexto,

@@ -1,6 +1,4 @@
-/* Section: contenedor de pagina con tono fijo.
-   Los tonos son absolutos (no heredan data-theme) para que la
-   alternancia oscuro/claro funcione en ambos temas globales. */
+
 
 .section {
   width: 100%;

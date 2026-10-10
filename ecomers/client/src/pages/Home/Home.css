@@ -508,7 +508,7 @@
   min-width: 0;
 }
 
-/* Aviso envío: pista punteada + carrito + check (loop 5s, decorativo). */
+
 .beneficio-envio {
   flex-wrap: wrap;
 }

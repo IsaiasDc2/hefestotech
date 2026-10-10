@@ -99,9 +99,6 @@ function Productos({ agregarAlCarrito }) {
   }, [precioMax]);
 
 
-
-
-
   useEffect(() => {
 
 
@@ -116,11 +113,9 @@ function Productos({ agregarAlCarrito }) {
         setError(null);
 
 
-
         const { data, error } = await supabase
           .from("productos")
           .select("*");
-
 
 
         if(error){
@@ -128,7 +123,6 @@ function Productos({ agregarAlCarrito }) {
           throw new Error(error.message);
 
         }
-
 
 
         const filas = (Array.isArray(data) ? data : []).map((p) => ({
@@ -169,11 +163,6 @@ function Productos({ agregarAlCarrito }) {
   }, [reintento]);
 
 
-
-
-
-
-
   const etiquetaCategoria =
     CATEGORIAS.find((c) => c.db === categoria)?.label || categoria;
 
@@ -197,11 +186,6 @@ function Productos({ agregarAlCarrito }) {
   },[productos]);
 
 
-
-
-
-
-
   const limpiarFiltros = ()=>{
 
 
@@ -221,11 +205,6 @@ function Productos({ agregarAlCarrito }) {
   };
 
 
-
-
-
-
-
   const productosOrdenados = useMemo(()=>{
 
 
@@ -238,18 +217,13 @@ function Productos({ agregarAlCarrito }) {
       || "";
 
 
-
       const texto =
       busquedaDif
       .toLowerCase();
 
 
-
-
       const coincideNombre =
       nombre.includes(texto);
-
-
 
 
       const coincideCategoria =
@@ -264,9 +238,6 @@ function Productos({ agregarAlCarrito }) {
       (producto.descuento_porcentaje ?? 0) > 0;
 
 
-
-
-
       const coincideMin =
       precioMinDif===""
 
@@ -275,17 +246,12 @@ function Productos({ agregarAlCarrito }) {
       producto.precio >= Number(precioMinDif);
 
 
-
-
-
       const coincideMax =
       precioMaxDif===""
 
       ||
 
       producto.precio <= Number(precioMaxDif);
-
-
 
 
       return (
@@ -302,10 +268,6 @@ function Productos({ agregarAlCarrito }) {
     });
 
 
-
-
-
-
     if(orden==="mayor"){
 
       resultado.sort(
@@ -313,7 +275,6 @@ function Productos({ agregarAlCarrito }) {
       );
 
     }
-
 
 
     if(orden==="menor"){
@@ -325,9 +286,7 @@ function Productos({ agregarAlCarrito }) {
     }
 
 
-
     return resultado;
-
 
 
   },[
@@ -339,12 +298,6 @@ function Productos({ agregarAlCarrito }) {
     precioMaxDif,
     orden
   ]);
-
-
-
-
-
-
 
 
   return (
@@ -374,11 +327,7 @@ function Productos({ agregarAlCarrito }) {
       </header>
 
 
-
-
-
       <div className="filtros">
-
 
 
         <input
@@ -398,9 +347,6 @@ function Productos({ agregarAlCarrito }) {
           }
 
         />
-
-
-
 
 
         <select
@@ -440,10 +386,6 @@ function Productos({ agregarAlCarrito }) {
         </select>
 
 
-
-
-
-
         <input
 
           type="number"
@@ -465,9 +407,6 @@ function Productos({ agregarAlCarrito }) {
         />
 
 
-
-
-
         <input
 
           type="number"
@@ -487,11 +426,6 @@ function Productos({ agregarAlCarrito }) {
           }
 
         />
-
-
-
-
-
 
 
         <select
@@ -524,11 +458,6 @@ function Productos({ agregarAlCarrito }) {
         </select>
 
 
-
-
-
-
-
         <button
 
           className="btn-limpiar"
@@ -542,13 +471,7 @@ function Productos({ agregarAlCarrito }) {
         </button>
 
 
-
       </div>
-
-
-
-
-
 
 
       {
@@ -559,10 +482,6 @@ function Productos({ agregarAlCarrito }) {
         </p>
 
       }
-
-
-
-
 
 
       {
@@ -581,11 +500,6 @@ function Productos({ agregarAlCarrito }) {
         </div>
 
       }
-
-
-
-
-
 
 
       {
@@ -649,7 +563,6 @@ function Productos({ agregarAlCarrito }) {
 
 
       }
-
 
 
     </section>

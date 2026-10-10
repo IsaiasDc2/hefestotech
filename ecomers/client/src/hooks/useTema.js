@@ -9,7 +9,6 @@ function temaInicial() {
     const guardado = localStorage.getItem(CLAVE);
     if (guardado === "light" || guardado === "dark") return guardado;
   } catch {
-    /* almacenamiento no disponible */
   }
   if (typeof window !== "undefined" && window.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
@@ -25,7 +24,7 @@ function aplicar(tema) {
   if (meta) meta.setAttribute("content", tema === "light" ? CLARO : OSCURO);
 }
 
-/** Control unico de tema: data-theme en <html> + persistencia local. */
+
 export function useTema() {
   const [tema, setTema] = useState(temaInicial);
 
@@ -41,7 +40,6 @@ export function useTema() {
       try {
         guardado = localStorage.getItem(CLAVE);
       } catch {
-        /* sin almacenamiento: respetar sistema */
       }
       if (guardado !== "light" && guardado !== "dark") {
         setTema(e.matches ? "light" : "dark");
@@ -61,7 +59,6 @@ export function useTema() {
       try {
         localStorage.setItem(CLAVE, next);
       } catch {
-        /* almacenamiento no disponible */
       }
       return next;
     });
@@ -72,7 +69,6 @@ export function useTema() {
     try {
       localStorage.setItem(CLAVE, valor);
     } catch {
-      /* almacenamiento no disponible */
     }
     setTema(valor);
   }, []);

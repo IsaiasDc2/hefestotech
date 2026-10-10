@@ -1,6 +1,4 @@
-/* Insignia de marca: el derivado ya trae esquinas redondeadas con alfa y
-   padding propio; aca solo se garantiza layout estable (CLS=0) y
-   alineacion. Sin glows permanentes (regla Flat-At-Rest de DESIGN.md). */
+
 .marca {
   display: inline-flex;
   flex-shrink: 0;
@@ -18,21 +16,21 @@
   height: auto;
 }
 
-/* Kicker con marca (cabecera simplificada de checkout). */
+
 .kicker-marca {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
 }
 
-/* Marca centrada en estados vacios / error / exito. */
+
 .marca-centrada {
   display: flex;
   justify-content: center;
   margin-bottom: 0.9rem;
 }
 
-/* Loading de cambio de pagina: marca + puntos. */
+
 .cargando-marca {
   display: flex;
   flex-direction: column;
@@ -46,7 +44,7 @@
   gap: 0.5rem;
 }
 
-/* 404: bloque centrado con aire de seccion. */
+
 .pagina-404 {
   align-items: center;
   text-align: center;

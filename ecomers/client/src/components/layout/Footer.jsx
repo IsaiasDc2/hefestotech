@@ -140,8 +140,6 @@ function Footer() {
         </div>
 
 
-
-
         <div className="footer-col">
 
           <h4>
@@ -184,8 +182,6 @@ function Footer() {
 
 
         </div>
-
-
 
 
         <div className="footer-col">
@@ -236,15 +232,12 @@ function Footer() {
         </div>
 
 
-
-
         <div className="footer-col">
 
 
           <h4>
             {t(idioma, "ft.contacto")}
           </h4>
-
 
 
           <ul className="contacto-lista">
@@ -259,7 +252,6 @@ function Footer() {
             </li>
 
 
-
             <li>
 
               <FaPhone aria-hidden="true" />
@@ -267,8 +259,6 @@ function Footer() {
               +54 11 1234-5678
 
             </li>
-
-
 
 
             <li>
@@ -283,7 +273,6 @@ function Footer() {
           </ul>
 
 
-
           <div className="pagos" aria-label={t(idioma, "ft.pagos")}>
 
             <FaCcVisa aria-label="Visa" />
@@ -296,14 +285,10 @@ function Footer() {
           </div>
 
 
-
         </div>
 
 
-
       </div>
-
-
 
 
       <div className="footer-bottom">

@@ -114,7 +114,6 @@ const useIdiomaStore = create((set) => ({
     try {
       localStorage.setItem("ht-idioma", idioma);
     } catch {
-      /* almacenamiento no disponible */
     }
     document.documentElement.lang = idioma === "en" ? "en" : "es";
     set({ idioma });
@@ -125,7 +124,6 @@ try {
   document.documentElement.lang =
     localStorage.getItem("ht-idioma") === "en" ? "en" : "es";
 } catch {
-  /* almacenamiento no disponible */
 }
 
 export default useIdiomaStore;

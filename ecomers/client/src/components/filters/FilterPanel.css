@@ -1,6 +1,4 @@
-/* HefestoTech · FilterPanel. Panel glass para filtros del catálogo.
-   Solo tokens (cero hex): var(--...) + transparent + currentColor.
-   Movimiento: solo transform / opacity / box-shadow. */
+
 
 .filter-panel {
   position: relative;
@@ -15,7 +13,7 @@
   gap: var(--space-3);
 }
 
-/* Brillo superior sutil (1px, como .card). */
+
 .filter-panel::before {
   content: "";
   position: absolute;
@@ -28,7 +26,7 @@
   pointer-events: none;
 }
 
-/* ---- Buscador ---- */
+
 .fp-buscador {
   position: relative;
   display: flex;
@@ -80,7 +78,7 @@
   transform: translateY(-1px);
 }
 
-/* ---- Categorías (chips únicos, radiogroup) ---- */
+
 .fp-categorias {
   display: flex;
   gap: var(--space-2);
@@ -136,7 +134,7 @@
   color: var(--accent);
 }
 
-/* ---- Marcas (scroll horizontal con degradado en bordes) ---- */
+
 .fp-etiqueta {
   font-size: 0.75rem;
   font-weight: 700;
@@ -212,7 +210,7 @@
   flex: 0 0 auto;
 }
 
-/* ---- Filtros activos + pie ---- */
+
 .fp-activos {
   list-style: none;
   display: flex;
@@ -274,7 +272,7 @@
   opacity: 0.95;
 }
 
-/* ---- Vacío ---- */
+
 .fp-vacio {
   text-align: center;
   padding: var(--space-4) var(--space-3);
@@ -296,7 +294,7 @@
   margin: 0 0 var(--space-3);
 }
 
-/* ---- Móvil: botón + bottom sheet ---- */
+
 .fp-abrir {
   display: none;
 }

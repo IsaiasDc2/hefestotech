@@ -1,4 +1,4 @@
-/* SectionHeader — encabezado editorial unico (El Arsenal). Solo tokens semanticos. */
+
 .ht-sh {
   display: flex;
   align-items: center;
@@ -164,7 +164,7 @@
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-/* Entrada al viewport, una sola vez: rebote leve, fade-up y linea que se dibuja. */
+
 .ht-sh.is-visible .ht-sh__insignia {
   opacity: 1;
   transform: scale(1);

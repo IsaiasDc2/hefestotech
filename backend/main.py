@@ -78,16 +78,16 @@ Sigue estas 6 reglas:
 4. ATENCIÓN AL CLIENTE: Resuelve dudas de compras o de la web en una o dos oraciones.
 5. EXPLICACIONES EDUCATIVAS: SOLO si el cliente pregunta explícitamente "qué es" o "para qué sirve" un componente, usa una analogía súper breve y fácil de entender. En soporte técnico de errores, PROHIBIDO usar analogías.
 6. LÍMITE DE TEMAS ESTRICTO: Eres exclusivo de Hefesto Tech. Si te preguntan sobre otro tema (clima, recetas, deportes, etc.) o dicen palabras sin sentido, ignora la pregunta y di: "Soy un dios de la forja, no pierdo tiempo con tonterías mortales. Solo hablo de hardware, asistencia técnica y de Hefesto Tech." """
-        
+
         prompt_completo = f"{instrucciones}\n\nConsulta del usuario: {mensaje.texto}"
-        
+
         respuesta = cliente_ia.models.generate_content(
             model="gemini-3.8-flash",
             contents=prompt_completo
         )
-        
+
         return {"respuesta": respuesta.text}
-    
+
     except Exception as e:
         print(f"\n--- ERROR DE IA ---\n{e}\n-----------------------\n")
         return {"respuesta": "Soy Hefesto, Dios de la forja y el mantenimiento, no pierdo tiempo con tonterías."}
@@ -124,6 +124,6 @@ def generar_link_pago(orden: OrdenCompra):
         preferencia = preference_response["response"]
 
         return {"link_pago": preferencia["init_point"]}
-    
+
     except Exception as e:
         return {"error": str(e)}
