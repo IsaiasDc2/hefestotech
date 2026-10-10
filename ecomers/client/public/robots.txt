@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://IsaiasDc2.github.io/hefestotech/sitemap.xml
