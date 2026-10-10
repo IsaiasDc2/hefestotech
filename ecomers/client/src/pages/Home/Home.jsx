@@ -137,6 +137,22 @@ function Home({ agregarAlCarrito }) {
     texto: filtroTextoDif,
     marcas: marcasElegidas,
   });
+  /* Conteo real por tarjeta de categoría (respeta texto+marcas del panel).
+     Ofertas no es una categoría DB: se cuenta sobre el mismo base filtrada. */
+  const baseConteo = filtrar(productos, {
+    textoDif: filtroTextoDif,
+    categoria: "Todas",
+    marcas: marcasElegidas,
+  });
+  const conteoPorSlug = Object.fromEntries(
+    CATEGORIAS.filter((c) => c.db).map((c) => [
+      c.slug,
+      conteosCategoria[c.db] ?? 0,
+    ])
+  );
+  conteoPorSlug.ofertas = baseConteo.filter(
+    (p) => Number(p.descuento_porcentaje ?? 0) > 0
+  ).length;
   const marcasDisponibles = Object.entries(
     contarMarcas(productos, {
       texto: filtroTextoDif,
@@ -167,29 +183,42 @@ function Home({ agregarAlCarrito }) {
           verTodo="/productos"
         />
         <div ref={refCategorias} className={`grid-categorias${categoriasVisibles ? " is-visible" : ""}`}>
-          {CATEGORIAS.map((c) => (
-            <Link
-              key={c.nombre}
-              to={`/productos?categoria=${c.slug}`}
-              className="card-categoria"
-            >
-              <span className="cat-icono" aria-hidden="true">
-                {c.icono}
-                <img
-                  src={`${BASE}banners/${c.imagen}.webp`}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  width="64"
-                  height="64"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              </span>
-              <span>{c.nombre}</span>
-            </Link>
-          ))}
+          {CATEGORIAS.map((c) => {
+            const conteo = conteoPorSlug[c.slug] ?? 0;
+            return (
+              <Link
+                key={c.nombre}
+                to={`/productos?categoria=${c.slug}`}
+                className="card-categoria"
+                aria-label={
+                  conteo > 0
+                    ? `${c.nombre}, ${conteo} ${conteo === 1 ? "producto" : "productos"}`
+                    : c.nombre
+                }
+              >
+                <span className="cat-icono" aria-hidden="true">
+                  {c.icono}
+                  <img
+                    src={`${BASE}banners/${c.imagen}.webp`}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="128"
+                    height="128"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </span>
+                <span className="cat-nombre">{c.nombre}</span>
+                {conteo > 0 && (
+                  <span className="cat-conteo">
+                    {conteo} {conteo === 1 ? "producto" : "productos"}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </section>
 

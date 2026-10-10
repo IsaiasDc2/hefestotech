@@ -7,8 +7,26 @@ import {
   FaTruckFast,
   FaCartPlus,
   FaCheck,
+  FaMicrochip,
+  FaMemory,
+  FaHardDrive,
+  FaKeyboard,
+  FaDesktop,
+  FaCube,
 } from "react-icons/fa6";
 import "./ProductCard.css";
+
+/* Icono de respaldo según categoría (estado de error de imagen). */
+function iconoPorCategoria(categoria = "") {
+  const c = categoria.toLowerCase();
+  if (c.includes("procesador")) return FaMicrochip;
+  if (c.includes("placa")) return FaDesktop;
+  if (c.includes("memoria") || c.includes("ram")) return FaMemory;
+  if (c.includes("almacen") || c.includes("disco")) return FaHardDrive;
+  if (c.includes("perif") || c.includes("teclado") || c.includes("mouse"))
+    return FaKeyboard;
+  return FaCube;
+}
 
 function ProductCard({ producto, agregarAlCarrito }) {
   const [favorito, setFavorito] = useState(false);
@@ -33,9 +51,12 @@ function ProductCard({ producto, agregarAlCarrito }) {
   const precioFinal = Number(
     producto.precio_con_descuento ?? producto.precio ?? 0
   );
+  const hayStock = Number(producto.stock ?? 0) > 0;
   const imagen = producto.imagen || "";
   const nombre = producto.nombre || "Producto";
   const marca = (producto.marca || "").trim();
+  const categoria = producto.categoria || "General";
+  const urlProducto = `/producto/${producto.id}`;
   const ratingRaw = producto.rating ?? producto.promedio ?? null;
   const tieneRating =
     ratingRaw !== null &&
@@ -44,9 +65,15 @@ function ProductCard({ producto, agregarAlCarrito }) {
     !Number.isNaN(Number(ratingRaw));
   const rating = tieneRating ? Number(ratingRaw) : null;
   const resenas = producto.resenas ?? producto.cantidad_resenas ?? null;
+  /* Cuotas solo si el dato es real (campo del producto). Nada inventado. */
+  const cuotasTexto =
+    typeof producto.cuotas_texto === "string" && producto.cuotas_texto.trim()
+      ? producto.cuotas_texto.trim()
+      : null;
+  const IconoRespaldo = iconoPorCategoria(categoria);
 
   return (
-    <div className="card-producto">
+    <div className={`card-producto${hayStock ? "" : " is-sin-stock"}`}>
       {tieneOferta && (
         <span className="oferta">
           <span>OFERTA</span>
@@ -54,29 +81,18 @@ function ProductCard({ producto, agregarAlCarrito }) {
         </span>
       )}
 
-      <button
-        type="button"
-        className={`favorito ${favorito ? "activo" : ""}`}
-        onClick={() => setFavorito((prev) => !prev)}
-        aria-pressed={favorito}
-        aria-label={
-          favorito ? "Quitar de favoritos" : "Agregar a favoritos"
-        }
-      >
-        {favorito ? (
-          <FaHeart aria-hidden="true" />
-        ) : (
-          <FaRegHeart aria-hidden="true" />
-        )}
-      </button>
+      {marca && (
+        <span className="card-marca" title={marca}>
+          {marca}
+        </span>
+      )}
 
-      <Link to={`/producto/${producto.id}`} className="producto-detalle">
-        {marca && (
-          <span className="card-marca" title={marca}>
-            {marca}
-          </span>
-        )}
-        <span className="card-media">
+      <div className="card-media">
+        <Link
+          to={urlProducto}
+          className="card-media-link"
+          aria-label={`Ver ${nombre}`}
+        >
           {imagen && !imgError ? (
             <img
               src={imagen}
@@ -85,30 +101,63 @@ function ProductCard({ producto, agregarAlCarrito }) {
               height="600"
               loading="lazy"
               decoding="async"
-              onError={() => { setImgError(true); }}
+              onError={() => {
+                setImgError(true);
+              }}
             />
           ) : (
-            <span className="producto-sin-imagen" aria-hidden="true">HefestoTech</span>
+            <span
+              className="producto-sin-imagen"
+              role="img"
+              aria-label={`Sin imagen disponible de ${nombre}`}
+            >
+              <IconoRespaldo className="sin-imagen-icono" aria-hidden="true" />
+              <span className="sin-imagen-texto" aria-hidden="true">
+                HefestoTech
+              </span>
+            </span>
           )}
-        </span>
-        {tieneRating ? (
-        <span className="card-rating" aria-label={`Calificación ${rating} de 5`}>
-          <span className="estrellas" aria-hidden="true">★★★★★</span>
-          <span className="rating-num">{rating.toFixed(1)}</span>
-          {resenas != null && <span className="rating-count">({resenas})</span>}
-        </span>
-        ) : (
-        <span className="card-rating card-rating-vacio">
-          <span className="rating-count">Sin calificaciones</span>
-        </span>
-        )}
+        </Link>
+        <button
+          type="button"
+          className={`favorito ${favorito ? "activo" : ""}`}
+          onClick={() => setFavorito((prev) => !prev)}
+          aria-pressed={favorito}
+          aria-label={
+            favorito ? "Quitar de favoritos" : "Agregar a favoritos"
+          }
+        >
+          {favorito ? (
+            <FaHeart aria-hidden="true" />
+          ) : (
+            <FaRegHeart aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      <Link to={urlProducto} className="card-titulo-link">
         <h3>{nombre}</h3>
       </Link>
 
-      <p className="categoria">{producto.categoria}</p>
+      {tieneRating && (
+        <span
+          className="card-rating"
+          aria-label={`Calificación ${rating.toFixed(1)} de 5`}
+        >
+          <span className="estrellas" aria-hidden="true">
+            ★★★★★
+          </span>
+          <span className="rating-num">{rating.toFixed(1)}</span>
+          {resenas != null && (
+            <span className="rating-count">({resenas})</span>
+          )}
+        </span>
+      )}
+
+      <p className="categoria">{categoria}</p>
 
       <div className="stock">
-        {producto.stock ? (
+        {hayStock ? (
           <span className="stock-linea disponible">
             <span className="stock-dot" aria-hidden="true" /> Disponible
           </span>
@@ -132,12 +181,16 @@ function ProductCard({ producto, agregarAlCarrito }) {
           </strong>
         </div>
       ) : (
-        <strong className="precio-actual">${precio.toLocaleString("es-AR")}</strong>
+        <strong className="precio-actual">
+          ${precio.toLocaleString("es-AR")}
+        </strong>
       )}
 
-      <p className="cuotas">
-        <FaCreditCard aria-hidden="true" /> 6 cuotas sin interés
-      </p>
+      {cuotasTexto && (
+        <p className="cuotas">
+          <FaCreditCard aria-hidden="true" /> {cuotasTexto}
+        </p>
+      )}
 
       {producto.envio_gratis && (
         <p className="envio">
@@ -148,16 +201,14 @@ function ProductCard({ producto, agregarAlCarrito }) {
       <button
         type="button"
         className={`btn-carrito${agregado ? " is-added" : ""}`}
-        disabled={!producto.stock}
+        disabled={!hayStock}
         onClick={manejarAgregar}
         aria-live="polite"
         aria-label={
-          producto.stock
-            ? `Agregar ${nombre} al carrito`
-            : `${nombre} sin stock`
+          hayStock ? `Agregar ${nombre} al carrito` : `${nombre} sin stock`
         }
       >
-        {producto.stock ? (
+        {hayStock ? (
           agregado ? (
             <>
               <FaCheck aria-hidden="true" /> Agregado
@@ -171,6 +222,18 @@ function ProductCard({ producto, agregarAlCarrito }) {
           "Sin stock"
         )}
       </button>
+    </div>
+  );
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <div className="card-skeleton" aria-hidden="true">
+      <span className="sk-media" />
+      <span className="sk-linea sk-titulo" />
+      <span className="sk-linea sk-corta" />
+      <span className="sk-linea sk-precio" />
+      <span className="sk-boton" />
     </div>
   );
 }
