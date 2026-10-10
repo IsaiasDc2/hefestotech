@@ -8,7 +8,7 @@
 }
 
 .section__inner {
-  max-width: 1280px;
+  max-width: var(--banner-ancho);
   margin: 0 auto;
   min-width: 0;
 }

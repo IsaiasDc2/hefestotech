@@ -29,6 +29,7 @@
   grid-area: 1 / 1;
   max-width: 100%;
   aspect-ratio: 21 / 9;
+  aspect-ratio: var(--banner-ratio);
   overflow: hidden;
   background: var(--surface-elevated-2);
   opacity: 0;
@@ -55,6 +56,26 @@
   user-select: none;
   -webkit-user-drag: none;
   transform: scale(1);
+}
+
+/* Encuadre contain: la imagen se ve entera (sin cortar textos
+   incrustados) sobre un relleno difuminado de si misma.
+   Sin barras negras: el fondo es la propia foto con blur. */
+.banner-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) brightness(0.72) saturate(1.15);
+  transform: scale(1.12);
+  pointer-events: none;
+}
+
+.banner-slide.encuadre-contain .banner-img {
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
 }
 
 /* Zoom levisimo y lento, sincronizado con el autoplay de 5s. */
@@ -121,7 +142,7 @@
   right: 0;
   bottom: 0;
   z-index: 2;
-  max-width: min(1280px, 100%);
+  max-width: min(var(--banner-ancho), 100%);
   margin: 0 auto;
   padding: 0 1.5rem 1.1rem;
   display: flex;
@@ -265,6 +286,7 @@ button.activo .banner-progreso {
 @media (max-width: 768px) {
   .banner-slide {
     aspect-ratio: 16 / 10;
+    aspect-ratio: var(--banner-ratio);
   }
   .banner-flecha { display: none; }
   .banner-barra {
