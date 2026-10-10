@@ -16,6 +16,11 @@
   gap: 0.55rem;
   min-width: 0;
   height: 100%;
+  /* Tilt 3D (vars desde useTilt, ±6°): reposo en 0. */
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
   background: linear-gradient(180deg, var(--card-2), var(--card));
   border: 1px solid var(--border);
   border-radius: var(--radio-md);
@@ -42,6 +47,37 @@
 
 .card-producto:hover::before {
   opacity: 1;
+}
+
+/* Tilt 3D + especular: SOLO con puntero fino (nunca en tactil).
+   El hover base (translateY) sigue igual fuera de este query. */
+@media (hover: hover) and (pointer: fine) {
+  .card-producto:hover {
+    transform:
+      translateY(-4px)
+      perspective(900px)
+      rotateX(var(--rx))
+      rotateY(var(--ry));
+  }
+
+  .card-producto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: radial-gradient(
+      420px circle at var(--mx) var(--my),
+      rgba(255, 255, 255, 0.14),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 200ms cubic-bezier(.2,.8,.2,1);
+    pointer-events: none;
+  }
+
+  .card-producto:hover::after {
+    opacity: 1;
+  }
 }
 
 .oferta {
@@ -102,6 +138,13 @@
   color: var(--primary);
   background: var(--primary-suave);
   box-shadow: 0 0 0 3px var(--primary-suave), 0 0 16px var(--primary-resplandor);
+  animation: fav-pop 300ms cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes fav-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.25); }
+  100% { transform: scale(1); }
 }
 
 .favorito:focus-visible,
@@ -560,9 +603,14 @@
   .card-media img,
   .card-media::after,
   .card-producto::before,
+  .card-producto::after,
   .btn-carrito,
   .favorito {
     transition: none;
+  }
+
+  .favorito.activo {
+    animation: none;
   }
 
   .card-producto:hover {

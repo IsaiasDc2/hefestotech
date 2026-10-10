@@ -9,6 +9,7 @@ import {
   FaCheck,
 } from "react-icons/fa6";
 import "./ProductCard.css";
+import { useTilt } from "../../hooks/useMotion";
 
 // Manifiesto estatico public/manifiesto-fondos.json (generado por
 // scripts/auditoria-imagenes.py): URL -> "blanco" | "negro".
@@ -52,6 +53,9 @@ function ProductCard({ producto, agregarAlCarrito }) {
   const [agregado, setAgregado] = useState(false);
   const [fondoTipo, setFondoTipo] = useState(null);
   const timerAgregado = useRef(null);
+  const refCard = useRef(null);
+  // Tilt 3D ±6° + especular: solo puntero fino, rAF, resetea al salir.
+  useTilt(refCard, 6);
 
   useEffect(() => () => {
     if (timerAgregado.current) clearTimeout(timerAgregado.current);
@@ -105,7 +109,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
   };
 
   return (
-    <div className={`card-producto${sinStock ? " is-sin-stock" : ""}`}>
+    <div ref={refCard} className={`card-producto${sinStock ? " is-sin-stock" : ""}`}>
       {tieneOferta && (
         <span className="oferta">
           <span>OFERTA</span>

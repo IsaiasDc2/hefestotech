@@ -25,6 +25,7 @@ import {
 import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
 import TiraBanner from "../../components/layout/TiraBanner";
+import { useCountUpGrupo } from "../../hooks/useMotion";
 import "./Home.css";
 
 const MARCAS = [
@@ -92,6 +93,9 @@ function Home({ agregarAlCarrito }) {
   const [refDestacados, destacadosVisibles] = usarVisibleUnaVez();
   const [refMarcas, marcasVisibles] = usarVisibleUnaVez();
   const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
+  const refHome = useRef(null);
+  // Count-up de cifras existentes (6, $99.999, 12): una vez al entrar.
+  useCountUpGrupo(refHome);
 
   const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
     label: c.nombre,
@@ -155,7 +159,7 @@ function Home({ agregarAlCarrito }) {
   };
 
   return (
-    <div className="home">
+    <div className="home" ref={refHome}>
       <Banner />
       <PromoBar />
 
@@ -173,6 +177,9 @@ function Home({ agregarAlCarrito }) {
               to={`/productos?categoria=${c.slug}`}
               className="card-categoria"
             >
+              <svg className="cat-pista" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <rect x="3" y="3" width="94" height="94" rx="14" pathLength="100" />
+              </svg>
               <span className="cat-icono" aria-hidden="true">
                 {c.icono}
                 <img
@@ -310,7 +317,7 @@ function Home({ agregarAlCarrito }) {
         <div className="beneficio">
           <FaCreditCard aria-hidden="true" />
           <div>
-            <strong>6 cuotas sin interés</strong>
+            <strong><span data-countup="6" data-final="6">6</span> cuotas sin interés</strong>
             <span>Con todas las tarjetas</span>
           </div>
         </div>
@@ -318,7 +325,7 @@ function Home({ agregarAlCarrito }) {
           <FaTruckFast aria-hidden="true" />
           <div>
             <strong>Envío a todo el país</strong>
-            <span>Gratis desde $99.999</span>
+            <span>Gratis desde <span data-countup="99999" data-formato="ars" data-final="$99.999">$99.999</span></span>
           </div>
           <span className="envio-anim" aria-hidden="true">
             <svg viewBox="0 0 200 32" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -355,7 +362,7 @@ function Home({ agregarAlCarrito }) {
           <FaShieldHalved aria-hidden="true" />
           <div>
             <strong>Garantía oficial</strong>
-            <span>12 meses en todos los productos</span>
+            <span><span data-countup="12" data-final="12">12</span> meses en todos los productos</span>
           </div>
         </div>
       </section>

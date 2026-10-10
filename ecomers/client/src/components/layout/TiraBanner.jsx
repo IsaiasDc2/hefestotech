@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useScrollLigado } from "../../hooks/useMotion";
 import "./TiraBanner.css";
 
 export default function TiraBanner({ src, alt, to = null, etiqueta = null }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
+  // Parallax <= 2% de la altura (var --tira-y), rAF pasivo, solo en pantalla.
+  useScrollLigado(ref, (rect, vh, el) => {
+    const centro = (rect.top + rect.height / 2 - vh / 2) / vh;
+    const k = Math.max(-1, Math.min(1, centro * 2));
+    el.style.setProperty("--tira-y", `${(k * rect.height * 0.02).toFixed(1)}px`);
+    el.classList.add("con-parallax");
+  });
 
   useEffect(() => {
     const el = ref.current;

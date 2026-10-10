@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useHeroVisible, useScrollLigado } from "../../hooks/useMotion";
 import "./Banner.css";
 
 const BASE = import.meta.env.BASE_URL || "/";
@@ -40,6 +41,16 @@ export default function Banner() {
   const total = SLIDES.length;
   const timer = useRef(null);
   const touchX = useRef(null);
+  const refHero = useRef(null);
+  // Shrink 1 -> 0.97 + parallax <= 40px + barra que se desvanece,
+  // solo transform/opacity via vars, rAF pasivo, pausado fuera de pantalla.
+  useHeroVisible(refHero);
+  useScrollLigado(refHero, (rect, _vh, el) => {
+    const avance = Math.min(1, Math.max(0, -rect.top / Math.max(1, rect.height)));
+    el.style.setProperty("--hero-s", (1 - 0.03 * avance).toFixed(4));
+    el.style.setProperty("--hero-y", `${(40 * avance).toFixed(1)}px`);
+    el.style.setProperty("--hero-barra", (1 - avance).toFixed(3));
+  });
   // Pausa del sistema (pestaña oculta / ventana sin foco). Se combina
   // con `pausado` sin pisar la intencion del usuario (play/pausa).
   const [oculto, setOculto] = useState(
@@ -127,6 +138,7 @@ export default function Banner() {
 
   return (
     <section
+      ref={refHero}
       className="banner"
       data-pausado={efectivoPausado ? "true" : "false"}
       aria-roledescription="carrusel"

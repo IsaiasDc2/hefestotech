@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import Asistente from "./Asistente";
 import Marca from "../brand/Marca";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
+import { usePausaPestana } from "../../hooks/useMotion";
 import "../brand/Marca.css";
 import "./Layout.css";
 
@@ -18,8 +19,14 @@ function Layout({
   aumentarCantidad,
   disminuirCantidad
 }) {
+  // Pausa global de loops CSS cuando la pestana se oculta.
+  usePausaPestana();
   return (
     <div className="layout">
+      <div className="ht-circuito" aria-hidden="true">
+        <span className="ht-pulso ht-pulso--a" />
+        <span className="ht-pulso ht-pulso--b" />
+      </div>
       <a className="skip-link" href="#contenido">
         Saltar al contenido
       </a>

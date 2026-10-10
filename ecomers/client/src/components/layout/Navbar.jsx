@@ -24,6 +24,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [scrolled, setScrolled] = useState(false);
   const [pop, setPop] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const refHead = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const { tema, alternar } = useTema();
   const etiquetaTema = idioma === "en"
@@ -38,10 +39,47 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const cerrarMenu = useCallback(() => setMenuAbierto(false), []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const head = refHead.current;
+    // Altura fijada una vez: el compacto cambia padding sin refluir (CLS 0).
+    const fijarAltura = () => {
+      if (!head) return;
+      head.style.minHeight = "";
+      head.style.minHeight = `${head.offsetHeight}px`;
+    };
+    const medir = () => {
+      if (!head || document.hidden) return;
+      const y = window.scrollY || 0;
+      setScrolled(y > 8);
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, y / total)) : 0;
+      head.style.setProperty("--scroll-p", p.toFixed(4));
+    };
+    let raf = 0;
+    let sucio = false;
+    const pedir = () => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        setScrolled((window.scrollY || 0) > 8);
+        return;
+      }
+      if (!sucio) {
+        sucio = true;
+        raf = requestAnimationFrame(() => {
+          sucio = false;
+          medir();
+        });
+      }
+    };
+    fijarAltura();
+    medir();
+    window.addEventListener("scroll", pedir, { passive: true });
+    window.addEventListener("resize", pedir);
+    window.addEventListener("resize", fijarAltura);
+    return () => {
+      window.removeEventListener("scroll", pedir);
+      window.removeEventListener("resize", pedir);
+      window.removeEventListener("resize", fijarAltura);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   useEffect(() => {
@@ -91,7 +129,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         </div>
       </div>
 
-      <div className={`site-head${scrolled ? " is-scrolled" : ""}`}>
+      <div ref={refHead} className={`site-head${scrolled ? " is-scrolled" : ""}`}>
         <div className="site-head-inner ht-contenedor">
           <button
             type="button"
@@ -146,7 +184,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               <span>{t(idioma, "nav.sesion")}</span>
             </Link>
             <button
-              className="carrito-btn"
+              className={`carrito-btn${pop ? " is-pop" : ""}`}
               onClick={abrirCarrito}
               aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${t(idioma, "nav.productos")}`}
               aria-live="polite"
@@ -191,6 +229,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             </ul>
           </div>
         </nav>
+        <span className="site-head-progreso" aria-hidden="true" />
       </div>
       <MobileDrawer abierto={menuAbierto} alCerrar={cerrarMenu} />
     </header>

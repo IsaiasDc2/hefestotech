@@ -761,6 +761,50 @@
   transform: scale(1.06);
 }
 
+/* Pista de circuito: se dibuja una sola vez al entrar (stroke-dashoffset),
+   queda sutil en reposo y brilla en hover. Decorativa, sin layout. */
+.cat-pista {
+  position: absolute;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cat-pista rect {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+.grid-categorias.is-visible .cat-pista {
+  opacity: 0.35;
+}
+
+.grid-categorias.is-visible .cat-pista rect {
+  transition: stroke-dashoffset 900ms cubic-bezier(.2,.8,.2,1);
+  stroke-dashoffset: 0;
+}
+
+.grid-categorias.is-visible > *:nth-child(2) .cat-pista rect { transition-delay: 60ms; }
+.grid-categorias.is-visible > *:nth-child(3) .cat-pista rect { transition-delay: 120ms; }
+.grid-categorias.is-visible > *:nth-child(4) .cat-pista rect { transition-delay: 180ms; }
+.grid-categorias.is-visible > *:nth-child(n + 5) .cat-pista rect { transition-delay: 240ms; }
+
+.card-categoria:hover .cat-pista {
+  opacity: 0.9;
+}
+
+/* Count-up: numeros tabulares para que el ancho no baile (CLS 0). */
+.beneficio strong,
+.beneficio [data-countup] {
+  font-variant-numeric: tabular-nums;
+}
+
 .estado-carga,
 .vacio {
   text-align: center;
@@ -793,6 +837,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .estado-carga::after { animation: none; }
+  .grid-categorias.is-visible .cat-pista,
+  .grid-categorias.is-visible .cat-pista rect {
+    opacity: 0.35;
+    stroke-dashoffset: 0;
+    transition: none;
+  }
   .seccion,
   .grid-destacados > *,
   .filtro-home .filtros,
