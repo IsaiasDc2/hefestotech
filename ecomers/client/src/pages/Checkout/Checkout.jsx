@@ -1,149 +1,193 @@
-import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaLock, FaTruckFast, FaCircleExclamation } from "react-icons/fa6";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
-import { crearOrdenCheckout } from "../../services/orderService";
+import { crearCheckout, obtenerEstadoCheckout } from "../../services/orderService";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
+// Estimación SOLO para mostrar en pantalla. El total que se cobra lo
+// calcula el servidor (POST /api/checkout/crear) desde precios/stock de
+// la DB: el front envía únicamente producto_id + cantidad.
 const UMBRAL_ENVIO_GRATIS = 150000;
 const COSTO_ENVIO_ESTANDAR = 5000;
 const COSTO_ENVIO_EXPRESS = 12000;
 
-const PROVINCIAS = [
-  "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba",
-  "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja",
-  "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan",
-  "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero",
-  "Tierra del Fuego", "Tucumán",
-];
+const unitarioEstimado = (item) =>
+  Number(item.precio_con_descuento ?? item.precio ?? 0);
 
-const unitario = (item) =>
-  Math.round(Number(item.precio_con_descuento ?? item.precio ?? 0));
+const pesos = (v) => `$${Number(v ?? 0).toLocaleString("es-AR")}`;
 
-const soloDigitos = (v = "") => String(v).replace(/\D/g, "");
-
-const emailValido = (v = "") => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
-
-const telefonoValido = (v = "") => {
-  const d = soloDigitos(v);
-  return d.length >= 10 && d.length <= 15;
+// Anti redirección abierta: solo dominios oficiales de Mercado Pago.
+// Si el backend (o un MITM sin TLS) devuelve otra URL, no navegar.
+const esUrlMP = (url) => {
+  let destino = null;
+  try {
+    destino = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = destino.hostname.toLowerCase();
+  return (
+    destino.protocol === "https:" &&
+    (host === "mercadopago.com" ||
+      host === "mercadopago.com.ar" ||
+      host.endsWith(".mercadopago.com") ||
+      host.endsWith(".mercadopago.com.ar") ||
+      host.endsWith(".mercadolibre.com"))
+  );
 };
 
-const documentoValido = (v = "") => {
-  const d = soloDigitos(v);
-  if (/^\d{7,8}$/.test(d)) return true; // DNI
-  if (!/^\d{11}$/.test(d)) return false; // CUIT: valida dígito verificador
-  const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-  const suma = mult.reduce((acc, m, i) => acc + m * Number(d[i]), 0);
-  const verif = (11 - (suma % 11)) % 11;
-  return verif === Number(d[10]);
+const ESTADO_TEXTO = {
+  pendiente: "Pago pendiente de acreditación",
+  pagada: "Pago acreditado",
+  preparacion: "En preparación",
+  enviada: "Enviada",
+  entregada: "Entregada",
+  cancelada: "Cancelada",
+  reembolsada: "Reembolsada",
 };
-
-const cpValido = (v = "") =>
-  /^\d{4}$/.test(v.trim()) || /^[A-Za-z]\d{4}[A-Za-z]{3}$/.test(v.trim());
-
-const CAMPOS = ["nombre", "email", "telefono", "documento", "direccion", "ciudad", "provincia", "codigoPostal"];
 
 function Checkout({ carrito = [], vaciarCarrito }) {
-  const [form, setForm] = useState({
-    nombre: "", email: "", telefono: "", documento: "",
-    direccion: "", ciudad: "", provincia: "", codigoPostal: "",
-  });
-  const [errores, setErrores] = useState({});
+  const [params] = useSearchParams();
+  const ordenIdUrl = params.get("orden_id") || "";
+  const pagoUrl = params.get("pago") || "";
+
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [codigoPostal, setCodigoPostal] = useState("");
   const [envio, setEnvio] = useState("estandar");
+  const [cupon, setCupon] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [consultando, setConsultando] = useState(false);
+  const [pasoPago, setPasoPago] = useState("");
   const [error, setError] = useState("");
-  const enviandoRef = useRef(false);
-  const refs = useRef({});
+  const [orden, setOrden] = useState(null);
 
-  const set = (campo) => (e) => {
-    setForm((f) => ({ ...f, [campo]: e.target.value }));
-    setErrores((prev) => ({ ...prev, [campo]: "" }));
-  };
+  // Al volver de Mercado Pago (?orden_id=...) se lee el estado REAL desde
+  // el servidor. Nada se da por pagado por el hecho de volver.
+  useEffect(() => {
+    if (!ordenIdUrl) return;
+    let viva = true;
+    setConsultando(true);
+    setError("");
+    const acceso = sessionStorage.getItem(`ck_token_${ordenIdUrl}`) || "";
+    obtenerEstadoCheckout(ordenIdUrl, acceso)
+      .then((r) => {
+        if (viva) setOrden(r);
+      })
+      .catch((err) => {
+        if (viva) setError(err?.message || "No se pudo consultar el estado del pago.");
+      })
+      .finally(() => {
+        if (viva) setConsultando(false);
+      });
+    return () => {
+      viva = false;
+    };
+  }, [ordenIdUrl]);
 
-  const subtotal = useMemo(
-    () => carrito.reduce((acc, item) => acc + unitario(item) * Number(item.cantidad ?? 1), 0),
+  const subtotalEst = useMemo(
+    () =>
+      carrito.reduce(
+        (acc, item) =>
+          acc + unitarioEstimado(item) * Number(item.cantidad ?? 1),
+        0
+      ),
     [carrito]
   );
 
-  const costoEnvio = useMemo(() => {
+  const costoEnvioEst = useMemo(() => {
     if (carrito.length === 0) return 0;
-    if (subtotal >= UMBRAL_ENVIO_GRATIS) return 0;
+    if (subtotalEst >= UMBRAL_ENVIO_GRATIS) return 0;
     return envio === "express" ? COSTO_ENVIO_EXPRESS : COSTO_ENVIO_ESTANDAR;
-  }, [envio, subtotal, carrito.length]);
+  }, [envio, subtotalEst, carrito.length]);
 
-  const total = subtotal + costoEnvio;
-
-  const validar = () => {
-    const e = {};
-    if (form.nombre.trim().length < 3) e.nombre = "Ingresá tu nombre completo.";
-    if (!emailValido(form.email)) e.email = "Ingresá un email válido.";
-    if (!telefonoValido(form.telefono)) e.telefono = "Ingresá un teléfono válido (ej. 11 5555 5555).";
-    if (!documentoValido(form.documento)) e.documento = "DNI (7-8 dígitos) o CUIT válido.";
-    if (form.direccion.trim().length < 4) e.direccion = "Ingresá tu dirección.";
-    if (form.ciudad.trim().length < 2) e.ciudad = "Ingresá tu ciudad.";
-    if (!PROVINCIAS.includes(form.provincia)) e.provincia = "Elegí tu provincia.";
-    if (!cpValido(form.codigoPostal)) e.codigoPostal = "CP de 4 dígitos o CPA.";
-    return e;
-  };
+  const totalEst = subtotalEst + costoEnvioEst;
 
   const confirmar = async (e) => {
     e.preventDefault();
-    if (enviandoRef.current) return; // anti-doble-clic
     setError("");
-    if (carrito.length === 0) return;
-    const e2 = validar();
-    setErrores(e2);
-    if (Object.keys(e2).length > 0) {
-      const primero = CAMPOS.find((c) => e2[c]);
-      refs.current[primero]?.focus();
-      return;
-    }
-    enviandoRef.current = true;
+    if (carrito.length === 0 || enviando) return;
     setEnviando(true);
     try {
-      const data = await crearOrdenCheckout({
-        comprador: {
-          nombre: form.nombre.trim(),
-          email: form.email.trim(),
-          telefono: soloDigitos(form.telefono),
-          documento: soloDigitos(form.documento),
-          direccion: form.direccion.trim(),
-          ciudad: form.ciudad.trim(),
-          provincia: form.provincia,
-          codigo_postal: form.codigoPostal.trim().toUpperCase(),
-        },
+      setPasoPago("Creando tu orden en el servidor…");
+      const resp = await crearCheckout({
         items: carrito.map((item) => ({
           producto_id: item.producto_id ?? item.id,
           cantidad: Number(item.cantidad ?? 1),
         })),
+        nombre: nombre.trim(),
+        email: email.trim(),
+        direccion: direccion.trim(),
+        ciudad: ciudad.trim(),
+        codigo_postal: codigoPostal.trim(),
         envio,
+        ...(cupon.trim() ? { cupon_codigo: cupon.trim() } : {}),
       });
+      if (resp.acceso_token) {
+        sessionStorage.setItem(`ck_token_${resp.orden_id}`, resp.acceso_token);
+      }
+      if (!esUrlMP(resp.init_point)) {
+        throw new Error("Respuesta de pago inválida. No se continúa por seguridad.");
+      }
       vaciarCarrito?.();
-      window.location.href = data.link_pago;
+      window.location.href = resp.init_point;
     } catch (err) {
-      setError(err?.message || "No se pudo crear el pedido. Probá de nuevo.");
-      enviandoRef.current = false;
+      setError(err?.message || "No se pudo crear la orden.");
+    } finally {
       setEnviando(false);
+      setPasoPago("");
     }
   };
 
-  const campo = (id, label, props, type = "text") => (
-    <label>
-      {label}
-      <input
-        ref={(el) => { refs.current[id] = el; }}
-        type={type}
-        value={form[id]}
-        onChange={set(id)}
-        aria-invalid={Boolean(errores[id])}
-        aria-describedby={errores[id] ? `err-${id}` : undefined}
-        {...props}
-      />
-      {errores[id] && <span className="campo-error" id={`err-${id}`} role="alert">{errores[id]}</span>}
-    </label>
-  );
+  if (ordenIdUrl || orden) {
+    const estado = orden?.estado || "";
+    const acreditada = estado === "pagada";
+    return (
+      <div className="checkout centrado">
+        <div className="card anim-entrada checkout-exito">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={44} alto={44} decorativa />
+          </span>
+          {consultando && (
+            <p className="badge badge-info" role="status">Consultando el estado de tu pago…</p>
+          )}
+          {!consultando && orden && (
+            <>
+              <p className={`badge ${acreditada ? "badge-ok" : estado === "cancelada" ? "badge-peligro" : "badge-info"} hero-kicker`}>
+                {acreditada && <FaCircleCheck aria-hidden="true" />}
+                {!acreditada && pagoUrl === "fallo" && <FaTriangleExclamation aria-hidden="true" />}
+                {" "}{ESTADO_TEXTO[estado] || estado}
+              </p>
+              <h1>{acreditada ? `¡Gracias${nombre ? `, ${nombre.split(" ")[0]}` : ""}!` : "Tu orden"}</h1>
+              <p className="texto-mutado">
+                Orden <strong>{String(orden.orden_id || "").slice(0, 8)}</strong> por{" "}
+                <strong>{pesos(Number(orden.total_centavos ?? 0) / 100)}</strong>.
+                {acreditada
+                  ? " El pago fue confirmado por Mercado Pago."
+                  : estado === "pendiente"
+                    ? " Todavía no se acreditó el pago. Si ya pagaste, aguardá unos instantes y recargá esta página."
+                    : " No se completó el pago. Podés reintentar desde el carrito."}
+              </p>
+            </>
+          )}
+          {!consultando && !orden && (
+            <>
+              {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
+              <p className="texto-mutado">No pudimos encontrar esa orden.</p>
+            </>
+          )}
+          <div className="checkout-acciones">
+            <Link to="/productos" className="btn-fantasma">Seguir comprando</Link>
+            <Link to="/cuenta" className="btn-primary">Ver mis pedidos</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (carrito.length === 0) {
     return (
@@ -166,78 +210,57 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         <div className="seccion-titular">
           <p className="kicker kicker-marca">
             <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-            <span>Checkout</span>
+            <span><span className="kicker-num">Pago seguro</span> Checkout</span>
           </p>
           <h1>Finalizar compra</h1>
         </div>
         <span className="badge badge-info"><FaLock aria-hidden="true" /> Compra protegida</span>
       </header>
 
-      <form className="checkout-grid" onSubmit={confirmar} noValidate>
+      <form className="checkout-grid" onSubmit={confirmar}>
         <div className="checkout-col">
           <section className="card checkout-panel" aria-label="Datos de contacto y envío">
             <h2>Datos y envío</h2>
             <div className="checkout-campos">
-              {campo("nombre", "Nombre completo", { autoComplete: "name", placeholder: "Juan Pérez" })}
-              {campo("email", "Email", { autoComplete: "email", placeholder: "juan@mail.com" }, "email")}
+              <label>Nombre completo
+                <input value={nombre} onChange={(e) => setNombre(e.target.value)} required autoComplete="name" />
+              </label>
+              <label>Email
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              </label>
+              <label>Dirección
+                <input value={direccion} onChange={(e) => setDireccion(e.target.value)} required autoComplete="street-address" />
+              </label>
               <div className="checkout-fila">
-                {campo("telefono", "Teléfono", { autoComplete: "tel", inputMode: "tel", placeholder: "11 5555 5555" })}
-                {campo("documento", "DNI o CUIT", { autoComplete: "off", inputMode: "numeric", placeholder: "20123456789" })}
+                <label>Ciudad
+                  <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
+                </label>
+                <label>Código postal
+                  <input value={codigoPostal} onChange={(e) => setCodigoPostal(e.target.value)} required inputMode="numeric" />
+                </label>
               </div>
-              {campo("direccion", "Dirección", { autoComplete: "street-address", placeholder: "Av. Siempreviva 123" })}
-              <div className="checkout-fila">
-                {campo("ciudad", "Ciudad", { autoComplete: "address-level2", placeholder: "Rosario" })}
-                {campo("codigoPostal", "Código postal", { autoComplete: "postal-code", inputMode: "text", placeholder: "2000" })}
-              </div>
-              <label>
-                Provincia
-                <select
-                  ref={(el) => { refs.current.provincia = el; }}
-                  value={form.provincia}
-                  onChange={set("provincia")}
-                  autoComplete="address-level1"
-                  aria-invalid={Boolean(errores.provincia)}
-                  aria-describedby={errores.provincia ? "err-provincia" : undefined}
-                >
-                  <option value="">Elegí tu provincia…</option>
-                  {PROVINCIAS.map((p) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                {errores.provincia && <span className="campo-error" id="err-provincia" role="alert">{errores.provincia}</span>}
+              <label>Cupón (opcional)
+                <input value={cupon} onChange={(e) => setCupon(e.target.value)} placeholder="Ej. HEROES10" autoComplete="off" />
               </label>
             </div>
 
             <div className="checkout-opciones" role="radiogroup" aria-label="Método de envío">
               <label className={envio === "estandar" ? "activo" : ""}>
                 <input type="radio" name="envio" value="estandar" checked={envio === "estandar"} onChange={() => setEnvio("estandar")} />
-                <FaTruckFast aria-hidden="true" /> Estándar — {subtotal >= UMBRAL_ENVIO_GRATIS ? "gratis" : `$${COSTO_ENVIO_ESTANDAR.toLocaleString("es-AR")}`}
+                <FaTruckFast aria-hidden="true" /> Estándar — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? "gratis" : pesos(COSTO_ENVIO_ESTANDAR)}
               </label>
               <label className={envio === "express" ? "activo" : ""}>
                 <input type="radio" name="envio" value="express" checked={envio === "express"} onChange={() => setEnvio("express")} />
-                <FaTruckFast aria-hidden="true" /> Express — {subtotal >= UMBRAL_ENVIO_GRATIS ? "gratis" : `$${COSTO_ENVIO_EXPRESS.toLocaleString("es-AR")}`}
+                <FaTruckFast aria-hidden="true" /> Express — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? "gratis" : pesos(COSTO_ENVIO_EXPRESS)}
               </label>
             </div>
           </section>
 
-          <section className="card checkout-panel" aria-label="Método de pago">
-            <h2>Pago</h2>
-            <div className="checkout-opciones" role="radiogroup" aria-label="Método de pago">
-              <label className="activo">
-                <input type="radio" name="pago" value="mercadopago" checked readOnly />
-                <img src={logoMP} alt="" aria-hidden="true" className="pago-logo" />
-                Mercado Pago
-              </label>
-              <label className="opcion-deshabilitada" aria-disabled="true" title="Próximamente: datos de transferencia no disponibles">
-                <input type="radio" name="pago" value="transferencia" disabled />
-                Transferencia <span className="badge badge-aviso">Próximamente</span>
-              </label>
-              <label className="opcion-deshabilitada" aria-disabled="true" title="Próximamente: pago en efectivo no disponible">
-                <input type="radio" name="pago" value="efectivo" disabled />
-                Efectivo al retirar <span className="badge badge-aviso">Próximamente</span>
-              </label>
-            </div>
+          <section className="card checkout-panel" aria-label="Pago con Mercado Pago">
+            <h2><img src={logoMP} alt="" aria-hidden="true" className="pago-logo" /> Mercado Pago</h2>
             <div className="pago-mp-panel">
               <img src={logoMP} alt="Mercado Pago" className="pago-logo-lg" />
-              <p className="texto-mutado">Al confirmar te redirigimos a Mercado Pago para pagar de forma segura con tarjeta, débito o dinero en cuenta.</p>
+              <p className="texto-mutado">Al confirmar creamos tu orden en el servidor y te redirigimos a Mercado Pago para completar el pago de forma segura con tarjeta, débito o dinero en cuenta.</p>
             </div>
           </section>
         </div>
@@ -248,20 +271,20 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             {carrito.map((item) => (
               <li key={item.id}>
                 <span>{item.nombre} × {item.cantidad}</span>
-                <strong>${(unitario(item) * Number(item.cantidad ?? 1)).toLocaleString("es-AR")}</strong>
+                <strong>{pesos(unitarioEstimado(item) * Number(item.cantidad ?? 1))}</strong>
               </li>
             ))}
           </ul>
           <dl className="checkout-totales">
-            <div><dt>Subtotal</dt><dd>${subtotal.toLocaleString("es-AR")}</dd></div>
-            <div><dt>Envío</dt><dd>{costoEnvio === 0 ? "Gratis" : `$${costoEnvio.toLocaleString("es-AR")}`}</dd></div>
-            <div className="total"><dt>Total</dt><dd>${total.toLocaleString("es-AR")}</dd></div>
+            <div><dt>Subtotal (estimado)</dt><dd>{pesos(subtotalEst)}</dd></div>
+            <div><dt>Envío (estimado)</dt><dd>{costoEnvioEst === 0 ? "Gratis" : pesos(costoEnvioEst)}</dd></div>
+            <div className="total"><dt>Total (estimado)</dt><dd>{pesos(totalEst)}</dd></div>
           </dl>
-          <p className="texto-mutado checkout-nota">Totales estimados: el servidor recalcula precios, stock y envío antes de cobrar.</p>
-          {error && <p className="badge badge-peligro checkout-error" role="alert"><FaCircleExclamation aria-hidden="true" /> {error}</p>}
-          {enviando && <p className="badge badge-info" role="status">Creando tu pedido…</p>}
+          <p className="texto-mutado checkout-nota">El total final lo calcula el servidor al confirmar.</p>
+          {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
+          {enviando && pasoPago && <p className="badge badge-info" role="status">{pasoPago}</p>}
           <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? "Creando pedido…" : `Pagar $${total.toLocaleString("es-AR")} con Mercado Pago`}
+            {enviando ? "Creando orden…" : `Pagar ${pesos(totalEst)} con Mercado Pago`}
           </button>
           <Link to="/carrito" className="btn-fantasma">Volver al carrito</Link>
         </aside>

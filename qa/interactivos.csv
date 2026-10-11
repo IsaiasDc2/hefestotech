@@ -1,0 +1,111 @@
+ruta,texto_aria,selector,destino_esperado,destino_real,resultado
+(global),Saltar al contenido,a.skip-link,#contenido en la misma pagina,#contenido en la misma pagina,ok
+(global),"Logo HefestoTech ir al inicio",header.site-head a.logo,/,/,ok
+(global),Buscar (submit),form.buscador-head button[type=submit],/productos con q si hay texto,/productos con q si hay texto,ok
+(global),Registrate,nav.nav-cuenta a.link-registro,/cuenta en modo registro,/cuenta vista login (param modo sin efecto),revisar
+(global),Mi cuenta / Iniciar sesion,nav.nav-cuenta a[href='/cuenta'],/cuenta,/cuenta,ok
+(global),Carrito N productos (abre lateral),button.carrito-btn,abre lateral del carrito,abre lateral del carrito,ok
+(global),Abrir menu,button.menu-btn,abre drawer movil,abre drawer movil,ok
+(global),Mas opciones,nav.nav-cuenta button[aria-label],abre drawer movil,abre drawer movil,ok
+(global),Productos (nav categorias),nav.nav-categorias li a,/productos,/productos,ok
+(global),Notebooks (nav categorias),nav.nav-categorias li a,/productos?q=notebook,/productos?q=notebook,ok
+(global),PCs armadas (nav categorias),nav.nav-categorias li a,/productos?q=pc armada,/productos?q=pc armada,ok
+(global),Arma tu PC combo (nav categorias),nav.nav-categorias li a,/productos?q=combo,/productos?q=combo,ok
+(global),Outlet (nav categorias),nav.nav-categorias li a,/productos?categoria=ofertas,/productos?categoria=ofertas,ok
+(global),Registrate (drawer),#menu-movil nav a.drawer-link,/cuenta en modo registro,/cuenta vista login (param modo sin efecto),revisar
+(global),Iniciar sesion (drawer),#menu-movil nav a.drawer-link,/cuenta,/cuenta,ok
+(global),Links de categoria (drawer x5),#menu-movil nav a.drawer-link,ver nav categorias,ver nav categorias,ok
+(global),WhatsApp (drawer),#menu-movil a[href*=wa.me],wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),Ayuda (drawer),#menu-movil nav a.drawer-link,/acerca,/acerca,ok
+(global),Posventa (drawer),#menu-movil nav a.drawer-link,/contactanos,/contactanos,ok
+(global),Idioma ES EN (drawer),#menu-movil button.drawer-idioma,cambia idioma local,cambia idioma local,ok
+(global),Tema claro oscuro (drawer),#menu-movil grupo tema,cambia tema local,cambia tema local,ok
+(global),Tema claro oscuro (topbar),button.topbar-tema,cambia tema local,cambia tema local,ok
+(global),Suscribirse newsletter,footer form.footer-news-form button,confirmacion de suscripcion,estado local sin backend ni persistencia,revisar
+(global),Facebook,footer.redes a[aria-label=Facebook],facebook real de HefestoTech,https://facebook.com/hefestotech (no verificado),a confirmar
+(global),Instagram,footer.redes a[aria-label=Instagram],instagram real de HefestoTech,https://instagram.com/hefestotech (no verificado),a confirmar
+(global),WhatsApp (footer),footer.redes a[aria-label=WhatsApp],wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),Inicio (footer),footer a,/ ,/,ok
+(global),Productos (footer),footer a,/productos,/productos,ok
+(global),Mi cuenta (footer),footer a,/cuenta,/cuenta,ok
+(global),Arma tu PC (footer),footer a,/contactanos,/contactanos,ok
+(global),Ayuda Quienes somos (footer),footer a,/acerca,/acerca,ok
+(global),Posventa (footer),footer a,/contactanos,/contactanos,ok
+(global),Envios (footer),footer a,/contactanos,/contactanos,ok
+(global),Cambios (footer),footer a,/contactanos,/contactanos,ok
+(global),FAQ (footer),footer a,/acerca,/acerca,ok
+(global),Nosotros pie inferior,footer .footer-bottom-sub a,/acerca,/acerca,ok
+(global),Contactanos pie inferior,footer .footer-bottom-sub a,/contactanos,/contactanos,ok
+(global),Abrir asistente,button.asistente-bola,abre panel del asistente,abre panel del asistente,ok
+(global),Minimizar asistente,button minimizar, minimiza panel,minimiza panel,ok
+(global),Cerrar asistente,button cerrar,cierra y reinicia chat,cierra y reinicia chat,ok
+(global),Atajos Armar PC error stock duda (x4),.asistente-chips button,respuesta POST /api/chat,respuesta POST /api/chat,ok
+(global),Enviar mensaje,.asistente-form button,respuesta POST /api/chat,respuesta POST /api/chat,ok
+(global),Reintentar aviso,.asistente-aviso button,reenvia ultimo mensaje,reenvia ultimo mensaje,ok
+(global),WhatsApp aviso asistente,.asistente-aviso a,wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),Cerrar carrito lateral,aside button[aria-label=Cerrar carrito],cierra lateral,cierra lateral,ok
+(global),Ver productos lateral vacio,button.cart-vacio-cta,/productos,solo cierra el lateral sin navegar,revisar
+(global),Quitar uno lateral,.cantidad button,disminuye cantidad,disminuye cantidad,ok
+(global),Agregar uno lateral,.cantidad button,aumenta cantidad,aumenta cantidad,ok
+(global),Eliminar item lateral,button.eliminar,elimina item del carrito,elimina item del carrito,ok
+(global),Finalizar compra lateral,a.btnComprar,/checkout,/checkout,ok
+(global),Seguir comprando lateral,a.cart-seguir,/productos,/productos,ok
+/,Tarjetas de categoria (x6),.grid-categorias a.card-categoria,/productos?categoria=slug,/productos?categoria=slug,ok
+/,Ver todo encabezados (x4),.ht-sh__vertodo,/productos u ofertas,/productos u ofertas,ok
+/,Reintentar carga error,button.btn-limpiar,recarga productos,recarga productos,ok
+/,Chips de marca (x8),.marca-chip,/productos?q=Marca,/productos?q=Marca,ok
+/,Tira silla gamer,figure.tira-banner a,/productos?categoria=sillas-gamer,/productos?categoria=sillas-gamer pero el slug no existe en BD y muestra todo sin filtrar,revisar
+/,Flechas carrusel (x2 por carrusel),button banner-flecha,diapositiva anterior/siguiente,diapositiva anterior/siguiente,ok
+/,Puntos diapositiva,.banner-puntos button,ir a diapositiva N,ir a diapositiva N,ok
+/,Pausar autoplay,button.banner-pausa,pausa autoplay,pausa autoplay,ok
+/productos,Filtros buscar categoria precios orden,.filtros input y select,filtran grilla local,filtran grilla local,ok
+/productos,Limpiar filtros,button.btn-limpiar,limpia filtros,limpia filtros,ok
+/productos,Reintentar catalogo,button.btn-limpiar,recarga productos,recarga productos,ok
+/productos y / y /cuenta#favoritos,Imagen del producto,a.card-media-link,/producto/:id,/producto/:id,ok
+/productos y / y /cuenta#favoritos,Nombre del producto,a.producto-detalle,/producto/:id,/producto/:id,ok
+/productos y / y /cuenta#favoritos,Corazon Agregar Quitar favoritos,button.favorito,toggle con aria-pressed y aria-label,estado local del card sin persistir en la seccion,revisar
+/productos y / y /cuenta#favoritos,Agregar al carrito card,button.btn-carrito,agrega y abre lateral,agrega y abre lateral,ok
+/producto/:id,Miga Inicio,nav.migajas a,/,/,ok
+/producto/:id,Miga Catalogo,nav.migajas a,/productos,/productos,ok
+/producto/:id,Volver al catalogo,a.volver,/productos,/productos,ok
+/producto/:id,Agregar al carrito detalle,button.btn-carrito,agrega al carrito,agrega al carrito,ok
+/producto/:id,Reintentar detalle,button.btn-limpiar,recarga producto,recarga producto,ok
+/carrito,Ver productos vacio,a.carrito-cta,/productos,/productos,ok
+/carrito,Quitar un N,button cantidad,disminuye cantidad,disminuye cantidad,ok
+/carrito,Agregar un N,button cantidad,aumenta cantidad,aumenta cantidad,ok
+/carrito,Eliminar N del carrito,button eliminar,elimina item,elimina item,ok
+/carrito,Seguir comprando,a.carrito-secundario,/productos,/productos,ok
+/carrito,Finalizar compra,a.btn-primary,/checkout,/checkout,ok
+/checkout,Confirmar compra,form button.btn-primary,crea pedido via backend,crea pedido via backend,ok
+/checkout,Seguir comprando exito,a.btn-fantasma,/productos,/productos,ok
+/checkout,Ver mis pedidos,a.btn-primary,/cuenta,/cuenta,ok
+/checkout,Crear cuenta exito invitado,a.btn-primary,/cuenta,/cuenta,ok
+/checkout,Ver productos vacio,a.btn-primary,/productos,/productos,ok
+/checkout,inicias sesion aviso,a,/cuenta,/cuenta,ok
+/checkout,Volver al carrito,a.btn-fantasma,/carrito,/carrito,ok
+/checkout,Crea tu cuenta exito invitado,a,/cuenta,/cuenta,ok
+/cuenta,Tabs Ingresar Crear Pedidos Favoritos,nav.cuenta-tabs button,cambia vista local,cambia vista local,ok
+/cuenta,Favoritos directo /cuenta?tab=favoritos,link con query,abre seccion favoritos,abre seccion favoritos,ok
+/cuenta,Cerrar sesion,button cuenta-sesion,cierra sesion,cierra sesion,ok
+/cuenta,Ingresar login,form button.btn-primary,inicia sesion supabase,inicia sesion supabase,ok
+/cuenta,Crear cuenta registro,form button.btn-primary,registra usuario supabase,registra usuario supabase,ok
+/cuenta,Continuar con Google,button deshabilitado,sin destino (solo email por ahora),sin destino informativo,ok
+/cuenta,Continuar con GitHub,button deshabilitado,sin destino (proximamente),sin destino informativo,ok
+/cuenta,Olvidaste tu contrasena,form a,/contactanos,/contactanos pero contactanos no resetea contrasenas,revisar
+/cuenta,Crear cuenta link login,a[href=/cuenta],vista registro,/cuenta vista login sin tab (no abre registro),revisar
+/cuenta,Ver productos pedidos,a.btn-fantasma,/productos,/productos,ok
+/cuenta,Explorar catalogo favoritos vacio,a.btn-fantasma,/productos,/productos,ok
+/cuenta,Quitar favorito (NUEVO),button Quitar,quita optimista con deshacer,quita optimista con deshacer,ok
+/cuenta,Mover al carrito (NUEVO),button Mover al carrito,agrega y quita de favoritos,agrega y quita de favoritos,ok
+/cuenta,Deshacer quitado (NUEVO),button Deshacer,restaura favorito,restaura favorito,ok
+/cuenta,Limpiar no disponibles (NUEVO),button registro-link,quita ocultos de la lista,quita ocultos de la lista,ok
+/cuenta,Ocultar error (NUEVO),button registro-link,oculta aviso,oculta aviso,ok
+/admin,Registrar movimiento,form button.btn-primary,inserta movimiento y actualiza stock,inserta movimiento y actualiza stock,ok
+/admin,Elegir producto,button.admin-mini,selecciona producto en el form,selecciona producto en el form,ok
+/admin,Ver catalogo,a,/productos,/productos,ok
+/admin,Guard denegado Volver al inicio (NUEVO),a,/,/,ok
+/admin y /cuenta,Guard denegado Ir a mi cuenta (NUEVO),a,/cuenta,/cuenta,ok
+/acerca,Ver productos,a.btn-primary,/productos,/productos,ok
+/acerca,Arma tu PC,a.btn-fantasma,/contactanos,/contactanos,ok
+/contactanos,Enviar mensaje,form button.btn-primary,envia consulta,simula envio local 600ms sin backend,revisar
+/inexistente,Volver al inicio,a.btn-primary,/,/,ok

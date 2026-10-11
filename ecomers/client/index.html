@@ -10,6 +10,14 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FB" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0E14" />
     <meta name="color-scheme" content="dark light" />
+    <!-- Pages estático: sin headers de servidor. CSP vía meta como
+      mitigación en profundidad (XSS/clickjacking). connect-src admite el
+      backend (VITE_API_URL) y Supabase; ajustar si cambia el deploy. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https://wa.me; script-src 'self' 'sha256-9N92KsvN2b43e09GVdU4m/LbVSnOuJATMNMeq+KCJ8I='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https: wss: http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:5173 http://localhost:5173"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <script>
       (function () {
         try {

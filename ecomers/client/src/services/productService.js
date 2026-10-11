@@ -51,7 +51,10 @@ export const obtenerProductoPorId = async (id) => {
 };
 
 export const buscarProductos = async (query) => {
-  const q = String(query ?? "").replace(/[%_,]/g, "").trim();
+  // Saneado para el filtro `.or()` de PostgREST: `,` separaría condiciones
+  // y `*` es comodín; `()` y comillas no aportan a la búsqueda y endurecen
+  // el patrón. El cliente nunca arma SQL, pero tampoco inyecta filtros.
+  const q = String(query ?? "").replace(/[%_,*()"'\\;!]/g, "").trim();
   if (!q) return obtenerProductos();
   const { data, error } = await supabase
     .from("productos")

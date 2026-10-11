@@ -1,87 +1,114 @@
+// HefestoTech · Checkout contra el backend (/api/checkout/*).
+// El cliente NUNCA inserta órdenes ni precios directo en Supabase: envía
+// solo producto_id + cantidad y el servidor recalcula todo desde la DB.
+// Se conservan las lecturas propias por RLS (mis órdenes / por id).
 import { supabase } from "../components/lib/supabaseClient";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE = String(
+  import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"
+).replace(/\/+$/, "");
 
-const sesionUsuarioId = async () => {
+const sesionToken = async () => {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.access_token ?? "";
+  } catch {
+    return "";
+  }
+};
+
+const backend = async (path, { method = "GET", body } = {}) => {
+  const t = await sesionToken();
+  let respuesta;
+  try {
+    respuesta = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(t ? { Authorization: `Bearer ${t}` } : {}),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("Sin conexión con el backend.");
+  }
+  let datos = {};
+  try {
+    datos = await respuesta.json();
+  } catch {
+    datos = {};
+  }
+  if (!respuesta.ok) throw new Error(datos?.detail || `Error ${respuesta.status}`);
+  return datos;
+};
+
+// Crea la orden en el servidor y devuelve {orden_id, init_point,
+// total_centavos, expira_at, acceso_token}. El total real lo calcula el
+// servidor; lo que muestra el front antes de confirmar es solo estimado.
+export const crearCheckout = (payload) =>
+  backend("/api/checkout/crear", { method: "POST", body: payload });
+
+// Estado REAL de la orden leído en el servidor (nada de estados locales).
+export const obtenerEstadoCheckout = (ordenId, accesoToken = "") => {
+  const q = accesoToken ? `?token=${encodeURIComponent(accesoToken)}` : "";
+  return backend(`/api/checkout/estado/${encodeURIComponent(ordenId)}${q}`);
+};
+
+// Compatibilidad con las pantallas de resultado: el servidor habla en
+// estados (pendiente/pagada/cancelada) y centavos; el front muestra pesos.
+export const obtenerEstadoPedido = (ordenId, token = "") =>
+  obtenerEstadoCheckout(ordenId, token).then((o) => ({
+    id: o.orden_id,
+    total: (o.total_centavos ?? 0) / 100,
+    estado: o.estado === "pagada" ? "pagado" : o.estado,
+    comprobante_numero: null,
+  }));
+
+// Regenera el link de pago en el servidor (solo pendiente/cancelada).
+export const reintentarPago = (ordenId, token = "") => {
+  const q = token ? `?token=${encodeURIComponent(token)}` : "";
+  return backend(`/api/checkout/${encodeURIComponent(ordenId)}/reintentar${q}`, {
+    method: "POST",
+  }).then((d) => ({ link_pago: d.init_point }));
+};
+
+export const obtenerComprobante = (id, token = "") => {
+  const q = token ? `?token=${encodeURIComponent(token)}` : "";
+  return backend(`/api/comprobantes/${encodeURIComponent(id)}${q}`);
+};
+
+export const urlComprobantePdf = (id, token = "") => {
+  const q = token ? `?token=${encodeURIComponent(token)}` : "";
+  return `${API_BASE}/api/comprobantes/${encodeURIComponent(id)}/pdf${q}`;
+};
+
+export const obtenerMisOrdenes = async () => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Sin sesion activa");
-  return user.id;
-};
-
-/** Crea la orden en el SERVIDOR (precios/stock/envío recalculados allá).
- *  Devuelve { orden_id, token, total, link_pago }. */
-export const crearOrdenCheckout = async ({ comprador, items, envio }) => {
-  const respuesta = await fetch(`${API_URL}/api/checkout/crear`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ comprador, items, envio }),
-  });
-  const data = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    throw new Error(data.detail || "No se pudo crear el pedido. Probá de nuevo.");
-  }
-  try {
-    sessionStorage.setItem(
-      `ht-pedido-${data.orden_id}`,
-      JSON.stringify({ token: data.token })
-    );
-  } catch {
-    /* sin storage: el token igual viaja en la URL de retorno */
-  }
-  return data;
-};
-
-/** Lee el estado del pedido DESDE la DB (vía backend), nunca de params URL. */
-export const obtenerEstadoPedido = async (ordenId, token) => {
-  const tk =
-    token ??
-    (() => {
-      try {
-        return JSON.parse(sessionStorage.getItem(`ht-pedido-${ordenId}`) || "{}").token ?? "";
-      } catch {
-        return "";
-      }
-    })();
-  const respuesta = await fetch(
-    `${API_URL}/api/pedidos/${ordenId}?token=${encodeURIComponent(tk)}`
-  );
-  if (!respuesta.ok) throw new Error("No se encontró el pedido.");
-  return respuesta.json();
-};
-
-/** Genera un nuevo link de pago para un pedido pendiente/rechazado/expirado. */
-export const reintentarPago = async (ordenId) => {
-  const respuesta = await fetch(`${API_URL}/api/checkout/${ordenId}/reintentar`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  const data = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) throw new Error(data.detail || "No se pudo reintentar el pago.");
-  return data;
-};
-
-/** Comprobante (snapshot) + URL del PDF. Requiere token de verificación. */
-export const obtenerComprobante = async (ordenId, token) => {
-  const respuesta = await fetch(
-    `${API_URL}/api/comprobantes/${ordenId}?token=${encodeURIComponent(token ?? "")}`
-  );
-  if (!respuesta.ok) throw new Error("Comprobante no disponible.");
-  return respuesta.json();
-};
-
-export const urlComprobantePdf = (ordenId, token) =>
-  `${API_URL}/api/comprobantes/${ordenId}/pdf?token=${encodeURIComponent(token ?? "")}`;
-
-/* Historial del comprador (RLS: solo ordenes propias). */
-export const obtenerMisOrdenes = async () => {
-  const user_id = await sesionUsuarioId();
   const { data, error } = await supabase
     .from("ordenes")
-    .select("id,total,estado,created_at,comprobante_numero")
-    .eq("user_id", user_id)
+    .select("*, orden_items(*)")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const obtenerOrdenPorId = async (id) => {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sin sesion activa");
+  const { data, error } = await supabase
+    .from("ordenes")
+    .select("*, orden_items(*)")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
   if (error) throw new Error(error.message);
   return data;
 };

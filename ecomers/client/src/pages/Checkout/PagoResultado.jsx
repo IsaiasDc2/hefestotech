@@ -21,16 +21,19 @@ export default function PagoResultado({ tipo }) {
 
   // MP devuelve external_reference como query param en el retorno.
   const ordenId = params.get("external_reference") ?? params.get("orden_id") ?? "";
+  const tokenInvitado =
+    params.get("token") ??
+    (ordenId ? sessionStorage.getItem(`ck_token_${ordenId}`) ?? "" : "");
 
   useEffect(() => {
     let vivo = true;
     const cargar = async (intentos = 0) => {
       try {
-        const o = await obtenerEstadoPedido(ordenId);
+        const o = await obtenerEstadoPedido(ordenId, tokenInvitado);
         if (!vivo) return;
         setEstado(o);
         // El webhook puede tardar: reintenta hasta 5 veces si sigue pendiente.
-        if (o.estado === "pendiente_mp" && intentos < 5) {
+        if (o.estado === "pendiente" && intentos < 5) {
           setTimeout(() => vivo && cargar(intentos + 1), 2500);
         } else {
           setCargando(false);
@@ -52,7 +55,7 @@ export default function PagoResultado({ tipo }) {
   const reintentar = async () => {
     setReintentando(true);
     try {
-      const { link_pago } = await reintentarPago(ordenId);
+      const { link_pago } = await reintentarPago(ordenId, tokenInvitado);
       window.location.href = link_pago;
     } catch (err) {
       setError(err?.message || "No se pudo reintentar.");
@@ -77,15 +80,15 @@ export default function PagoResultado({ tipo }) {
             Estado actual: <strong>{estado.estado}</strong>.
           </p>
         )}
-        {estado?.estado === "pagado" && estado.comprobante_numero && (
+        {estado?.estado === "pagado" && (
           <p className="texto-mutado">
-            Comprobante <strong>{estado.comprobante_numero}</strong>.{" "}
-            <Link to={`/pedido/${estado.id}?token=${new URLSearchParams(window.location.search).get("token") ?? ""}`}>
+            Comprobante emitido.{" "}
+            <Link to={`/pedido/${estado.id}?token=${tokenInvitado}`}>
               Ver comprobante
             </Link>
           </p>
         )}
-        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || tipo === "fallido") && !cargando && (
+        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || estado?.estado === "cancelada" || tipo === "fallido") && !cargando && (
           <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
             {reintentando ? "Generando link…" : "Reintentar pago"}
           </button>

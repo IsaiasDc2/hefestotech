@@ -276,6 +276,41 @@
   box-shadow: var(--sombra-media);
 }
 
+/* Compacto al scroll: la altura esta fijada por JS (min-height),
+   asi el padding menor no refluja la pagina (CLS 0). */
+.site-head.is-scrolled .site-head-inner {
+  padding-top: 0.3rem;
+  padding-bottom: 0.3rem;
+}
+
+.site-head.is-scrolled .logo .marca img {
+  transform: scale(0.88);
+}
+
+.logo .marca img {
+  transition: transform var(--dur-2) var(--ease);
+}
+
+/* Linea de progreso del acento: relleno de progreso (scaleX, sin layout). */
+.site-head-progreso {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--grad-marca);
+  box-shadow: var(--sombra-marca);
+  transform: scaleX(var(--scroll-p, 0));
+  transform-origin: left center;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+  pointer-events: none;
+}
+
+.site-head.is-scrolled .site-head-progreso {
+  opacity: 1;
+}
+
 :root[data-theme="light"] .site-head.is-scrolled {
   background-color: rgba(255, 255, 255, 0.96);
 }
@@ -560,6 +595,18 @@ button.link-cuenta {
 
 .carrito-btn:active {
   transform: scale(0.97);
+}
+
+/* Rebote al agregar: acompana al badge-pop del contador (transform solo). */
+.carrito-btn.is-pop {
+  animation: carrito-rebote 450ms cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes carrito-rebote {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.12) rotate(-4deg); }
+  65% { transform: scale(0.96) rotate(2deg); }
+  100% { transform: scale(1); }
 }
 
 .carrito-btn:focus-visible {
@@ -909,10 +956,19 @@ button.link-cuenta {
     transition: none;
     animation: none;
   }
+  .site-head.is-scrolled .logo .marca img {
+    transform: none;
+  }
   .carrito-btn:hover {
     transform: none;
   }
   .carrito-count.is-pop {
     animation: none;
+  }
+  .carrito-btn.is-pop {
+    animation: none;
+  }
+  .site-head-progreso {
+    display: none;
   }
 }

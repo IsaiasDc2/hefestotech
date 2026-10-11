@@ -1,258 +1,259 @@
 import { useEffect, useRef, useState } from "react";
-import { FaXmark, FaArrowRight, FaArrowDown, FaRotateRight } from "react-icons/fa6";
+import {
+  FaXmark,
+  FaMinus,
+  FaArrowRight,
+  FaRotateRight,
+  FaTriangleExclamation,
+  FaWhatsapp,
+} from "react-icons/fa6";
 import Marca from "../brand/Marca.jsx";
 import "./Asistente.css";
 
-const SALUDO = "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?";
-const ERROR_MANTENIMIENTO =
-  "Mis circuitos están en mantenimiento. Intentá de nuevo más tarde.";
-const ERROR_SIN_CONEXION =
-  "Parece que no tenés conexión. Revisá tu internet y tocá Reintentar.";
-const CLAVE_VISTO = "ht-asistente-visto";
+const SALUDO_INICIAL = "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?";
+const WHATSAPP_URL = "https://wa.me/5491112345678";
+const MAX_LARGO = 500;
 
-/* Atajos: solo a funciones que el asistente ya resuelve
-   (presupuesto, soporte técnico, compra, explicación de componente). */
+// Atajos: solo funciones que el backend atiende hoy (backend/main.py,
+// reglas 1-4 del system prompt de /api/chat). Cada chip envía un mensaje
+// real al mismo endpoint; no inventan capacidades nuevas.
 const ATAJOS = [
-  "Quiero un presupuesto",
-  "Mi PC tiene un error",
-  "Duda sobre mi compra",
-  "¿Qué es un SSD?",
+  { etiqueta: "Armar mi PC", texto: "Quiero armar una PC, ¿por dónde empiezo?" },
+  { etiqueta: "Tengo un error", texto: "Mi PC tiene un error, ¿me ayudás a diagnosticarlo?" },
+  { etiqueta: "Consultar stock", texto: "Quiero consultar stock y precios" },
+  { etiqueta: "Duda de compra", texto: "Tengo una duda sobre una compra en la web" },
 ];
 
-function horaCorta(ts) {
+function horaCorta(marca) {
   try {
-    return new Date(ts).toLocaleTimeString("es-AR", {
+    return new Date(marca).toLocaleTimeString("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  } catch {
+  } catch (_) {
     return "";
   }
 }
 
-function escaparHtml(s) {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+/* Markdown mínimo y seguro por construcción: jamás se usa
+   dangerouslySetInnerHTML. El texto viaja como nodos React (escapado por
+   defecto) y solo se permite **negrita**, *itálica*, `código` y listas
+   "- ". Sin links ni HTML crudo no hay vector XSS y no hace falta sumar
+   librerías. */
+function renderEnLinea(fragmento, clave) {
+  const partes = String(fragmento).split(/(\*\*.+?\*\*|\*[^*]+?|`[^`]+?`)/g);
+  return partes.map((parte, i) => {
+    if (parte.startsWith("**") && parte.endsWith("**") && parte.length > 4) {
+      return <strong key={`${clave}-${i}`}>{parte.slice(2, -2)}</strong>;
+    }
+    if (parte.startsWith("*") && parte.endsWith("*") && parte.length > 2) {
+      return <em key={`${clave}-${i}`}>{parte.slice(1, -1)}</em>;
+    }
+    if (parte.startsWith("`") && parte.endsWith("`") && parte.length > 2) {
+      return <code key={`${clave}-${i}`}>{parte.slice(1, -1)}</code>;
+    }
+    return <span key={`${clave}-${i}`}>{parte}</span>;
+  });
 }
 
-/* Markdown básico: negrita, cursiva, código, listas y saltos de línea.
-   Solo presentación; el texto de la respuesta no se altera. */
-function mdBasico(texto) {
-  const enLinea = (s) =>
-    escaparHtml(s)
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+function renderRico(texto) {
   const lineas = String(texto ?? "").split("\n");
-  let html = "";
-  let listaAbierta = false;
-  const cerrarLista = () => {
-    if (listaAbierta) {
-      html += "</ul>";
-      listaAbierta = false;
+  const bloques = [];
+  let lista = [];
+  const volcarLista = () => {
+    if (lista.length) {
+      bloques.push(
+        <ul key={`lista-${bloques.length}`} className="asistente-lista">
+          {lista.map((item, i) => (
+            <li key={i}>{renderEnLinea(item, `li-${bloques.length}-${i}`)}</li>
+          ))}
+        </ul>,
+      );
+      lista = [];
     }
   };
-  for (const linea of lineas) {
-    const item = linea.match(/^\s*(?:[-•]|\d+[.)])\s+(.*)$/);
-    if (item) {
-      if (!listaAbierta) {
-        html += '<ul class="asistente-lista">';
-        listaAbierta = true;
-      }
-      html += `<li>${enLinea(item[1])}</li>`;
-    } else if (linea.trim() === "") {
-      cerrarLista();
+  lineas.forEach((linea, i) => {
+    const recortada = linea.trim();
+    if (recortada.startsWith("- ")) {
+      lista.push(recortada.slice(2));
     } else {
-      cerrarLista();
-      html += `<p>${enLinea(linea)}</p>`;
+      volcarLista();
+      if (recortada) {
+        bloques.push(<p key={`p-${i}`}>{renderEnLinea(linea, `p-${i}`)}</p>);
+      }
     }
-  }
-  cerrarLista();
-  return html;
+  });
+  volcarLista();
+  return bloques.length ? bloques : renderEnLinea(texto, "solo");
 }
+
+const AVISOS = {
+  error: {
+    titulo: "No pude forjar la respuesta.",
+    detalle: "Probá de nuevo o escribinos por WhatsApp.",
+  },
+  "sin-conexion": {
+    titulo: "Sin conexión.",
+    detalle: "Revisá tu red o escribinos por WhatsApp.",
+  },
+  limite: {
+    titulo: "Demasiadas consultas seguidas.",
+    detalle: "Esperá un minuto e intentá de nuevo.",
+  },
+  caido: {
+    titulo: "Mis circuitos están en mantenimiento.",
+    detalle: "Intentá de nuevo más tarde o escribinos por WhatsApp.",
+  },
+};
 
 function Asistente() {
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [chat, setChat] = useState([{ rol: "ia", texto: SALUDO, hora: Date.now() }]);
-  const [pildora, setPildora] = useState(false);
-  const [esNuevo, setEsNuevo] = useState(() => {
-    try {
-      return !window.localStorage.getItem(CLAVE_VISTO);
-    } catch {
-      return false;
-    }
-  });
+  const [chat, setChat] = useState([
+    { rol: "ia", texto: SALUDO_INICIAL, hora: Date.now() },
+  ]);
+  const [estado, setEstado] = useState("listo");
+  const [aviso, setAviso] = useState(null);
+  const [ultimoTexto, setUltimoTexto] = useState("");
   const botonRef = useRef(null);
   const panelRef = useRef(null);
-  const listaRef = useRef(null);
-  const campoRef = useRef(null);
-  const alFondoRef = useRef(true);
-  const chatRef = useRef(chat);
-  chatRef.current = chat;
+  const mensajesRef = useRef(null);
+  const areaRef = useRef(null);
 
-  /* Envío: mismo contrato con el backend (POST /api/chat {texto}). */
+  const sinEmpezar = !chat.some((m) => m.rol === "usuario");
+  const escribiendo = estado === "escribiendo";
+
   const enviarTexto = async (texto) => {
-    const limpio = texto.trim();
-    if (!limpio || cargando) return;
-    const sinError = chatRef.current.filter((m) => m.rol !== "error");
-    const conUsuario = [...sinError, { rol: "usuario", texto: limpio, hora: Date.now() }];
-    chatRef.current = conUsuario;
-    setChat(conUsuario);
-    setMensaje("");
-    setCargando(true);
-    alFondoRef.current = true;
-    setPildora(false);
+    const limpio = String(texto ?? "").trim();
+    if (!limpio || escribiendo) return;
+    const recortado = limpio.slice(0, MAX_LARGO);
+    setUltimoTexto(recortado);
+    const msgUsuario = { rol: "usuario", texto: recortado, hora: Date.now() };
+    const base = [...chat, msgUsuario];
+    setChat(base);
+    setAviso(null);
 
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setAviso({ tipo: "sin-conexion", reintentable: true });
+      return;
+    }
+
+    setEstado("escribiendo");
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
       const respuesta = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: limpio }),
+        body: JSON.stringify({ texto: recortado }),
       });
-
-      const data = await respuesta.json();
-
-      const actualizado = [
-        ...conUsuario,
-        { rol: "ia", texto: data.respuesta, hora: Date.now() },
-      ];
-      chatRef.current = actualizado;
-      setChat(actualizado);
+      let data = null;
+      try {
+        data = await respuesta.json();
+      } catch (_) {
+        data = null;
+      }
+      if (respuesta.status === 429) {
+        setAviso({
+          tipo: "limite",
+          detalle: data?.detail,
+          reintentable: true,
+        });
+      } else if (!respuesta.ok || !data?.respuesta) {
+        setAviso({ tipo: "error", reintentable: true });
+      } else {
+        setChat([...base, { rol: "ia", texto: data.respuesta, hora: Date.now() }]);
+      }
     } catch (error) {
-      const sinConexion =
-        typeof navigator !== "undefined" && navigator.onLine === false;
-      const actualizado = [
-        ...conUsuario,
-        {
-          rol: "error",
-          texto: sinConexion ? ERROR_SIN_CONEXION : ERROR_MANTENIMIENTO,
-          fallido: limpio,
-          hora: Date.now(),
-        },
-      ];
-      chatRef.current = actualizado;
-      setChat(actualizado);
+      setAviso({ tipo: "caido", reintentable: true });
     } finally {
-      setCargando(false);
+      setEstado("listo");
     }
   };
 
-  const enviarMensaje = (e) => {
-    e.preventDefault();
-    enviarTexto(mensaje);
+  const reintentar = () => {
+    if (ultimoTexto) enviarTexto(ultimoTexto);
   };
 
-  const onTeclaCampo = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      enviarTexto(mensaje);
-    }
+  const minimizar = () => setAbierto(false);
+  const cerrar = () => {
+    setAbierto(false);
+    setChat([{ rol: "ia", texto: SALUDO_INICIAL, hora: Date.now() }]);
+    setAviso(null);
+    setMensaje("");
+    setUltimoTexto("");
   };
 
-  const autoCrecer = () => {
-    const el = campoRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  };
-
-  useEffect(() => {
-    autoCrecer();
-  }, [mensaje, abierto]);
-
-  /* Scroll auto: baja solo si el usuario ya estaba al fondo;
-     si subió, muestra la píldora para volver. */
-  const onScrollLista = () => {
-    const el = listaRef.current;
-    if (!el) return;
-    const alFondo = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    alFondoRef.current = alFondo;
-    if (alFondo) setPildora(false);
-    else setPildora(true);
-  };
-
-  const bajarAlFondo = () => {
-    const el = listaRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-    alFondoRef.current = true;
-    setPildora(false);
-  };
-
-  useEffect(() => {
-    if (!abierto) return;
-    if (alFondoRef.current) {
-      const el = listaRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-      setPildora(false);
-    } else {
-      setPildora(true);
-    }
-  }, [chat, cargando, abierto]);
-
+  // Foco: al abrir va al panel; al cerrar vuelve al botón que abrió.
   const yaMonto = useRef(false);
   useEffect(() => {
     if (abierto) {
-      try {
-        window.localStorage.setItem(CLAVE_VISTO, "1");
-      } catch {
-        /* sin almacenamiento: no se persiste la visita */
-      }
-      setEsNuevo(false);
-      campoRef.current?.focus();
+      panelRef.current?.focus();
     } else if (yaMonto.current) {
       botonRef.current?.focus();
     }
     yaMonto.current = true;
   }, [abierto]);
 
+  // Scroll de mensajes al fondo + autogrow del campo.
   useEffect(() => {
-    if (!abierto) return;
-    const alTeclear = (e) => {
-      if (e.key === "Escape") setAbierto(false);
-    };
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [abierto]);
+    mensajesRef.current?.scrollTo({
+      top: mensajesRef.current.scrollHeight,
+      behavior: "auto",
+    });
+  }, [chat, estado, aviso, abierto]);
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [mensaje, abierto]);
 
-  /* Móvil: panel a 100dvh con visualViewport (teclado) + scroll lock. */
+  // Móvil: scroll lock + altura según visualViewport (teclado abierto).
   useEffect(() => {
     if (!abierto) return;
-    const esMovil = window.matchMedia("(max-width: 560px)").matches;
-    if (!esMovil) return;
+    const esMovil = window.matchMedia("(max-width: 640px)");
     const vv = window.visualViewport;
+    const panel = panelRef.current;
     const aplicar = () => {
-      if (panelRef.current && vv) {
-        panelRef.current.style.height = `${vv.height}px`;
+      if (!panel || !esMovil.matches || !vv) return;
+      panel.style.top = `${Math.max(8, vv.offsetTop + 8)}px`;
+      panel.style.height = `${Math.max(320, vv.height - 16)}px`;
+    };
+    const bloquear = () => {
+      if (esMovil.matches) {
+        document.body.style.overflow = "hidden";
+        aplicar();
       }
     };
-    const previo = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    aplicar();
+    bloquear();
     vv?.addEventListener("resize", aplicar);
+    vv?.addEventListener("scroll", aplicar);
     return () => {
-      document.body.style.overflow = previo;
+      document.body.style.overflow = "";
+      if (panel) {
+        panel.style.top = "";
+        panel.style.height = "";
+      }
       vv?.removeEventListener("resize", aplicar);
-      if (panelRef.current) panelRef.current.style.height = "";
+      vv?.removeEventListener("scroll", aplicar);
     };
   }, [abierto]);
 
-  /* Foco trap dentro del diálogo. */
-  const onTeclaPanel = (e) => {
-    if (e.key !== "Tab") return;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const focos = panel.querySelectorAll(
-      'button:not([disabled]), textarea, [href], [tabindex]:not([tabindex="-1"])'
-    );
-    if (focos.length === 0) return;
-    const primero = focos[0];
-    const ultimo = focos[focos.length - 1];
+  const alTeclaPanel = (e) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      setAbierto(false);
+      return;
+    }
+    if (e.key !== "Tab" || !panelRef.current) return;
+    const lista = [
+      ...panelRef.current.querySelectorAll(
+        'button:not(:disabled), [href], textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ];
+    if (!lista.length) return;
+    const primero = lista[0];
+    const ultimo = lista[lista.length - 1];
     if (e.shiftKey && document.activeElement === primero) {
       e.preventDefault();
       ultimo.focus();
@@ -262,141 +263,160 @@ function Asistente() {
     }
   };
 
-  const abrirCerrar = () => setAbierto((v) => !v);
+  const alTeclaCampo = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      enviarTexto(mensaje);
+      setMensaje("");
+    }
+  };
+
+  const avisoInfo = aviso ? AVISOS[aviso.tipo] ?? AVISOS.error : null;
 
   return (
-    <div className={`asistente${abierto ? " es-abierto" : ""}`}>
+    <div className="asistente">
       {abierto && (
         <div
-          className="asistente-panel"
+          className="asistente-panel card"
           id="asistente-panelo"
           role="dialog"
           aria-modal="false"
           aria-labelledby="asistente-titulo"
           ref={panelRef}
           tabIndex={-1}
-          onKeyDown={onTeclaPanel}
+          onKeyDown={alTeclaPanel}
         >
           <div className="asistente-head">
             <span className="asistente-avatar" aria-hidden="true">
               <Marca variante="simbolo" ancho={28} alto={28} decorativa />
             </span>
-            <div>
+            <div className="asistente-titulos">
               <strong id="asistente-titulo">Asistente de HefestoTech</strong>
-              <span className="asistente-sub">Hardware · presupuestos · soporte</span>
+              <span className="asistente-sub">Presupuestos · Soporte · Stock</span>
             </div>
-            <button
-              type="button"
-              onClick={() => setAbierto(false)}
-              aria-label="Cerrar asistente"
-            >
-              <FaXmark aria-hidden="true" />
-            </button>
+            <div className="asistente-acciones">
+              <button type="button" onClick={minimizar} aria-label="Minimizar asistente">
+                <FaMinus aria-hidden="true" />
+              </button>
+              <button type="button" onClick={cerrar} aria-label="Cerrar asistente">
+                <FaXmark aria-hidden="true" />
+              </button>
+            </div>
           </div>
+
           <div
             className="asistente-mensajes"
             role="log"
             aria-live="polite"
+            aria-atomic="false"
+            aria-relevant="additions"
             aria-label="Conversación con Hefesto"
-            ref={listaRef}
-            onScroll={onScrollLista}
+            ref={mensajesRef}
           >
-            {chat.map((msg, i) =>
-              msg.rol === "error" ? (
-                <div key={i} className="asistente-msg es-error" role="alert">
-                  <span className="asistente-msg-texto">{msg.texto}</span>
-                  <span className="asistente-hora">{horaCorta(msg.hora)}</span>
-                  <button
-                    type="button"
-                    className="asistente-reintentar"
-                    onClick={() => enviarTexto(msg.fallido || "")}
-                    disabled={cargando}
-                  >
-                    <FaRotateRight aria-hidden="true" /> Reintentar
-                  </button>
-                </div>
-              ) : (
-                <div
-                  key={i}
-                  className={`asistente-msg${msg.rol === "ia" ? " es-ia" : " es-usuario"}`}
-                >
-                  {msg.rol === "ia" && (
-                    <span className="asistente-msg-avatar" aria-hidden="true">
-                      <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-                    </span>
-                  )}
-                  <span className="asistente-msg-texto">
-                    {msg.rol === "ia" ? (
-                      <span
-                        dangerouslySetInnerHTML={{ __html: mdBasico(msg.texto) }}
-                      />
-                    ) : (
-                      msg.texto
-                    )}
+            {chat.map((msg, i) => (
+              <div
+                key={i}
+                className={`asistente-msg${msg.rol === "ia" ? " es-ia" : " es-usuario"}`}
+              >
+                {msg.rol === "ia" && (
+                  <span className="asistente-msg-avatar" aria-hidden="true">
+                    <Marca variante="simbolo" ancho={18} alto={18} decorativa />
                   </span>
-                  <span className="asistente-hora">{horaCorta(msg.hora)}</span>
-                </div>
-              )
+                )}
+                <span className="asistente-msg-texto">
+                  {msg.rol === "ia" ? renderRico(msg.texto) : msg.texto}
+                  {msg.hora ? (
+                    <time dateTime={new Date(msg.hora).toISOString()}>
+                      {horaCorta(msg.hora)}
+                    </time>
+                  ) : null}
+                </span>
+              </div>
+            ))}
+
+            {escribiendo && (
+              <div className="asistente-msg es-ia" aria-hidden="true">
+                <span className="asistente-msg-avatar">
+                  <Marca variante="simbolo" ancho={18} alto={18} decorativa />
+                </span>
+                <span className="asistente-escribiendo">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </div>
             )}
-            {cargando && (
-              <div className="asistente-msg es-ia es-escribiendo" aria-hidden="true">
-                <span className="asistente-msg-avatar" aria-hidden="true">
-                  <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-                </span>
-                <span className="asistente-puntos" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
+            <span className="asistente-sr" role="status">
+              {escribiendo ? "Hefesto está escribiendo…" : ""}
+            </span>
+
+            {avisoInfo && (
+              <div className={`asistente-aviso es-${aviso.tipo}`} role="alert">
+                <FaTriangleExclamation aria-hidden="true" />
+                <div>
+                  <strong>{avisoInfo.titulo}</strong>
+                  <p>{aviso?.detalle || avisoInfo.detalle}</p>
+                  <div className="asistente-aviso-acciones">
+                    {aviso.reintentable && ultimoTexto && (
+                      <button type="button" onClick={reintentar} disabled={escribiendo}>
+                        <FaRotateRight aria-hidden="true" /> Reintentar
+                      </button>
+                    )}
+                    <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+                      <FaWhatsapp aria-hidden="true" /> WhatsApp
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          {pildora && (
-            <button
-              type="button"
-              className="asistente-pildora"
-              onClick={bajarAlFondo}
-              aria-label="Bajar a los mensajes nuevos"
-            >
-              <FaArrowDown aria-hidden="true" />
-            </button>
+          {sinEmpezar && (
+            <div className="asistente-chips">
+              {ATAJOS.map((atajo) => (
+                <button
+                  key={atajo.etiqueta}
+                  type="button"
+                  onClick={() => enviarTexto(atajo.texto)}
+                  disabled={escribiendo}
+                >
+                  {atajo.etiqueta}
+                </button>
+              ))}
+            </div>
           )}
 
-          <div
-            className="asistente-atajos"
-            role="group"
-            aria-label="Consultas rápidas"
+          <form
+            className="asistente-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              enviarTexto(mensaje);
+              setMensaje("");
+            }}
           >
-            {ATAJOS.map((texto) => (
-              <button
-                key={texto}
-                type="button"
-                className="asistente-atajo"
-                onClick={() => enviarTexto(texto)}
-                disabled={cargando}
-              >
-                {texto}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={enviarMensaje} className="asistente-form">
+            <label className="asistente-sr" htmlFor="asistente-campo">
+              Escribí tu consulta
+            </label>
             <textarea
-              ref={campoRef}
-              value={mensaje}
-              onChange={(e) => setMensaje(e.target.value)}
-              onKeyDown={onTeclaCampo}
-              placeholder="Escribí tu consulta…"
-              aria-label="Escribí tu consulta"
+              id="asistente-campo"
+              ref={areaRef}
               rows={1}
-              disabled={cargando}
+              value={mensaje}
+              maxLength={MAX_LARGO}
+              onChange={(e) => setMensaje(e.target.value)}
+              onKeyDown={alTeclaCampo}
+              placeholder="Escribí tu consulta…"
+              enterKeyHint="send"
+              disabled={escribiendo}
             />
+            <span className="asistente-contador" aria-hidden="true">
+              {mensaje.length}/{MAX_LARGO}
+            </span>
             <button
               type="submit"
               className="asistente-enviar"
               aria-label="Enviar mensaje"
-              disabled={!mensaje.trim() || cargando}
+              disabled={!mensaje.trim() || escribiendo}
             >
               <FaArrowRight aria-hidden="true" />
             </button>
@@ -405,8 +425,8 @@ function Asistente() {
       )}
       <button
         type="button"
-        className={`asistente-bola${abierto ? " es-abierto" : ""}${esNuevo && !abierto ? " es-nuevo" : ""}`}
-        onClick={abrirCerrar}
+        className={`asistente-bola${abierto ? " es-abierto" : ""}`}
+        onClick={() => setAbierto((v) => !v)}
         ref={botonRef}
         aria-label={abierto ? "Cerrar asistente de HefestoTech" : "Abrir asistente de HefestoTech"}
         aria-expanded={abierto}

@@ -19,12 +19,21 @@ const ROTACION_MS = 5000;
 export default function PromoBar() {
   const [activo, setActivo] = useState(0);
   const [pausado, setPausado] = useState(false);
+  const [tabVisible, setTabVisible] = useState(
+    () => typeof document === "undefined" || !document.hidden
+  );
 
   useEffect(() => {
-    if (pausado || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const alVisibilidad = () => setTabVisible(!document.hidden);
+    document.addEventListener("visibilitychange", alVisibilidad);
+    return () => document.removeEventListener("visibilitychange", alVisibilidad);
+  }, []);
+
+  useEffect(() => {
+    if (pausado || !tabVisible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const t = setTimeout(() => setActivo((a) => (a + 1) % PROMOS.length), ROTACION_MS);
     return () => clearTimeout(t);
-  }, [activo, pausado]);
+  }, [activo, pausado, tabVisible]);
 
   return (
     <section

@@ -88,3 +88,68 @@
     transition: none;
   }
 }
+
+/* ============================================================
+   Fondo circuito: cuadricula sutil (<= 0.08 opacidad) + 2 pulsos.
+   Capa fija decorativa: no toca layout, no recibe eventos.
+   Los pulsos SOLO corren con el hero en pantalla
+   (html[data-hero-visible]) y se pausan con pestana oculta:
+   maximo 1-2 loops visibles a la vez (el camioncito se pausa
+   mientras el hero esta visible).
+   ============================================================ */
+.ht-circuito {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--primary-borde) 1px, transparent 1px),
+    linear-gradient(90deg, var(--primary-borde) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.08;
+}
+
+.ht-pulso {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-sky) 0%, transparent 70%);
+  opacity: 0;
+  animation: ht-pulso 6s ease-out infinite;
+  animation-play-state: paused;
+}
+
+.ht-pulso--a {
+  top: 22%;
+  left: 12%;
+}
+
+.ht-pulso--b {
+  top: 38%;
+  right: 14%;
+  animation-delay: 3s;
+}
+
+html[data-hero-visible="true"] .ht-pulso {
+  animation-play-state: running;
+}
+
+/* Presupuesto de loops: sin hero visible el camioncito corre;
+   con hero visible corre el sistema hero + pulsos, no el camion. */
+html[data-hero-visible="true"] .topbar-camion {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes ht-pulso {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  12% { opacity: 0.9; transform: scale(1); }
+  28% { opacity: 0; transform: scale(1.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ht-circuito {
+    display: none;
+  }
+}

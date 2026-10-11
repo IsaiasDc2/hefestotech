@@ -68,9 +68,12 @@
   color: transparent;
   opacity: 0;
   transform: translateY(var(--reveal-y));
+  /* Revelado por lineas: mascara vertical + fade, una sola vez. */
+  clip-path: inset(0 0 100% 0);
   transition:
     opacity var(--dur-3) var(--ease-out),
-    transform var(--dur-3) var(--ease-out);
+    transform var(--dur-3) var(--ease-out),
+    clip-path var(--dur-450, 450ms) var(--ease-out);
 }
 
 @supports not (background-clip: text) {
@@ -174,6 +177,7 @@
 .ht-sh.is-visible .ht-sh__titulo {
   opacity: 1;
   transform: none;
+  clip-path: inset(0 0 0% 0);
 }
 
 .ht-sh.is-visible .ht-sh__linea {
@@ -207,6 +211,7 @@
   .ht-sh__vertodo span {
     opacity: 1;
     transform: none;
+    clip-path: none;
     animation: none;
     transition: none;
   }

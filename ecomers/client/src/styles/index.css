@@ -876,12 +876,29 @@ img {
   --dur-450: 450ms;
   --dur-650: 650ms;
   --ease-emil: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Banners (d): ratio unico + ancho unico hero/tiras.
+     Desktop 21/9 (menor recorte global medido en
+     public/banners/*); movil 16/10 via query abajo. */
+  --banner-ratio: 21 / 9;
+  --banner-ancho: 1280px;
+
+  /* Fondo de imagen en cards/categorias (d):
+     oscuro en dark, blanco en light. */
+  --card-image-bg: var(--primitive-night);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --banner-ratio: 16 / 10;
+  }
 }
 
 :root[data-theme="light"] {
   --surface-1: var(--surface);
   --surface-2: var(--surface-elevated);
   --surface-3: var(--surface-elevated-2);
+  --card-image-bg: var(--primitive-paper-surface);
   --overlay: rgba(15, 23, 42, 0.4);
   --scrim: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.5));
   --glow-brand: 0 6px 24px rgba(79, 70, 229, 0.2);
@@ -1130,4 +1147,24 @@ body::after {
     transform: none;
     box-shadow: var(--shadow-rest);
   }
+}
+
+/* ============================================================
+   Motion: pausa global de loops con pestana oculta.
+   usePausaPestana() marca <html data-tab-oculta="true"> y el CSS
+   congela los loops (camion, envio, shimmer, pulsos, kenburns).
+   Solo animation-play-state: sin layout, sin CLS.
+   ============================================================ */
+html[data-tab-oculta="true"] .topbar-camion,
+html[data-tab-oculta="true"] .env-trail,
+html[data-tab-oculta="true"] .env-cart,
+html[data-tab-oculta="true"] .env-speed,
+html[data-tab-oculta="true"] .env-check-pop,
+html[data-tab-oculta="true"] .ht-pulso,
+html[data-tab-oculta="true"] .card-skeleton::after,
+html[data-tab-oculta="true"] .skeleton,
+html[data-tab-oculta="true"] .estado-carga::after,
+html[data-tab-oculta="true"] .banner-slide.es-activa .banner-img,
+html[data-tab-oculta="true"] button.activo .banner-progreso {
+  animation-play-state: paused;
 }
