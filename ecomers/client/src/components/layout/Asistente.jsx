@@ -3,23 +3,41 @@ import { FaRobot, FaXmark } from "react-icons/fa6";
 import "./Asistente.css";
 
 function Asistente() {
+  // Función para generar la fecha y hora en formato "DD/MM HH:MM"
+  const obtenerFechaHora = () => {
+    const ahora = new Date();
+    const dia = String(ahora.getDate()).padStart(2, "0");
+    const mes = String(ahora.getMonth() + 1).padStart(2, "0");
+    const hora = ahora.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${dia}/${mes} ${hora}`;
+  };
+
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [chat, setChat] = useState([
-    { rol: "ia", texto: "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?" },
+    {
+      rol: "ia",
+      texto: "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?",
+      hora: obtenerFechaHora(),
+    },
   ]);
 
   const enviarMensaje = async (e) => {
     e.preventDefault();
     if (!mensaje.trim()) return;
 
-    // Agregamos lo que el usuario escribió al chat visualmente
-    const nuevoChat = [...chat, { rol: "usuario", texto: mensaje }];
+    // Agregamos el mensaje del usuario con su hora exacta
+    const nuevoChat = [
+      ...chat,
+      { rol: "usuario", texto: mensaje, hora: obtenerFechaHora() },
+    ];
     setChat(nuevoChat);
     setMensaje(""); // Limpiamos la barra de texto
 
     try {
-      // Hacemos la petición a tu servidor FastAPI
       const respuesta = await fetch("http://127.0.0.1:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,8 +46,11 @@ function Asistente() {
 
       const data = await respuesta.json();
 
-      // Agregamos la respuesta real de OpenAI al chat
-      setChat([...nuevoChat, { rol: "ia", texto: data.respuesta }]);
+      // Agregamos la respuesta de la IA con la hora en la que llegó
+      setChat([
+        ...nuevoChat,
+        { rol: "ia", texto: data.respuesta, hora: obtenerFechaHora() },
+      ]);
     } catch (error) {
       setChat([
         ...nuevoChat,
@@ -37,6 +58,7 @@ function Asistente() {
           rol: "ia",
           texto:
             "Mis circuitos están en mantenimiento. Intenta de nuevo más tarde.",
+          hora: obtenerFechaHora(),
         },
       ]);
     }
@@ -70,7 +92,6 @@ function Asistente() {
             </button>
           </div>
 
-          {/* Caja de mensajes dinámicos */}
           <div
             className="asistente-mensajes"
             style={{
@@ -94,14 +115,26 @@ function Asistente() {
                   maxWidth: "85%",
                   fontSize: "0.9rem",
                   lineHeight: "1.4",
+                  display: "flex",
+                  flexDirection: "column", // Necesario para que la hora quede debajo del texto
                 }}
               >
-                {msg.texto}
+                <span>{msg.texto}</span>
+                {/* Estilos inyectados para la fecha y hora */}
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    opacity: 0.7,
+                    alignSelf: "flex-end",
+                    marginTop: "4px",
+                  }}
+                >
+                  {msg.hora}
+                </span>
               </div>
             ))}
           </div>
 
-          {/* Formulario real que reemplaza a la caja "fake" */}
           <form
             onSubmit={enviarMensaje}
             className="asistente-fake"
