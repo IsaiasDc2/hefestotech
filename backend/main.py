@@ -21,13 +21,18 @@ app = FastAPI(title="Hefesto Tech API")
 app.include_router(admin_router)
 app.include_router(checkout_router)
 
+origenes = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://isaiasdc2.github.io",
+]
+_frente = os.getenv("FRONTEND_URL", "").rstrip("/")
+if _frente and _frente not in origenes:
+    origenes.append(_frente)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://isaiasdc2.github.io",
-    ],
+    allow_origins=origenes,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
