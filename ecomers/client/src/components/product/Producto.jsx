@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
@@ -7,31 +7,37 @@ import "./Productos.css";
 
 
 function usarVisibleUnaVez() {
-  const ref = useRef(null);
+  const obsRef = useRef(null);
   const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (
-      typeof IntersectionObserver === "undefined" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      setVisible(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      (entradas) => {
-        if (entradas.some((e) => e.isIntersecting)) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+  useEffect(() => () => obsRef.current?.disconnect(), []);
+
+  const ref = useCallback(
+    (el) => {
+      obsRef.current?.disconnect();
+      obsRef.current = null;
+      if (!el || visible) return;
+      if (
+        typeof IntersectionObserver === "undefined" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        setVisible(true);
+        return;
+      }
+      const obs = new IntersectionObserver(
+        (entradas) => {
+          if (entradas.some((e) => e.isIntersecting)) {
+            setVisible(true);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
+      );
+      obs.observe(el);
+      obsRef.current = obs;
+    },
+    [visible]
+  );
 
   return [ref, visible];
 }
