@@ -3,5 +3,5 @@ httpx
 uvicorn[standard]
 pandas
 python-dotenv
-google-genai
+google-genai==2.29.0
 mercadopago

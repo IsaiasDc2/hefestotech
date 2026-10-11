@@ -154,13 +154,22 @@ Sigue estas 7 reglas:
         )
         
         respuesta = cliente_ia.models.generate_content(
-            model="gemini-3.8-flash",
+            model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
             contents=prompt_completo
         )
         
         return {"respuesta": respuesta.text}
-    
+
     except Exception:
-        # Error genérico: sin trazas ni datos del usuario en logs ni en respuesta.
-        print("ERROR /api/chat: fallo interno del servicio de IA.")
-        return {"respuesta": "Soy Hefesto, Dios de la forja y el mantenimiento, no pierdo tiempo con tonterías."}
+        # Reintento único ante sobrecarga transitoria del modelo.
+        try:
+            time.sleep(3)
+            respuesta = cliente_ia.models.generate_content(
+                model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
+                contents=prompt_completo,
+            )
+            return {"respuesta": respuesta.text}
+        except Exception:
+            # Error genérico: sin trazas ni datos del usuario en logs ni en respuesta.
+            print("ERROR /api/chat: fallo interno del servicio de IA.")
+            return {"respuesta": "Soy Hefesto, Dios de la forja y el mantenimiento, no pierdo tiempo con tonterías."}
