@@ -87,7 +87,19 @@ def _sdk_mp():
 
 @app.get("/")
 def estado_api():
-    return {"mensaje": "La API de Hefesto Tech está funcionando correctamente"}
+    def hay(nombre):
+        return bool(os.getenv(nombre))
+    return {
+        "mensaje": "La API de Hefesto Tech está funcionando correctamente",
+        "env": {
+            "SUPABASE_URL": hay("SUPABASE_URL"),
+            "SUPABASE_SERVICE_ROLE_KEY": hay("SUPABASE_SERVICE_ROLE_KEY"),
+            "MERCADOPAGO_ACCESS_TOKEN": hay("MERCADOPAGO_ACCESS_TOKEN"),
+            "MP_WEBHOOK_SECRET": hay("MP_WEBHOOK_SECRET"),
+            "GEMINI_API_KEY": hay("GEMINI_API_KEY"),
+            "BACKEND_URL": hay("BACKEND_URL"),
+        },
+    }
 
 @app.get("/api/productos")
 def obtener_productos():
