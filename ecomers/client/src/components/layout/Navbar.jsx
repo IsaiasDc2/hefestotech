@@ -5,6 +5,7 @@ import {
   FaCartShopping,
   FaEllipsis,
   FaMagnifyingGlass,
+  FaShieldHalved,
   FaUser,
   FaUserPlus,
   FaTruckFast,
@@ -15,6 +16,7 @@ import {
 import Marca from "../brand/Marca";
 import { FILA_CATEGORIAS, esClaveActiva } from "./navLinks";
 import MobileDrawer from "./MobileDrawer";
+import { supabase } from "../lib/supabaseClient";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
 import "./Navbar.css";
@@ -24,6 +26,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [scrolled, setScrolled] = useState(false);
   const [pop, setPop] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [esAdmin, setEsAdmin] = useState(false);
   const refHead = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const { tema, alternar } = useTema();
@@ -37,6 +40,25 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
 
   const abrirMenu = useCallback(() => setMenuAbierto(true), []);
   const cerrarMenu = useCallback(() => setMenuAbierto(false), []);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || !vivo) return;
+        const { data } = await supabase
+          .from("perfiles")
+          .select("rol")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (vivo && (data?.rol === "owner" || data?.rol === "admin")) setEsAdmin(true);
+      } catch {
+        /* sin sesión o sin red: sin botón de panel */
+      }
+    })();
+    return () => { vivo = false; };
+  }, []);
 
   useEffect(() => {
     const head = refHead.current;
@@ -183,6 +205,16 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               <FaUser aria-hidden="true" />
               <span>{t(idioma, "nav.sesion")}</span>
             </Link>
+            {esAdmin && (
+              <Link
+                to="/admin"
+                className="link-cuenta link-panel"
+                aria-label={idioma === "en" ? "Admin panel" : "Panel de control"}
+              >
+                <FaShieldHalved aria-hidden="true" />
+                <span>{idioma === "en" ? "Admin" : "Panel"}</span>
+              </Link>
+            )}
             <button
               className={`carrito-btn${pop ? " is-pop" : ""}`}
               onClick={abrirCarrito}
