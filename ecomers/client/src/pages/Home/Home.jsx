@@ -312,6 +312,12 @@ function Home({ agregarAlCarrito }) {
             productos={destacados}
             agregarAlCarrito={agregarAlCarrito}
           />
+          <TiraBanner
+            src={`${BASE}banners/tira-placa.webp`}
+            alt="Placas de video RTX"
+            to="/productos?categoria=placas-de-video"
+            etiqueta="Ver placas de video"
+          />
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
               <p>El catálogo está vacío por ahora.</p>

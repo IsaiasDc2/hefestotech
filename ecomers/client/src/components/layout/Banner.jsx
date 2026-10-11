@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useHeroVisible, useScrollLigado } from "../../hooks/useMotion";
 import "./Banner.css";
 
@@ -12,12 +13,16 @@ const SLIDES = [
     // 1961x544 con texto incrustado a la derecha: contain + fondo
     // difuminado para no cortar el mensaje ni el producto.
     encuadre: "contain",
+    to: "/productos?categoria=perifericos",
+    etiqueta: "Ver periféricos",
   },
   {
     id: "hero-neon",
     src: `${BASE}banners/hero-neon.webp`,
     alt: "Logo ROG neón sobre fondo oscuro",
     encuadre: "cover",
+    to: "/productos?q=ASUS",
+    etiqueta: "Ver productos ASUS",
   },
   {
     id: "hero-raro",
@@ -26,6 +31,8 @@ const SLIDES = [
     // 863x1248 vertical: contain + fondo difuminado; en cover se
     // perderia cabeza y monitor en el recorte 21/9.
     encuadre: "contain",
+    to: "/armar",
+    etiqueta: "Armá tu PC",
   },
 ];
 
@@ -170,15 +177,22 @@ export default function Banner() {
                   style={{ backgroundImage: `url("${s.src}")` }}
                 />
               )}
-              <img
-                src={s.src}
-                alt={s.alt}
-                className="banner-img"
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : undefined}
-                decoding="async"
-                draggable="false"
-              />
+              <Link
+                to={s.to}
+                className="banner-slide-link"
+                aria-label={`${s.etiqueta}: ${s.alt}`}
+                tabIndex={activo ? 0 : -1}
+              >
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  className="banner-img"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  fetchPriority={i === 0 ? "high" : undefined}
+                  decoding="async"
+                  draggable="false"
+                />
+              </Link>
             </div>
           );
         })}
@@ -201,40 +215,6 @@ export default function Banner() {
         ›
       </button>
 
-      <div className="banner-barra">
-        <span className="banner-contador" aria-live="polite">
-          {String(indice + 1).padStart(2, "0")}
-          <span className="banner-contador-total"> / {String(total).padStart(2, "0")}</span>
-        </span>
-        <div className="banner-puntos" role="tablist" aria-label="Elegir diapositiva">
-          {SLIDES.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              role="tab"
-              aria-selected={i === indice}
-              aria-label={`Ir a la diapositiva ${i + 1}`}
-              className={i === indice ? "activo" : ""}
-              onClick={() => irA(i)}
-            >
-              <span
-                className="banner-progreso"
-                key={`${s.id}-${i === indice ? indice : "x"}`}
-                aria-hidden="true"
-              />
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="banner-pausa"
-          onClick={() => setPausado((p) => !p)}
-          aria-pressed={pausado}
-          aria-label={pausado ? "Reanudar carrusel" : "Pausar carrusel"}
-        >
-          <span aria-hidden="true">{pausado ? "▶" : "❚❚"}</span>
-        </button>
-      </div>
     </section>
   );
 }
