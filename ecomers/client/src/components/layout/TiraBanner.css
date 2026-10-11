@@ -44,6 +44,9 @@
   display: block;
   width: 100%;
   height: auto;
+  max-height: 440px;
+  object-fit: cover;
+  object-position: center;
   border: 0;
   background: transparent;
   transform: translate3d(0, var(--tira-y, 0px), 0);
@@ -113,6 +116,9 @@
 @media (max-width: 380px) {
   .tira-banner {
     padding-inline: 0.9rem;
+  }
+  .tira-banner__marco img {
+    max-height: 230px;
   }
 }
 
