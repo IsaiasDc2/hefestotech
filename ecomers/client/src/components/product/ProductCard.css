@@ -96,20 +96,27 @@
 }
 
 .favorito:focus-visible,
-.producto-detalle:focus-visible,
+.card-media-link:focus-visible,
+.card-titulo-link:focus-visible,
 .btn-carrito:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
-.producto-detalle {
+.card-titulo-link {
   text-decoration: none;
   color: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  display: block;
   min-width: 0;
+}
+
+.card-media-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
 }
 
 .card-marca {
@@ -130,7 +137,7 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border-suave);
   aspect-ratio: 1 / 1;
@@ -155,19 +162,19 @@
   height: 100%;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  padding: 0.75rem;
+  padding: 9%;
   box-sizing: border-box;
   display: block;
   background: var(--surface-elevated-2);
   transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 200ms cubic-bezier(.2,.8,.2,1);
 }
 
-.producto-detalle:hover .card-media img,
+.card-media-link:hover img,
 .card-producto:hover .card-media img {
   transform: scale(1.06);
 }
 
-.producto-detalle img[src=""] {
+.card-media-link img[src=""] {
   min-height: 180px;
   background:
     linear-gradient(135deg, var(--primary-suave), transparent 60%),
@@ -176,8 +183,10 @@
 
 .producto-sin-imagen {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   width: 100%;
   height: 100%;
   min-height: 100%;
@@ -189,6 +198,15 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   font-size: 0.8rem;
+}
+
+.sin-imagen-icono {
+  font-size: 2rem;
+  color: var(--text-faint);
+}
+
+.sin-imagen-texto {
+  font-size: 0.72rem;
 }
 
 .card-rating {
@@ -216,7 +234,7 @@
   color: var(--muted);
 }
 
-.producto-detalle h3 {
+.card-titulo-link h3 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 600;
@@ -228,7 +246,7 @@
   min-height: 2.6em;
 }
 
-.producto-detalle:hover h3 {
+.card-titulo-link:hover h3 {
   color: var(--primary);
 }
 
@@ -281,8 +299,13 @@
 }
 
 
-.card-producto:has(.btn-carrito:disabled) .card-media img {
+.card-producto:has(.btn-carrito:disabled) .card-media img,
+.card-producto.is-sin-stock .card-media img {
   filter: grayscale(0.5) brightness(0.75);
+}
+
+.card-producto.is-sin-stock .card-media {
+  opacity: 0.72;
 }
 
 .precios {
@@ -399,7 +422,7 @@
 .btn-carrito.is-added:not(:disabled) {
   background: var(--success);
   border-color: var(--success);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 6px 24px var(--ok-borde);
 }
 
@@ -441,14 +464,14 @@
   min-height: 44px;
 }
 
-.card-rating-vacio .rating-count {
-  color: var(--muted);
-}
-
 
 .card-skeleton {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
   background: var(--skeleton-base);
   border: 1px solid var(--border);
   border-radius: var(--radio-md);
@@ -461,6 +484,45 @@
   inset: 0;
   background: linear-gradient(100deg, transparent 25%, var(--skeleton-brillo) 50%, transparent 75%);
   animation: card-shimmer 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.sk-media,
+.sk-linea,
+.sk-boton {
+  display: block;
+  border-radius: 8px;
+  background: var(--border-soft);
+  opacity: 0.8;
+}
+
+.sk-media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+}
+
+.sk-linea {
+  height: 0.8rem;
+}
+
+.sk-titulo {
+  width: 90%;
+}
+
+.sk-corta {
+  width: 45%;
+}
+
+.sk-precio {
+  width: 60%;
+  height: 1.2rem;
+  margin-top: auto;
+}
+
+.sk-boton {
+  height: 44px;
+  border-radius: 8px;
 }
 
 @keyframes card-shimmer {
@@ -475,7 +537,7 @@
     gap: 0.45rem;
   }
 
-  .producto-detalle h3 {
+  .card-titulo-link h3 {
     font-size: 0.88rem;
   }
 
@@ -495,7 +557,7 @@
     transform: none;
   }
 
-  .producto-detalle:hover .card-media img,
+  .card-media-link:hover img,
   .card-producto:hover .card-media img {
     transform: none;
   }
@@ -530,7 +592,7 @@
     transform: none;
   }
 
-  .producto-detalle:hover .card-media img,
+  .card-media-link:hover img,
   .card-producto:hover .card-media img {
     transform: none;
   }

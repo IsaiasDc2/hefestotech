@@ -4,7 +4,7 @@ export const FILA_CATEGORIAS = [
   { labelKey: "cat.productos", to: "/productos", clave: "productos" },
   { labelKey: "cat.notebooks", to: "/productos?q=notebook", clave: "notebook" },
   { labelKey: "cat.pcs", to: "/productos?q=pc%20armada", clave: "pc armada" },
-  { labelKey: "cat.arma", to: "/productos?q=combo", clave: "combo" },
+  { labelKey: "cat.arma", to: "/armar", clave: "combo" },
   { labelKey: "cat.outlet", to: linkOfertas, clave: "outlet" },
 ];
 
@@ -18,6 +18,7 @@ export function esClaveActiva(pathname, search, clave) {
   const categoriaActual = (params.get("categoria") || "").toLowerCase();
   const busquedaActual = (params.get("q") || "").toLowerCase();
   const enProductos = pathname === "/productos";
+  if (clave === "combo" && pathname === "/armar") return true;
   if (!enProductos) return false;
   if (clave === "productos") return !categoriaActual && !busquedaActual;
   if (clave === "outlet") {
