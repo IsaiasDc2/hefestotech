@@ -53,7 +53,17 @@ export default function Reclamos({ avisar }) {
         }
       />
       {lista.length === 0 ? (
-        <Vacio titulo="Sin reclamos" texto={estado ? `Ninguno en estado «${estado}».` : "No hay reclamos registrados."} />
+        <Vacio
+          titulo="Sin reclamos"
+          texto={estado ? `Ninguno en estado «${estado}».` : "No hay reclamos registrados."}
+          accion={
+            estado ? (
+              <button type="button" className="btn-fantasma adm-btn" onClick={() => setEstado("")}>
+                Ver todos
+              </button>
+            ) : null
+          }
+        />
       ) : (
         <ul className="adm-tarjetas">
           {lista.map((r) => (

@@ -14,14 +14,15 @@ const SALUDO_INICIAL = "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?";
 const WHATSAPP_URL = "https://wa.me/5491112345678";
 const MAX_LARGO = 500;
 
-// Atajos: solo funciones que el backend atiende hoy (backend/main.py,
-// reglas 1-4 del system prompt de /api/chat). Cada chip envía un mensaje
-// real al mismo endpoint; no inventan capacidades nuevas.
+// Atajos: solo funciones que existen hoy. Cada chip envía un mensaje
+// real al mismo endpoint /api/chat; el system prompt deriva a /armar,
+// /reclamo, /cuenta o WhatsApp según corresponda. Sin datos inventados.
 const ATAJOS = [
   { etiqueta: "Armar mi PC", texto: "Quiero armar una PC, ¿por dónde empiezo?" },
-  { etiqueta: "Tengo un error", texto: "Mi PC tiene un error, ¿me ayudás a diagnosticarlo?" },
-  { etiqueta: "Consultar stock", texto: "Quiero consultar stock y precios" },
-  { etiqueta: "Duda de compra", texto: "Tengo una duda sobre una compra en la web" },
+  { etiqueta: "Medios de pago", texto: "¿Qué medios de pago aceptan?" },
+  { etiqueta: "Envíos", texto: "¿Cómo funcionan los envíos?" },
+  { etiqueta: "Estado de mi pedido", texto: "Quiero saber el estado de mi pedido" },
+  { etiqueta: "Hablar por WhatsApp", texto: "Quiero hablar por WhatsApp" },
 ];
 
 function horaCorta(marca) {

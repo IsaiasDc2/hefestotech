@@ -1,6 +1,29 @@
 import { useState } from "react";
-import { FaEnvelope, FaPhone, FaLocationDot, FaClock, FaUser, FaTag, FaMessage } from "react-icons/fa6";
+import { FaEnvelope, FaPhone, FaLocationDot, FaClock, FaUser, FaTag, FaMessage, FaWhatsapp } from "react-icons/fa6";
+import { whatsappUrl } from "../../constants/whatsapp";
 import "./Contacto.css"
+
+const WHATSAPP_GENERAL = "Hola HefestoTech, ¿me ayudás con una consulta?";
+const WHATSAPP_CANALES = [
+  {
+    id: "ventas",
+    titulo: "Ventas",
+    detalle: "Asesoramiento para armar tu PC o elegir un producto.",
+    mensaje: "Hola, quiero asesoramiento para una compra. ¿Me ayudás?",
+  },
+  {
+    id: "soporte",
+    titulo: "Soporte",
+    detalle: "Ayuda con tu equipo o tu compra.",
+    mensaje: "Hola, necesito soporte con mi equipo. ¿Me ayudás?",
+  },
+  {
+    id: "pedido",
+    titulo: "Estado de pedido",
+    detalle: "Consultá en qué punto está tu pedido.",
+    mensaje: "Hola, quiero consultar el estado de mi pedido.",
+  },
+];
 
 function Contactanos() {
   const [enviando, setEnviando] = useState(false);
@@ -60,6 +83,45 @@ function Contactanos() {
               <h3>Horario de atención</h3>
               <p>Lun a Vie, 9 a 18hs</p>
             </div>
+          </div>
+
+          <div className="contacto-whatsapp">
+            <div className="contacto-whatsapp-encabezado">
+              <span className="contacto-whatsapp-icono" aria-hidden="true">
+                <FaWhatsapp />
+              </span>
+              <div>
+                <h3>WhatsApp</h3>
+                <p>Escribinos y te respondemos a la brevedad.</p>
+              </div>
+            </div>
+
+            <a
+              className="contacto-whatsapp-cta"
+              href={whatsappUrl(WHATSAPP_GENERAL)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FaWhatsapp aria-hidden="true" />
+              Escribinos por WhatsApp
+            </a>
+
+            <ul className="contacto-whatsapp-canales" aria-label="Canales de WhatsApp">
+              {WHATSAPP_CANALES.map((canal) => (
+                <li key={canal.id}>
+                  <a
+                    className="contacto-whatsapp-canal"
+                    href={whatsappUrl(canal.mensaje)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="contacto-whatsapp-canal-titulo">{canal.titulo}</span>
+                    <span className="contacto-whatsapp-canal-detalle">{canal.detalle}</span>
+                    <span className="contacto-whatsapp-canal-accion" aria-hidden="true">Abrir chat →</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </aside>
 

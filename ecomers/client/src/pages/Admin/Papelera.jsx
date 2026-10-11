@@ -39,7 +39,15 @@ export default function Papelera({ avisar }) {
       <section className="card adm-panel" aria-label="Elementos en papelera">
         <p className="texto-mutado">Borrado lógico: los elementos se purgan a los 30 días.</p>
         {lista.length === 0 ? (
-          <Vacio titulo="Papelera vacía" texto="Nada para restaurar." />
+          <Vacio
+            titulo="Papelera vacía"
+            texto="Nada para restaurar."
+            accion={
+              <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+                Actualizar
+              </button>
+            }
+          />
         ) : (
           <ul className="adm-lista">
             {lista.map((p) => (

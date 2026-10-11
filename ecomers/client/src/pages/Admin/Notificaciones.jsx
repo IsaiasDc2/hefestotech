@@ -29,7 +29,15 @@ export default function Notificaciones({ onLeidas }) {
       />
       <section className="card adm-panel" aria-label="Bandeja">
         {lista.length === 0 ? (
-          <Vacio titulo="Sin notificaciones" texto="No hay avisos por ahora." />
+          <Vacio
+            titulo="Sin notificaciones"
+            texto="No hay avisos por ahora."
+            accion={
+              <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+                Actualizar
+              </button>
+            }
+          />
         ) : (
           <ul className="adm-lista">
             {lista.map((n, i) => (

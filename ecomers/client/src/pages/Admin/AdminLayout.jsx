@@ -71,6 +71,7 @@ export function BotonTema() {
       className="adm-icon-btn"
       onClick={alternar}
       aria-label={tema === "light" ? "Cambiar a tema oscuro" : "Cambiar a tema claro"}
+      aria-pressed={tema === "light"}
       title="Tema"
     >
       {tema === "light" ? <FaMoon aria-hidden="true" /> : <FaSun aria-hidden="true" />}
@@ -302,6 +303,7 @@ export default function AdminLayout({
           <div
             ref={drawerRef}
             className="adm-drawer"
+            id="adm-menu-movil"
             role="dialog"
             aria-modal="true"
             aria-label="Menú del panel"
@@ -323,6 +325,8 @@ export default function AdminLayout({
             className="adm-icon-btn adm-hamburguesa"
             onClick={() => setDrawer(true)}
             aria-label="Abrir menú del panel"
+            aria-expanded={drawer}
+            aria-controls="adm-menu-movil"
           >
             <FaBars aria-hidden="true" />
           </button>

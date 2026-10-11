@@ -203,12 +203,12 @@ export function Vacio({ titulo, texto, accion = null }) {
     <div className="adm-vacio">
       <p className="adm-vacio-titulo">{titulo}</p>
       {texto && <p className="adm-vacio-texto">{texto}</p>}
-      {accion}
+      {accion && <div className="adm-vacio-accion">{accion}</div>}
     </div>
   );
 }
 
-export function Proximamente({ modulo, detalle = "" }) {
+export function Proximamente({ modulo, detalle = "", accion = null }) {
   return (
     <section className="card adm-panel" aria-label={`${modulo} no disponible`}>
       <span className="adm-insignia">Próximamente</span>
@@ -218,11 +218,12 @@ export function Proximamente({ modulo, detalle = "" }) {
         no tiene acceso.
         {detalle ? ` Detalle: ${detalle}` : ""}
       </p>
+      {accion && <div className="adm-form-acciones">{accion}</div>}
     </section>
   );
 }
 
-export function SinPermiso({ modulo }) {
+export function SinPermiso({ modulo, accion = null }) {
   return (
     <section className="card adm-panel" aria-label="Sin permiso">
       <span className="adm-insignia es-aviso">Sin permiso</span>
@@ -231,6 +232,7 @@ export function SinPermiso({ modulo }) {
         Tu rol no tiene acceso a este módulo. Si creés que es un error,
         escribinos desde la página de contacto.
       </p>
+      {accion && <div className="adm-form-acciones">{accion}</div>}
     </section>
   );
 }

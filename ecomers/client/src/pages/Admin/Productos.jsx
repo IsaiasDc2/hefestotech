@@ -105,7 +105,8 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
       categoria: p.categoria ?? "General",
       codigo: p.codigo ?? "",
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: sinMovimiento ? "auto" : "smooth" });
   };
 
   if (estado === "cargando") return <Skeleton lineas={8} etiqueta="Cargando productos…" />;
@@ -186,7 +187,17 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           <button type="submit" className="btn-fantasma adm-btn">Buscar</button>
         </form>
         {lista.length === 0 ? (
-          <Vacio titulo="Sin productos" texto={busqueda ? "Ninguno coincide con la búsqueda." : "Todavía no hay productos cargados."} />
+          <Vacio
+            titulo="Sin productos"
+            texto={busqueda ? "Ninguno coincide con la búsqueda." : "Todavía no hay productos cargados."}
+            accion={
+              busqueda ? (
+                <button type="button" className="btn-fantasma adm-btn" onClick={() => { setQ(""); setBusqueda(""); }}>
+                  Limpiar búsqueda
+                </button>
+              ) : null
+            }
+          />
         ) : (
           <Tabla
             columnas={[

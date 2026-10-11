@@ -55,7 +55,17 @@ export default function Pedidos({ avisar, pedirConfirm }) {
         }
       />
       {lista.length === 0 ? (
-        <Vacio titulo="Sin pedidos" texto={estado ? `Ninguno en estado «${estado}».` : "Todavía no hay pedidos."} />
+        <Vacio
+          titulo="Sin pedidos"
+          texto={estado ? `Ninguno en estado «${estado}».` : "Todavía no hay pedidos."}
+          accion={
+            estado ? (
+              <button type="button" className="btn-fantasma adm-btn" onClick={() => setEstado("")}>
+                Ver todos
+              </button>
+            ) : null
+          }
+        />
       ) : (
         <ul className="adm-tarjetas">
           {lista.map((p) => (
