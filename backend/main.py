@@ -51,7 +51,6 @@ def obtener_productos():
 
     return {"total_stock": len(productos_lista), "productos": productos_lista}
 
-# --- RUTAS DE LA IA ---
 class MensajeUsuario(BaseModel):
     texto: str
 
@@ -70,7 +69,6 @@ Sigue estas 6 reglas:
         
         prompt_completo = f"{instrucciones}\n\nConsulta del usuario: {mensaje.texto}"
         
-   # Llamada con la nueva sintaxis nativa
         respuesta = cliente_ia.models.generate_content(
             model="gemini-3.8-flash",
             contents=prompt_completo
