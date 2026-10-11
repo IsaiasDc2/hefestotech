@@ -1,0 +1,131 @@
+{
+  "_nota": "Fondo estimado por bordes/esquinas. No se tocan originales.",
+  "fondos": {
+    "almacenamiento.webp": {
+      "fondo": "#f5f3ef",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "500x500"
+    },
+    "hero-banner.webp": {
+      "fondo": "#161619",
+      "uniforme": "no",
+      "transparencia": "no",
+      "px": "1961x544"
+    },
+    "hero-neon.webp": {
+      "fondo": "#130e0f",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "1365x768"
+    },
+    "hero-raro.webp": {
+      "fondo": "#323032",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "863x1248"
+    },
+    "oferta.webp": {
+      "fondo": "#f9fafa",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "500x500"
+    },
+    "periferico.webp": {
+      "fondo": "#111b24",
+      "uniforme": "no",
+      "transparencia": "si",
+      "px": "500x333"
+    },
+    "placa.webp": {
+      "fondo": "#fefefe",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "500x342"
+    },
+    "procesador.webp": {
+      "fondo": "#4b5d69",
+      "uniforme": "no",
+      "transparencia": "si",
+      "px": "500x280"
+    },
+    "ram.webp": {
+      "fondo": "#fbfbfb",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "500x500"
+    },
+    "tira-escritorio.webp": {
+      "fondo": "#1f283f",
+      "uniforme": "no",
+      "transparencia": "no",
+      "px": "1024x1024"
+    },
+    "tira-silla.webp": {
+      "fondo": "#433629",
+      "uniforme": "no",
+      "transparencia": "no",
+      "px": "1452x720"
+    },
+    "apple-touch-icon.png": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "180x180"
+    },
+    "favicon-32.png": {
+      "fondo": "#293438",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "32x32"
+    },
+    "icon-192.png": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "192x192"
+    },
+    "icon-512.png": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "512x512"
+    },
+    "logo-lockup.png": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "560x435"
+    },
+    "logo-lockup.webp": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "560x435"
+    },
+    "logo-original.jpeg": {
+      "fondo": "#242424",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "868x881"
+    },
+    "logo-symbol.png": {
+      "fondo": "#242424",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "308x296"
+    },
+    "logo-symbol.webp": {
+      "fondo": "#252525",
+      "uniforme": "si",
+      "transparencia": "si",
+      "px": "308x296"
+    },
+    "og-cover.jpg": {
+      "fondo": "#0b0e15",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "1200x630"
+    }
+  }
+}
