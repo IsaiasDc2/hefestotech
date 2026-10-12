@@ -36,8 +36,14 @@ const SLIDES = [
   },
 ];
 
-const AUTOPLAY_MS = 6000;
-const UMBRAL_SWIPE = 40;
+// Duracion de cada diapositiva. Unica fuente de verdad: se publica como
+// --banner-ciclo y la barra de progreso (CSS) funciona como temporizador.
+const INTERVALO_MS = 6000;
+const UMBRAL_SWIPE = 48;
+
+const reduceMovimiento = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const envolver = (i, total) => ((i % total) + total) % total;
 
@@ -67,19 +73,26 @@ const Chevron = ({ izquierda = false }) => (
   </svg>
 );
 
-export default function Banner() {
-  const [indice, setIndice] = useState(0);
-  const [pausado, setPausado] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+export default function Banner({ intervalo = INTERVALO_MS }) {
   const total = SLIDES.length;
-  const timer = useRef(null);
-  const touchX = useRef(null);
-  const refHero = useRef(null);
-  const [montadas, setMontadas] = useState(() => new Set([0]));
+  const [indice, setIndice] = useState(0);
+  // Motivos de pausa independientes: ninguno pisa la intencion de otro.
+  const [pausaUsuario, setPausaUsuario] = useState(reduceMovimiento);
+  const [pausaPuntero, setPausaPuntero] = useState(false);
+  const [pausaFoco, setPausaFoco] = useState(false);
+  const [oculto, setOculto] = useState(
+    () => typeof document !== "undefined" && document.hidden
+  );
   const [enVista, setEnVista] = useState(true);
+  const [montadas, setMontadas] = useState(() => new Set([0]));
+  const refHero = useRef(null);
+  const toque = useRef(null);
+  const arranque = useRef(true);
+
+  const pausado = pausaUsuario || pausaPuntero || pausaFoco || oculto || !enVista;
+  // Con autoplay quieto un lector de pantalla anuncia los cambios manuales.
+  const anunciar = pausaUsuario || pausaFoco;
+
   // Shrink 1 -> 0.97 + parallax <= 40px + barra que se desvanece,
   // solo transform/opacity via vars, rAF pasivo, pausado fuera de pantalla.
   useHeroVisible(refHero);
@@ -89,96 +102,77 @@ export default function Banner() {
     el.style.setProperty("--hero-y", `${(40 * avance).toFixed(1)}px`);
     el.style.setProperty("--hero-barra", (1 - avance).toFixed(3));
   });
-  // Pausa del sistema (pestaña oculta / ventana sin foco / fuera de pantalla).
-  // Se combina con `pausado` sin pisar la intencion del usuario.
-  const [oculto, setOculto] = useState(
-    () => typeof document !== "undefined" && document.hidden
-  );
-  const efectivoPausado = pausado || oculto || !enVista;
 
-  const coincideReduceMovimiento = () =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Pausa del sistema: pestaña oculta o carrusel fuera de pantalla.
+  useEffect(() => {
+    const alCambiar = () => setOculto(document.hidden);
+    document.addEventListener("visibilitychange", alCambiar);
+    return () => document.removeEventListener("visibilitychange", alCambiar);
+  }, []);
 
   useEffect(() => {
     const el = refHero.current;
     if (!el || !("IntersectionObserver" in window)) return;
     const io = new IntersectionObserver(([e]) => setEnVista(e.isIntersecting), {
-      threshold: 0.2,
+      threshold: 0.35,
     });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  // Solo se monta la imagen activa y sus vecinas (las vecinas tras un
-  // respiro, para no competir con la imagen LCP). Las ya montadas se
-  // conservan: el fundido de salida no parpadea.
+  // Solo se monta la imagen de la diapositiva activa y la de sus vecinas
+  // (estas ultimas tras un respiro, para no competir con la imagen LCP).
+  // Las ya montadas se conservan: el fundido de salida no parpadea.
   useEffect(() => {
-    const t = setTimeout(() => {
+    const sumar = () =>
       setMontadas((prev) => {
         const sig = new Set(prev);
         [indice, indice - 1, indice + 1].forEach((i) => sig.add(envolver(i, total)));
         return sig.size === prev.size ? prev : sig;
       });
-    }, 1200);
-    return () => clearTimeout(t);
-  }, [indice, total]);
-
-  useEffect(() => {
-    const alVisibilidad = () => setOculto(document.hidden);
-    const alBlur = () => setOculto(true);
-    const alFoco = () => setOculto(document.hidden);
-    document.addEventListener("visibilitychange", alVisibilidad);
-    window.addEventListener("blur", alBlur);
-    window.addEventListener("focus", alFoco);
-    return () => {
-      document.removeEventListener("visibilitychange", alVisibilidad);
-      window.removeEventListener("blur", alBlur);
-      window.removeEventListener("focus", alFoco);
-    };
-  }, []);
-
-  // Precarga la siguiente diapositiva (la primera ya es prioritaria
-  // con eager + fetchPriority high en el <img>).
-  useEffect(() => {
-    const href = SLIDES[(indice + 1) % total].src;
-    if (document.querySelector(`link[rel="preload"][href="${href}"]`)) return;
-    const enlace = document.createElement("link");
-    enlace.rel = "preload";
-    enlace.as = "image";
-    enlace.href = href;
-    enlace.fetchPriority = "low";
-    document.head.appendChild(enlace);
-    return () => {
-      enlace.remove();
-    };
-  }, [indice, total]);
-
-  const irA = useCallback((i) => setIndice(((i % total) + total) % total), [total]);
-  const anterior = useCallback(() => irA(indice - 1), [indice, irA]);
-  const siguiente = useCallback(() => irA(indice + 1), [indice, irA]);
-
-  useEffect(() => {
-    if (efectivoPausado) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    timer.current = setTimeout(() => irA(indice + 1), AUTOPLAY_MS);
-    return () => clearTimeout(timer.current);
-  }, [indice, efectivoPausado, irA]);
-
-  const onTouchStart = (e) => {
-    touchX.current = e.touches[0].clientX;
-  };
-  const onTouchEnd = (e) => {
-    if (touchX.current === null) return;
-    const dx = e.changedTouches[0].clientX - touchX.current;
-    if (Math.abs(dx) > UMBRAL_SWIPE) {
-      if (dx < 0) siguiente();
-      else anterior();
+    if (arranque.current) {
+      arranque.current = false;
+      const t = setTimeout(sumar, 1200);
+      return () => clearTimeout(t);
     }
-    touchX.current = null;
+    sumar();
+  }, [indice, total]);
+
+  const irA = useCallback((i) => setIndice(envolver(i, total)), [total]);
+  const anterior = useCallback(() => setIndice((i) => envolver(i - 1, total)), [total]);
+  const siguiente = useCallback(() => setIndice((i) => envolver(i + 1, total)), [total]);
+
+  useEffect(() => {
+    if (pausado || reduceMovimiento()) return;
+    const t = setTimeout(siguiente, intervalo);
+    return () => clearTimeout(t);
+  }, [indice, pausado, intervalo, siguiente]);
+
+  // Swipe horizontal. Mientras el dedo esta apoyado el autoplay espera, y
+  // un gesto mayormente vertical (scroll) no cambia de diapositiva.
+  const alTocar = (e) => {
+    const t = e.touches[0];
+    toque.current = { x: t.clientX, y: t.clientY };
+    setPausaPuntero(true);
+  };
+  const alSoltar = (e) => {
+    setPausaPuntero(false);
+    const ini = toque.current;
+    toque.current = null;
+    if (!ini) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - ini.x;
+    const dy = t.clientY - ini.y;
+    if (Math.abs(dx) < UMBRAL_SWIPE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) siguiente();
+    else anterior();
+  };
+  const alCancelarToque = () => {
+    toque.current = null;
+    setPausaPuntero(false);
   };
 
-  const onKeyDown = (e) => {
+  const alTeclear = (e) => {
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       anterior();
@@ -190,67 +184,72 @@ export default function Banner() {
 
   // Pausa por foco solo con foco de teclado y solo al entrar/salir de verdad
   // del carrusel. Un clic con mouse no deja el autoplay detenido.
-  const pausarAlEntrar = (e) => {
-    if (esFocoTeclado(e.target)) setPausado(true);
+  const alEntrarFoco = (e) => {
+    if (esFocoTeclado(e.target)) setPausaFoco(true);
   };
-  const reanudarAlSalir = (e) => {
-    if (!e.currentTarget.contains(e.relatedTarget))
-      setPausado(coincideReduceMovimiento());
+  const alSalirFoco = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) setPausaFoco(false);
   };
 
   return (
     <section
       ref={refHero}
       className="banner"
-      data-pausado={efectivoPausado ? "true" : "false"}
+      style={{ "--banner-ciclo": `${intervalo}ms` }}
+      data-pausado={pausado ? "true" : "false"}
       aria-roledescription="carrusel"
       aria-label="Promociones destacadas"
-      onMouseEnter={() => setPausado(true)}
-      onMouseLeave={() => setPausado(coincideReduceMovimiento())}
-      onFocus={pausarAlEntrar}
-      onBlur={reanudarAlSalir}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-      onKeyDown={onKeyDown}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setPausaPuntero(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setPausaPuntero(false)}
+      onFocus={alEntrarFoco}
+      onBlur={alSalirFoco}
+      onTouchStart={alTocar}
+      onTouchEnd={alSoltar}
+      onTouchCancel={alCancelarToque}
+      onKeyDown={alTeclear}
     >
-      <div className="banner-pista">
+      <div className="banner-pista" aria-live={anunciar ? "polite" : "off"}>
         {SLIDES.map((s, i) => {
           const activo = i === indice;
           const esContain = s.encuadre === "contain";
+          const prioridad = i === 0 ? "high" : "low";
           return (
             <div
               key={s.id}
               role="group"
-              className={`banner-slide${activo ? " es-activa" : ""}${esContain ? " encuadre-contain" : ""}`}
-              aria-hidden={!activo}
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
+              aria-hidden={!activo}
+              className={`banner-slide${activo ? " es-activa" : ""}${esContain ? " encuadre-contain" : ""}`}
             >
               {(activo || montadas.has(i)) && (
                 <>
-              {esContain && (
-                <div
-                  className="banner-fondo"
-                  aria-hidden="true"
-                  style={{ backgroundImage: `url("${s.src}")` }}
-                />
-              )}
-              <Link
-                to={s.to}
-                className="banner-slide-link"
-                aria-label={`${s.etiqueta}: ${s.alt}`}
-                tabIndex={activo ? 0 : -1}
-              >
-                <img
-                  src={s.src}
-                  alt={s.alt}
-                  className="banner-img"
-                  loading={i === 0 ? "eager" : "lazy"}
-                  fetchPriority={i === 0 ? "high" : undefined}
-                  decoding="async"
-                  draggable="false"
-                />
-              </Link>
+                  <Link
+                    to={s.to}
+                    className="banner-slide-link"
+                    aria-label={`${s.etiqueta}: ${s.alt}`}
+                    tabIndex={activo ? 0 : -1}
+                  >
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      className="banner-img"
+                      fetchPriority={prioridad}
+                      decoding="async"
+                      draggable="false"
+                    />
+                  </Link>
+                  {esContain && (
+                    <img
+                      src={s.src}
+                      alt=""
+                      aria-hidden="true"
+                      className="banner-fondo"
+                      fetchPriority={prioridad}
+                      decoding="async"
+                      draggable="false"
+                    />
+                  )}
                 </>
               )}
             </div>
@@ -258,23 +257,27 @@ export default function Banner() {
         })}
       </div>
 
-      <button
-        type="button"
-        className="banner-flecha ant"
-        onClick={anterior}
-        aria-label="Diapositiva anterior"
-      >
-        <Chevron izquierda />
-      </button>
-      <button
-        type="button"
-        className="banner-flecha sig"
-        onClick={siguiente}
-        aria-label="Diapositiva siguiente"
-      >
-        <Chevron />
-      </button>
+      {total > 1 && (
+        <>
+          <button
+            type="button"
+            className="banner-flecha ant"
+            onClick={anterior}
+            aria-label="Diapositiva anterior"
+          >
+            <Chevron izquierda />
+          </button>
+          <button
+            type="button"
+            className="banner-flecha sig"
+            onClick={siguiente}
+            aria-label="Diapositiva siguiente"
+          >
+            <Chevron />
+          </button>
 
+        </>
+      )}
     </section>
   );
 }
