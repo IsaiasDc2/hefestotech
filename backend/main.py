@@ -172,7 +172,9 @@ async def asistente_ia(mensaje: MensajeUsuario, request: Request):
                 contents=prompt_completo,
             )
             return {"respuesta": respuesta.text}
-        except Exception:
+      
+        except Exception as e:
             # Error genérico
             print("ERROR /api/chat: fallo interno del servicio de IA.")
-            return {"respuesta": "La forja está ardiendo. Hay muchas consultas en este momento, espera un poco y vuelve a intentarlo."}
+            print(f"Error técnico real: {e}")
+            return {"respuesta": "La forja está ardiendo..."}
