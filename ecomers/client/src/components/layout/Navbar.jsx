@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaBars,
   FaCartShopping,
-  FaEllipsis,
   FaMagnifyingGlass,
   FaShieldHalved,
   FaUser,
@@ -194,7 +193,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               aria-label={idioma === "en" ? "More options" : "Más opciones"}
               title={idioma === "en" ? "More options" : "Más opciones"}
             >
-              <FaEllipsis aria-hidden="true" />
+              <FaBars aria-hidden="true" />
             </button>
             <Link
               to="/cuenta"
