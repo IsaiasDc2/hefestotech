@@ -44,20 +44,38 @@ function Asistente() {
         body: JSON.stringify({ texto: mensaje }),
       });
 
-      const data = await respuesta.json();
+      // Validamos si la IA devuelve exactamente el error 503 (Saturación)
+      if (respuesta.status === 503) {
+        setChat([
+          ...nuevoChat,
+          {
+            rol: "ia",
+            texto:
+              "La forja está ardiendo. Hay muchas consultas en este momento, espera un poco y vuelve a intentarlo.",
+            hora: obtenerFechaHora(),
+          },
+        ]);
+        return;
+      }
 
-      // Agregamos la respuesta de la IA con la hora en la que llegó
+      // Si hay un error general del servidor, lo enviamos al catch
+      if (!respuesta.ok) {
+        throw new Error("Fallo en la comunicación con el servidor");
+      }
+
+      const data = await respuesta.json();
       setChat([
         ...nuevoChat,
         { rol: "ia", texto: data.respuesta, hora: obtenerFechaHora() },
       ]);
     } catch (error) {
+      // Mensaje temático de reserva por si el backend se cae o la IA no responde
       setChat([
         ...nuevoChat,
         {
           rol: "ia",
           texto:
-            "Mis circuitos están en mantenimiento. Intenta de nuevo más tarde.",
+            "La forja está sobrecargada de trabajo. Espera unos minutos y vuelve a golpear el yunque.",
           hora: obtenerFechaHora(),
         },
       ]);
@@ -95,7 +113,7 @@ function Asistente() {
           <div
             className="asistente-mensajes"
             style={{
-              height: "250px",
+              height: "400px",
               overflowY: "auto",
               padding: "15px",
               display: "flex",
