@@ -37,6 +37,35 @@ const SLIDES = [
 ];
 
 const AUTOPLAY_MS = 6000;
+const UMBRAL_SWIPE = 40;
+
+const envolver = (i, total) => ((i % total) + total) % total;
+
+// :focus-visible separa teclado de clic. Sin soporte se asume teclado.
+const esFocoTeclado = (el) => {
+  try {
+    return el.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+};
+
+const Chevron = ({ izquierda = false }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width="20"
+    height="20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d={izquierda ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} />
+  </svg>
+);
 
 export default function Banner() {
   const [indice, setIndice] = useState(0);
@@ -49,6 +78,8 @@ export default function Banner() {
   const timer = useRef(null);
   const touchX = useRef(null);
   const refHero = useRef(null);
+  const [montadas, setMontadas] = useState(() => new Set([0]));
+  const [enVista, setEnVista] = useState(true);
   // Shrink 1 -> 0.97 + parallax <= 40px + barra que se desvanece,
   // solo transform/opacity via vars, rAF pasivo, pausado fuera de pantalla.
   useHeroVisible(refHero);
@@ -58,16 +89,40 @@ export default function Banner() {
     el.style.setProperty("--hero-y", `${(40 * avance).toFixed(1)}px`);
     el.style.setProperty("--hero-barra", (1 - avance).toFixed(3));
   });
-  // Pausa del sistema (pestaña oculta / ventana sin foco). Se combina
-  // con `pausado` sin pisar la intencion del usuario (play/pausa).
+  // Pausa del sistema (pestaña oculta / ventana sin foco / fuera de pantalla).
+  // Se combina con `pausado` sin pisar la intencion del usuario.
   const [oculto, setOculto] = useState(
     () => typeof document !== "undefined" && document.hidden
   );
-  const efectivoPausado = pausado || oculto;
+  const efectivoPausado = pausado || oculto || !enVista;
 
   const coincideReduceMovimiento = () =>
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    const el = refHero.current;
+    if (!el || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(([e]) => setEnVista(e.isIntersecting), {
+      threshold: 0.2,
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Solo se monta la imagen activa y sus vecinas (las vecinas tras un
+  // respiro, para no competir con la imagen LCP). Las ya montadas se
+  // conservan: el fundido de salida no parpadea.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setMontadas((prev) => {
+        const sig = new Set(prev);
+        [indice, indice - 1, indice + 1].forEach((i) => sig.add(envolver(i, total)));
+        return sig.size === prev.size ? prev : sig;
+      });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [indice, total]);
 
   useEffect(() => {
     const alVisibilidad = () => setOculto(document.hidden);
@@ -116,7 +171,7 @@ export default function Banner() {
   const onTouchEnd = (e) => {
     if (touchX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
-    if (Math.abs(dx) > 40) {
+    if (Math.abs(dx) > UMBRAL_SWIPE) {
       if (dx < 0) siguiente();
       else anterior();
     }
@@ -133,10 +188,10 @@ export default function Banner() {
     }
   };
 
-  // Pausa por foco solo al entrar/salir de verdad del carrusel
-  // (relatedTarget evita parpadeos al tabular entre controles internos).
+  // Pausa por foco solo con foco de teclado y solo al entrar/salir de verdad
+  // del carrusel. Un clic con mouse no deja el autoplay detenido.
   const pausarAlEntrar = (e) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) setPausado(true);
+    if (esFocoTeclado(e.target)) setPausado(true);
   };
   const reanudarAlSalir = (e) => {
     if (!e.currentTarget.contains(e.relatedTarget))
@@ -165,11 +220,14 @@ export default function Banner() {
           return (
             <div
               key={s.id}
+              role="group"
               className={`banner-slide${activo ? " es-activa" : ""}${esContain ? " encuadre-contain" : ""}`}
               aria-hidden={!activo}
               aria-roledescription="diapositiva"
               aria-label={`${i + 1} de ${total}`}
             >
+              {(activo || montadas.has(i)) && (
+                <>
               {esContain && (
                 <div
                   className="banner-fondo"
@@ -193,6 +251,8 @@ export default function Banner() {
                   draggable="false"
                 />
               </Link>
+                </>
+              )}
             </div>
           );
         })}
@@ -204,7 +264,7 @@ export default function Banner() {
         onClick={anterior}
         aria-label="Diapositiva anterior"
       >
-        ‹
+        <Chevron izquierda />
       </button>
       <button
         type="button"
@@ -212,7 +272,7 @@ export default function Banner() {
         onClick={siguiente}
         aria-label="Diapositiva siguiente"
       >
-        ›
+        <Chevron />
       </button>
 
     </section>
