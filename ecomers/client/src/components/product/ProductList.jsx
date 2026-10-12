@@ -103,14 +103,6 @@ function ProductoDetalle({ agregarAlCarrito }) {
               <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
             )}
           </div>
-          {producto.imagen && (
-            <div className="detalle-miniaturas" aria-hidden="true">
-              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
-              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
-              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
-              <span style={{ backgroundImage: `url(${producto.imagen})` }} />
-            </div>
-          )}
         </div>
 
         <div className="detalle-info">

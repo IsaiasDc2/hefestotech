@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaGoogle, FaGithub, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
+import { FaGoogle, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
 import Marca from "../../components/brand/Marca";
 import "./Login.css";
@@ -93,11 +93,6 @@ function Login({ onIrRegistro }) {
           <button type="button" className="btn-fantasma" title="Solo email por ahora" disabled aria-disabled="true">
           <FaGoogle aria-hidden="true" />
           Continuar con Google (solo email por ahora)
-        </button>
-
-        <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">
-          <FaGithub aria-hidden="true" />
-          Continuar con GitHub
         </button>
 
         <p className="registro">

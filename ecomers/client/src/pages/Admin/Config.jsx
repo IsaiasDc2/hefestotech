@@ -22,12 +22,7 @@ export default function Config() {
         <ul className="adm-lista">
           <li><span>Modo</span><strong>{import.meta.env.DEV ? "Desarrollo" : "Producción"}</strong></li>
           <li><span>Backend</span><strong>{soloHost(API_BASE)}</strong></li>
-          <li><span>Secrets</span><strong>conectado •••• (redactado)</strong></li>
         </ul>
-        <p className="texto-mutado">
-          Los secretos nunca salen del servidor: acá solo se muestra si hay
-          conexión, jamás valores.
-        </p>
       </section>
       <section className="card adm-panel" aria-label="Canales">
         <h2>Canales</h2>

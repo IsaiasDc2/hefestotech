@@ -317,8 +317,6 @@ function Footer() {
           <Link to="/acerca">{t(idioma, "ft.nosotros")}</Link>
           <span aria-hidden="true">•</span>
           <Link to="/contactanos">{t(idioma, "ft.contactanos")}</Link>
-          <span aria-hidden="true">•</span>
-          <span>{t(idioma, "ft.hechoEn")}</span>
         </p>
 
       </div>
