@@ -14,14 +14,17 @@ const SALUDO_INICIAL = "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?";
 const WHATSAPP_URL = "https://wa.me/5491112345678";
 const MAX_LARGO = 500;
 
-// Atajos: solo funciones que existen hoy. Cada chip envía un mensaje
-// real al mismo endpoint /api/chat; el system prompt deriva a /armar,
-// /reclamo, /cuenta o WhatsApp según corresponda. Sin datos inventados.
 const ATAJOS = [
-  { etiqueta: "Armar mi PC", texto: "Quiero armar una PC, ¿por dónde empiezo?" },
+  {
+    etiqueta: "Armar mi PC",
+    texto: "Quiero armar una PC, ¿por dónde empiezo?",
+  },
   { etiqueta: "Medios de pago", texto: "¿Qué medios de pago aceptan?" },
   { etiqueta: "Envíos", texto: "¿Cómo funcionan los envíos?" },
-  { etiqueta: "Estado de mi pedido", texto: "Quiero saber el estado de mi pedido" },
+  {
+    etiqueta: "Estado de mi pedido",
+    texto: "Quiero saber el estado de mi pedido",
+  },
   { etiqueta: "Hablar por WhatsApp", texto: "Quiero hablar por WhatsApp" },
 ];
 
@@ -36,11 +39,6 @@ function horaCorta(marca) {
   }
 }
 
-/* Markdown mínimo y seguro por construcción: jamás se usa
-   dangerouslySetInnerHTML. El texto viaja como nodos React (escapado por
-   defecto) y solo se permite **negrita**, *itálica*, `código` y listas
-   "- ". Sin links ni HTML crudo no hay vector XSS y no hace falta sumar
-   librerías. */
 function renderEnLinea(fragmento, clave) {
   const partes = String(fragmento).split(/(\*\*.+?\*\*|\*[^*]+?|`[^`]+?`)/g);
   return partes.map((parte, i) => {
@@ -108,30 +106,10 @@ const AVISOS = {
 };
 
 function Asistente() {
-  // Función para generar la fecha y hora en formato "DD/MM HH:MM"
-  const obtenerFechaHora = () => {
-    const ahora = new Date();
-    const dia = String(ahora.getDate()).padStart(2, "0");
-    const mes = String(ahora.getMonth() + 1).padStart(2, "0");
-    const hora = ahora.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return `${dia}/${mes} ${hora}`;
-  };
-
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [chat, setChat] = useState([
-<<<<<<< HEAD
-    {
-      rol: "ia",
-      texto: "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?",
-      hora: obtenerFechaHora(),
-    },
-=======
     { rol: "ia", texto: SALUDO_INICIAL, hora: Date.now() },
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
   ]);
   const [estado, setEstado] = useState("listo");
   const [aviso, setAviso] = useState(null);
@@ -144,15 +122,6 @@ function Asistente() {
   const sinEmpezar = !chat.some((m) => m.rol === "usuario");
   const escribiendo = estado === "escribiendo";
 
-<<<<<<< HEAD
-    // Agregamos el mensaje del usuario con su hora exacta
-    const nuevoChat = [
-      ...chat,
-      { rol: "usuario", texto: mensaje, hora: obtenerFechaHora() },
-    ];
-    setChat(nuevoChat);
-    setMensaje(""); // Limpiamos la barra de texto
-=======
   const enviarTexto = async (texto) => {
     const limpio = String(texto ?? "").trim();
     if (!limpio || escribiendo) return;
@@ -162,7 +131,6 @@ function Asistente() {
     const base = [...chat, msgUsuario];
     setChat(base);
     setAviso(null);
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
 
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       setAviso({ tipo: "sin-conexion", reintentable: true });
@@ -171,60 +139,35 @@ function Asistente() {
 
     setEstado("escribiendo");
     try {
-<<<<<<< HEAD
-      const respuesta = await fetch("http://127.0.0.1:8000/api/chat", {
-=======
       const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
       const respuesta = await fetch(`${API_URL}/api/chat`, {
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: recortado }),
       });
-<<<<<<< HEAD
 
-      // Validamos si la IA devuelve exactamente el error 503 (Saturación)
+      // TU LÓGICA: Validamos si la IA devuelve exactamente el error 503
       if (respuesta.status === 503) {
         setChat([
-          ...nuevoChat,
+          ...base,
           {
             rol: "ia",
             texto:
               "La forja está ardiendo. Hay muchas consultas en este momento, espera un poco y vuelve a intentarlo.",
-            hora: obtenerFechaHora(),
+            hora: Date.now(),
           },
         ]);
+        setEstado("listo");
         return;
       }
 
-      // Si hay un error general del servidor, lo enviamos al catch
-      if (!respuesta.ok) {
-        throw new Error("Fallo en la comunicación con el servidor");
-      }
-
-      const data = await respuesta.json();
-      setChat([
-        ...nuevoChat,
-        { rol: "ia", texto: data.respuesta, hora: obtenerFechaHora() },
-      ]);
-    } catch (error) {
-      // Mensaje temático de reserva por si el backend se cae o la IA no responde
-      setChat([
-        ...nuevoChat,
-        {
-          rol: "ia",
-          texto:
-            "La forja está sobrecargada de trabajo. Espera unos minutos y vuelve a golpear el yunque.",
-          hora: obtenerFechaHora(),
-        },
-      ]);
-=======
       let data = null;
       try {
         data = await respuesta.json();
       } catch (_) {
         data = null;
       }
+
       if (respuesta.status === 429) {
         setAviso({
           tipo: "limite",
@@ -234,13 +177,24 @@ function Asistente() {
       } else if (!respuesta.ok || !data?.respuesta) {
         setAviso({ tipo: "error", reintentable: true });
       } else {
-        setChat([...base, { rol: "ia", texto: data.respuesta, hora: Date.now() }]);
+        setChat([
+          ...base,
+          { rol: "ia", texto: data.respuesta, hora: Date.now() },
+        ]);
       }
     } catch (error) {
-      setAviso({ tipo: "caido", reintentable: true });
+      // TU LÓGICA: Mensaje temático por si el backend se cae totalmente
+      setChat([
+        ...base,
+        {
+          rol: "ia",
+          texto:
+            "La forja está sobrecargada de trabajo. Espera unos minutos y vuelve a golpear el yunque.",
+          hora: Date.now(),
+        },
+      ]);
     } finally {
       setEstado("listo");
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
     }
   };
 
@@ -257,7 +211,6 @@ function Asistente() {
     setUltimoTexto("");
   };
 
-  // Foco: al abrir va al panel; al cerrar vuelve al botón que abrió.
   const yaMonto = useRef(false);
   useEffect(() => {
     if (abierto) {
@@ -268,13 +221,13 @@ function Asistente() {
     yaMonto.current = true;
   }, [abierto]);
 
-  // Scroll de mensajes al fondo + autogrow del campo.
   useEffect(() => {
     mensajesRef.current?.scrollTo({
       top: mensajesRef.current.scrollHeight,
       behavior: "auto",
     });
   }, [chat, estado, aviso, abierto]);
+
   useEffect(() => {
     const el = areaRef.current;
     if (!el) return;
@@ -282,7 +235,6 @@ function Asistente() {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, [mensaje, abierto]);
 
-  // Móvil: scroll lock + altura según visualViewport (teclado abierto).
   useEffect(() => {
     if (!abierto) return;
     const esMovil = window.matchMedia("(max-width: 640px)");
@@ -345,7 +297,7 @@ function Asistente() {
     }
   };
 
-  const avisoInfo = aviso ? AVISOS[aviso.tipo] ?? AVISOS.error : null;
+  const avisoInfo = aviso ? (AVISOS[aviso.tipo] ?? AVISOS.error) : null;
 
   return (
     <div className="asistente">
@@ -366,13 +318,23 @@ function Asistente() {
             </span>
             <div className="asistente-titulos">
               <strong id="asistente-titulo">Asistente de HefestoTech</strong>
-              <span className="asistente-sub">Presupuestos · Soporte · Stock</span>
+              <span className="asistente-sub">
+                Presupuestos · Soporte · Stock
+              </span>
             </div>
             <div className="asistente-acciones">
-              <button type="button" onClick={minimizar} aria-label="Minimizar asistente">
+              <button
+                type="button"
+                onClick={minimizar}
+                aria-label="Minimizar asistente"
+              >
                 <FaMinus aria-hidden="true" />
               </button>
-              <button type="button" onClick={cerrar} aria-label="Cerrar asistente">
+              <button
+                type="button"
+                onClick={cerrar}
+                aria-label="Cerrar asistente"
+              >
                 <FaXmark aria-hidden="true" />
               </button>
             </div>
@@ -380,53 +342,17 @@ function Asistente() {
 
           <div
             className="asistente-mensajes"
-<<<<<<< HEAD
-            style={{
-              height: "400px",
-              overflowY: "auto",
-              padding: "15px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}
-=======
+            style={{ height: "400px" }} // TU LÓGICA: Altura para mejor visualización
             role="log"
             aria-live="polite"
             aria-atomic="false"
             aria-relevant="additions"
             aria-label="Conversación con Hefesto"
             ref={mensajesRef}
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
           >
             {chat.map((msg, i) => (
               <div
                 key={i}
-<<<<<<< HEAD
-                style={{
-                  alignSelf: msg.rol === "ia" ? "flex-start" : "flex-end",
-                  backgroundColor: msg.rol === "ia" ? "#2a2a2a" : "#0d6efd",
-                  color: "white",
-                  padding: "10px 14px",
-                  borderRadius: "12px",
-                  maxWidth: "85%",
-                  fontSize: "0.9rem",
-                  lineHeight: "1.4",
-                  display: "flex",
-                  flexDirection: "column", // Necesario para que la hora quede debajo del texto
-                }}
-              >
-                <span>{msg.texto}</span>
-                {/* Estilos inyectados para la fecha y hora */}
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    opacity: 0.7,
-                    alignSelf: "flex-end",
-                    marginTop: "4px",
-                  }}
-                >
-                  {msg.hora}
-=======
                 className={`asistente-msg${msg.rol === "ia" ? " es-ia" : " es-usuario"}`}
               >
                 {msg.rol === "ia" && (
@@ -441,7 +367,6 @@ function Asistente() {
                       {horaCorta(msg.hora)}
                     </time>
                   ) : null}
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
                 </span>
               </div>
             ))}
@@ -470,7 +395,11 @@ function Asistente() {
                   <p>{aviso?.detalle || avisoInfo.detalle}</p>
                   <div className="asistente-aviso-acciones">
                     {aviso.reintentable && ultimoTexto && (
-                      <button type="button" onClick={reintentar} disabled={escribiendo}>
+                      <button
+                        type="button"
+                        onClick={reintentar}
+                        disabled={escribiendo}
+                      >
                         <FaRotateRight aria-hidden="true" /> Reintentar
                       </button>
                     )}
@@ -483,8 +412,6 @@ function Asistente() {
             )}
           </div>
 
-<<<<<<< HEAD
-=======
           {sinEmpezar && (
             <div className="asistente-chips">
               {ATAJOS.map((atajo) => (
@@ -500,7 +427,6 @@ function Asistente() {
             </div>
           )}
 
->>>>>>> 1114608ac2b55f204e1db1a46ebc69f59aa040a6
           <form
             className="asistente-form"
             onSubmit={(e) => {
@@ -543,7 +469,11 @@ function Asistente() {
         className={`asistente-bola${abierto ? " es-abierto" : ""}`}
         onClick={() => setAbierto((v) => !v)}
         ref={botonRef}
-        aria-label={abierto ? "Cerrar asistente de HefestoTech" : "Abrir asistente de HefestoTech"}
+        aria-label={
+          abierto
+            ? "Cerrar asistente de HefestoTech"
+            : "Abrir asistente de HefestoTech"
+        }
         aria-expanded={abierto}
         aria-controls="asistente-panelo"
       >
