@@ -27,10 +27,8 @@ const SLIDES = [
   {
     id: "hero-raro",
     src: `${BASE}banners/hero-raro.webp`,
-    alt: "Gamer con auriculares y control en ambiente neón",
-    // 863x1248 vertical: contain + fondo difuminado; en cover se
-    // perderia cabeza y monitor en el recorte 21/9.
-    encuadre: "contain",
+    alt: "Gamer con triple monitor y luces de neón",
+    encuadre: "cover",
     to: "/armar",
     etiqueta: "Armá tu PC",
   },
