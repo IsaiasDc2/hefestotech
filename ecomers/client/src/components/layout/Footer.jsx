@@ -27,12 +27,24 @@ import "./Footer.css";
 function Footer() {
   const [email, setEmail] = useState("");
   const [suscrito, setSuscrito] = useState(false);
+  const [errorNews, setErrorNews] = useState("");
   const idioma = useIdiomaStore((s) => s.idioma);
 
-  const suscribir = (e) => {
+  const suscribir = async (e) => {
     e.preventDefault();
-    if (email.trim().length > 3 && email.includes("@")) {
+    setErrorNews("");
+    if (!(email.trim().length > 3 && email.includes("@"))) return;
+    try {
+      const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+      const respuesta = await fetch(`${API_URL}/api/newsletter`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (!respuesta.ok) throw new Error();
       setSuscrito(true);
+    } catch {
+      setErrorNews("No pudimos suscribirte. Probá de nuevo.");
     }
   };
 
@@ -73,6 +85,11 @@ function Footer() {
                 <FaPaperPlane aria-hidden="true" />
                 {t(idioma, "ft.suscribir")}
               </button>
+              {errorNews && (
+                <p className="badge badge-peligro" role="alert">
+                  {errorNews}
+                </p>
+              )}
             </form>
           )}
         </div>

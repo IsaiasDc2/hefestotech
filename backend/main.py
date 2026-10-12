@@ -14,12 +14,14 @@ import mercadopago
 
 from admin_api import router as admin_router
 from checkout_api import router as checkout_router
+from contacto_api import router as contacto_router
 
 load_dotenv()
 
 app = FastAPI(title="Hefesto Tech API")
 app.include_router(admin_router)
 app.include_router(checkout_router)
+app.include_router(contacto_router)
 
 origenes = [
     "http://localhost:5173",

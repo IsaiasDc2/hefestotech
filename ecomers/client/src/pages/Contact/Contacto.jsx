@@ -28,16 +28,28 @@ const WHATSAPP_CANALES = [
 function Contactanos() {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setEnviando(true);
-
-    setTimeout(() => {
-      setEnviando(false);
+    setErrorEnvio("");
+    try {
+      const datos = Object.fromEntries(new FormData(e.target).entries());
+      const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+      const respuesta = await fetch(`${API_URL}/api/contacto`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos),
+      });
+      if (!respuesta.ok) throw new Error();
       setEnviado(true);
       e.target.reset();
-    }, 600);
+    } catch {
+      setErrorEnvio("No pudimos enviar tu mensaje. Probá de nuevo o escribinos por WhatsApp.");
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -202,6 +214,11 @@ function Contactanos() {
           {enviado && (
             <p className="badge badge-ok mensaje-exito" role="status">
               ¡Listo! Recibimos tu mensaje y te respondemos en menos de 24 hs.
+            </p>
+          )}
+          {errorEnvio && (
+            <p className="badge badge-peligro" role="alert">
+              {errorEnvio}
             </p>
           )}
         </form>
