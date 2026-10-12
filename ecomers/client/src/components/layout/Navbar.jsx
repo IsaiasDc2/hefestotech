@@ -7,7 +7,6 @@ import {
   FaMagnifyingGlass,
   FaShieldHalved,
   FaUser,
-  FaUserPlus,
   FaTruckFast,
   FaMoon,
   FaScrewdriverWrench,
@@ -197,13 +196,13 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
             >
               <FaEllipsis aria-hidden="true" />
             </button>
-            <Link to="/cuenta?modo=registro" className="link-cuenta link-registro">
-              <FaUserPlus aria-hidden="true" />
-              <span>{t(idioma, "nav.registrate")}</span>
-            </Link>
-            <Link to="/cuenta" className="link-cuenta" aria-label={t(idioma, "nav.sesion")}>
+            <Link
+              to="/cuenta"
+              className="link-cuenta link-cuenta-icono"
+              aria-label={t(idioma, "nav.sesion")}
+              title={t(idioma, "nav.sesion")}
+            >
               <FaUser aria-hidden="true" />
-              <span>{t(idioma, "nav.sesion")}</span>
             </Link>
             {esAdmin && (
               <Link
