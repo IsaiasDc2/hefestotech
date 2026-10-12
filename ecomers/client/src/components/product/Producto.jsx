@@ -1,10 +1,46 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import ProductCard from "./ProductCard";
 import "./Productos.css";
 
+
+function usarVisibleUnaVez() {
+  const obsRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => () => obsRef.current?.disconnect(), []);
+
+  const ref = useCallback(
+    (el) => {
+      obsRef.current?.disconnect();
+      obsRef.current = null;
+      if (!el || visible) return;
+      if (
+        typeof IntersectionObserver === "undefined" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        setVisible(true);
+        return;
+      }
+      const obs = new IntersectionObserver(
+        (entradas) => {
+          if (entradas.some((e) => e.isIntersecting)) {
+            setVisible(true);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
+      );
+      obs.observe(el);
+      obsRef.current = obs;
+    },
+    [visible]
+  );
+
+  return [ref, visible];
+}
 
 function Productos({ agregarAlCarrito }) {
 
@@ -27,10 +63,20 @@ function Productos({ agregarAlCarrito }) {
 
   const [precioMax, setPrecioMax] = useState("");
 
+  const [busquedaDif, setBusquedaDif] = useState(busqueda);
+
+  const [precioMinDif, setPrecioMinDif] = useState(precioMin);
+
+  const [precioMaxDif, setPrecioMaxDif] = useState(precioMax);
+
   const [orden, setOrden] = useState(() => {
     const o = params.get("orden");
     return o === "mayor" || o === "menor" ? o : "";
   });
+
+  const [reintento, setReintento] = useState(0);
+
+  const [grillaRef, grillaVisible] = usarVisibleUnaVez();
 
 
   useEffect(() => {
@@ -43,7 +89,20 @@ function Productos({ agregarAlCarrito }) {
   }, [params]);
 
 
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDif(busqueda), 250);
+    return () => clearTimeout(t);
+  }, [busqueda]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMinDif(precioMin), 250);
+    return () => clearTimeout(t);
+  }, [precioMin]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPrecioMaxDif(precioMax), 250);
+    return () => clearTimeout(t);
+  }, [precioMax]);
 
 
   useEffect(() => {
@@ -60,11 +119,9 @@ function Productos({ agregarAlCarrito }) {
         setError(null);
 
 
-
         const { data, error } = await supabase
           .from("productos")
           .select("*");
-
 
 
         if(error){
@@ -72,7 +129,6 @@ function Productos({ agregarAlCarrito }) {
           throw new Error(error.message);
 
         }
-
 
 
         const filas = (Array.isArray(data) ? data : []).map((p) => ({
@@ -110,12 +166,7 @@ function Productos({ agregarAlCarrito }) {
     cargarProductos();
 
 
-  }, []);
-
-
-
-
-
+  }, [reintento]);
 
 
   const etiquetaCategoria =
@@ -141,11 +192,6 @@ function Productos({ agregarAlCarrito }) {
   },[productos]);
 
 
-
-
-
-
-
   const limpiarFiltros = ()=>{
 
 
@@ -165,11 +211,6 @@ function Productos({ agregarAlCarrito }) {
   };
 
 
-
-
-
-
-
   const productosOrdenados = useMemo(()=>{
 
 
@@ -182,18 +223,13 @@ function Productos({ agregarAlCarrito }) {
       || "";
 
 
-
       const texto =
-      busqueda
+      busquedaDif
       .toLowerCase();
-
-
 
 
       const coincideNombre =
       nombre.includes(texto);
-
-
 
 
       const coincideCategoria =
@@ -208,28 +244,20 @@ function Productos({ agregarAlCarrito }) {
       (producto.descuento_porcentaje ?? 0) > 0;
 
 
-
-
-
       const coincideMin =
-      precioMin===""
+      precioMinDif===""
 
       ||
 
-      producto.precio >= Number(precioMin);
-
-
-
+      producto.precio >= Number(precioMinDif);
 
 
       const coincideMax =
-      precioMax===""
+      precioMaxDif===""
 
       ||
 
-      producto.precio <= Number(precioMax);
-
-
+      producto.precio <= Number(precioMaxDif);
 
 
       return (
@@ -246,10 +274,6 @@ function Productos({ agregarAlCarrito }) {
     });
 
 
-
-
-
-
     if(orden==="mayor"){
 
       resultado.sort(
@@ -257,7 +281,6 @@ function Productos({ agregarAlCarrito }) {
       );
 
     }
-
 
 
     if(orden==="menor"){
@@ -269,26 +292,18 @@ function Productos({ agregarAlCarrito }) {
     }
 
 
-
     return resultado;
-
 
 
   },[
     productos,
-    busqueda,
+    busquedaDif,
     categoria,
     soloOfertas,
-    precioMin,
-    precioMax,
+    precioMinDif,
+    precioMaxDif,
     orden
   ]);
-
-
-
-
-
-
 
 
   return (
@@ -318,11 +333,7 @@ function Productos({ agregarAlCarrito }) {
       </header>
 
 
-
-
-
       <div className="filtros">
-
 
 
         <input
@@ -331,7 +342,9 @@ function Productos({ agregarAlCarrito }) {
 
           type="text"
 
-          placeholder="🔍 Buscar producto..."
+          placeholder="Buscar producto..."
+
+          aria-label="Buscar producto"
 
           value={busqueda}
 
@@ -342,12 +355,11 @@ function Productos({ agregarAlCarrito }) {
         />
 
 
-
-
-
         <select
 
           value={categoria}
+
+          aria-label="Filtrar por categoría"
 
           onChange={
             e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
@@ -380,15 +392,17 @@ function Productos({ agregarAlCarrito }) {
         </select>
 
 
-
-
-
-
         <input
 
           type="number"
 
           placeholder="Precio mínimo"
+
+          aria-label="Precio mínimo"
+
+          min="0"
+
+          inputMode="numeric"
 
           value={precioMin}
 
@@ -399,14 +413,17 @@ function Productos({ agregarAlCarrito }) {
         />
 
 
-
-
-
         <input
 
           type="number"
 
           placeholder="Precio máximo"
+
+          aria-label="Precio máximo"
+
+          min="0"
+
+          inputMode="numeric"
 
           value={precioMax}
 
@@ -417,14 +434,11 @@ function Productos({ agregarAlCarrito }) {
         />
 
 
-
-
-
-
-
         <select
 
           value={orden}
+
+          aria-label="Ordenar por precio"
 
           onChange={
             e=>setOrden(e.target.value)
@@ -450,11 +464,6 @@ function Productos({ agregarAlCarrito }) {
         </select>
 
 
-
-
-
-
-
         <button
 
           className="btn-limpiar"
@@ -468,13 +477,7 @@ function Productos({ agregarAlCarrito }) {
         </button>
 
 
-
       </div>
-
-
-
-
-
 
 
       {
@@ -487,26 +490,22 @@ function Productos({ agregarAlCarrito }) {
       }
 
 
-
-
-
-
       {
         error && !cargando &&
 
-        <p className="estado-error">
-
-          Error:
-          {error}
-
-        </p>
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar el catálogo</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => setReintento((n) => n + 1)}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
 
       }
-
-
-
-
-
 
 
       {
@@ -525,7 +524,7 @@ function Productos({ agregarAlCarrito }) {
         !error &&
 
 
-        <div className="grid-productos">
+        <div ref={grillaRef} className={`grid-productos${grillaVisible ? " is-visible" : ""}`}>
 
 
           {
@@ -570,7 +569,6 @@ function Productos({ agregarAlCarrito }) {
 
 
       }
-
 
 
     </section>

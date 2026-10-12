@@ -1,0 +1,23 @@
+fuente,url_o_ruta,contexto,accesible,error,formato,ancho_px,alto_px,proporcion,peso_kb,modo,transparencia,fondo_bordes,uniforme_borde,barras,baja_res_600,tiny_192,sugerencia
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\almacenamiento.webp,banners,si,,webp,500,500,500:500,8.1,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\hero-banner.webp,banners,si,,webp,1961,544,1961:544,110.5,RGB,no,otro,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\hero-neon.webp,banners,si,,webp,1365,768,1365:768,100.2,RGB,no,mixto,no,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\hero-raro.webp,banners,si,,webp,863,1248,863:1248,49.4,RGB,no,mixto,no,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\oferta.webp,banners,si,,webp,500,500,500:500,20.5,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\periferico.webp,banners,si,,webp,500,333,500:333,46.3,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\placa.webp,banners,si,,webp,500,342,500:342,15.0,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\procesador.webp,banners,si,,webp,500,280,500:280,35.3,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\ram.webp,banners,si,,webp,500,500,500:500,13.2,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\tira-escritorio.webp,banners,si,,webp,1024,1024,1024:1024,110.1,RGB,no,mixto,no,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\banners\tira-silla.webp,banners,si,,webp,1452,720,1452:720,108.4,RGB,no,mixto,no,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\apple-touch-icon.png,brand,si,,png,180,180,180:180,24.6,RGB,no,otro,si,,si,si,icono/chico: verificar nitidez en su uso
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\favicon-32.png,brand,si,,png,32,32,32:32,2.5,RGBA,posible,otro,si,,si,si,icono/chico: verificar nitidez en su uso
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\icon-192.png,brand,si,,png,192,192,192:192,31.1,RGBA,posible,otro,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\icon-512.png,brand,si,,png,512,512,512:512,154.3,RGBA,posible,otro,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\logo-lockup.png,brand,si,,png,560,435,560:435,170.7,RGBA,posible,otro,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\logo-lockup.webp,brand,si,,webp,560,435,560:435,15.4,RGB,no,otro,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\logo-original.jpeg,brand,si,,jpeg,868,881,868:881,24.5,RGB,no,otro,si,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\logo-symbol.png,brand,si,,png,308,296,308:296,97.6,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\logo-symbol.webp,brand,si,,webp,308,296,308:296,16.3,RGBA,si,transparente,si,,si,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\brand\og-cover.jpg,brand,si,,jpeg,1200,630,1200:630,31.8,RGB,no,negro,si,,no,no,ok
+local,C:\Users\isaia\OneDrive\Desktop\hefestotech\ecomers\client\public\favicon.svg,brand,n/a,svg vectorial,svg,,,,,,si,n/a,,,,,ok vectorial

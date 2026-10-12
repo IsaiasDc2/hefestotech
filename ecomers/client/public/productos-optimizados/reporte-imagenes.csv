@@ -1,0 +1,23 @@
+archivo,origen,px,peso_kb,formato,proporcion,transparencia,fondo_bordes,fondo_uniforme,baja_resolucion,nota
+almacenamiento.webp,local,500x176,16.6,WEBP,125:44,si,#cbd0d1,si,SI,min lado 176px vs umbral 192px
+hero-banner.webp,local,1961x544,110.5,WEBP,1961:544,no,#161619,no,no,min lado 544px vs umbral 192px
+hero-neon.webp,local,1365x768,100.2,WEBP,455:256,no,#130e0f,si,no,min lado 768px vs umbral 192px
+hero-raro.webp,local,500x215,18.3,WEBP,100:43,no,#180d16,no,no,min lado 215px vs umbral 192px
+oferta.webp,local,500x500,9.0,WEBP,1:1,si,#f9f9fa,si,no,min lado 500px vs umbral 192px
+periferico.webp,local,500x430,7.9,WEBP,50:43,si,#fdfdfd,si,no,min lado 430px vs umbral 192px
+placa.webp,local,500x342,15.0,WEBP,250:171,si,#fefefe,si,no,min lado 342px vs umbral 192px
+procesador.webp,local,500x500,14.8,WEBP,1:1,si,#fefefe,si,no,min lado 500px vs umbral 192px
+ram.webp,local,500x500,13.2,WEBP,1:1,si,#fbfbfb,si,no,min lado 500px vs umbral 192px
+tira-escritorio.webp,local,1024x1024,110.1,WEBP,1:1,no,#1f283f,no,no,min lado 1024px vs umbral 192px
+tira-placa.webp,local,1264x842,407.6,JPEG,632:421,no,#040404,si,no,min lado 842px vs umbral 192px
+tira-silla.webp,local,1452x720,108.4,WEBP,121:60,no,#433629,no,no,min lado 720px vs umbral 192px
+apple-touch-icon.png,local,180x180,24.6,PNG,1:1,no,#252525,si,no,"asset de marca, tamano nominal"
+favicon-32.png,local,32x32,2.5,PNG,1:1,si,#293438,si,no,"asset de marca, tamano nominal"
+icon-192.png,local,192x192,31.1,PNG,1:1,si,#252525,si,no,"asset de marca, tamano nominal"
+icon-512.png,local,512x512,154.3,PNG,1:1,si,#252525,si,no,"asset de marca, tamano nominal"
+logo-lockup.png,local,560x435,170.7,PNG,112:87,si,#252525,si,no,"asset de marca, tamano nominal"
+logo-lockup.webp,local,560x435,15.4,WEBP,112:87,no,#252525,si,no,"asset de marca, tamano nominal"
+logo-original.jpeg,local,868x881,24.5,JPEG,868:881,no,#242424,si,no,"asset de marca, tamano nominal"
+logo-symbol.png,local,308x296,97.6,PNG,77:74,si,#242424,si,no,"asset de marca, tamano nominal"
+logo-symbol.webp,local,308x296,16.3,WEBP,77:74,si,#252525,si,no,"asset de marca, tamano nominal"
+og-cover.jpg,local,1200x630,31.8,JPEG,40:21,no,#0b0e15,si,no,"asset de marca, tamano nominal"

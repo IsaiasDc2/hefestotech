@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
+import Marca from "../../components/brand/Marca";
 
 function Registro() {
   const [nombre, setNombre] = useState("");
@@ -69,8 +70,9 @@ function Registro() {
   return (
     <div className="login-pagina">
       <form className="login card anim-entrada" onSubmit={handleSubmit}>
-        <p className="badge badge-info hero-kicker">
-          <FaUser aria-hidden="true" /> HefestoTech
+        <p className="badge badge-info hero-kicker kicker-marca">
+          <Marca variante="simbolo" ancho={22} alto={22} decorativa />
+          HefestoTech
         </p>
         <h2>Crear cuenta</h2>
 

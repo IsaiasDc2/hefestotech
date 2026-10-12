@@ -1,5 +1,14 @@
 *.env
+.env.local
+**/.env.local
+# tooling local (no versionar)
+.opencode/
+# skills de agentes locales (no versionar)
+ecomers/client/.agents/
 node_modules/
+**/node_modules/
+dist/
+**/dist/
 .venv
 venv/
 *.log
@@ -13,3 +22,15 @@ config.json
 *.db
 .env
 node_modules
+# estado local impeccable (no versionar)
+.impeccable/
+.agents/
+.claude/
+.codex/
+.cursor/
+skills/
+stop-slop/
+humanizer/
+taste-skill/
+skills-lock.json
+ecomers/client/skills-lock.json

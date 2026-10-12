@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FaMicrochip,
@@ -13,9 +13,18 @@ import {
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
 import ProductCard from "../../components/product/ProductCard";
+import "../../components/product/ProductCard.css";
 import ProductCarousel from "../../components/product/ProductCarousel";
+import SectionHeader from "../../components/ui/SectionHeader";
+import FilterPanel from "../../components/filters/FilterPanel";
+import {
+  contarCategorias,
+  contarMarcas,
+  filtrar,
+} from "../../components/filters/filtros";
 import PromoBar from "../../components/layout/PromoBar";
 import Banner from "../../components/layout/Banner";
+import TiraBanner from "../../components/layout/TiraBanner";
 import "./Home.css";
 
 const MARCAS = [
@@ -30,34 +39,70 @@ const MARCAS = [
 ];
 
 const CATEGORIAS = [
-  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip /> },
-  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop /> },
-  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory /> },
-  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive /> },
-  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard /> },
-  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire /> },
+  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip />, imagen: "procesador" },
+  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop />, imagen: "placa" },
+  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory />, imagen: "ram" },
+  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive />, imagen: "almacenamiento" },
+  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard />, imagen: "periferico" },
+  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire />, imagen: "oferta" },
 ];
+
+const BASE = import.meta.env.BASE_URL || "/";
+
+function usarVisibleUnaVez() {
+  const obsRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => () => obsRef.current?.disconnect(), []);
+
+  const ref = useCallback(
+    (el) => {
+      obsRef.current?.disconnect();
+      obsRef.current = null;
+      if (!el || visible) return;
+      if (
+        typeof IntersectionObserver === "undefined" ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        setVisible(true);
+        return;
+      }
+      const obs = new IntersectionObserver(
+        (entradas) => {
+          if (entradas.some((e) => e.isIntersecting)) {
+            setVisible(true);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
+      );
+      obs.observe(el);
+      obsRef.current = obs;
+    },
+    [visible]
+  );
+
+  return [ref, visible];
+}
 
 function Home({ agregarAlCarrito }) {
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
+  const [reintento, setReintento] = useState(0);
   const [filtroTexto, setFiltroTexto] = useState("");
+  const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
-  const pillsRef = useRef(null);
+  const [marcasElegidas, setMarcasElegidas] = useState([]);
+  const [refCategorias, categoriasVisibles] = usarVisibleUnaVez();
+  const [refDestacados, destacadosVisibles] = usarVisibleUnaVez();
+  const [refMarcas, marcasVisibles] = usarVisibleUnaVez();
+  const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
 
-  const pills = [
-    { label: "Todas", value: "Todas" },
-    ...CATEGORIAS.filter((c) => c.db).map((c) => ({
-      label: c.nombre,
-      value: c.db,
-    })),
-  ];
-
-  const desplazarPills = (dir) => {
-    const el = pillsRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir * 220, behavior: "smooth" });
-  };
+  const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
+    label: c.nombre,
+    value: c.db,
+  }));
 
   const normalizar = (data) =>
     (data || []).map((p) => ({
@@ -72,6 +117,7 @@ function Home({ agregarAlCarrito }) {
   useEffect(() => {
     async function cargar() {
       try {
+        setError(false);
         const { data, error } = await supabase
           .from("productos")
           .select("*")
@@ -80,28 +126,55 @@ function Home({ agregarAlCarrito }) {
         setProductos(normalizar(data));
       } catch {
         setProductos([]);
+        setError(true);
       } finally {
         setCargando(false);
       }
     }
     cargar();
-  }, []);
+  }, [reintento]);
 
   const destacados = productos.slice(0, 8);
   const ofertas = productos
     .filter((p) => p.descuento_porcentaje > 0)
     .slice(0, 10);
 
-  const filtrados = productos.filter((p) => {
-    const texto = filtroTexto.trim().toLowerCase();
-    const coincideTexto =
-      !texto ||
-      p.nombre.toLowerCase().includes(texto) ||
-      (p.marca || "").toLowerCase().includes(texto);
-    const coincideCategoria =
-      filtroCategoria === "Todas" || p.categoria === filtroCategoria;
-    return coincideTexto && coincideCategoria;
+  const conteosCategoria = contarCategorias(productos, {
+    texto: filtroTextoDif,
+    marcas: marcasElegidas,
   });
+  /* Conteo real por tarjeta de categoría (respeta texto+marcas del panel).
+     Ofertas no es una categoría DB: se cuenta sobre el mismo base filtrada. */
+  const baseConteo = filtrar(productos, {
+    textoDif: filtroTextoDif,
+    categoria: "Todas",
+    marcas: marcasElegidas,
+  });
+  const conteoPorSlug = Object.fromEntries(
+    CATEGORIAS.filter((c) => c.db).map((c) => [
+      c.slug,
+      conteosCategoria[c.db] ?? 0,
+    ])
+  );
+  conteoPorSlug.ofertas = baseConteo.filter(
+    (p) => Number(p.descuento_porcentaje ?? 0) > 0
+  ).length;
+  const marcasDisponibles = Object.entries(
+    contarMarcas(productos, {
+      texto: filtroTextoDif,
+      categoria: filtroCategoria,
+    })
+  ).map(([nombre, conteo]) => ({ nombre, conteo }));
+  const filtrados = filtrar(productos, {
+    textoDif: filtroTextoDif,
+    categoria: filtroCategoria,
+    marcas: marcasElegidas,
+  });
+  const limpiarFiltros = () => {
+    setFiltroTexto("");
+    setFiltroCategoria("Todas");
+    setMarcasElegidas([]);
+  };
 
   return (
     <div className="home">
@@ -109,176 +182,159 @@ function Home({ agregarAlCarrito }) {
       <PromoBar />
 
       <section className="seccion" aria-labelledby="home-categorias">
-        <div className="seccion-head editorial">
-          <div className="seccion-titular">
-            <p className="kicker">
-              <span className="kicker-num" aria-hidden="true">01</span>
-              Explorar
-            </p>
-            <h2 id="home-categorias">Explorá por categoría</h2>
-          </div>
-          <Link to="/productos" className="ver-todo">
-            Ver todo <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-        <div className="grid-categorias">
-          {CATEGORIAS.map((c) => (
-            <Link
-              key={c.nombre}
-              to={`/productos?categoria=${c.slug}`}
-              className="card-categoria"
-            >
-              <span className="cat-icono" aria-hidden="true">{c.icono}</span>
-              <span>{c.nombre}</span>
-            </Link>
-          ))}
+        <SectionHeader
+          kicker="Explorar"
+          titulo="Explorá por categoría"
+          id="home-categorias"
+          verTodo="/productos"
+        />
+        <div ref={refCategorias} className={`grid-categorias${categoriasVisibles ? " is-visible" : ""}`}>
+          {CATEGORIAS.map((c) => {
+            const conteo = conteoPorSlug[c.slug] ?? 0;
+            return (
+              <Link
+                key={c.nombre}
+                to={`/productos?categoria=${c.slug}`}
+                className="card-categoria"
+                aria-label={
+                  conteo > 0
+                    ? `${c.nombre}, ${conteo} ${conteo === 1 ? "producto" : "productos"}`
+                    : c.nombre
+                }
+              >
+                <span className="cat-icono" aria-hidden="true">
+                  {c.icono}
+                  <img
+                    src={`${BASE}banners/${c.imagen}.webp`}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="128"
+                    height="128"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </span>
+                <span className="cat-nombre">{c.nombre}</span>
+                {conteo > 0 && (
+                  <span className="cat-conteo">
+                    {conteo} {conteo === 1 ? "producto" : "productos"}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
       {cargando ? (
-        <p className="estado-carga">Calentando la forja...</p>
+        <section className="seccion" aria-label="Cargando catálogo">
+          <p className="estado-carga" role="status">Cargando productos…</p>
+          <div className="grid-destacados" aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card-skeleton" />
+            ))}
+          </div>
+        </section>
+      ) : error ? (
+        <div className="vacio" role="alert">
+          <p className="vacio-titulo">No pudimos cargar los productos</p>
+          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <button
+            type="button"
+            className="btn-limpiar"
+            onClick={() => {
+              setCargando(true);
+              setReintento((n) => n + 1);
+            }}
+          >
+            ↻ Reintentar
+          </button>
+        </div>
       ) : (
         <>
-          <section className="seccion filtro-home" aria-labelledby="home-catalogo">
-            <div className="seccion-head editorial">
-              <div className="seccion-titular">
-                <p className="kicker">
-                  <span className="kicker-num" aria-hidden="true">02</span>
-                  Destacados
-                </p>
-                <h2 id="home-catalogo">Conocé nuestros productos destacados</h2>
-              </div>
-              <span className="conteo">
-                {filtrados.length} producto{filtrados.length === 1 ? "" : "s"}
-              </span>
-            </div>
-            <div className="pills-wrap">
-              <button
-                type="button"
-                className="pills-flecha"
-                onClick={() => desplazarPills(-1)}
-                aria-label="Categorías anteriores"
-              >
-                ‹
-              </button>
-              <div
-                className="pills-categorias"
-                ref={pillsRef}
-                role="tablist"
-                aria-label="Filtrá por categoría"
-              >
-                {pills.map((pill) => (
-                  <button
-                    key={pill.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={filtroCategoria === pill.value}
-                    className={`pill${filtroCategoria === pill.value ? " activa" : ""}`}
-                    onClick={() => setFiltroCategoria(pill.value)}
-                  >
-                    {pill.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                className="pills-flecha"
-                onClick={() => desplazarPills(1)}
-                aria-label="Más categorías"
-              >
-                ›
-              </button>
-            </div>
-            <div className="filtros">
-              <input
-                className="buscador"
-                type="text"
-                placeholder="🔍 Buscar por nombre o marca..."
-                value={filtroTexto}
-                onChange={(e) => setFiltroTexto(e.target.value)}
-                aria-label="Buscar productos"
-              />
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-                aria-label="Filtrar por categoría"
-              >
-                <option value="Todas">Todas las categorías</option>
-                {CATEGORIAS.filter((c) => c.db).map((c) => (
-                  <option key={c.slug} value={c.db}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
-              {(filtroTexto || filtroCategoria !== "Todas") && (
-                <button
-                  className="btn-limpiar"
-                  onClick={() => {
-                    setFiltroTexto("");
-                    setFiltroCategoria("Todas");
-                  }}
-                >
-                  ↻ Limpiar
-                </button>
-              )}
-            </div>
-            {filtrados.length === 0 ? (
-              <div className="vacio">
-                <p>Sin resultados con ese filtro.</p>
-                <span>Probá con otra búsqueda o categoría.</span>
-              </div>
-            ) : (
-              <div className="grid-destacados">
-                {filtrados.slice(0, 8).map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    producto={p}
-                    agregarAlCarrito={agregarAlCarrito}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
           <ProductCarousel
-            titulo="Ofertas de la semana"
-            kicker="Botín semanal"
-            kickerNum="03"
+            titulo="En oferta"
+            kicker="Precios rebajados"
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
           />
+
+          <TiraBanner
+            src={`${BASE}banners/tira-escritorio.webp`}
+            alt="Setup gamer con monitor sobre escritorio"
+          />
+
+          <section className="seccion filtro-home" aria-labelledby="home-catalogo">
+            <SectionHeader
+              kicker="Destacados"
+              titulo="Explorá el catálogo"
+              id="home-catalogo"
+              verTodo="/productos"
+            />
+            <FilterPanel
+              texto={filtroTexto}
+              onTexto={setFiltroTexto}
+              categoria={filtroCategoria}
+              onCategoria={setFiltroCategoria}
+              marcas={marcasElegidas}
+              onMarcas={setMarcasElegidas}
+              categorias={categoriasPanel}
+              marcasDisponibles={marcasDisponibles}
+              conteosCategoria={conteosCategoria}
+              total={filtrados.length}
+              totalCatalogo={productos.length}
+              onLimpiar={limpiarFiltros}
+            />
+            <div ref={refDestacados} className={`grid-destacados${destacadosVisibles ? " is-visible" : ""}`}>
+              {filtrados.slice(0, 8).map((p) => (
+                <ProductCard
+                  key={p.id}
+                  producto={p}
+                  agregarAlCarrito={agregarAlCarrito}
+                />
+              ))}
+            </div>
+          </section>
+
+          <TiraBanner
+            src={`${BASE}banners/tira-silla.webp`}
+            alt="Silla gamer"
+            to="/productos?categoria=sillas-gamer"
+            etiqueta="Ver sillas gamer"
+          />
           <ProductCarousel
-            titulo="Destacados de la forja"
-            kicker="Los más buscados"
-            kickerNum="04"
+            titulo="Destacados"
+            kicker="Selección"
             verTodo="/productos"
             productos={destacados}
             agregarAlCarrito={agregarAlCarrito}
           />
+          <TiraBanner
+            src={`${BASE}banners/tira-placa.webp`}
+            alt="Placas de video RTX"
+            to="/productos?categoria=placas-de-video"
+            etiqueta="Ver placas de video"
+          />
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
-              <p>El catálogo se está forjando.</p>
-              <span>Volvé pronto para ver los destacados.</span>
+              <p>El catálogo está vacío por ahora.</p>
+              <span>Volvé pronto o explorá el catálogo completo.</span>
             </div>
           )}
         </>
       )}
 
       <section className="seccion marcas" aria-labelledby="home-marcas">
-        <div className="seccion-head editorial">
-          <div className="seccion-titular">
-            <p className="kicker">
-              <span className="kicker-num" aria-hidden="true">05</span>
-              Marcas
-            </p>
-            <h2 id="home-marcas">Nuestras marcas</h2>
-          </div>
-          <Link to="/productos" className="ver-todo">
-            Ver todo <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-        <div className="marcas-fila">
+        <SectionHeader
+          kicker="Marcas"
+          titulo="Marcas"
+          id="home-marcas"
+          verTodo="/productos"
+        />
+        <div ref={refMarcas} className={`marcas-fila${marcasVisibles ? " is-visible" : ""}`}>
           {MARCAS.map((m) => (
             <Link
               key={m}
@@ -291,7 +347,7 @@ function Home({ agregarAlCarrito }) {
         </div>
       </section>
 
-      <section className="beneficios" aria-label="Beneficios de compra">
+      <section ref={refBeneficios} className={`beneficios${beneficiosVisibles ? " is-visible" : ""}`} aria-label="Beneficios de compra">
         <div className="beneficio">
           <FaCreditCard aria-hidden="true" />
           <div>
@@ -299,12 +355,42 @@ function Home({ agregarAlCarrito }) {
             <span>Con todas las tarjetas</span>
           </div>
         </div>
-        <div className="beneficio">
+        <div className="beneficio beneficio-envio">
           <FaTruckFast aria-hidden="true" />
           <div>
             <strong>Envío a todo el país</strong>
             <span>Gratis desde $99.999</span>
           </div>
+          <span className="envio-anim" aria-hidden="true">
+            <svg viewBox="0 0 200 32" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line className="env-track" x1="8" y1="24" x2="190" y2="24" />
+              <line className="env-trail" x1="8" y1="24" x2="190" y2="24" />
+              <g transform="translate(8,2)">
+                <g className="env-cart">
+                  <g transform="skewX(-8)">
+                    <path d="M1 3 L-4 -3" />
+                    <path d="M1 3 H17 L14.5 13 H3.5 Z" />
+                    <path d="M7 3 L8 13" />
+                    <circle className="env-wheel" cx="6" cy="16.5" r="2" />
+                    <circle className="env-wheel" cx="12.5" cy="16.5" r="2" />
+                  </g>
+                  <g className="env-speed">
+                    <path d="M-10 5 H-18" />
+                    <path d="M-11 9 H-21" />
+                    <path d="M-10 13 H-17" />
+                  </g>
+                </g>
+              </g>
+              <g transform="translate(8,15)">
+                <g className="env-check">
+                  <g className="env-check-pop">
+                    <circle r="9" />
+                    <path d="M-4 0 L-1 3.5 L4.5 -3" />
+                  </g>
+                </g>
+              </g>
+            </svg>
+          </span>
         </div>
         <div className="beneficio">
           <FaShieldHalved aria-hidden="true" />

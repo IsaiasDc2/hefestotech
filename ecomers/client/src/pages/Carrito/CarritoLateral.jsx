@@ -122,7 +122,7 @@ function CarritoLateral({
             >
               <span
                 className={`cart-envio-relleno${envioGratis ? " is-completo" : ""}`}
-                style={{ width: `${Math.round(progreso * 100)}%` }}
+                style={{ "--relleno": progreso }}
               />
             </div>
           </div>

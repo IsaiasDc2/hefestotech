@@ -1,0 +1,160 @@
+/* =========================================================
+   Tira publicitaria
+   ========================================================= */
+.tira-banner {
+  --tira-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --tira-alto-max: 440px;
+
+  max-width: var(--banner-ancho, 1280px);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem) clamp(0.9rem, 3vw, 1.5rem) 0;
+
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 550ms var(--tira-ease),
+    transform 550ms var(--tira-ease);
+}
+
+.tira-banner.es-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Marco de pieza publicitaria: radio card, borde degradado de 1px, sombra en
+   reposo. El borde usa padding-box/border-box para que el degradado viva solo
+   en el trazo de 1px (Flat-At-Rest: sin glow).
+
+   Revelado con mascara vertical (clip-path) una sola vez. El estado final usa
+   insets NEGATIVOS: con inset(0) la mascara recortaria la sombra, el glow de
+   hover y el anillo de foco, que viven fuera de la caja.
+
+   La transicion lista TODO lo que cambia en el marco (clip-path, lift,
+   sombra): si el enlace declarara la suya aparte, pisaria a esta y el
+   revelado dejaria de animarse. */
+.tira-banner__marco {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radio-card);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface-elevated), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--primary-borde), var(--border)) border-box;
+  background-color: var(--card-image-bg);
+  box-shadow: var(--shadow-rest);
+  clip-path: inset(0 0 100% 0);
+  transition:
+    clip-path 600ms var(--tira-ease),
+    transform 200ms var(--tira-ease),
+    box-shadow 200ms var(--tira-ease);
+}
+
+.tira-banner.es-visible .tira-banner__marco {
+  clip-path: inset(-120px -120px -120px -120px);
+}
+
+.tira-banner__marco img {
+  position: relative;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: var(--tira-alto-max);
+  object-fit: cover;
+  object-position: center;
+  border: 0;
+  background: transparent;
+  /* Parallax: --tira-y y --tira-escala los escribe el rAF del componente.
+     translate va en `transform` (sin transicion, sigue al scroll) y la
+     escala en su propia propiedad (transiciona sin tironeo al activarse). */
+  transform: translate3d(0, var(--tira-y, 0px), 0);
+  scale: var(--tira-escala, 1);
+  transition: scale 600ms var(--tira-ease);
+}
+
+/* Vineta de legibilidad: velo inferior de 15% maximo. */
+.tira-banner__marco::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, transparent 62%, rgba(11, 14, 20, 0.15));
+  pointer-events: none;
+}
+
+.tira-banner__enlace { cursor: pointer; }
+
+@media (hover: hover) and (pointer: fine) {
+  /* Brillo que cruza la pieza al pasar el mouse. */
+  .tira-banner__enlace::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: 0;
+    z-index: 2;
+    width: 34%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    transform: translateX(-160%) skewX(-12deg);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tira-banner__enlace:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift), var(--glow-brand);
+  }
+
+  .tira-banner__enlace:hover img {
+    scale: calc(var(--tira-escala, 1) * 1.015);
+  }
+
+  .tira-banner__enlace:hover::after {
+    opacity: 1;
+    transform: translateX(340%) skewX(-12deg);
+    transition:
+      transform 650ms var(--tira-ease),
+      opacity 200ms var(--tira-ease);
+  }
+}
+
+.tira-banner__enlace:active { transform: scale(0.99); }
+
+.tira-banner__enlace:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
+}
+
+@media (max-width: 480px) {
+  .tira-banner { --tira-alto-max: 240px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tira-banner {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  /* Misma especificidad que las reglas base para que ganen. */
+  .tira-banner .tira-banner__marco,
+  .tira-banner.es-visible .tira-banner__marco {
+    clip-path: none;
+    transition: none;
+  }
+  .tira-banner .tira-banner__marco img,
+  .tira-banner .tira-banner__enlace:hover img {
+    transform: none;
+    scale: 1;
+    transition: none;
+  }
+  .tira-banner .tira-banner__enlace,
+  .tira-banner .tira-banner__enlace:hover,
+  .tira-banner .tira-banner__enlace:active {
+    transform: none;
+    transition: none;
+  }
+  .tira-banner .tira-banner__enlace::after { display: none; }
+}

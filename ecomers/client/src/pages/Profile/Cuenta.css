@@ -36,11 +36,18 @@
   border: 1px solid transparent;
   border-radius: var(--radio-full);
   padding: 0.6rem 1.15rem;
+  min-height: 44px;
   font-weight: 600;
   font-size: 0.88rem;
-  line-height: 1;
+  line-height: 1.4;
   color: var(--muted);
   transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+
+.cuenta-tabs button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--anillo-foco);
 }
 
 .cuenta-tabs button:hover:not(.activo) {
@@ -82,6 +89,10 @@
   margin-bottom: 1rem;
 }
 
+.cuenta-sesion .btn-fantasma {
+  min-height: 44px;
+}
+
 .panel-cuenta .badge {
   margin-bottom: 0.9rem;
 }
@@ -114,8 +125,10 @@
 }
 
 .panel-cuenta .vacio .btn-fuego,
-.panel-cuenta .vacio .btn-fantasma {
+.panel-cuenta .vacio .btn-fantasma,
+.panel-cuenta .vacio .btn-primary {
   width: 100%;
+  min-height: 44px;
 }
 
 @media (max-width: 480px) {

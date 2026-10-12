@@ -1,0 +1,7 @@
+fastapi
+httpx
+uvicorn[standard]
+pandas
+python-dotenv
+google-genai==2.29.0
+mercadopago
