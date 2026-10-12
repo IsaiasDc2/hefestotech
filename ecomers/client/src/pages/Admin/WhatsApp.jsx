@@ -60,10 +60,22 @@ function Bandeja({ avisar }) {
   const [hilo, setHilo] = useState({ estado: "vacio", mensajes: [] });
   const [borrador, setBorrador] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   const conversaciones = datos?.conversaciones ?? [];
   const kpis = datos?.kpis ?? { abiertos_hoy: 0, sin_responder_48h: 0, por_estado: {} };
   const actual = conversaciones.find((c) => c.id === elegido) ?? null;
+
+  const iniciales = (nombre) => {
+    const partes = String(nombre || "Invitado").trim().split(/\s+/).slice(0, 2);
+    return partes.map((p) => p.charAt(0).toUpperCase()).join("") || "?";
+  };
+  const q = busqueda.trim().toLowerCase();
+  const filtradas = q
+    ? conversaciones.filter((c) =>
+        `${c.cliente ?? ""} ${c.motivo ?? ""}`.toLowerCase().includes(q)
+      )
+    : conversaciones;
 
   useEffect(() => {
     // Si la lista cambia (recarga/filtro), soltar la selección fantasma.
@@ -148,17 +160,30 @@ function Bandeja({ avisar }) {
         </div>
       </dl>
 
-      {conversaciones.length === 0 ? (
+      {filtradas.length === 0 ? (
         <Vacio
           titulo="Sin conversaciones"
-          texto="Todavía no hay reclamos para atender. Cuando entre uno, aparece acá como conversación."
+          texto={
+            q
+              ? "Ninguna coincide con esa búsqueda."
+              : "Todavía no hay reclamos para atender. Cuando entre uno, aparece acá como conversación."
+          }
         />
       ) : (
         <div className="ht-band-columnas">
           <section className="card ht-band-lista-panel" aria-label="Conversaciones">
-            <h2>Conversaciones ({conversaciones.length})</h2>
+            <h2>Conversaciones ({filtradas.length})</h2>
+            <div className="ht-band-buscar">
+              <input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Cliente o motivo…"
+                aria-label="Buscar conversación"
+              />
+            </div>
             <ul className="ht-band-lista">
-              {conversaciones.map((c) => (
+              {filtradas.map((c) => (
                 <li key={c.id}>
                   <button
                     type="button"
@@ -167,13 +192,21 @@ function Bandeja({ avisar }) {
                     aria-current={c.id === elegido ? "true" : undefined}
                     aria-label={`${c.cliente || "Invitado"}, ${c.motivo}, estado ${c.estado}, ${hace(c.ultimo?.created_at ?? c.created_at)}`}
                   >
-                    <span className="ht-band-item-head">
-                      <strong>{c.cliente || "Invitado"}</strong>
-                      <span className={`adm-estado es-${c.estado}`}>{c.estado}</span>
+                    <span className="ht-band-avatar" aria-hidden="true">
+                      {iniciales(c.cliente)}
                     </span>
-                    <span className="ht-band-item-motivo">{c.motivo || "Sin motivo"}</span>
-                    <span className="ht-band-item-snippet texto-mutado">{snippet(c)}</span>
-                    <span className="ht-band-item-fecha texto-mutado">{hace(c.ultimo?.created_at ?? c.created_at)}</span>
+                    <span className="ht-band-item-cuerpo">
+                      <span className="ht-band-item-fila">
+                        <strong>{c.cliente || "Invitado"}</strong>
+                        <span className="ht-band-item-fecha texto-mutado">{hace(c.ultimo?.created_at ?? c.created_at)}</span>
+                      </span>
+                      <span className="ht-band-item-fila">
+                        <span className="ht-band-item-snippet texto-mutado">{snippet(c)}</span>
+                        {c.estado === "abierto" && (
+                          <span className="ht-band-no-leido" aria-hidden="true" />
+                        )}
+                      </span>
+                    </span>
                   </button>
                 </li>
               ))}
@@ -186,6 +219,9 @@ function Bandeja({ avisar }) {
             ) : (
               <>
                 <header className="ht-band-hilo-head">
+                  <span className="ht-band-avatar" aria-hidden="true">
+                    {iniciales(actual.cliente)}
+                  </span>
                   <div>
                     <h2>{actual.cliente || "Invitado"}</h2>
                     <p className="texto-mutado">

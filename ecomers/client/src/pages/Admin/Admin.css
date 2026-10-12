@@ -1097,9 +1097,9 @@
   width: 100%;
   min-height: 44px;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  align-items: stretch;
+  flex-direction: row;
+  gap: 0.7rem;
+  align-items: center;
   text-align: left;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--border-suave);
@@ -1109,6 +1109,70 @@
   font-family: inherit;
   font-size: 0.88rem;
   cursor: pointer;
+}
+
+.ht-band-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.ht-band-item-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ht-band-item-fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.ht-band-item-fila strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ht-band-no-leido {
+  width: 0.65rem;
+  height: 0.65rem;
+  min-width: 0.65rem;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.ht-band-buscar {
+  margin-bottom: 0.2rem;
+}
+
+.ht-band-buscar input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-suave);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--text);
+  padding: 0.55rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.9rem;
 }
 
 .ht-band-item:hover {
@@ -1142,9 +1206,18 @@
 
 .ht-band-hilo-head {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
   gap: 0.8rem;
+}
+
+.ht-band-hilo-head > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ht-band-hilo-head .adm-estado {
+  flex-shrink: 0;
 }
 
 .ht-band-hilo-head p {
@@ -1197,8 +1270,8 @@
 
 .ht-burbuja.es-propia {
   align-self: flex-end;
-  background: var(--primary-suave);
-  border-color: var(--primary-borde);
+  background: color-mix(in srgb, var(--success) 22%, var(--surface-elevated));
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
 }
 
 .ht-burbuja.es-cliente {
