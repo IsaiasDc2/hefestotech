@@ -518,6 +518,32 @@ class ReclamoEstado(BaseModel):
         return v
 
 
+class MensajeReclamoCrear(BaseModel):
+    """Nota interna del hilo de un reclamo (bandeja WhatsApp).
+
+    El autor se acota a staff/sistema: los mensajes de cliente entran por
+    el formulario público o por WhatsApp manual, nunca por este endpoint.
+    Nada se envía solo: responder por WhatsApp es un enlace wa.me manual.
+    """
+    texto: str
+    autor: str = "staff"
+
+    @field_validator("texto")
+    @classmethod
+    def _texto(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v or len(v) > 2000:
+            raise ValueError("Texto requerido (máximo 2000 caracteres).")
+        return v
+
+    @field_validator("autor")
+    @classmethod
+    def _autor(cls, v: str) -> str:
+        if v not in ("staff", "sistema"):
+            raise ValueError("Autor inválido (staff | sistema).")
+        return v
+
+
 class CuponCrear(BaseModel):
     codigo: str
     tipo: str
@@ -920,6 +946,140 @@ def estado_reclamo(rid: str, d: ReclamoEstado,
     if not filas:
         raise HTTPException(status_code=404, detail="Reclamo inexistente.")
     return {"reclamo": filas[0]}
+
+
+# ------------------------------------------------------- bandeja (hilos) ---
+# La bandeja trata cada reclamo como una conversación: KPIs reales + lista
+# con último mensaje real. Sin mensajes, no hay hilos inventados (ultimo=None
+# y el hilo muestra el detalle original del reclamo como único contexto).
+import re as _re_bandeja
+
+_RE_NOMBRE_RECLAMO = _re_bandeja.compile(r"—\s*(?P<nombre>.+?)\s*<(?P<email>[^<>]+)>\s*$")
+
+
+def _cliente_de_reclamo(r: dict[str, Any]) -> str:
+    """Nombre del reclamante o 'Invitado'.
+
+    El formulario público (/reclamo) guarda `motivo` como
+    '<motivo> — <nombre> <email>'; si no matchea, es invitado/anónimo.
+    Nunca se inventa un nombre: solo se parsea lo guardado.
+    """
+    m = _RE_NOMBRE_RECLAMO.search(str(r.get("motivo") or ""))
+    nombre = (m.group("nombre") if m else "").strip()
+    return nombre or "Invitado"
+
+
+@router.get("/api/admin/bandeja")
+def bandeja(admin: AdminActual = Depends(requiere("reclamos", "leer"))) -> dict[str, Any]:
+    """KPIs reales + conversaciones (reclamos con su último mensaje real)."""
+    todos = _sb_get("reclamos", {
+        "select": "id,motivo,detalle,estado,created_at,updated_at,user_id,orden_id",
+        "order": "created_at.desc", "limit": 5000,
+    }) or []
+
+    por_estado: dict[str, int] = {e: 0 for e in ESTADOS_RECLAMO}
+    for r in todos:
+        if r.get("estado") in por_estado:
+            por_estado[r.get("estado")] += 1
+
+    hoy = datetime.now(timezone.utc).date().isoformat()
+    abiertos_hoy = sum(1 for r in todos
+                       if r.get("estado") == "abierto"
+                       and str(r.get("created_at") or "")[:10] == hoy)
+
+    # Mensajes de los recientes (para el snippet) y de los abiertos
+    # (para "sin responder"). Topes para no armar URLs eternas.
+    recientes = todos[:100]
+    abiertos = [r for r in todos if r.get("estado") in ("abierto", "en_revision")][:500]
+    ids = {r.get("id") for r in recientes} | {r.get("id") for r in abiertos}
+    ids.discard(None)
+    por_reclamo: dict[str, list[dict[str, Any]]] = {}
+    if ids:
+        msgs = _sb_get("reclamo_mensajes", {
+            "select": "reclamo_id,autor,texto,created_at",
+            "reclamo_id": f"in.({','.join(sorted(str(i) for i in ids))})",
+            "order": "created_at.asc", "limit": 5000,
+        }) or []
+        for m in msgs:
+            por_reclamo.setdefault(str(m.get("reclamo_id")), []).append(m)
+
+    # Sin responder >48h: abierto/en revisión donde lo último relevante del
+    # cliente (o la radicación) tiene más de 48h y ningún staff/sistema
+    # escribió después. Todo sale de created_at reales, nada estimado.
+    ahora = datetime.now(timezone.utc)
+    sin_responder = 0
+    for r in abiertos:
+        msgs = por_reclamo.get(str(r.get("id")), [])
+        ult_staff = max(
+            (str(m.get("created_at") or "") for m in msgs if m.get("autor") in ("staff", "sistema")),
+            default="",
+        )
+        ref_candidatos = [str(r.get("created_at") or "")]
+        ref_candidatos += [str(m.get("created_at") or "") for m in msgs
+                           if m.get("autor") not in ("staff", "sistema")]
+        ref = max(ref_candidatos)
+        if ult_staff and ult_staff >= ref:
+            continue  # staff respondió después de lo último del cliente
+        try:
+            ref_dt = datetime.fromisoformat(ref.replace("Z", "+00:00"))
+            if (ahora - ref_dt).total_seconds() > 48 * 3600:
+                sin_responder += 1
+        except ValueError:
+            continue
+
+    conversaciones = []
+    for r in recientes:
+        msgs = por_reclamo.get(str(r.get("id")), [])
+        ultimo = msgs[-1] if msgs else None
+        conversaciones.append({
+            "id": r.get("id"),
+            "cliente": _cliente_de_reclamo(r),
+            "motivo": r.get("motivo") or "",
+            "detalle": r.get("detalle") or "",
+            "estado": r.get("estado") or "",
+            "orden_id": r.get("orden_id"),
+            "created_at": r.get("created_at"),
+            "updated_at": r.get("updated_at"),
+            "ultimo": ({
+                "autor": ultimo.get("autor"),
+                "texto": ultimo.get("texto"),
+                "created_at": ultimo.get("created_at"),
+            } if ultimo else None),
+        })
+
+    return {
+        "kpis": {
+            "abiertos_hoy": abiertos_hoy,
+            "sin_responder_48h": sin_responder,
+            "por_estado": por_estado,
+        },
+        "conversaciones": conversaciones,
+    }
+
+
+@router.get("/api/admin/reclamos/{rid}/mensajes")
+def mensajes_reclamo(rid: str,
+                     admin: AdminActual = Depends(requiere("reclamos", "leer"))) -> dict[str, Any]:
+    existe = _sb_get("reclamos", {"select": "id", "id": f"eq.{rid}", "limit": 1}) or []
+    if not existe:
+        raise HTTPException(status_code=404, detail="Reclamo inexistente.")
+    return {"mensajes": _sb_get("reclamo_mensajes", {
+        "select": "*", "reclamo_id": f"eq.{rid}",
+        "order": "created_at.asc", "limit": 500,
+    }) or []}
+
+
+@router.post("/api/admin/reclamos/{rid}/mensajes", status_code=201)
+def crear_mensaje_reclamo(rid: str, d: MensajeReclamoCrear, request: Request,
+                          admin: AdminActual = Depends(requiere("reclamos", "editar"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "reclamo-mensaje", 20)
+    existe = _sb_get("reclamos", {"select": "id", "id": f"eq.{rid}", "limit": 1}) or []
+    if not existe:
+        raise HTTPException(status_code=404, detail="Reclamo inexistente.")
+    creados = _sb_post("reclamo_mensajes", {
+        "reclamo_id": rid, "autor": d.autor, "texto": d.texto,
+    }) or []
+    return {"mensaje": creados[0] if creados else {}}
 
 
 @router.get("/api/admin/cupones")
