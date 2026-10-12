@@ -1,5 +1,5 @@
 import { lazy, useEffect, useState } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
@@ -115,6 +115,8 @@ export default function App() {
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
+    <>
+    <DesplazarArriba />
     <Routes>
       <Route
         path="/"
@@ -170,5 +172,14 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
+    </>
   );
+}
+
+function DesplazarArriba() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
 }
