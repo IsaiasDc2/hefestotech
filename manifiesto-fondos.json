@@ -2,10 +2,10 @@
   "_nota": "Fondo estimado por bordes/esquinas. No se tocan originales.",
   "fondos": {
     "almacenamiento.webp": {
-      "fondo": "#f5f3ef",
+      "fondo": "#cbd0d1",
       "uniforme": "si",
       "transparencia": "si",
-      "px": "500x500"
+      "px": "500x176"
     },
     "hero-banner.webp": {
       "fondo": "#161619",
@@ -20,22 +20,22 @@
       "px": "1365x768"
     },
     "hero-raro.webp": {
-      "fondo": "#323032",
-      "uniforme": "si",
+      "fondo": "#180d16",
+      "uniforme": "no",
       "transparencia": "no",
-      "px": "863x1248"
+      "px": "500x215"
     },
     "oferta.webp": {
-      "fondo": "#f9fafa",
+      "fondo": "#f9f9fa",
       "uniforme": "si",
       "transparencia": "si",
       "px": "500x500"
     },
     "periferico.webp": {
-      "fondo": "#111b24",
-      "uniforme": "no",
+      "fondo": "#fdfdfd",
+      "uniforme": "si",
       "transparencia": "si",
-      "px": "500x333"
+      "px": "500x430"
     },
     "placa.webp": {
       "fondo": "#fefefe",
@@ -44,10 +44,10 @@
       "px": "500x342"
     },
     "procesador.webp": {
-      "fondo": "#4b5d69",
-      "uniforme": "no",
+      "fondo": "#fefefe",
+      "uniforme": "si",
       "transparencia": "si",
-      "px": "500x280"
+      "px": "500x500"
     },
     "ram.webp": {
       "fondo": "#fbfbfb",
@@ -60,6 +60,12 @@
       "uniforme": "no",
       "transparencia": "no",
       "px": "1024x1024"
+    },
+    "tira-placa.webp": {
+      "fondo": "#040404",
+      "uniforme": "si",
+      "transparencia": "no",
+      "px": "1264x842"
     },
     "tira-silla.webp": {
       "fondo": "#433629",

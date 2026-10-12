@@ -1,14 +1,15 @@
 archivo,origen,px,peso_kb,formato,proporcion,transparencia,fondo_bordes,fondo_uniforme,baja_resolucion,nota
-almacenamiento.webp,local,500x500,8.1,WEBP,1:1,si,#f5f3ef,si,no,min lado 500px vs umbral 192px
+almacenamiento.webp,local,500x176,16.6,WEBP,125:44,si,#cbd0d1,si,SI,min lado 176px vs umbral 192px
 hero-banner.webp,local,1961x544,110.5,WEBP,1961:544,no,#161619,no,no,min lado 544px vs umbral 192px
 hero-neon.webp,local,1365x768,100.2,WEBP,455:256,no,#130e0f,si,no,min lado 768px vs umbral 192px
-hero-raro.webp,local,863x1248,49.4,WEBP,863:1248,no,#323032,si,no,min lado 863px vs umbral 192px
-oferta.webp,local,500x500,20.5,WEBP,1:1,si,#f9fafa,si,no,min lado 500px vs umbral 192px
-periferico.webp,local,500x333,46.3,WEBP,500:333,si,#111b24,no,no,min lado 333px vs umbral 192px
+hero-raro.webp,local,500x215,18.3,WEBP,100:43,no,#180d16,no,no,min lado 215px vs umbral 192px
+oferta.webp,local,500x500,9.0,WEBP,1:1,si,#f9f9fa,si,no,min lado 500px vs umbral 192px
+periferico.webp,local,500x430,7.9,WEBP,50:43,si,#fdfdfd,si,no,min lado 430px vs umbral 192px
 placa.webp,local,500x342,15.0,WEBP,250:171,si,#fefefe,si,no,min lado 342px vs umbral 192px
-procesador.webp,local,500x280,35.3,WEBP,25:14,si,#4b5d69,no,no,min lado 280px vs umbral 192px
+procesador.webp,local,500x500,14.8,WEBP,1:1,si,#fefefe,si,no,min lado 500px vs umbral 192px
 ram.webp,local,500x500,13.2,WEBP,1:1,si,#fbfbfb,si,no,min lado 500px vs umbral 192px
 tira-escritorio.webp,local,1024x1024,110.1,WEBP,1:1,no,#1f283f,no,no,min lado 1024px vs umbral 192px
+tira-placa.webp,local,1264x842,407.6,JPEG,632:421,no,#040404,si,no,min lado 842px vs umbral 192px
 tira-silla.webp,local,1452x720,108.4,WEBP,121:60,no,#433629,no,no,min lado 720px vs umbral 192px
 apple-touch-icon.png,local,180x180,24.6,PNG,1:1,no,#252525,si,no,"asset de marca, tamano nominal"
 favicon-32.png,local,32x32,2.5,PNG,1:1,si,#293438,si,no,"asset de marca, tamano nominal"
