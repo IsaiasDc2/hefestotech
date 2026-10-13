@@ -203,7 +203,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
             columnas={[
               { clave: "nombre", titulo: "Producto", ver: (p) => <><strong>{p.nombre}</strong><br /><span className="texto-mutado">{p.codigo ?? ""} · {p.marca ?? ""}</span></> },
               { clave: "precio", titulo: "Precio", ver: (p) => formatoARS(p.precio_centavos ?? 0) },
-              { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} / mín ${p.stock_minimo ?? 5}` },
+              { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} en stock · mín ${p.stock_minimo ?? 5}` },
               {
                 clave: "acciones", titulo: "Acciones",
                 ver: (p) => (

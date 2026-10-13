@@ -23,14 +23,31 @@ app.include_router(admin_router)
 app.include_router(checkout_router)
 app.include_router(contacto_router)
 
+def _origen(u):
+    u = (u or "").strip().rstrip("/")
+    if not u.lower().startswith(("http://", "https://")):
+        return ""
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(u)
+        return f"{p.scheme}://{p.netloc}" if p.netloc else ""
+    except Exception:
+        return ""
+
 origenes = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5199",
+    "http://127.0.0.1:5199",
     "https://isaiasdc2.github.io",
 ]
-_frente = os.getenv("FRONTEND_URL", "").rstrip("/")
+_frente = _origen(os.getenv("FRONTEND_URL", ""))
 if _frente and _frente not in origenes:
     origenes.append(_frente)
+for extra in os.getenv("CORS_EXTRA_ORIGINS", "").split(","):
+    o = _origen(extra)
+    if o and o not in origenes:
+        origenes.append(o)
 
 app.add_middleware(
     CORSMiddleware,

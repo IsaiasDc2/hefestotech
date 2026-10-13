@@ -1,5 +1,12 @@
 // HefestoTech · Admin · Inicio: resumen operativo (GET /api/admin/resumen).
 import { Link } from "react-router-dom";
+import {
+  FaBox,
+  FaBoxesStacked,
+  FaCartShopping,
+  FaMessage,
+  FaArrowRight,
+} from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton } from "./ui";
 import { useModulo } from "./ui";
@@ -12,10 +19,10 @@ export default function Inicio({ onIr }) {
   if (estado === "no-disponible") return <Proximamente modulo="Inicio" detalle={detalle} />;
 
   const tarjetas = [
-    { id: "productos", etiqueta: "Productos activos", valor: datos?.productos_activos ?? 0 },
-    { id: "stock", etiqueta: "Con bajo stock", valor: datos?.bajo_stock ?? 0 },
-    { id: "pedidos", etiqueta: "Pedidos pendientes", valor: datos?.pedidos_pendientes_pagina ?? 0 },
-    { id: "reclamos", etiqueta: "Reclamos abiertos", valor: datos?.reclamos_abiertos ?? 0 },
+    { id: "productos", etiqueta: "Productos activos", valor: datos?.productos_activos ?? 0, Icono: FaBox, tono: "" },
+    { id: "stock", etiqueta: "Con bajo stock", valor: datos?.bajo_stock ?? 0, Icono: FaBoxesStacked, tono: (datos?.bajo_stock ?? 0) > 0 ? "es-alerta" : "" },
+    { id: "pedidos", etiqueta: "Pedidos pendientes", valor: datos?.pedidos_pendientes_pagina ?? 0, Icono: FaCartShopping, tono: (datos?.pedidos_pendientes_pagina ?? 0) > 0 ? "es-aviso" : "" },
+    { id: "reclamos", etiqueta: "Reclamos abiertos", valor: datos?.reclamos_abiertos ?? 0, Icono: FaMessage, tono: (datos?.reclamos_abiertos ?? 0) > 0 ? "es-aviso" : "" },
   ];
 
   return (
@@ -31,9 +38,11 @@ export default function Inicio({ onIr }) {
       />
       <div className="adm-kpis">
         {tarjetas.map((t) => (
-          <button key={t.id} type="button" className="card adm-kpi" onClick={() => onIr(t.id)}>
+          <button key={t.id} type="button" className={`card adm-kpi ${t.tono}`} onClick={() => onIr(t.id)}>
+            <span className="adm-kpi-icono" aria-hidden="true"><t.Icono /></span>
             <span className="adm-kpi-valor">{t.valor}</span>
             <span className="adm-kpi-etiqueta">{t.etiqueta}</span>
+            <span className="adm-kpi-ir" aria-hidden="true"><FaArrowRight /></span>
           </button>
         ))}
       </div>

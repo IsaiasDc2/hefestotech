@@ -435,9 +435,13 @@
 
 .adm-kpi {
   padding: 1.1rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "icono valor ir"
+    "icono etiqueta ir";
+  column-gap: 0.8rem;
+  align-items: center;
   border: 1px solid var(--border-suave);
   border-radius: var(--radio, 12px);
   background: var(--card, var(--surface));
@@ -457,15 +461,62 @@
   transform: scale(0.98);
 }
 
+.adm-kpi:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.adm-kpi-icono {
+  grid-area: icono;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  color: var(--primary);
+  background: var(--primary-suave);
+  border: 1px solid var(--primary-borde);
+  flex-shrink: 0;
+}
+
+.adm-kpi.es-alerta .adm-kpi-icono {
+  color: var(--danger);
+  background: var(--danger-suave);
+  border-color: var(--danger-borde);
+}
+
+.adm-kpi.es-aviso .adm-kpi-icono {
+  color: var(--gold);
+  background: var(--oro-suave);
+  border-color: var(--oro-borde);
+}
+
 .adm-kpi-valor {
+  grid-area: valor;
   font-size: 1.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .adm-kpi-etiqueta {
+  grid-area: etiqueta;
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+.adm-kpi-ir {
+  grid-area: ir;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  transition: transform 160ms ease-out, color 150ms ease-out;
+}
+
+.adm-kpi:hover .adm-kpi-ir {
+  transform: translateX(3px);
+  color: var(--primary);
 }
 
 .adm-tarjetas {
