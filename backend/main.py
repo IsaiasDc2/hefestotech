@@ -1,16 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
 from pydantic import BaseModel, field_validator
 from collections import defaultdict, deque
-import pandas as pd
-import urllib.parse
 import os
 import time
 from dotenv import load_dotenv
 
 from google import genai
-import mercadopago
 
 from admin_api import router as admin_router
 from checkout_api import router as checkout_router
@@ -39,6 +35,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def cabeceras_seguridad(request: Request, call_next):
+    respuesta = await call_next(request)
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    respuesta.headers["X-Frame-Options"] = "DENY"
+    respuesta.headers["Referrer-Policy"] = "no-referrer"
+    return respuesta
 
 # ---- Rate limit simple en memoria (por IP y endpoint) ----
 _LIMITE_VENTANA_SEG = 60
@@ -81,12 +86,6 @@ def _frontend_base() -> str:
     return base
 
 
-def _sdk_mp():
-    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
-    if not token:
-        return None
-    return mercadopago.SDK(token)
-
 @app.get("/")
 def estado_api():
     def hay(nombre):
@@ -102,23 +101,6 @@ def estado_api():
             "BACKEND_URL": hay("BACKEND_URL"),
         },
     }
-
-@app.get("/api/productos")
-def obtener_productos():
-    csv_path = Path(__file__).resolve().parent / "datos" / "Inventario_Stock_Ecommerce.csv"
-    try:
-        df = pd.read_csv(csv_path)
-    except FileNotFoundError:
-        return {"error": "Archivo CSV no encontrado."}
-
-    productos_lista = []
-    for _, fila in df.iterrows():
-        producto = fila.to_dict()
-        texto_imagen = urllib.parse.quote(f"{producto['Marca']}\n{producto['Categoría']}")
-        producto['Imagen_URL'] = f"https://placehold.co/400x400/2c3e50/ecf0f1?text={texto_imagen}"
-        productos_lista.append(producto)
-
-    return {"total_stock": len(productos_lista), "productos": productos_lista}
 
 class MensajeUsuario(BaseModel):
     texto: str

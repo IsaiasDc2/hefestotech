@@ -1,7 +1,7 @@
-fastapi
-httpx
-uvicorn[standard]
-pandas
-python-dotenv
+fastapi==0.142.2
+httpx==0.28.1
+uvicorn[standard]==0.54.0
+pydantic==2.13.5
+python-dotenv==1.2.4
 google-genai==2.29.0
-mercadopago
+mercadopago==3.6.0

@@ -60,7 +60,7 @@ def _es_url_mp(url: str) -> bool:
 
         u = urlparse(url)
         host = (u.hostname or "").lower()
-        return u.scheme == "https:" and any(
+        return u.scheme == "https" and any(
             host == h or host.endswith(f".{h}") for h in _MP_HOSTS
         )
     except Exception:
@@ -530,7 +530,7 @@ def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[st
     filas = _sb_get("ordenes", {
         "select": ("id,user_id,estado,subtotal_centavos,descuento_centavos,"
                    "costo_envio_centavos,total_centavos,expira_at,mp_payment_id,"
-                   "created_at,orden_items(producto_id,cantidad,precio)"),
+                   "acceso_token,created_at,orden_items(producto_id,cantidad,precio)"),
         "id": f"eq.{orden_id.strip()}", "limit": 1,
     }) or []
     if not filas:
@@ -742,6 +742,11 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
 # ------------------------------------------------- liberar expiradas ---
 @router.post("/api/checkout/liberar-expiradas")
 def liberar_expiradas(request: Request) -> dict[str, Any]:
+    esperado = os.getenv("CRON_SECRET", "")
+    if esperado:
+        recibido = request.headers.get("x-cron-secret", "")
+        if not hmac.compare_digest(recibido, esperado):
+            raise HTTPException(status_code=403, detail="Acceso denegado.")
     _limitar(request.client.host if request.client else "?", "checkout-liberar", 10)
     ahora = datetime.now(timezone.utc).isoformat()
     vencidas = _sb_get("ordenes", {
@@ -793,7 +798,8 @@ def _orden_visible(orden_id: str, request: Request, token: str = "") -> dict[str
 def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "checkout-reintentar", 10)
     o = _orden_visible(orden_id, request, token)
-    if o.get("estado") not in ("pendiente", "cancelada"):
+    estado = o.get("estado")
+    if estado not in ("pendiente", "cancelada"):
         raise HTTPException(status_code=409, detail="La orden ya no admite reintento.")
     total = int(o.get("total_centavos") or 0)
     if total <= 0:
@@ -801,6 +807,36 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
     mp_token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
     if not mp_token:
         raise HTTPException(status_code=503, detail="Pagos no configurados.")
+    re_reservado: list[dict[str, Any]] | None = None
+    if estado == "cancelada":
+        # La cancelación liberó la reserva: hay que re-reservar antes de
+        # reabrir el pago, si no se cobra sin stock (oversell).
+        items = _sb_get("orden_items", {
+            "select": "producto_id,cantidad", "orden_id": f"eq.{orden_id.strip()}",
+        }) or []
+        ids = sorted({str(i.get("producto_id")) for i in items if i.get("producto_id")})
+        prods = _sb_get("productos", {
+            "select": "id,stock,activo,deleted_at",
+            "id": f"in.({','.join(ids)})",
+        }) or []
+        por_id = {p["id"]: p for p in prods}
+        lineas = []
+        for i in items:
+            pid = i.get("producto_id")
+            cant = int(i.get("cantidad") or 0)
+            if not pid or cant < 1:
+                continue
+            p = por_id.get(pid)
+            if p is None or p.get("deleted_at") is not None or not p.get("activo", True):
+                raise HTTPException(status_code=409, detail="Un producto ya no está disponible.")
+            if int(p.get("stock") or 0) < cant:
+                raise HTTPException(status_code=409, detail="Sin stock suficiente para reintentar.")
+            lineas.append({"producto_id": pid, "cantidad": cant})
+        if not lineas:
+            raise HTTPException(status_code=409, detail="La orden no tiene ítems.")
+        uid = _uid_desde_bearer(request.headers.get("authorization"))
+        _reservar(orden_id, lineas, uid)
+        re_reservado = lineas
     try:
         import mercadopago
 
@@ -833,6 +869,9 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
     except HTTPException:
         raise
     except Exception:
+        # Si la re-reserva ya ocurrió, deshacerla: la orden sigue cancelada.
+        if re_reservado:
+            _liberar(orden_id, re_reservado, "liberacion", None)
         print("ERROR checkout_api: fallo al reintentar preferencia.")
         raise HTTPException(
             status_code=502,
