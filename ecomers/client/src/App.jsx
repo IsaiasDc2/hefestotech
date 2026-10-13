@@ -4,6 +4,7 @@ import Layout from "./components/layout/Layout";
 import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
+import useIdiomaStore, { t } from "./store/idiomaStore";
 
 const Home = lazy(() => import("./pages/Home/Home"));
 const Productos = lazy(() => import("./components/product/Producto"));
@@ -32,6 +33,7 @@ const ROLES_ADMIN = ["owner", "admin"];
 
 function GuardiaRol({ soloAdmin = false, children }) {
   const [estado, setEstado] = useState("cargando");
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   useEffect(() => {
     let viva = true;
@@ -73,21 +75,20 @@ function GuardiaRol({ soloAdmin = false, children }) {
   if (estado === "cargando") {
     return (
       <p className="detalle-estado" role="status">
-        Verificando acceso…
+        {t(idioma, "app.verificando")}
       </p>
     );
   }
   if (estado === "invitado" || estado === "ok") return children;
   return (
     <div className="detalle-estado" role="alert">
-      <p className="vacio-titulo">Acceso restringido</p>
+      <p className="vacio-titulo">{t(idioma, "app.restringido")}</p>
       <p className="vacio-texto">
-        Esta sección requiere un rol autorizado. Si creés que es un error,
-        escribinos desde la página de contacto.
+        {t(idioma, "app.restringidoT")}
       </p>
       <div className="detalle-acciones-error">
-        <Link to="/">← Volver al inicio</Link>
-        <Link to="/cuenta">Ir a mi cuenta</Link>
+        <Link to="/">← {t(idioma, "app.volver")}</Link>
+        <Link to="/cuenta">{t(idioma, "app.miCuenta")}</Link>
       </div>
     </div>
   );

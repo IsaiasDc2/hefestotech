@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { FaCartShopping } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
 
@@ -17,6 +18,7 @@ function Carrito({
         Number(item.cantidad ?? 1),
     0
   );
+  const idioma = useIdiomaStore((s) => s.idioma);
   const progreso = Math.min(1, UMBRAL_ENVIO_GRATIS > 0 ? subtotal / UMBRAL_ENVIO_GRATIS : 1);
   const faltante = Math.max(0, UMBRAL_ENVIO_GRATIS - subtotal);
 
@@ -30,9 +32,9 @@ function Carrito({
           <span className="cart-vacio-anillo" />
           <FaCartShopping className="cart-vacio-icono" />
         </div>
-        <h1>Carrito</h1>
-        <p className="carrito-vacio-texto">Tu carrito está vacío.</p>
-        <Link to="/productos" className="carrito-cta">Ver productos →</Link>
+        <h1>{t(idioma, "cart.titulo")}</h1>
+        <p className="carrito-vacio-texto">{t(idioma, "cart.vacio")}</p>
+        <Link to="/productos" className="carrito-cta">{t(idioma, "cart.verProd")} →</Link>
       </div>
     );
   }
@@ -40,17 +42,16 @@ function Carrito({
   return (
     <div className="carrito-pagina">
       <header className="carrito-pagina-head">
-      <h1>Carrito completo</h1>
+      <h1>{t(idioma, "cart.tituloFull")}</h1>
       <p className="carrito-conteo">
-        {carrito.length} producto{carrito.length === 1 ? "" : "s"} en el
-        carrito
+        {carrito.length} {carrito.length === 1 ? t(idioma, "cart.producto") : t(idioma, "cart.productos")} {t(idioma, "cart.enCarrito")}
       </p>
       </header>
       <div className="cart-envio cart-envio-pagina" aria-hidden={false}>
         <p className="cart-envio-texto">
           {subtotal >= UMBRAL_ENVIO_GRATIS
-            ? "¡Tenés envío gratis!"
-            : `Te faltan $${faltante.toLocaleString("es-AR")} para el envío gratis`}
+            ? t(idioma, "cart.envioGratis")
+            : `${t(idioma, "cart.faltan")} $${faltante.toLocaleString("es-AR")} ${t(idioma, "cart.paraEnvio")}`}
         </p>
         <div
           className="cart-envio-barra"
@@ -58,7 +59,7 @@ function Carrito({
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(progreso * 100)}
-          aria-label="Progreso hacia el envío gratis"
+          aria-label={t(idioma, "cart.progreso")}
         >
           <span
             className="cart-envio-relleno"
@@ -91,9 +92,9 @@ function Carrito({
               ).toLocaleString("es-AR")}
             </span>
             <span className="carrito-item-acciones">
-              <button type="button" onClick={() => disminuirCantidad?.(item.id)} aria-label={`Quitar un ${nombreItem}`} disabled={cantidadItem <= 1}>−</button>
-              <button type="button" onClick={() => aumentarCantidad?.(item.id)} aria-label={`Agregar un ${nombreItem}`}>+</button>
-              <button type="button" onClick={() => eliminarDelCarrito?.(item.id)} aria-label={`Eliminar ${nombreItem} del carrito`}>Eliminar</button>
+              <button type="button" onClick={() => disminuirCantidad?.(item.id)} aria-label={`${t(idioma, "cart.quitarUno")} ${nombreItem}`} disabled={cantidadItem <= 1}>−</button>
+              <button type="button" onClick={() => aumentarCantidad?.(item.id)} aria-label={`${t(idioma, "cart.agregarUno")} ${nombreItem}`}>+</button>
+              <button type="button" onClick={() => eliminarDelCarrito?.(item.id)} aria-label={`${t(idioma, "cart.eliminar")} ${nombreItem} ${t(idioma, "cart.delCarrito")}`}>{t(idioma, "cart.eliminar")}</button>
             </span>
           </li>
           );
@@ -101,11 +102,11 @@ function Carrito({
       </ul>
       <div className="carrito-pagina-resumen">
         <p className="carrito-subtotal">
-          Subtotal: <strong>${subtotal.toLocaleString("es-AR")}</strong>
+          {t(idioma, "cart.subtotal")}: <strong>${subtotal.toLocaleString("es-AR")}</strong>
         </p>
         <div className="carrito-pagina-acciones">
-          <Link to="/productos" className="carrito-secundario">← Seguir comprando</Link>
-          <Link to="/checkout" className="btn-primary">Finalizar compra →</Link>
+          <Link to="/productos" className="carrito-secundario">← {t(idioma, "cart.seguir")}</Link>
+          <Link to="/checkout" className="btn-primary">{t(idioma, "cart.finalizar")} →</Link>
         </div>
       </div>
     </div>

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./SectionHeader.css";
 
 
 function SectionHeader({ num = null, kicker = null, titulo, id, verTodo = null, accionExtra = null }) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   useEffect(() => {
     const el = ref.current;
@@ -50,7 +52,7 @@ function SectionHeader({ num = null, kicker = null, titulo, id, verTodo = null, 
           {accionExtra}
           {verTodo && (
             <Link to={verTodo} className="ht-sh__vertodo">
-              Ver todo <span aria-hidden="true">→</span>
+              {t(idioma, "sec.verTodo")} <span aria-hidden="true">→</span>
             </Link>
           )}
         </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import ProductCard from "./ProductCard";
 import "./Productos.css";
 
@@ -45,6 +46,7 @@ function usarVisibleUnaVez() {
 function Productos({ agregarAlCarrito }) {
 
 
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [productos, setProductos] = useState([]);
 
   const [cargando, setCargando] = useState(true);
@@ -315,17 +317,15 @@ function Productos({ agregarAlCarrito }) {
 
 
         <h1>
-          {soloOfertas ? "Ofertas" : etiquetaCategoria === "Todas" ? "Componentes de PC" : etiquetaCategoria}
+          {soloOfertas ? t(idioma, "prod.ofertas") : etiquetaCategoria === "Todas" ? t(idioma, "prod.tituloGeneral") : etiquetaCategoria}
         </h1>
 
 
         <p className="subtitulo-productos">
 
           {soloOfertas
-            ? "Descuentos reales en hardware seleccionado."
-            : `Encontrá procesadores, placas de video,
-          memorias y todo lo necesario para armar
-          tu PC ideal.`}
+            ? t(idioma, "prod.subOfertas")
+            : t(idioma, "prod.subGeneral")}
 
         </p>
 
@@ -342,9 +342,9 @@ function Productos({ agregarAlCarrito }) {
 
           type="text"
 
-          placeholder="Buscar producto..."
+          placeholder={t(idioma, "prod.buscarPh")}
 
-          aria-label="Buscar producto"
+          aria-label={t(idioma, "prod.buscarAria")}
 
           value={busqueda}
 
@@ -359,7 +359,7 @@ function Productos({ agregarAlCarrito }) {
 
           value={categoria}
 
-          aria-label="Filtrar por categoría"
+          aria-label={t(idioma, "prod.filtrarPor")}
 
           onChange={
             e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
@@ -380,7 +380,7 @@ function Productos({ agregarAlCarrito }) {
 
               >
 
-                {cat}
+                {cat === "Todas" ? t(idioma, "filt.todas") : cat}
 
               </option>
 
@@ -396,9 +396,9 @@ function Productos({ agregarAlCarrito }) {
 
           type="number"
 
-          placeholder="Precio mínimo"
+          placeholder={t(idioma, "prod.precioMin")}
 
-          aria-label="Precio mínimo"
+          aria-label={t(idioma, "prod.precioMin")}
 
           min="0"
 
@@ -417,9 +417,9 @@ function Productos({ agregarAlCarrito }) {
 
           type="number"
 
-          placeholder="Precio máximo"
+          placeholder={t(idioma, "prod.precioMax")}
 
-          aria-label="Precio máximo"
+          aria-label={t(idioma, "prod.precioMax")}
 
           min="0"
 
@@ -438,7 +438,7 @@ function Productos({ agregarAlCarrito }) {
 
           value={orden}
 
-          aria-label="Ordenar por precio"
+          aria-label={t(idioma, "prod.ordenarPor")}
 
           onChange={
             e=>setOrden(e.target.value)
@@ -447,17 +447,17 @@ function Productos({ agregarAlCarrito }) {
         >
 
           <option value="">
-            Ordenar por precio
+            {t(idioma, "prod.ordenar")}
           </option>
 
 
           <option value="mayor">
-            Mayor precio
+            {t(idioma, "prod.mayor")}
           </option>
 
 
           <option value="menor">
-            Menor precio
+            {t(idioma, "prod.menor")}
           </option>
 
 
@@ -472,7 +472,7 @@ function Productos({ agregarAlCarrito }) {
 
         >
 
-          ↻ Limpiar
+          ↻ {t(idioma, "prod.limpiar")}
 
         </button>
 
@@ -484,7 +484,7 @@ function Productos({ agregarAlCarrito }) {
         cargando &&
 
         <p className="estado-carga">
-          Cargando productos...
+          {t(idioma, "prod.cargando")}
         </p>
 
       }
@@ -494,14 +494,14 @@ function Productos({ agregarAlCarrito }) {
         error && !cargando &&
 
         <div className="vacio" role="alert">
-          <p className="vacio-titulo">No pudimos cargar el catálogo</p>
-          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <p className="vacio-titulo">{t(idioma, "prod.errorTitulo")}</p>
+          <p className="vacio-texto">{t(idioma, "prod.errorTexto")}</p>
           <button
             type="button"
             className="btn-limpiar"
             onClick={() => setReintento((n) => n + 1)}
           >
-            ↻ Reintentar
+            ↻ {t(idioma, "prod.reintentar")}
           </button>
         </div>
 
@@ -514,7 +514,7 @@ function Productos({ agregarAlCarrito }) {
 
         <p className="resultados-contador" role="status">
           <strong>{productosOrdenados.length}</strong>
-          &nbsp;resultados
+          &nbsp;{t(idioma, "prod.resultados")}
         </p>
       }
 
@@ -536,7 +536,7 @@ function Productos({ agregarAlCarrito }) {
           (
 
             <h2>
-              No se encontraron productos
+              {t(idioma, "prod.vacio")}
             </h2>
 
           )

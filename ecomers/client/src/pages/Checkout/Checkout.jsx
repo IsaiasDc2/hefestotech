@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { crearCheckout, obtenerEstadoCheckout } from "../../services/orderService";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
@@ -38,17 +39,17 @@ const esUrlMP = (url) => {
   );
 };
 
-const ESTADO_TEXTO = {
-  pendiente: "Pago pendiente de acreditación",
-  pagada: "Pago acreditado",
-  preparacion: "En preparación",
-  enviada: "Enviada",
-  entregada: "Entregada",
-  cancelada: "Cancelada",
-  reembolsada: "Reembolsada",
-};
-
 function Checkout({ carrito = [], vaciarCarrito }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const ESTADO_TXT = {
+    pendiente: t(idioma, "chk.pendiente"),
+    pagada: t(idioma, "chk.pagada"),
+    preparacion: t(idioma, "chk.preparacion"),
+    enviada: t(idioma, "chk.enviada"),
+    entregada: t(idioma, "chk.entregada"),
+    cancelada: t(idioma, "chk.cancelada"),
+    reembolsada: t(idioma, "chk.reembolsada"),
+  };
   const [params] = useSearchParams();
   const ordenIdUrl = params.get("orden_id") || "";
   const pagoUrl = params.get("pago") || "";
@@ -79,7 +80,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         if (viva) setOrden(r);
       })
       .catch((err) => {
-        if (viva) setError(err?.message || "No se pudo consultar el estado del pago.");
+        if (viva) setError(err?.message || t(idioma, "chk.noEstado"));
       })
       .finally(() => {
         if (viva) setConsultando(false);
@@ -113,7 +114,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     if (carrito.length === 0 || enviando) return;
     setEnviando(true);
     try {
-      setPasoPago("Creando tu orden en el servidor…");
+      setPasoPago(t(idioma, "chk.creando"));
       const resp = await crearCheckout({
         items: carrito.map((item) => ({
           producto_id: item.producto_id ?? item.id,
@@ -131,12 +132,12 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         sessionStorage.setItem(`ck_token_${resp.orden_id}`, resp.acceso_token);
       }
       if (!esUrlMP(resp.init_point)) {
-        throw new Error("Respuesta de pago inválida. No se continúa por seguridad.");
+        throw new Error(t(idioma, "chk.respInvalida"));
       }
       vaciarCarrito?.();
       window.location.href = resp.init_point;
     } catch (err) {
-      setError(err?.message || "No se pudo crear la orden.");
+      setError(err?.message || t(idioma, "chk.noOrden"));
     } finally {
       setEnviando(false);
       setPasoPago("");
@@ -153,36 +154,36 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             <Marca variante="simbolo" ancho={44} alto={44} decorativa />
           </span>
           {consultando && (
-            <p className="badge badge-info" role="status">Consultando el estado de tu pago…</p>
+            <p className="badge badge-info" role="status">{t(idioma, "chk.consultando")}</p>
           )}
           {!consultando && orden && (
             <>
               <p className={`badge ${acreditada ? "badge-ok" : estado === "cancelada" ? "badge-peligro" : "badge-info"} hero-kicker`}>
                 {acreditada && <FaCircleCheck aria-hidden="true" />}
                 {!acreditada && pagoUrl === "fallo" && <FaTriangleExclamation aria-hidden="true" />}
-                {" "}{ESTADO_TEXTO[estado] || estado}
+                {" "}{ESTADO_TXT[estado] || estado}
               </p>
-              <h1>{acreditada ? `¡Gracias${nombre ? `, ${nombre.split(" ")[0]}` : ""}!` : "Tu orden"}</h1>
+              <h1>{acreditada ? `${t(idioma, "chk.gracias")}${nombre ? `, ${nombre.split(" ")[0]}` : ""}!` : t(idioma, "chk.tuOrden")}</h1>
               <p className="texto-mutado">
-                Orden <strong>{String(orden.orden_id || "").slice(0, 8)}</strong> por{" "}
+                {t(idioma, "chk.orden")} <strong>{String(orden.orden_id || "").slice(0, 8)}</strong> {t(idioma, "chk.por")}{" "}
                 <strong>{pesos(Number(orden.total_centavos ?? 0) / 100)}</strong>.
                 {acreditada
-                  ? " El pago fue confirmado por Mercado Pago."
+                  ? ` ${t(idioma, "chk.pagoConfirmado")}`
                   : estado === "pendiente"
-                    ? " Todavía no se acreditó el pago. Si ya pagaste, aguardá unos instantes y recargá esta página."
-                    : " No se completó el pago. Podés reintentar desde el carrito."}
+                    ? ` ${t(idioma, "chk.pagoPendiente")}`
+                    : ` ${t(idioma, "chk.pagoNo")}`}
               </p>
             </>
           )}
           {!consultando && !orden && (
             <>
               {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
-              <p className="texto-mutado">No pudimos encontrar esa orden.</p>
+              <p className="texto-mutado">{t(idioma, "chk.noEncontrada")}</p>
             </>
           )}
           <div className="checkout-acciones">
-            <Link to="/productos" className="btn-fantasma">Seguir comprando</Link>
-            <Link to="/cuenta" className="btn-primary">Ver mis pedidos</Link>
+            <Link to="/productos" className="btn-fantasma">{t(idioma, "chk.seguir")}</Link>
+            <Link to="/cuenta" className="btn-primary">{t(idioma, "chk.verPedidos")}</Link>
           </div>
         </div>
       </div>
@@ -196,9 +197,9 @@ function Checkout({ carrito = [], vaciarCarrito }) {
           <span className="marca-centrada" aria-hidden="true">
             <Marca variante="simbolo" ancho={44} alto={44} decorativa />
           </span>
-          <p className="vacio-titulo">Tu carrito está vacío</p>
-          <p className="vacio-texto">Sumá productos antes de finalizar la compra.</p>
-          <Link to="/productos" className="btn-primary">Ver productos</Link>
+          <p className="vacio-titulo">{t(idioma, "chk.vacioT")}</p>
+          <p className="vacio-texto">{t(idioma, "chk.vacioS")}</p>
+          <Link to="/productos" className="btn-primary">{t(idioma, "chk.verProd")}</Link>
         </div>
       </div>
     );
@@ -210,63 +211,63 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         <div className="seccion-titular">
           <p className="kicker kicker-marca">
             <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-            <span><span className="kicker-num">Pago seguro</span> Checkout</span>
+            <span><span className="kicker-num">{t(idioma, "chk.pagoSeguro")}</span> {t(idioma, "chk.checkout")}</span>
           </p>
-          <h1>Finalizar compra</h1>
+          <h1>{t(idioma, "chk.finalizar")}</h1>
         </div>
-        <span className="badge badge-info"><FaLock aria-hidden="true" /> Compra protegida</span>
+        <span className="badge badge-info"><FaLock aria-hidden="true" /> {t(idioma, "chk.compraProt")}</span>
       </header>
 
       <form className="checkout-grid" onSubmit={confirmar}>
         <div className="checkout-col">
-          <section className="card checkout-panel" aria-label="Datos de contacto y envío">
-            <h2>Datos y envío</h2>
+          <section className="card checkout-panel" aria-label={t(idioma, "chk.datosEnvio")}>
+            <h2>{t(idioma, "chk.datosEnvio")}</h2>
             <div className="checkout-campos">
-              <label>Nombre completo
+              <label>{t(idioma, "chk.nombre")}
                 <input value={nombre} onChange={(e) => setNombre(e.target.value)} required autoComplete="name" />
               </label>
-              <label>Email
+              <label>{t(idioma, "chk.email")}
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
               </label>
-              <label>Dirección
+              <label>{t(idioma, "chk.direccion")}
                 <input value={direccion} onChange={(e) => setDireccion(e.target.value)} required autoComplete="street-address" />
               </label>
               <div className="checkout-fila">
-                <label>Ciudad
+                <label>{t(idioma, "chk.ciudad")}
                   <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
                 </label>
-                <label>Código postal
+                <label>{t(idioma, "chk.cp")}
                   <input value={codigoPostal} onChange={(e) => setCodigoPostal(e.target.value)} required inputMode="numeric" />
                 </label>
               </div>
-              <label>Cupón (opcional)
-                <input value={cupon} onChange={(e) => setCupon(e.target.value)} placeholder="Ej. HEROES10" autoComplete="off" />
+              <label>{t(idioma, "chk.cupon")}
+                <input value={cupon} onChange={(e) => setCupon(e.target.value)} placeholder={t(idioma, "chk.cuponPh")} autoComplete="off" />
               </label>
             </div>
 
-            <div className="checkout-opciones" role="radiogroup" aria-label="Método de envío">
+            <div className="checkout-opciones" role="radiogroup" aria-label={t(idioma, "chk.metodoEnvio")}>
               <label className={envio === "estandar" ? "activo" : ""}>
                 <input type="radio" name="envio" value="estandar" checked={envio === "estandar"} onChange={() => setEnvio("estandar")} />
-                <FaTruckFast aria-hidden="true" /> Estándar — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? "gratis" : pesos(COSTO_ENVIO_ESTANDAR)}
+                <FaTruckFast aria-hidden="true" /> {t(idioma, "chk.estandar")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_ESTANDAR)}
               </label>
               <label className={envio === "express" ? "activo" : ""}>
                 <input type="radio" name="envio" value="express" checked={envio === "express"} onChange={() => setEnvio("express")} />
-                <FaTruckFast aria-hidden="true" /> Express — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? "gratis" : pesos(COSTO_ENVIO_EXPRESS)}
+                <FaTruckFast aria-hidden="true" /> {t(idioma, "chk.express")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_EXPRESS)}
               </label>
             </div>
           </section>
 
-          <section className="card checkout-panel" aria-label="Pago con Mercado Pago">
-            <h2><img src={logoMP} alt="" aria-hidden="true" className="pago-logo" /> Mercado Pago</h2>
+          <section className="card checkout-panel" aria-label={`${t(idioma, "chk.pago")} ${t(idioma, "chk.mpTitulo")}`}>
+            <h2><img src={logoMP} alt="" aria-hidden="true" className="pago-logo" /> {t(idioma, "chk.mpTitulo")}</h2>
             <div className="pago-mp-panel">
               <img src={logoMP} alt="Mercado Pago" className="pago-logo-lg" />
-              <p className="texto-mutado">Al confirmar creamos tu orden en el servidor y te redirigimos a Mercado Pago para completar el pago de forma segura con tarjeta, débito o dinero en cuenta.</p>
+              <p className="texto-mutado">{t(idioma, "chk.mpTexto")}</p>
             </div>
           </section>
         </div>
 
-        <aside className="card checkout-resumen" aria-label="Resumen del pedido">
-          <h2>Resumen</h2>
+        <aside className="card checkout-resumen" aria-label={t(idioma, "chk.resumen")}>
+          <h2>{t(idioma, "chk.resumen")}</h2>
           <ul className="checkout-items">
             {carrito.map((item) => (
               <li key={item.id}>
@@ -276,17 +277,17 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             ))}
           </ul>
           <dl className="checkout-totales">
-            <div><dt>Subtotal (estimado)</dt><dd>{pesos(subtotalEst)}</dd></div>
-            <div><dt>Envío (estimado)</dt><dd>{costoEnvioEst === 0 ? "Gratis" : pesos(costoEnvioEst)}</dd></div>
-            <div className="total"><dt>Total (estimado)</dt><dd>{pesos(totalEst)}</dd></div>
+            <div><dt>{t(idioma, "chk.subtotal")}</dt><dd>{pesos(subtotalEst)}</dd></div>
+            <div><dt>{t(idioma, "chk.envio")}</dt><dd>{costoEnvioEst === 0 ? t(idioma, "chk.gratis") : pesos(costoEnvioEst)}</dd></div>
+            <div className="total"><dt>{t(idioma, "chk.total")}</dt><dd>{pesos(totalEst)}</dd></div>
           </dl>
-          <p className="texto-mutado checkout-nota">El total final lo calcula el servidor al confirmar.</p>
+          <p className="texto-mutado checkout-nota">{t(idioma, "chk.nota")}</p>
           {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
           {enviando && pasoPago && <p className="badge badge-info" role="status">{pasoPago}</p>}
           <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? "Creando orden…" : `Pagar ${pesos(totalEst)} con Mercado Pago`}
+            {enviando ? t(idioma, "chk.creandoOrden") : `${t(idioma, "chk.pagar")} ${pesos(totalEst)} ${t(idioma, "chk.con")} Mercado Pago`}
           </button>
-          <Link to="/carrito" className="btn-fantasma">Volver al carrito</Link>
+          <Link to="/carrito" className="btn-fantasma">{t(idioma, "chk.volver")}</Link>
         </aside>
       </form>
     </div>

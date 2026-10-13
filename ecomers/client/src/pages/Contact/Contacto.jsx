@@ -1,31 +1,33 @@
 import { useState } from "react";
 import { FaEnvelope, FaPhone, FaLocationDot, FaClock, FaUser, FaTag, FaMessage, FaWhatsapp } from "react-icons/fa6";
 import { whatsappUrl } from "../../constants/whatsapp";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Contacto.css"
 
 const WHATSAPP_GENERAL = "Hola HefestoTech, ¿me ayudás con una consulta?";
-const WHATSAPP_CANALES = [
-  {
-    id: "ventas",
-    titulo: "Ventas",
-    detalle: "Asesoramiento para armar tu PC o elegir un producto.",
-    mensaje: "Hola, quiero asesoramiento para una compra. ¿Me ayudás?",
-  },
-  {
-    id: "soporte",
-    titulo: "Soporte",
-    detalle: "Ayuda con tu equipo o tu compra.",
-    mensaje: "Hola, necesito soporte con mi equipo. ¿Me ayudás?",
-  },
-  {
-    id: "pedido",
-    titulo: "Estado de pedido",
-    detalle: "Consultá en qué punto está tu pedido.",
-    mensaje: "Hola, quiero consultar el estado de mi pedido.",
-  },
-];
 
 function Contactanos() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const WHATSAPP_CANALES = [
+    {
+      id: "ventas",
+      titulo: t(idioma, "cont.ventasT"),
+      detalle: t(idioma, "cont.ventasD"),
+      mensaje: "Hola, quiero asesoramiento para una compra. ¿Me ayudás?",
+    },
+    {
+      id: "soporte",
+      titulo: t(idioma, "cont.sopT"),
+      detalle: t(idioma, "cont.sopD"),
+      mensaje: "Hola, necesito soporte con mi equipo. ¿Me ayudás?",
+    },
+    {
+      id: "pedido",
+      titulo: t(idioma, "cont.pedT"),
+      detalle: t(idioma, "cont.pedD"),
+      mensaje: "Hola, quiero consultar el estado de mi pedido.",
+    },
+  ];
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorEnvio, setErrorEnvio] = useState("");
@@ -46,7 +48,7 @@ function Contactanos() {
       setEnviado(true);
       e.target.reset();
     } catch {
-      setErrorEnvio("No pudimos enviar tu mensaje. Probá de nuevo o escribinos por WhatsApp.");
+      setErrorEnvio(t(idioma, "cont.error"));
     } finally {
       setEnviando(false);
     }
@@ -55,20 +57,19 @@ function Contactanos() {
   return (
     <div className="contacto-container">
       <header className="contacto-hero anim-entrada">
-        <p className="badge badge-info hero-kicker">Respondemos en menos de 24 hs</p>
-        <h1>Contactanos</h1>
+        <p className="badge badge-info hero-kicker">{t(idioma, "cont.kicker")}</p>
+        <h1>{t(idioma, "cont.titulo")}</h1>
         <p>
-          ¿Tenés dudas sobre un producto o querés armar tu PC?
-          Escribinos y te respondemos en menos de 24 hs.
+          {t(idioma, "cont.sub")}
         </p>
       </header>
 
       <div className="contacto-grid">
-        <aside className="contacto-info card" aria-label="Datos de contacto">
+        <aside className="contacto-info card" aria-label={t(idioma, "cont.datos")}>
           <div className="info-item">
             <FaEnvelope className="info-icono" aria-hidden="true" />
             <div>
-              <h3>Email</h3>
+              <h3>{t(idioma, "cont.email")}</h3>
               <p>contacto@hefestotech.com</p>
             </div>
           </div>
@@ -76,7 +77,7 @@ function Contactanos() {
           <div className="info-item">
             <FaPhone className="info-icono" aria-hidden="true" />
             <div>
-              <h3>Teléfono</h3>
+              <h3>{t(idioma, "cont.telefono")}</h3>
               <p>+54 11 1234-5678</p>
             </div>
           </div>
@@ -84,7 +85,7 @@ function Contactanos() {
           <div className="info-item">
             <FaLocationDot className="info-icono" aria-hidden="true" />
             <div>
-              <h3>Ubicación</h3>
+              <h3>{t(idioma, "cont.ubicacion")}</h3>
               <p>Salta Capital, Argentina</p>
             </div>
           </div>
@@ -92,8 +93,8 @@ function Contactanos() {
           <div className="info-item">
             <FaClock className="info-icono" aria-hidden="true" />
             <div>
-              <h3>Horario de atención</h3>
-              <p>Lun a Vie, 9 a 18hs</p>
+              <h3>{t(idioma, "cont.horario")}</h3>
+              <p>{t(idioma, "cont.horarioV")}</p>
             </div>
           </div>
 
@@ -103,8 +104,8 @@ function Contactanos() {
                 <FaWhatsapp />
               </span>
               <div>
-                <h3>WhatsApp</h3>
-                <p>Escribinos y te respondemos a la brevedad.</p>
+                <h3>{t(idioma, "cont.wa")}</h3>
+                <p>{t(idioma, "cont.waSub")}</p>
               </div>
             </div>
 
@@ -115,10 +116,10 @@ function Contactanos() {
               rel="noreferrer"
             >
               <FaWhatsapp aria-hidden="true" />
-              Escribinos por WhatsApp
+              {t(idioma, "cont.waCta")}
             </a>
 
-            <ul className="contacto-whatsapp-canales" aria-label="Canales de WhatsApp">
+            <ul className="contacto-whatsapp-canales" aria-label={t(idioma, "cont.waCanales")}>
               {WHATSAPP_CANALES.map((canal) => (
                 <li key={canal.id}>
                   <a
@@ -129,7 +130,7 @@ function Contactanos() {
                   >
                     <span className="contacto-whatsapp-canal-titulo">{canal.titulo}</span>
                     <span className="contacto-whatsapp-canal-detalle">{canal.detalle}</span>
-                    <span className="contacto-whatsapp-canal-accion" aria-hidden="true">Abrir chat →</span>
+                    <span className="contacto-whatsapp-canal-accion" aria-hidden="true">{t(idioma, "cont.abrirChat")} →</span>
                   </a>
                 </li>
               ))}
@@ -138,18 +139,18 @@ function Contactanos() {
         </aside>
 
         <form className="formulario card anim-entrada" onSubmit={handleSubmit}>
-          <p className="badge badge-aviso">HefestoTech · Soporte</p>
-          <h2>Envianos tu consulta</h2>
+          <p className="badge badge-aviso">{t(idioma, "cont.soporte")}</p>
+          <h2>{t(idioma, "cont.formT")}</h2>
 
           <div className="grupo">
-            <label htmlFor="nombre">Nombre completo</label>
+            <label htmlFor="nombre">{t(idioma, "cont.nombre")}</label>
             <div className="input-con-icono">
               <FaUser className="input-icono" aria-hidden="true" />
               <input
                 id="nombre"
                 name="nombre"
                 type="text"
-                placeholder="Tu nombre"
+                placeholder={t(idioma, "cont.nombrePh")}
                 required
                 minLength={3}
               />
@@ -157,28 +158,28 @@ function Contactanos() {
           </div>
 
           <div className="grupo">
-            <label htmlFor="email">Correo electrónico</label>
+            <label htmlFor="email">{t(idioma, "cont.emailL")}</label>
             <div className="input-con-icono">
               <FaEnvelope className="input-icono" aria-hidden="true" />
               <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder={t(idioma, "cont.emailPh")}
                 required
               />
             </div>
           </div>
 
           <div className="grupo">
-            <label htmlFor="asunto">Asunto</label>
+            <label htmlFor="asunto">{t(idioma, "cont.asunto")}</label>
             <div className="input-con-icono">
               <FaTag className="input-icono" aria-hidden="true" />
               <input
                 id="asunto"
                 name="asunto"
                 type="text"
-                placeholder="¿En qué te podemos ayudar?"
+                placeholder={t(idioma, "cont.asuntoPh")}
                 required
                 minLength={5}
               />
@@ -186,13 +187,13 @@ function Contactanos() {
           </div>
 
           <div className="grupo">
-            <label htmlFor="mensaje">Mensaje</label>
+            <label htmlFor="mensaje">{t(idioma, "cont.mensaje")}</label>
             <div className="input-con-icono input-con-icono-area">
               <FaMessage className="input-icono" aria-hidden="true" />
               <textarea
                 id="mensaje"
                 name="mensaje"
-                placeholder="Contanos los detalles de tu consulta..."
+                placeholder={t(idioma, "cont.mensajePh")}
                 rows={5}
                 required
                 minLength={10}
@@ -208,12 +209,12 @@ function Contactanos() {
           )}
 
           <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? "Enviando..." : "Enviar mensaje →"}
+            {enviando ? t(idioma, "cont.enviando") : `${t(idioma, "cont.enviar")} →`}
           </button>
 
           {enviado && (
             <p className="badge badge-ok mensaje-exito" role="status">
-              ¡Listo! Recibimos tu mensaje y te respondemos en menos de 24 hs.
+              {t(idioma, "cont.ok")}
             </p>
           )}
           {errorEnvio && (

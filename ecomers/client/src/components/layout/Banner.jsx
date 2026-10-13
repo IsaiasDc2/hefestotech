@@ -1,38 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useHeroVisible, useScrollLigado } from "../../hooks/useMotion";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Banner.css";
 
 const BASE = import.meta.env.BASE_URL || "/";
-
-const SLIDES = [
-  {
-    id: "hero-banner",
-    src: `${BASE}banners/hero-banner.webp`,
-    alt: "Teclado gamer AULA con retroiluminación RGB",
-    // 1961x544 con texto incrustado a la derecha: contain + fondo
-    // difuminado para no cortar el mensaje ni el producto.
-    encuadre: "contain",
-    to: "/productos?categoria=perifericos",
-    etiqueta: "Ver periféricos",
-  },
-  {
-    id: "hero-neon",
-    src: `${BASE}banners/hero-neon.webp`,
-    alt: "Logo ROG neón sobre fondo oscuro",
-    encuadre: "cover",
-    to: "/productos?q=ASUS",
-    etiqueta: "Ver productos ASUS",
-  },
-  {
-    id: "hero-raro",
-    src: `${BASE}banners/hero-raro.webp`,
-    alt: "Gamer con triple monitor y luces de neón",
-    encuadre: "cover",
-    to: "/armar",
-    etiqueta: "Armá tu PC",
-  },
-];
 
 // Duracion de cada diapositiva. Unica fuente de verdad: se publica como
 // --banner-ciclo y la barra de progreso (CSS) funciona como temporizador.
@@ -72,6 +44,33 @@ const Chevron = ({ izquierda = false }) => (
 );
 
 export default function Banner({ intervalo = INTERVALO_MS }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const SLIDES = [
+    {
+      id: "hero-banner",
+      src: `${BASE}banners/hero-banner.webp`,
+      alt: t(idioma, "banner.hero1Alt"),
+      encuadre: "contain",
+      to: "/productos?categoria=perifericos",
+      etiqueta: t(idioma, "banner.hero1Eti"),
+    },
+    {
+      id: "hero-neon",
+      src: `${BASE}banners/hero-neon.webp`,
+      alt: t(idioma, "banner.hero2Alt"),
+      encuadre: "cover",
+      to: "/productos?q=ASUS",
+      etiqueta: t(idioma, "banner.hero2Eti"),
+    },
+    {
+      id: "hero-raro",
+      src: `${BASE}banners/hero-raro.webp`,
+      alt: t(idioma, "banner.hero3Alt"),
+      encuadre: "cover",
+      to: "/armar",
+      etiqueta: t(idioma, "banner.hero3Eti"),
+    },
+  ];
   const total = SLIDES.length;
   const [indice, setIndice] = useState(0);
   // Motivos de pausa independientes: ninguno pisa la intencion de otro.
@@ -196,7 +195,7 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
       style={{ "--banner-ciclo": `${intervalo}ms` }}
       data-pausado={pausado ? "true" : "false"}
       aria-roledescription="carrusel"
-      aria-label="Promociones destacadas"
+      aria-label={t(idioma, "banner.aria")}
       onPointerEnter={(e) => e.pointerType === "mouse" && setPausaPuntero(true)}
       onPointerLeave={(e) => e.pointerType === "mouse" && setPausaPuntero(false)}
       onFocus={alEntrarFoco}
@@ -216,7 +215,7 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
               key={s.id}
               role="group"
               aria-roledescription="diapositiva"
-              aria-label={`${i + 1} de ${total}`}
+              aria-label={`${i + 1} ${t(idioma, "banner.de")} ${total}`}
               aria-hidden={!activo}
               className={`banner-slide${activo ? " es-activa" : ""}${esContain ? " encuadre-contain" : ""}`}
             >
@@ -261,7 +260,7 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
             type="button"
             className="banner-flecha ant"
             onClick={anterior}
-            aria-label="Diapositiva anterior"
+            aria-label={t(idioma, "banner.anterior")}
           >
             <Chevron izquierda />
           </button>
@@ -269,7 +268,7 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
             type="button"
             className="banner-flecha sig"
             onClick={siguiente}
-            aria-label="Diapositiva siguiente"
+            aria-label={t(idioma, "banner.siguiente")}
           >
             <Chevron />
           </button>

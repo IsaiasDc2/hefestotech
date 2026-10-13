@@ -25,7 +25,6 @@ function MobileDrawer({ abierto, alCerrar }) {
   const setIdioma = useIdiomaStore((s) => s.setIdioma);
   const { tema, fijarTema } = useTema();
   const location = useLocation();
-  const esEn = idioma === "en";
 
   useEffect(() => {
     if (!abierto) return undefined;
@@ -62,8 +61,8 @@ function MobileDrawer({ abierto, alCerrar }) {
 
   if (!abierto) return null;
 
-  const etiquetaMenu = esEn ? "Menu" : "Menú";
-  const etiquetaCerrar = esEn ? "Close menu" : "Cerrar menú";
+  const etiquetaMenu = t(idioma, "drawer.menu");
+  const etiquetaCerrar = t(idioma, "drawer.cerrar");
 
   return (
     <div className="drawer-raiz">

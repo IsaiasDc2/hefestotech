@@ -12,6 +12,7 @@ import {
   FaCircleQuestion,
 } from "react-icons/fa6";
 import useArmador, { PASOS, TOTAL_PASOS } from "./usoArmador";
+import useIdiomaStore, { t } from "../store/idiomaStore";
 import { PASO_EXTRAS } from "./pasos";
 import { precioFinal } from "./adaptar";
 import ArmadorCard from "./ArmadorCard";
@@ -51,15 +52,15 @@ function TotalAnimado({ valor }) {
   return <>{mostrado.toLocaleString("es-AR")}</>;
 }
 
-function estadoGlobal(evaluacion, cantidad) {
-  if (cantidad === 0) return { clase: "is-neutro", texto: "Sin armar" };
+function estadoGlobal(evaluacion, cantidad, idioma) {
+  if (cantidad === 0) return { clase: "is-neutro", texto: t(idioma, "arm.sinArmar") };
   const { resumen } = evaluacion;
-  if (resumen.bloqueada) return { clase: "is-error", texto: "Con errores" };
-  if (resumen.warn > 0) return { clase: "is-warn", texto: "Con avisos" };
+  if (resumen.bloqueada) return { clase: "is-error", texto: t(idioma, "arm.conErrores") };
+  if (resumen.warn > 0) return { clase: "is-warn", texto: t(idioma, "arm.conAvisos") };
   if (resumen.unknown > 0)
-    return { clase: "is-warn", texto: "A revisar" };
-  if (resumen.total === 0) return { clase: "is-neutro", texto: "Sin evaluar" };
-  return { clase: "is-ok", texto: "Compatible" };
+    return { clase: "is-warn", texto: t(idioma, "arm.aRevisar") };
+  if (resumen.total === 0) return { clase: "is-neutro", texto: t(idioma, "arm.sinEvaluar") };
+  return { clase: "is-ok", texto: t(idioma, "arm.compatible") };
 }
 
 function subir() {
@@ -71,7 +72,14 @@ function subir() {
 
 function Armador() {
   const a = useArmador();
+  const idioma = useIdiomaStore((s) => s.idioma);
   const tituloRef = useRef(null);
+  const nombrePaso = (p) => {
+    if (!p) return "";
+    const clave = `arm.paso.${p.id}`;
+    const v = t(idioma, clave);
+    return v === clave ? p.titulo : v;
+  };
 
   const esExtras = a.paso === PASOS.length;
   const pasoDef = esExtras ? PASO_EXTRAS : PASOS[a.paso];
@@ -165,7 +173,7 @@ function Armador() {
     return conEstado;
   }, [basePaso, a.filtros, a.extras, a.estadoCandidato, esExtras, pasoDef]);
 
-  const global = estadoGlobal(a.evaluacion, a.cantidad);
+  const global = estadoGlobal(a.evaluacion, a.cantidad, idioma);
   const seleccionadoActual = esExtras
     ? null
     : a.elegidos[a.paso]?.producto ?? null;
@@ -195,25 +203,22 @@ function Armador() {
 
   const resumenLinea = useMemo(() => {
     const { resumen } = a.evaluacion;
-    if (a.cantidad === 0) return "Todavía no elegiste nada.";
-    if (resumen.total === 0) return "Elegí al menos dos componentes y lo evaluamos.";
-    return `${resumen.ok} bien, ${resumen.warn} avisos, ${resumen.error} errores, ${resumen.unknown} pendientes.`;
-  }, [a.evaluacion, a.cantidad]);
+    if (a.cantidad === 0) return t(idioma, "arm.nadaAun");
+    if (resumen.total === 0) return t(idioma, "arm.elegiDos");
+    return `${resumen.ok} ${t(idioma, "arm.bien")}, ${resumen.warn} ${t(idioma, "arm.avisos")}, ${resumen.error} ${t(idioma, "arm.errores")}, ${resumen.unknown} ${t(idioma, "arm.pendientes")}.`;
+  }, [a.evaluacion, a.cantidad, idioma]);
 
   /* ---------------- intro ---------------- */
   if (!a.iniciado) {
     return (
       <main className="armador">
         <section className="armador-intro" aria-labelledby="armador-titulo">
-          <p className="armador-kicker">Armá tu PC</p>
+          <p className="armador-kicker">{t(idioma, "arm.kicker")}</p>
           <h1 id="armador-titulo" tabIndex={-1} ref={tituloRef}>
-            Tu próxima PC, pieza por pieza
+            {t(idioma, "arm.introT")}
           </h1>
           <p>
-            Te guiamos en {TOTAL_PASOS} pasos: elegís cada componente y te
-            avisamos al toque si algo no combina. Nada de tuteo raro ni
-            letra chica: si falta un dato, te lo decimos en vez de
-            inventarlo.
+            {t(idioma, "arm.introS")} {TOTAL_PASOS} {t(idioma, "arm.introS2")}
           </p>
           <div className="armador-intro-acciones">
             <button
@@ -222,7 +227,7 @@ function Armador() {
               onClick={() => a.setIniciado(true)}
             >
               <FaScrewdriverWrench aria-hidden="true" />
-              {hayRestaurado ? "Seguir armando" : "Empezar"}
+              {hayRestaurado ? t(idioma, "arm.seguir") : t(idioma, "arm.empezar")}
             </button>
             {hayRestaurado && (
               <button
@@ -233,7 +238,7 @@ function Armador() {
                   a.setIniciado(true);
                 }}
               >
-                <FaRotateLeft aria-hidden="true" /> Arrancar de cero
+                <FaRotateLeft aria-hidden="true" /> {t(idioma, "arm.deCero")}
               </button>
             )}
           </div>
@@ -250,12 +255,12 @@ function Armador() {
           type="button"
           className="ht-btn ht-btn-ghost"
           onClick={atras}
-          aria-label="Volver al último paso"
+          aria-label={t(idioma, "arm.volverUltimo")}
         >
-          <FaArrowLeft aria-hidden="true" /> Volver
+          <FaArrowLeft aria-hidden="true" /> {t(idioma, "arm.volver")}
         </button>
         <h1 tabIndex={-1} ref={tituloRef} className="armador-titulo">
-          Revisá tu armado
+          {t(idioma, "arm.revisa")}
         </h1>
         <ArmadorResumen
           elegidos={a.elegidos}
@@ -277,13 +282,13 @@ function Armador() {
   return (
     <main className="armador">
       {/* Stepper fijo */}
-      <nav className="armador-stepper" aria-label="Pasos del armado">
+      <nav className="armador-stepper" aria-label={t(idioma, "arm.pasosDe")}>
         <p className="stepper-movil" aria-live="polite">
           {esExtras ? (
-            <>Extras (opcional)</>
+            <>{t(idioma, "arm.extrasOp")}</>
           ) : (
             <>
-              Paso {pasoIndice + 1} de {TOTAL_PASOS}: {pasoDef.titulo}
+              {t(idioma, "arm.paso")} {pasoIndice + 1} {t(idioma, "arm.de2")} {TOTAL_PASOS}: {nombrePaso(pasoDef)}
             </>
           )}
         </p>
@@ -306,18 +311,18 @@ function Armador() {
                     .join(" ")}
                   aria-current={actual ? "step" : undefined}
                   onClick={() => irAPaso(i)}
-                  aria-label={`Paso ${i + 1}: ${p.titulo}${
-                    elegido ? `, elegido ${elegido.nombre}` : ""
-                  }${salteado && !elegido ? ", salteado" : ""}`}
+                  aria-label={`${t(idioma, "arm.paso")} ${i + 1}: ${nombrePaso(p)}${
+                    elegido ? `, ${t(idioma, "arm.elegido")} ${elegido.nombre}` : ""
+                  }${salteado && !elegido ? `, ${t(idioma, "arm.salteado")}` : ""}`}
                 >
                   {elegido ? (
                     <FaCheck aria-hidden="true" className="pop" />
                   ) : (
                     <span aria-hidden="true">{i + 1}</span>
                   )}
-                  {p.titulo}
+                  {nombrePaso(p)}
                   {salteado && !elegido && (
-                    <span className="chip-saltea">salteado</span>
+                    <span className="chip-saltea">{t(idioma, "arm.salteadoC")}</span>
                   )}
                 </button>
               </li>
@@ -330,38 +335,38 @@ function Armador() {
               aria-current={esExtras ? "step" : undefined}
               onClick={() => irAPaso(PASOS.length)}
             >
-              Extras{a.extras.length > 0 && ` (${a.extras.length})`}
+              {t(idioma, "arm.extras")}{a.extras.length > 0 && ` (${a.extras.length})`}
             </button>
           </li>
         </ol>
       </nav>
 
       <h1 tabIndex={-1} ref={tituloRef} className="armador-titulo">
-        {esExtras ? "Sumá extras (opcional)" : `Elegí tu ${pasoDef.titulo}`}
+        {esExtras ? t(idioma, "arm.sumaExtras") : `${t(idioma, "arm.elegiTu")} ${nombrePaso(pasoDef)}`}
       </h1>
       <p className="armador-ayuda">
         {esExtras
-          ? "Monitores, periféricos y más. No afectan la compatibilidad y podés saltear esta parte."
-          : `Paso ${pasoIndice + 1} de ${TOTAL_PASOS}. Los compatibles van primero; si algo no combina, te decimos por qué.`}
+          ? t(idioma, "arm.ayudaExtras")
+          : `${t(idioma, "arm.paso")} ${pasoIndice + 1} ${t(idioma, "arm.de2")} ${TOTAL_PASOS}. ${t(idioma, "arm.ayudaPaso")}`}
       </p>
       <p className="armador-live" aria-live="polite" role="status">
-        Compatibilidad de tu armado: {resumenLinea}
+        {t(idioma, "arm.compatDe")} {resumenLinea}
       </p>
 
       {a.cargando && (
         <p className="estado-carga" role="status">
-          Cargando productos…
+          {t(idioma, "arm.cargando")}
         </p>
       )}
       {a.errorCarga && !a.cargando && (
         <div className="estado-error" role="alert">
-          <p>No pudimos cargar los productos.</p>
+          <p>{t(idioma, "arm.errorCarga")}</p>
           <button
             type="button"
             className="ht-btn ht-btn-primary"
             onClick={a.reintentar}
           >
-            Reintentar
+            {t(idioma, "arm.reintentar")}
           </button>
         </div>
       )}
@@ -371,27 +376,27 @@ function Armador() {
           {/* Filtros del paso */}
           <form
             className="armador-filtros"
-            aria-label={`Filtros de ${pasoDef.titulo}`}
+            aria-label={`${t(idioma, "arm.filtrosDe")} ${nombrePaso(pasoDef)}`}
             onSubmit={(e) => e.preventDefault()}
           >
             <label className="filtro">
-              <span>Buscar</span>
+              <span>{t(idioma, "arm.buscar")}</span>
               <input
                 type="search"
-                placeholder={`Buscar en ${pasoDef.titulo.toLowerCase()}…`}
+                placeholder={`${t(idioma, "arm.buscarEn")} ${nombrePaso(pasoDef).toLowerCase()}…`}
                 value={a.filtros.q}
                 onChange={(e) => a.setFiltros({ q: e.target.value })}
-                aria-label={`Buscar en ${pasoDef.titulo}`}
+                aria-label={`${t(idioma, "arm.buscarEn")} ${nombrePaso(pasoDef)}`}
               />
             </label>
             {marcasPaso.length > 0 && (
               <label className="filtro">
-                <span>Marca</span>
+                <span>{t(idioma, "arm.marca")}</span>
                 <select
                   value={a.filtros.marca}
                   onChange={(e) => a.setFiltros({ marca: e.target.value })}
                 >
-                  <option value="todas">Todas</option>
+                  <option value="todas">{t(idioma, "arm.todas")}</option>
                   {marcasPaso.map((m) => (
                     <option key={m} value={m}>
                       {m}
@@ -403,7 +408,7 @@ function Armador() {
             {rangoPrecio.max > rangoPrecio.min && (
               <label className="filtro">
                 <span>
-                  Hasta $
+                  {t(idioma, "arm.hasta")} $
                   {(a.filtros.max ?? rangoPrecio.max).toLocaleString("es-AR")}
                 </span>
                 <input
@@ -420,22 +425,22 @@ function Armador() {
                           : Number(e.target.value),
                     })
                   }
-                  aria-label="Precio máximo"
+                  aria-label={t(idioma, "arm.precioMax")}
                 />
               </label>
             )}
             {!esExtras && (
               <>
                 <label className="filtro">
-                  <span>Orden</span>
+                  <span>{t(idioma, "arm.orden")}</span>
                   <select
                     value={a.filtros.orden}
                     onChange={(e) => a.setFiltros({ orden: e.target.value })}
                   >
-                    <option value="reco">Recomendados</option>
-                    <option value="precio-asc">Precio: menor a mayor</option>
-                    <option value="precio-desc">Precio: mayor a menor</option>
-                    <option value="nombre">Nombre A–Z</option>
+                    <option value="reco">{t(idioma, "arm.reco")}</option>
+                    <option value="precio-asc">{t(idioma, "arm.precioAsc")}</option>
+                    <option value="precio-desc">{t(idioma, "arm.precioDesc")}</option>
+                    <option value="nombre">{t(idioma, "arm.nombreAz")}</option>
                   </select>
                 </label>
                 <label className="filtro-check">
@@ -446,7 +451,7 @@ function Armador() {
                       a.setFiltros({ verIncomp: e.target.checked })
                     }
                   />
-                  <span>Mostrar incompatibles</span>
+                  <span>{t(idioma, "arm.verIncomp")}</span>
                 </label>
               </>
             )}
@@ -454,7 +459,7 @@ function Armador() {
 
           {seleccionadoActual && (
             <p className="armador-elegido" role="status">
-              <FaCheck aria-hidden="true" /> Llevás:{" "}
+              <FaCheck aria-hidden="true" /> {t(idioma, "arm.llevas")}:{" "}
               <strong>{seleccionadoActual.nombre}</strong> ($
               {precioFinal(seleccionadoActual).toLocaleString("es-AR")})
             </p>
@@ -462,8 +467,7 @@ function Armador() {
 
           {candidatos.length === 0 ? (
             <p className="armador-vacio" role="status">
-              No hay productos con esos filtros. Aflojá con la búsqueda o
-              el precio y probá de nuevo.
+              {t(idioma, "arm.sinFiltros")}
             </p>
           ) : (
             <div className="armador-grilla">
@@ -511,7 +515,7 @@ function Armador() {
               disabled={pasoIndice === 0}
               onClick={atras}
             >
-              <FaArrowLeft aria-hidden="true" /> Atrás
+              <FaArrowLeft aria-hidden="true" /> {t(idioma, "arm.atras")}
             </button>
             {!esExtras && (
               <button
@@ -521,7 +525,7 @@ function Armador() {
                   if (a.saltear(pasoDef)) siguiente();
                 }}
               >
-                <FaForward aria-hidden="true" /> Saltear este paso
+                <FaForward aria-hidden="true" /> {t(idioma, "arm.saltear")}
               </button>
             )}
             <button
@@ -531,14 +535,14 @@ function Armador() {
             >
               {pasoIndice >= PASOS.length ? (
                 <>
-                  Ver resumen <FaArrowRight aria-hidden="true" />
+                  {t(idioma, "arm.verResumen")} <FaArrowRight aria-hidden="true" />
                 </>
               ) : (
                 <>
-                  Siguiente:{" "}
+                  {t(idioma, "arm.siguiente")}:{" "}
                   {pasoIndice + 1 < PASOS.length
-                    ? PASOS[pasoIndice + 1].titulo
-                    : "Extras"}{" "}
+                    ? nombrePaso(PASOS[pasoIndice + 1])
+                    : t(idioma, "arm.extras")}{" "}
                   <FaArrowRight aria-hidden="true" />
                 </>
               )}
@@ -549,18 +553,18 @@ function Armador() {
             className="armador-reiniciar"
             onClick={a.reiniciar}
           >
-            <FaRotateLeft aria-hidden="true" /> Arrancar de cero
+            <FaRotateLeft aria-hidden="true" /> {t(idioma, "arm.reiniciar")}
           </button>
         </>
       )}
 
       {/* Barra fija */}
-      <div className="armador-barra" role="status" aria-label="Resumen del armado">
+      <div className="armador-barra" role="status" aria-label={t(idioma, "armres.titulo")}>
         <span className="barra-total">
-          Total: $<TotalAnimado valor={a.total} />
+          {t(idioma, "arm.total")}: $<TotalAnimado valor={a.total} />
         </span>
         <span className="barra-cant">
-          {a.cantidad} {a.cantidad === 1 ? "pieza" : "piezas"}
+          {a.cantidad} {a.cantidad === 1 ? t(idioma, "arm.pieza") : t(idioma, "arm.piezas")}
         </span>
         <span className={`barra-estado ${global.clase}`}>
           {global.clase === "is-ok" ? (
@@ -576,16 +580,16 @@ function Armador() {
         </span>
         <span className="barra-consumo">
           {a.consumo == null
-            ? "Consumo: a definir"
-            : `Consumo: ~${a.consumo}W`}
+            ? t(idioma, "arm.consumoDef")
+            : `${t(idioma, "arm.consumo")}: ~${a.consumo}W`}
         </span>
         <button
           type="button"
           className="ht-btn ht-btn-primary"
           onClick={siguiente}
-          aria-label="Seguir al siguiente paso"
+          aria-label={t(idioma, "arm.seguirPaso")}
         >
-          Siguiente <FaArrowRight aria-hidden="true" />
+          {t(idioma, "arm.siguiente")} <FaArrowRight aria-hidden="true" />
         </button>
       </div>
     </main>

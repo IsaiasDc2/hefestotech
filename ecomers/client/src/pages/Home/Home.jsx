@@ -12,6 +12,7 @@ import {
   FaCreditCard,
 } from "react-icons/fa6";
 import { supabase } from "../../components/lib/supabaseClient";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import ProductCard from "../../components/product/ProductCard";
 import "../../components/product/ProductCard.css";
 import ProductCarousel from "../../components/product/ProductCarousel";
@@ -39,12 +40,12 @@ const MARCAS = [
 ];
 
 const CATEGORIAS = [
-  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip />, imagen: "procesador" },
-  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop />, imagen: "placa" },
-  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory />, imagen: "ram" },
-  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive />, imagen: "almacenamiento" },
-  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard />, imagen: "periferico" },
-  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire />, imagen: "oferta" },
+  { nombreKey: "home.cat.procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip />, imagen: "procesador" },
+  { nombreKey: "home.cat.placas", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop />, imagen: "placa" },
+  { nombreKey: "home.cat.memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory />, imagen: "ram" },
+  { nombreKey: "home.cat.almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive />, imagen: "almacenamiento" },
+  { nombreKey: "home.cat.perifericos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard />, imagen: "periferico" },
+  { nombreKey: "home.cat.ofertas", slug: "ofertas", db: null, icono: <FaFire />, imagen: "oferta" },
 ];
 
 const BASE = import.meta.env.BASE_URL || "/";
@@ -86,6 +87,7 @@ function usarVisibleUnaVez() {
 }
 
 function Home({ agregarAlCarrito }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(false);
@@ -100,7 +102,7 @@ function Home({ agregarAlCarrito }) {
   const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
 
   const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
-    label: c.nombre,
+    label: t(idioma, c.nombreKey),
     value: c.db,
   }));
 
@@ -183,23 +185,25 @@ function Home({ agregarAlCarrito }) {
 
       <section className="seccion" aria-labelledby="home-categorias">
         <SectionHeader
-          kicker="Explorar"
-          titulo="Explorá por categoría"
+          kicker={t(idioma, "home.explorarKicker")}
+          titulo={t(idioma, "home.explorarTitulo")}
           id="home-categorias"
           verTodo="/productos"
         />
         <div ref={refCategorias} className={`grid-categorias${categoriasVisibles ? " is-visible" : ""}`}>
           {CATEGORIAS.map((c) => {
             const conteo = conteoPorSlug[c.slug] ?? 0;
+            const nombreCat = t(idioma, c.nombreKey);
+            const unidad = conteo === 1 ? t(idioma, "home.producto") : t(idioma, "home.productos");
             return (
               <Link
-                key={c.nombre}
+                key={c.slug}
                 to={`/productos?categoria=${c.slug}`}
                 className="card-categoria"
                 aria-label={
                   conteo > 0
-                    ? `${c.nombre}, ${conteo} ${conteo === 1 ? "producto" : "productos"}`
-                    : c.nombre
+                    ? `${nombreCat}, ${conteo} ${unidad}`
+                    : nombreCat
                 }
               >
                 <span className="cat-icono" aria-hidden="true">
@@ -216,10 +220,10 @@ function Home({ agregarAlCarrito }) {
                     }}
                   />
                 </span>
-                <span className="cat-nombre">{c.nombre}</span>
+                <span className="cat-nombre">{nombreCat}</span>
                 {conteo > 0 && (
                   <span className="cat-conteo">
-                    {conteo} {conteo === 1 ? "producto" : "productos"}
+                    {conteo} {unidad}
                   </span>
                 )}
               </Link>
@@ -229,8 +233,8 @@ function Home({ agregarAlCarrito }) {
       </section>
 
       {cargando ? (
-        <section className="seccion" aria-label="Cargando catálogo">
-          <p className="estado-carga" role="status">Cargando productos…</p>
+        <section className="seccion" aria-label={t(idioma, "home.cargandoCat")}>
+          <p className="estado-carga" role="status">{t(idioma, "home.cargandoProd")}</p>
           <div className="grid-destacados" aria-hidden="true">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="card-skeleton" />
@@ -239,8 +243,8 @@ function Home({ agregarAlCarrito }) {
         </section>
       ) : error ? (
         <div className="vacio" role="alert">
-          <p className="vacio-titulo">No pudimos cargar los productos</p>
-          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
+          <p className="vacio-titulo">{t(idioma, "home.errorTitulo")}</p>
+          <p className="vacio-texto">{t(idioma, "home.errorTexto")}</p>
           <button
             type="button"
             className="btn-limpiar"
@@ -249,14 +253,14 @@ function Home({ agregarAlCarrito }) {
               setReintento((n) => n + 1);
             }}
           >
-            ↻ Reintentar
+            ↻ {t(idioma, "home.reintentar")}
           </button>
         </div>
       ) : (
         <>
           <ProductCarousel
-            titulo="En oferta"
-            kicker="Precios rebajados"
+            titulo={t(idioma, "home.ofertaTitulo")}
+            kicker={t(idioma, "home.ofertaKicker")}
             verTodo="/productos?categoria=ofertas"
             productos={ofertas}
             agregarAlCarrito={agregarAlCarrito}
@@ -264,13 +268,13 @@ function Home({ agregarAlCarrito }) {
 
           <TiraBanner
             src={`${BASE}banners/tira-escritorio.webp`}
-            alt="Setup gamer con monitor sobre escritorio"
+            alt={t(idioma, "tira.setup")}
           />
 
           <section className="seccion filtro-home" aria-labelledby="home-catalogo">
             <SectionHeader
-              kicker="Destacados"
-              titulo="Explorá el catálogo"
+              kicker={t(idioma, "home.catalogoKicker")}
+              titulo={t(idioma, "home.catalogoTitulo")}
               id="home-catalogo"
               verTodo="/productos"
             />
@@ -301,27 +305,27 @@ function Home({ agregarAlCarrito }) {
 
           <TiraBanner
             src={`${BASE}banners/tira-silla.webp`}
-            alt="Silla gamer"
+            alt={t(idioma, "tira.silla")}
             to="/productos?categoria=sillas-gamer"
-            etiqueta="Ver sillas gamer"
+            etiqueta={t(idioma, "tira.sillaEti")}
           />
           <ProductCarousel
-            titulo="Destacados"
-            kicker="Selección"
+            titulo={t(idioma, "home.destacadosTitulo")}
+            kicker={t(idioma, "home.seleccionKicker")}
             verTodo="/productos"
             productos={destacados}
             agregarAlCarrito={agregarAlCarrito}
           />
           <TiraBanner
             src={`${BASE}banners/tira-placa.webp`}
-            alt="Placas de video RTX"
+            alt={t(idioma, "tira.placa")}
             to="/productos?categoria=placas-de-video"
-            etiqueta="Ver placas de video"
+            etiqueta={t(idioma, "tira.placaEti")}
           />
           {destacados.length === 0 && ofertas.length === 0 && (
             <div className="vacio">
-              <p>El catálogo está vacío por ahora.</p>
-              <span>Volvé pronto o explorá el catálogo completo.</span>
+              <p>{t(idioma, "home.vacioTitulo")}</p>
+              <span>{t(idioma, "home.vacioTexto")}</span>
             </div>
           )}
         </>
@@ -329,8 +333,8 @@ function Home({ agregarAlCarrito }) {
 
       <section className="seccion marcas" aria-labelledby="home-marcas">
         <SectionHeader
-          kicker="Marcas"
-          titulo="Marcas"
+          kicker={t(idioma, "home.marcasKicker")}
+          titulo={t(idioma, "home.marcasTitulo")}
           id="home-marcas"
           verTodo="/productos"
         />
@@ -347,19 +351,19 @@ function Home({ agregarAlCarrito }) {
         </div>
       </section>
 
-      <section ref={refBeneficios} className={`beneficios${beneficiosVisibles ? " is-visible" : ""}`} aria-label="Beneficios de compra">
+      <section ref={refBeneficios} className={`beneficios${beneficiosVisibles ? " is-visible" : ""}`} aria-label={t(idioma, "home.beneficios")}>
         <div className="beneficio">
           <FaCreditCard aria-hidden="true" />
           <div>
-            <strong>6 cuotas sin interés</strong>
-            <span>Con todas las tarjetas</span>
+            <strong>{t(idioma, "home.cuotasT")}</strong>
+            <span>{t(idioma, "home.cuotasS")}</span>
           </div>
         </div>
         <div className="beneficio beneficio-envio">
           <FaTruckFast aria-hidden="true" />
           <div>
-            <strong>Envío a todo el país</strong>
-            <span>Gratis desde $99.999</span>
+            <strong>{t(idioma, "home.envioT")}</strong>
+            <span>{t(idioma, "home.envioS")}</span>
           </div>
           <span className="envio-anim" aria-hidden="true">
             <svg viewBox="0 0 200 32" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -395,8 +399,8 @@ function Home({ agregarAlCarrito }) {
         <div className="beneficio">
           <FaShieldHalved aria-hidden="true" />
           <div>
-            <strong>Garantía oficial</strong>
-            <span>12 meses en todos los productos</span>
+            <strong>{t(idioma, "home.garantiaT")}</strong>
+            <span>{t(idioma, "home.garantiaS")}</span>
           </div>
         </div>
       </section>

@@ -14,6 +14,7 @@ import {
   FaDesktop,
   FaCube,
 } from "react-icons/fa6";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./ProductCard.css";
 
 /* Icono de respaldo según categoría (estado de error de imagen). */
@@ -29,6 +30,7 @@ function iconoPorCategoria(categoria = "") {
 }
 
 function ProductCard({ producto, agregarAlCarrito }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [favorito, setFavorito] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [agregado, setAgregado] = useState(false);
@@ -53,7 +55,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
   );
   const hayStock = Number(producto.stock ?? 0) > 0;
   const imagen = producto.imagen || "";
-  const nombre = producto.nombre || "Producto";
+  const nombre = producto.nombre || t(idioma, "card.producto");
   const marca = (producto.marca || "").trim();
   const categoria = producto.categoria || "General";
   const urlProducto = `/producto/${producto.id}`;
@@ -76,7 +78,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
     <div className={`card-producto${hayStock ? "" : " is-sin-stock"}`}>
       {tieneOferta && (
         <span className="oferta">
-          <span>OFERTA</span>
+          <span>{t(idioma, "card.oferta")}</span>
           {descuento > 0 && <span className="oferta-pct">-{descuento}%</span>}
         </span>
       )}
@@ -91,7 +93,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
         <Link
           to={urlProducto}
           className="card-media-link"
-          aria-label={`Ver ${nombre}`}
+          aria-label={`${t(idioma, "card.ver")} ${nombre}`}
         >
           {imagen && !imgError ? (
             <img
@@ -109,7 +111,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
             <span
               className="producto-sin-imagen"
               role="img"
-              aria-label={`Sin imagen disponible de ${nombre}`}
+              aria-label={`${t(idioma, "card.sinImagen")} ${nombre}`}
             >
               <IconoRespaldo className="sin-imagen-icono" aria-hidden="true" />
               <span className="sin-imagen-texto" aria-hidden="true">
@@ -124,7 +126,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
           onClick={() => setFavorito((prev) => !prev)}
           aria-pressed={favorito}
           aria-label={
-            favorito ? "Quitar de favoritos" : "Agregar a favoritos"
+            favorito ? t(idioma, "card.favQuitar") : t(idioma, "card.favAgregar")
           }
         >
           {favorito ? (
@@ -142,7 +144,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
       {tieneRating && (
         <span
           className="card-rating"
-          aria-label={`Calificación ${rating.toFixed(1)} de 5`}
+          aria-label={`${t(idioma, "card.rating")} ${rating.toFixed(1)} ${t(idioma, "card.de")} 5`}
         >
           <span className="estrellas" aria-hidden="true">
             ★★★★★
@@ -159,11 +161,11 @@ function ProductCard({ producto, agregarAlCarrito }) {
       <div className="stock">
         {hayStock ? (
           <span className="stock-linea disponible">
-            <span className="stock-dot" aria-hidden="true" /> Disponible
+            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.disponible")}
           </span>
         ) : (
           <span className="stock-linea agotado">
-            <span className="stock-dot" aria-hidden="true" /> Sin stock
+            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.sinStock")}
           </span>
         )}
       </div>
@@ -194,7 +196,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
 
       {producto.envio_gratis && (
         <p className="envio">
-          <FaTruckFast aria-hidden="true" /> Envío gratis
+          <FaTruckFast aria-hidden="true" /> {t(idioma, "card.envioGratis")}
         </p>
       )}
 
@@ -205,21 +207,21 @@ function ProductCard({ producto, agregarAlCarrito }) {
         onClick={manejarAgregar}
         aria-live="polite"
         aria-label={
-          hayStock ? `Agregar ${nombre} al carrito` : `${nombre} sin stock`
+          hayStock ? `${t(idioma, "card.agregar")} ${nombre}` : `${nombre} ${t(idioma, "card.sinStock")}`
         }
       >
         {hayStock ? (
           agregado ? (
             <>
-              <FaCheck aria-hidden="true" /> Agregado
+              <FaCheck aria-hidden="true" /> {t(idioma, "card.agregado")}
             </>
           ) : (
             <>
-              <FaCartPlus aria-hidden="true" /> Agregar al carrito
+              <FaCartPlus aria-hidden="true" /> {t(idioma, "card.agregar")}
             </>
           )
         ) : (
-          "Sin stock"
+          t(idioma, "card.sinStock")
         )}
       </button>
     </div>

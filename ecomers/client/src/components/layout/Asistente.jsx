@@ -8,22 +8,11 @@ import {
   FaWhatsapp,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca.jsx";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Asistente.css";
 
-const SALUDO_INICIAL = "¡Hola! Soy Hefesto. ¿En qué te ayudo con tu setup?";
 const WHATSAPP_URL = "https://wa.me/5491112345678";
 const MAX_LARGO = 500;
-
-// Atajos: solo funciones que existen hoy. Cada chip envía un mensaje
-// real al mismo endpoint /api/chat; el system prompt deriva a /armar,
-// /reclamo, /cuenta o WhatsApp según corresponda. Sin datos inventados.
-const ATAJOS = [
-  { etiqueta: "Armar mi PC", texto: "Quiero armar una PC, ¿por dónde empiezo?" },
-  { etiqueta: "Medios de pago", texto: "¿Qué medios de pago aceptan?" },
-  { etiqueta: "Envíos", texto: "¿Cómo funcionan los envíos?" },
-  { etiqueta: "Estado de mi pedido", texto: "Quiero saber el estado de mi pedido" },
-  { etiqueta: "Hablar por WhatsApp", texto: "Quiero hablar por WhatsApp" },
-];
 
 function horaCorta(marca) {
   try {
@@ -88,30 +77,38 @@ function renderRico(texto) {
   return bloques.length ? bloques : renderEnLinea(texto, "solo");
 }
 
-const AVISOS = {
-  error: {
-    titulo: "No pude forjar la respuesta.",
-    detalle: "Probá de nuevo o escribinos por WhatsApp.",
-  },
-  "sin-conexion": {
-    titulo: "Sin conexión.",
-    detalle: "Revisá tu red o escribinos por WhatsApp.",
-  },
-  limite: {
-    titulo: "Demasiadas consultas seguidas.",
-    detalle: "Esperá un minuto e intentá de nuevo.",
-  },
-  caido: {
-    titulo: "Mis circuitos están en mantenimiento.",
-    detalle: "Intentá de nuevo más tarde o escribinos por WhatsApp.",
-  },
-};
-
 function Asistente() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const SALUDO = t(idioma, "as.saludo");
+  const ATAJOS_T = [
+    { etiqueta: t(idioma, "as.at1"), texto: "Quiero armar una PC, ¿por dónde empiezo?" },
+    { etiqueta: t(idioma, "as.at2"), texto: "¿Qué medios de pago aceptan?" },
+    { etiqueta: t(idioma, "as.at3"), texto: "¿Cómo funcionan los envíos?" },
+    { etiqueta: t(idioma, "as.at4"), texto: "Quiero saber el estado de mi pedido" },
+    { etiqueta: t(idioma, "as.at5"), texto: "Quiero hablar por WhatsApp" },
+  ];
+  const AVISOS_T = {
+    error: {
+      titulo: t(idioma, "as.avErrorT"),
+      detalle: t(idioma, "as.avErrorD"),
+    },
+    "sin-conexion": {
+      titulo: t(idioma, "as.avSinT"),
+      detalle: t(idioma, "as.avSinD"),
+    },
+    limite: {
+      titulo: t(idioma, "as.avLimT"),
+      detalle: t(idioma, "as.avLimD"),
+    },
+    caido: {
+      titulo: t(idioma, "as.avCaiT"),
+      detalle: t(idioma, "as.avCaiD"),
+    },
+  };
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [chat, setChat] = useState([
-    { rol: "ia", texto: SALUDO_INICIAL, hora: Date.now() },
+    { rol: "ia", texto: SALUDO, hora: Date.now() },
   ]);
   const [estado, setEstado] = useState("listo");
   const [aviso, setAviso] = useState(null);
@@ -178,7 +175,7 @@ function Asistente() {
   const minimizar = () => setAbierto(false);
   const cerrar = () => {
     setAbierto(false);
-    setChat([{ rol: "ia", texto: SALUDO_INICIAL, hora: Date.now() }]);
+    setChat([{ rol: "ia", texto: SALUDO, hora: Date.now() }]);
     setAviso(null);
     setMensaje("");
     setUltimoTexto("");
@@ -272,7 +269,7 @@ function Asistente() {
     }
   };
 
-  const avisoInfo = aviso ? AVISOS[aviso.tipo] ?? AVISOS.error : null;
+  const avisoInfo = aviso ? AVISOS_T[aviso.tipo] ?? AVISOS_T.error : null;
 
   return (
     <div className="asistente">
@@ -292,14 +289,14 @@ function Asistente() {
               <Marca variante="simbolo" ancho={28} alto={28} decorativa />
             </span>
             <div className="asistente-titulos">
-              <strong id="asistente-titulo">Asistente de HefestoTech</strong>
-              <span className="asistente-sub">Presupuestos · Soporte · Stock</span>
+              <strong id="asistente-titulo">{t(idioma, "as.titulo")}</strong>
+              <span className="asistente-sub">{t(idioma, "as.sub")}</span>
             </div>
             <div className="asistente-acciones">
-              <button type="button" onClick={minimizar} aria-label="Minimizar asistente">
+              <button type="button" onClick={minimizar} aria-label={t(idioma, "as.minimizar")}>
                 <FaMinus aria-hidden="true" />
               </button>
-              <button type="button" onClick={cerrar} aria-label="Cerrar asistente">
+              <button type="button" onClick={cerrar} aria-label={t(idioma, "as.cerrar")}>
                 <FaXmark aria-hidden="true" />
               </button>
             </div>
@@ -311,7 +308,7 @@ function Asistente() {
             aria-live="polite"
             aria-atomic="false"
             aria-relevant="additions"
-            aria-label="Conversación con Hefesto"
+            aria-label={t(idioma, "as.conversacion")}
             ref={mensajesRef}
           >
             {chat.map((msg, i) => (
@@ -348,7 +345,7 @@ function Asistente() {
               </div>
             )}
             <span className="asistente-sr" role="status">
-              {escribiendo ? "Hefesto está escribiendo…" : ""}
+              {escribiendo ? t(idioma, "as.escribiendo") : ""}
             </span>
 
             {avisoInfo && (
@@ -360,7 +357,7 @@ function Asistente() {
                   <div className="asistente-aviso-acciones">
                     {aviso.reintentable && ultimoTexto && (
                       <button type="button" onClick={reintentar} disabled={escribiendo}>
-                        <FaRotateRight aria-hidden="true" /> Reintentar
+                        <FaRotateRight aria-hidden="true" /> {t(idioma, "as.reintentar")}
                       </button>
                     )}
                     <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
@@ -374,7 +371,7 @@ function Asistente() {
 
           {sinEmpezar && (
             <div className="asistente-chips">
-              {ATAJOS.map((atajo) => (
+              {ATAJOS_T.map((atajo) => (
                 <button
                   key={atajo.etiqueta}
                   type="button"
@@ -396,7 +393,7 @@ function Asistente() {
             }}
           >
             <label className="asistente-sr" htmlFor="asistente-campo">
-              Escribí tu consulta
+              {t(idioma, "as.escribiTu")}
             </label>
             <textarea
               id="asistente-campo"
@@ -406,7 +403,7 @@ function Asistente() {
               maxLength={MAX_LARGO}
               onChange={(e) => setMensaje(e.target.value)}
               onKeyDown={alTeclaCampo}
-              placeholder="Escribí tu consulta…"
+              placeholder={t(idioma, "as.ph")}
               enterKeyHint="send"
               disabled={escribiendo}
             />
@@ -416,7 +413,7 @@ function Asistente() {
             <button
               type="submit"
               className="asistente-enviar"
-              aria-label="Enviar mensaje"
+              aria-label={t(idioma, "as.enviar")}
               disabled={!mensaje.trim() || escribiendo}
             >
               <FaArrowRight aria-hidden="true" />
@@ -429,7 +426,7 @@ function Asistente() {
         className={`asistente-bola${abierto ? " es-abierto" : ""}`}
         onClick={() => setAbierto((v) => !v)}
         ref={botonRef}
-        aria-label={abierto ? "Cerrar asistente de HefestoTech" : "Abrir asistente de HefestoTech"}
+        aria-label={abierto ? t(idioma, "as.cerrarAbierto") : t(idioma, "as.abrir")}
         aria-expanded={abierto}
         aria-controls="asistente-panelo"
       >

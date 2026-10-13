@@ -1,84 +1,80 @@
 import { Link } from "react-router-dom";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Acerca.css";
 
 function Acerca() {
+  const idioma = useIdiomaStore((s) => s.idioma);
   return (
     <div className="acerca">
       <header className="acerca-hero anim-entrada">
-        <p className="badge badge-info hero-kicker">Desde 2020 · Salta Capital</p>
+        <p className="badge badge-info hero-kicker">{t(idioma, "acerca.kicker")}</p>
         <h1>
-          Acerca de <span className="titulo-degradado">HefestoTech</span>
+          {t(idioma, "acerca.de")} <span className="titulo-degradado">HefestoTech</span>
         </h1>
         <p>
-          Probamos cada componente antes de publicarlo. Si no lo usaríamos
-          en nuestra propia PC, no lo vendemos.
+          {t(idioma, "acerca.sub")}
         </p>
       </header>
 
-      <section className="acerca-stats" aria-label="HefestoTech en números">
+      <section className="acerca-stats" aria-label={t(idioma, "acerca.numeros")}>
         <div className="stat card">
           <strong>5000+</strong>
-          <span>Clientes atendidos</span>
+          <span>{t(idioma, "acerca.clientes")}</span>
         </div>
         <div className="stat card">
           <strong>2020</strong>
-          <span>Año de fundación</span>
+          <span>{t(idioma, "acerca.fundacion")}</span>
         </div>
         <div className="stat card">
           <strong>24-48hs</strong>
-          <span>Tiempo de envío</span>
+          <span>{t(idioma, "acerca.envio")}</span>
         </div>
         <div className="stat card">
           <strong>4.8★</strong>
-          <span>Valoración promedio</span>
+          <span>{t(idioma, "acerca.valoracion")}</span>
         </div>
       </section>
 
       <section className="acerca-seccion">
-        <h2>Nuestra historia</h2>
+        <h2>{t(idioma, "acerca.historia")}</h2>
         <p>
-          Empezamos en 2020 vendiendo componentes sueltos a gamers y
-          makers de nuestro barrio. Hoy despachamos a todo el país, pero
-          seguimos probando cada producto antes de listarlo: si no lo
-          usaríamos en nuestra propia PC, no lo vendemos.
+          {t(idioma, "acerca.historiaT")}
         </p>
       </section>
 
       <section className="acerca-valores">
-        <h2>Lo que nos guía</h2>
+        <h2>{t(idioma, "acerca.guia")}</h2>
 
         <div className="valores-grid">
           <div className="valor-card card">
             <span className="valor-icono" aria-hidden="true">01</span>
-            <h3>Calidad verificada</h3>
+            <h3>{t(idioma, "acerca.calidad")}</h3>
             <p>
-              Cada producto pasa control de stock real y garantía oficial
-              antes de publicarse.
+              {t(idioma, "acerca.calidadT")}
             </p>
           </div>
 
           <div className="valor-card card">
             <span className="valor-icono" aria-hidden="true">02</span>
-            <h3>Envíos rápidos</h3>
+            <h3>{t(idioma, "acerca.envios")}</h3>
             <p>
-              Despachamos en 24-48 hs.
+              {t(idioma, "acerca.enviosT")}
             </p>
           </div>
 
           <div className="valor-card card">
             <span className="valor-icono" aria-hidden="true">03</span>
-            <h3>Soporte real</h3>
+            <h3>{t(idioma, "acerca.soporte")}</h3>
             <p>
-              Te ayudamos a elegir la pieza correcta antes de comprar.
+              {t(idioma, "acerca.soporteT")}
             </p>
           </div>
 
           <div className="valor-card card">
             <span className="valor-icono" aria-hidden="true">04</span>
-            <h3>Precios claros</h3>
+            <h3>{t(idioma, "acerca.precios")}</h3>
             <p>
-              Cuotas sin interés y sin letra chica: el precio que ves es
-              el que pagás.
+              {t(idioma, "acerca.preciosT")}
             </p>
           </div>
         </div>
@@ -86,14 +82,14 @@ function Acerca() {
 
       <section className="acerca-cta">
         <div className="acerca-cta-panel card">
-          <h2>¿Listo para armar tu próxima PC?</h2>
-          <p>Explorá el catálogo completo de componentes disponibles.</p>
+          <h2>{t(idioma, "acerca.cta")}</h2>
+          <p>{t(idioma, "acerca.ctaT")}</p>
           <div className="acerca-cta-botones">
             <Link to="/productos" className="btn-primary">
-              Ver productos
+              {t(idioma, "acerca.verProd")}
             </Link>
             <Link to="/contactanos" className="btn-fantasma">
-              Armá tu PC
+              {t(idioma, "acerca.arma")}
             </Link>
           </div>
         </div>

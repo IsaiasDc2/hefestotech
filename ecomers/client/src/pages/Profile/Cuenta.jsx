@@ -7,20 +7,22 @@ import Marca from "../../components/brand/Marca";
 import ProductCard from "../../components/product/ProductCard";
 import useAuthStore from "../../store/authStore";
 import useCartStore from "../../store/cartStore";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerProductosPorIds, useFavoritos } from "../../services/favoritos";
 import "./Cuenta.css";
 
-const VISTAS = [
-  { id: "login", label: "Ingresar" },
-  { id: "registro", label: "Crear cuenta" },
-  { id: "pedidos", label: "Mis pedidos" },
-  { id: "favoritos", label: "Favoritos" },
+const VISTAS_KEYS = [
+  { id: "login", key: "cuenta.ingresar" },
+  { id: "registro", key: "cuenta.crear" },
+  { id: "pedidos", key: "cuenta.pedidos" },
+  { id: "favoritos", key: "cuenta.favoritos" },
 ];
 
 // Seccion Favoritos: mismo ProductCard del catalogo, quitar con aviso y
 // deshacer, mover al carrito, vacio con acceso al catalogo y aviso para
 // productos ocultos (inexistentes o dados de baja).
 function SeccionFavoritos() {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const { ids, cargando, error, ultimoQuitado, quitar, quitarMuchos, deshacerQuitado, limpiarError } = useFavoritos();
   const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
   const [productos, setProductos] = useState([]);
@@ -45,7 +47,7 @@ function SeccionFavoritos() {
         setOcultosIds(ocultos);
       })
       .catch((err) => {
-        if (vivo) setErrorProductos(err?.message || "No se pudieron cargar los favoritos.");
+        if (vivo) setErrorProductos(err?.message || t(idioma, "cuenta.noFav"));
       })
       .finally(() => {
         if (vivo) setCargandoProductos(false);
@@ -74,9 +76,9 @@ function SeccionFavoritos() {
   if (cargando || cargandoProductos) {
     return (
       <div className="panel-cuenta card anim-entrada" id="favoritos">
-        <p className="badge badge-info">Guardados</p>
-        <h2>Mis favoritos</h2>
-        <p role="status">Cargando tus guardados…</p>
+        <p className="badge badge-info">{t(idioma, "cuenta.guardados")}</p>
+        <h2>{t(idioma, "cuenta.favoritos")}</h2>
+        <p role="status">{t(idioma, "cuenta.cargandoFav")}</p>
       </div>
     );
   }
@@ -84,9 +86,9 @@ function SeccionFavoritos() {
   if (ids.length === 0 && !ultimoQuitado) {
     return (
       <div className="panel-cuenta card anim-entrada" id="favoritos">
-        <p className="badge badge-info">Guardados</p>
-        <h2>Mis favoritos</h2>
-        <p>No tenés productos favoritos.</p>
+        <p className="badge badge-info">{t(idioma, "cuenta.guardados")}</p>
+        <h2>{t(idioma, "cuenta.favoritos")}</h2>
+        <p>{t(idioma, "cuenta.sinFav")}</p>
         <div className="vacio">
           <span className="marca-centrada" aria-hidden="true">
             <Marca variante="simbolo" ancho={40} alto={40} decorativa />
@@ -94,10 +96,10 @@ function SeccionFavoritos() {
           <span className="vacio-icono" aria-hidden="true">
             <FaHeart />
           </span>
-          <p className="vacio-titulo">Nada guardado por ahora</p>
-          <p className="vacio-texto">Marcá el corazón en un producto y lo ves acá.</p>
+          <p className="vacio-titulo">{t(idioma, "cuenta.nadaGuardado")}</p>
+          <p className="vacio-texto">{t(idioma, "cuenta.marcaCorazon")}</p>
           <Link to="/productos" className="btn-fantasma">
-            Explorar catálogo <FaArrowRight aria-hidden="true" />
+            {t(idioma, "cuenta.explorar")} <FaArrowRight aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -106,30 +108,29 @@ function SeccionFavoritos() {
 
   return (
     <div className="panel-cuenta card anim-entrada" id="favoritos">
-      <p className="badge badge-info">Guardados</p>
-      <h2>Mis favoritos ({productos.length})</h2>
+      <p className="badge badge-info">{t(idioma, "cuenta.guardados")}</p>
+      <h2>{t(idioma, "cuenta.favoritos")} ({productos.length})</h2>
       {(error || errorProductos) && (
         <p className="badge badge-peligro login-error" role="alert">
           {error || errorProductos}{" "}
           <button type="button" className="registro-link" onClick={() => { limpiarError(); setErrorProductos(""); }}>
-            Ocultar
+            {t(idioma, "cuenta.ocultar")}
           </button>
         </p>
       )}
       {ocultosIds.length > 0 && (
         <p className="badge badge-aviso" role="status">
-          <FaTriangleExclamation aria-hidden="true" /> {ocultosIds.length} guardado(s) ya no están
-          disponibles y se ocultaron.{" "}
+          <FaTriangleExclamation aria-hidden="true" /> {ocultosIds.length} {t(idioma, "cuenta.noDisponibles")}{" "}
           <button type="button" className="registro-link" onClick={limpiarOcultos}>
-            Limpiar no disponibles
+            {t(idioma, "cuenta.limpiarNo")}
           </button>
         </p>
       )}
       {ultimoQuitado && (
         <p className="badge badge-info" role="status">
-          Quitado: {ultimoQuitado.nombre}.{" "}
+          {t(idioma, "cuenta.quitado")}: {ultimoQuitado.nombre}.{" "}
           <button type="button" className="registro-link" onClick={deshacerQuitado}>
-            <FaRotateLeft aria-hidden="true" /> Deshacer
+            <FaRotateLeft aria-hidden="true" /> {t(idioma, "cuenta.deshacer")}
           </button>
         </p>
       )}
@@ -145,17 +146,17 @@ function SeccionFavoritos() {
                 type="button"
                 className="btn-fantasma"
                 onClick={() => moverAlCarrito(producto)}
-                aria-label={`Mover ${producto.nombre || "producto"} al carrito`}
+                aria-label={`${t(idioma, "cuenta.mover")} ${producto.nombre || "producto"}`}
               >
-                <FaCartPlus aria-hidden="true" /> Mover al carrito
+                <FaCartPlus aria-hidden="true" /> {t(idioma, "cuenta.mover")}
               </button>
               <button
                 type="button"
                 className="btn-fantasma"
                 onClick={() => quitarAnimado(producto.id, producto.nombre)}
-                aria-label={`Quitar ${producto.nombre || "producto"} de favoritos`}
+                aria-label={`${t(idioma, "cuenta.quitar")} ${producto.nombre || "producto"}`}
               >
-                <FaTrashCan aria-hidden="true" /> Quitar
+                <FaTrashCan aria-hidden="true" /> {t(idioma, "cuenta.quitar")}
               </button>
             </div>
           </div>
@@ -163,10 +164,10 @@ function SeccionFavoritos() {
       </div>
       {productos.length === 0 && ocultosIds.length > 0 && (
         <div className="vacio">
-          <p className="vacio-titulo">Solo quedan no disponibles</p>
-          <p className="vacio-texto">Limpiá la lista o explorá el catálogo.</p>
+          <p className="vacio-titulo">{t(idioma, "cuenta.soloNo")}</p>
+          <p className="vacio-texto">{t(idioma, "cuenta.limpiaLista")}</p>
           <Link to="/productos" className="btn-fantasma">
-            Explorar catálogo <FaArrowRight aria-hidden="true" />
+            {t(idioma, "cuenta.explorar")} <FaArrowRight aria-hidden="true" />
           </Link>
         </div>
       )}
@@ -177,6 +178,7 @@ function SeccionFavoritos() {
 function Cuenta() {
   const [vista, setVista] = useState("login");
   const [params] = useSearchParams();
+  const idioma = useIdiomaStore((s) => s.idioma);
   const usuario = useAuthStore((s) => s.usuario);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
@@ -192,17 +194,17 @@ function Cuenta() {
 
   return (
     <div className="cuenta">
-      <p className="badge badge-info hero-kicker">HefestoTech · Mi cuenta</p>
+      <p className="badge badge-info hero-kicker">{t(idioma, "cuenta.miCuenta")}</p>
       {isAuthenticated && usuario && (
         <div className="panel-cuenta card cuenta-sesion">
-          <p className="texto-mutado">Sesión activa como <strong>{usuario.email}</strong></p>
+          <p className="texto-mutado">{t(idioma, "cuenta.sesionActiva")} <strong>{usuario.email}</strong></p>
           <button type="button" className="btn-fantasma" onClick={logout}>
-            <FaRightFromBracket aria-hidden="true" /> Cerrar sesión
+            <FaRightFromBracket aria-hidden="true" /> {t(idioma, "cuenta.cerrar")}
           </button>
         </div>
       )}
-      <nav className="cuenta-tabs" aria-label="Secciones de la cuenta" role="tablist">
-        {VISTAS.map((v) => (
+      <nav className="cuenta-tabs" aria-label={t(idioma, "cuenta.secciones")} role="tablist">
+        {VISTAS_KEYS.map((v) => (
           <button
             key={v.id}
             type="button"
@@ -212,7 +214,7 @@ function Cuenta() {
             aria-current={vista === v.id ? "page" : undefined}
             onClick={() => setVista(v.id)}
           >
-            {v.label}
+            {t(idioma, v.key)}
           </button>
         ))}
       </nav>
@@ -223,9 +225,9 @@ function Cuenta() {
 
         {vista === "pedidos" && (
           <div className="panel-cuenta card anim-entrada">
-            <p className="badge badge-info">Historial</p>
-            <h2>Mis pedidos</h2>
-            <p>Todavía no tenés pedidos realizados.</p>
+            <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+            <h2>{t(idioma, "cuenta.pedidos")}</h2>
+            <p>{t(idioma, "cuenta.sinPedidos")}</p>
             <div className="vacio">
               <span className="marca-centrada" aria-hidden="true">
                 <Marca variante="simbolo" ancho={40} alto={40} decorativa />
@@ -233,10 +235,10 @@ function Cuenta() {
               <span className="vacio-icono" aria-hidden="true">
                 <FaBoxOpen />
               </span>
-              <p className="vacio-titulo">Sin pedidos todavía</p>
-              <p className="vacio-texto">Cuando compres, el seguimiento aparece acá.</p>
+              <p className="vacio-titulo">{t(idioma, "cuenta.sinPedidosT")}</p>
+              <p className="vacio-texto">{t(idioma, "cuenta.seguimiento")}</p>
               <Link to="/productos" className="btn-fantasma">
-                Ver productos <FaArrowRight aria-hidden="true" />
+                {t(idioma, "cuenta.verProd")} <FaArrowRight aria-hidden="true" />
               </Link>
             </div>
           </div>

@@ -10,6 +10,7 @@ import {
   FaMicrochip,
   FaXmark,
 } from "react-icons/fa6";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./FilterPanel.css";
 
 
@@ -54,6 +55,8 @@ function FilterPanel({
   const abrirRef = useRef(null);
   const dialogoRef = useRef(null);
   const baseId = useId();
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const TODAS_T = t(idioma, "filt.todas");
 
   useEffect(() => {
     setBorrador(texto ?? "");
@@ -104,14 +107,14 @@ function FilterPanel({
 
   const conteoTexto =
     totalCatalogo == null
-      ? `${total} producto${total === 1 ? "" : "s"}`
-      : `Mostrando ${total} de ${totalCatalogo}`;
+      ? `${total} ${total === 1 ? t(idioma, "filt.producto") : t(idioma, "filt.productos")}`
+      : `${t(idioma, "filt.mostrando")} ${total} ${t(idioma, "filt.de")} ${totalCatalogo}`;
 
-  const verResultados = `Ver ${total} resultado${total === 1 ? "" : "s"}`;
+  const verResultados = `${t(idioma, "filt.ver")} ${total} ${total === 1 ? t(idioma, "filt.resultado") : t(idioma, "filt.resultados")}`;
 
   const pintarCategorias = (sufijo) => (
-    <div className="fp-categorias" role="radiogroup" aria-label="Filtrá por categoría">
-      {[{ label: "Todas", value: TODAS }, ...categorias].map((c) => {
+    <div className="fp-categorias" role="radiogroup" aria-label={t(idioma, "filt.porCategoria")}>
+      {[{ label: TODAS_T, value: TODAS }, ...categorias].map((c) => {
         const Icono = iconoPara(c.value, c.label);
         const activo = categoria === c.value;
         const conteo = c.value === TODAS ? totalTodas : Number(conteosCategoria[c.value] ?? 0);
@@ -138,7 +141,7 @@ function FilterPanel({
   const pintarMarcas = (sufijo) => (
     <div className="fp-marcas">
       <p className="fp-etiqueta" id={`${baseId}-marcas${sufijo}`}>
-        Marcas
+        {t(idioma, "filt.marcas")}
       </p>
       <div
         className="fp-marcas-scroll"
@@ -153,7 +156,7 @@ function FilterPanel({
               key={`${sufijo}-${m.nombre}`}
               type="button"
               aria-pressed={activa}
-              aria-label={`Filtrar por ${m.nombre}`}
+              aria-label={`${t(idioma, "filt.filtrarPor")} ${m.nombre}`}
               disabled={apagada}
               className={`fp-marca${activa ? " fp-marca--activa" : ""}${apagada ? " fp-marca--apagada" : ""}`}
               onClick={() => alternarMarca(m.nombre)}
@@ -171,14 +174,14 @@ function FilterPanel({
   );
 
   return (
-    <section className="filter-panel" aria-label="Filtros del catálogo">
+    <section className="filter-panel" aria-label={t(idioma, "filt.titulo")}>
       <div className="fp-buscador">
         <FaMagnifyingGlass className="fp-lupa" aria-hidden="true" />
         <input
           type="search"
           className="fp-input"
-          placeholder="Buscar por nombre o marca..."
-          aria-label="Buscar productos"
+          placeholder={t(idioma, "filt.buscarPh")}
+          aria-label={t(idioma, "filt.buscarAria")}
           value={borrador}
           onChange={(e) => setBorrador(e.target.value)}
         />
@@ -186,7 +189,7 @@ function FilterPanel({
           <button
             type="button"
             className="fp-borrar"
-            aria-label="Borrar búsqueda"
+            aria-label={t(idioma, "filt.borrar")}
             onClick={() => {
               setBorrador("");
               onTexto("");
@@ -202,11 +205,11 @@ function FilterPanel({
       <div className="fp-solo-desktop">{pintarMarcas("base")}</div>
 
       {hayFiltro && (
-        <ul className="fp-activos" aria-label="Filtros activos">
+        <ul className="fp-activos" aria-label={t(idioma, "filt.activos")}>
           {hayTexto && (
             <li>
               <button type="button" className="fp-activo" onClick={() => onTexto("")}>
-                Búsqueda: {texto.trim()} <FaXmark aria-hidden="true" />
+                {t(idioma, "filt.busqueda")}: {texto.trim()} <FaXmark aria-hidden="true" />
               </button>
             </li>
           )}
@@ -233,18 +236,18 @@ function FilterPanel({
         </p>
         {hayFiltro && (
           <button type="button" className="fp-limpiar" onClick={onLimpiar}>
-            Limpiar
+            {t(idioma, "filt.limpiar")}
           </button>
         )}
       </div>
 
       {total === 0 && (
         <div className="fp-vacio">
-          <p className="fp-vacio-titulo">Sin resultados con ese filtro.</p>
-          <p className="fp-vacio-texto">Probá con otra búsqueda o categoría.</p>
+          <p className="fp-vacio-titulo">{t(idioma, "filt.sinTitulo")}</p>
+          <p className="fp-vacio-texto">{t(idioma, "filt.sinTexto")}</p>
           {hayFiltro && (
             <button type="button" className="fp-limpiar" onClick={onLimpiar}>
-              Limpiar
+              {t(idioma, "filt.limpiar")}
             </button>
           )}
         </div>
@@ -257,7 +260,7 @@ function FilterPanel({
         aria-haspopup="dialog"
         onClick={() => setAbierto(true)}
       >
-        Filtros{cantidadFiltros > 0 ? ` (${cantidadFiltros})` : ""}
+        {t(idioma, "filt.filtros")}{cantidadFiltros > 0 ? ` (${cantidadFiltros})` : ""}
       </button>
 
       {abierto && (
@@ -266,7 +269,7 @@ function FilterPanel({
             ref={dialogoRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Filtros del catálogo"
+            aria-label={t(idioma, "filt.titulo")}
             className="fp-dialogo"
             onClick={(e) => e.stopPropagation()}
           >
@@ -274,7 +277,7 @@ function FilterPanel({
             <button
               type="button"
               className="fp-cerrar"
-              aria-label="Cerrar filtros"
+              aria-label={t(idioma, "filt.cerrar")}
               onClick={() => setAbierto(false)}
             >
               <FaXmark aria-hidden="true" />
@@ -287,7 +290,7 @@ function FilterPanel({
               </button>
               {hayFiltro && (
                 <button type="button" className="fp-limpiar" onClick={onLimpiar}>
-                  Limpiar
+                  {t(idioma, "filt.limpiar")}
                 </button>
               )}
             </div>

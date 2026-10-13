@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { FaFileArrowDown, FaPrint, FaReceipt } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerComprobante, obtenerEstadoPedido, urlComprobantePdf } from "../../services/orderService";
 import "./Checkout.css";
 import "./PedidoDetalle.css";
@@ -9,6 +10,7 @@ import "./PedidoDetalle.css";
 /** /pedido/:id — comprobante con snapshot, QR/enlace de verificación, PDF e impresión. */
 export default function PedidoDetalle() {
   const { id } = useParams();
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";
   const [comp, setComp] = useState(null);
@@ -28,7 +30,7 @@ export default function PedidoDetalle() {
         setComp(c);
         setEstado(o);
       } catch {
-        if (vivo) setError("Comprobante no disponible. Revisá el enlace de verificación.");
+        if (vivo) setError(t(idioma, "ped.noDisponible"));
       } finally {
         if (vivo) setCargando(false);
       }
@@ -39,7 +41,7 @@ export default function PedidoDetalle() {
   if (cargando) {
     return (
       <div className="checkout centrado">
-        <p className="badge badge-info" role="status">Cargando comprobante…</p>
+        <p className="badge badge-info" role="status">{t(idioma, "ped.cargando")}</p>
       </div>
     );
   }
@@ -48,8 +50,8 @@ export default function PedidoDetalle() {
     return (
       <div className="checkout centrado">
         <div className="card anim-entrada checkout-exito">
-          <p className="badge badge-peligro" role="alert">{error || "No encontrado."}</p>
-          <Link to="/productos" className="btn-primary">Volver a la tienda</Link>
+          <p className="badge badge-peligro" role="alert">{error || t(idioma, "ped.noEncontrado")}</p>
+          <Link to="/productos" className="btn-primary">{t(idioma, "ped.volver")}</Link>
         </div>
       </div>
     );
@@ -66,24 +68,24 @@ export default function PedidoDetalle() {
         <div className="seccion-titular">
           <p className="kicker kicker-marca">
             <Marca variante="simbolo" ancho={20} alto={20} decorativa />
-            <span>Comprobante {comp.numero}</span>
+            <span>{t(idioma, "ped.comprobante")} {comp.numero}</span>
           </p>
-          <h1>Tu compra</h1>
+          <h1>{t(idioma, "ped.tuCompra")}</h1>
         </div>
-        <span className="badge badge-ok"><FaReceipt aria-hidden="true" /> {estado?.estado === "pagado" ? "Pagado" : estado?.estado ?? ""}</span>
+        <span className="badge badge-ok"><FaReceipt aria-hidden="true" /> {estado?.estado === "pagado" ? t(idioma, "ped.pagado") : estado?.estado ?? ""}</span>
       </header>
 
       <div className="comprobante-grid">
-        <section className="card checkout-panel comprobante" aria-label="Comprobante de compra">
+        <section className="card checkout-panel comprobante" aria-label={t(idioma, "ped.comprobante")}>
           <p className="badge badge-info">{comp.numero}</p>
           <dl className="comprobante-datos">
-            <div><dt>Emitido</dt><dd>{new Date(comp.emitido_en).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</dd></div>
-            <div><dt>Cliente</dt><dd>{comp.ordenes?.nombre} — {comp.ordenes?.email}</dd></div>
-            <div><dt>Envío</dt><dd>{comp.ordenes?.direccion}, {comp.ordenes?.ciudad} ({comp.ordenes?.provincia}) CP {comp.ordenes?.codigo_postal}</dd></div>
+            <div><dt>{t(idioma, "ped.emitido")}</dt><dd>{new Date(comp.emitido_en).toLocaleString(idioma === "en" ? "en-US" : "es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</dd></div>
+            <div><dt>{t(idioma, "ped.cliente")}</dt><dd>{comp.ordenes?.nombre} — {comp.ordenes?.email}</dd></div>
+            <div><dt>{t(idioma, "ped.envio")}</dt><dd>{comp.ordenes?.direccion}, {comp.ordenes?.ciudad} ({comp.ordenes?.provincia}) CP {comp.ordenes?.codigo_postal}</dd></div>
           </dl>
           <table className="comprobante-tabla">
             <thead>
-              <tr><th scope="col">Ítem</th><th scope="col">Cant.</th><th scope="col">Precio</th></tr>
+              <tr><th scope="col">{t(idioma, "ped.item")}</th><th scope="col">{t(idioma, "ped.cant")}</th><th scope="col">{t(idioma, "ped.precio")}</th></tr>
             </thead>
             <tbody>
               {items.map((it, i) => (
@@ -95,27 +97,27 @@ export default function PedidoDetalle() {
               ))}
             </tbody>
             <tfoot>
-              <tr><td colSpan={2}>Subtotal</td><td>${Number(tot.subtotal ?? 0).toLocaleString("es-AR")}</td></tr>
-              <tr><td colSpan={2}>Envío</td><td>${Number(tot.costo_envio ?? 0).toLocaleString("es-AR")}</td></tr>
-              <tr><td colSpan={2}><strong>Total</strong></td><td><strong>${Number(tot.total ?? 0).toLocaleString("es-AR")}</strong></td></tr>
+              <tr><td colSpan={2}>{t(idioma, "ped.subtotal")}</td><td>${Number(tot.subtotal ?? 0).toLocaleString("es-AR")}</td></tr>
+              <tr><td colSpan={2}>{t(idioma, "ped.envio")}</td><td>${Number(tot.costo_envio ?? 0).toLocaleString("es-AR")}</td></tr>
+              <tr><td colSpan={2}><strong>{t(idioma, "ped.total")}</strong></td><td><strong>${Number(tot.total ?? 0).toLocaleString("es-AR")}</strong></td></tr>
             </tfoot>
           </table>
-          <p className="badge badge-aviso" role="note">Comprobante de compra – no válido como factura</p>
+          <p className="badge badge-aviso" role="note">{t(idioma, "ped.nota")}</p>
           <div className="comprobante-verif">
-            <img src={qr} alt="QR de verificación del comprobante" width={140} height={140} loading="lazy" />
-            <p className="texto-mutado">Verificá este comprobante en:<br /><Link to={verificacion}>{verificacion}</Link></p>
+            <img src={qr} alt={t(idioma, "ped.qr")} width={140} height={140} loading="lazy" />
+            <p className="texto-mutado">{t(idioma, "ped.verifica")}<br /><Link to={verificacion}>{verificacion}</Link></p>
           </div>
         </section>
 
-        <aside className="card checkout-resumen" aria-label="Acciones del comprobante">
-          <h2>Acciones</h2>
+        <aside className="card checkout-resumen" aria-label={t(idioma, "ped.acciones")}>
+          <h2>{t(idioma, "ped.acciones")}</h2>
           <a className="btn-primary" href={urlComprobantePdf(id, token)} download>
-            <FaFileArrowDown aria-hidden="true" /> Descargar PDF
+            <FaFileArrowDown aria-hidden="true" /> {t(idioma, "ped.descargar")}
           </a>
           <button type="button" className="btn-fantasma" onClick={() => window.print()}>
-            <FaPrint aria-hidden="true" /> Imprimir
+            <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}
           </button>
-          <Link to="/productos" className="btn-fantasma">Seguir comprando</Link>
+          <Link to="/productos" className="btn-fantasma">{t(idioma, "ped.seguir")}</Link>
         </aside>
       </div>
     </div>

@@ -10,6 +10,7 @@ import {
   FaCircleQuestion,
 } from "react-icons/fa6";
 import useCartStore from "../store/cartStore";
+import useIdiomaStore, { t } from "../store/idiomaStore";
 import { precioFinal } from "./adaptar";
 import { PASOS } from "./pasos";
 
@@ -37,6 +38,13 @@ function ArmadorResumen({
   irAPaso,
 }) {
   const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const nombrePaso = (p) => {
+    if (!p) return "";
+    const clave = `arm.paso.${p.id}`;
+    const v = t(idioma, clave);
+    return v === clave ? p.titulo : v;
+  };
   const [agregando, setAgregando] = useState(false);
 
   const { resumen, resultados } = evaluacion;
@@ -49,7 +57,9 @@ function ArmadorResumen({
     if (bloqueado || agregando) return;
     if (conAvisos) {
       const ok = window.confirm(
-        `Che, tu armado tiene ${resumen.warn} aviso(s) y ${resumen.unknown} pendiente(s) de revisión.\n\n¿Lo agregamos igual al carrito? Te recomendamos leer el informe antes.`
+        idioma === "en"
+          ? `Your build has ${resumen.warn} warning(s) and ${resumen.unknown} pending review(s).\n\nAdd it to the cart anyway? We recommend reading the report first.`
+          : `Che, tu armado tiene ${resumen.warn} aviso(s) y ${resumen.unknown} pendiente(s) de revisión.\n\n¿Lo agregamos igual al carrito? Te recomendamos leer el informe antes.`
       );
       if (!ok) return;
     }
@@ -66,7 +76,7 @@ function ArmadorResumen({
 
   return (
     <div className="resumen">
-      <h2 className="resumen-titulo">Tu PC</h2>
+      <h2 className="resumen-titulo">{t(idioma, "armres.titulo")}</h2>
 
       <ul className="resumen-lista">
         {elegidos.map(({ paso, producto }, i) => (
@@ -88,7 +98,7 @@ function ArmadorResumen({
                   )}
                 </span>
                 <span className="resumen-datos">
-                  <span className="resumen-paso">{paso.titulo}</span>
+                  <span className="resumen-paso">{nombrePaso(paso)}</span>
                   <Link
                     to={`/producto/${producto.id}`}
                     className="resumen-nombre"
@@ -107,9 +117,9 @@ function ArmadorResumen({
                     type="button"
                     className="ht-btn ht-btn-ghost"
                     onClick={() => irAPaso(i)}
-                    aria-label={`Cambiar ${paso.titulo}: ${producto.nombre}`}
+                    aria-label={`${t(idioma, "armres.cambiar")} ${nombrePaso(paso)}: ${producto.nombre}`}
                   >
-                    <FaPen aria-hidden="true" /> Cambiar
+                    <FaPen aria-hidden="true" /> {t(idioma, "armres.cambiar")}
                   </button>
                 </span>
               </>
@@ -120,11 +130,11 @@ function ArmadorResumen({
                   aria-hidden="true"
                 />
                 <span className="resumen-datos">
-                  <span className="resumen-paso">{paso.titulo}</span>
-                  <span className="resumen-no-incluido">No incluido</span>
+                  <span className="resumen-paso">{nombrePaso(paso)}</span>
+                  <span className="resumen-no-incluido">{t(idioma, "armres.salteado")}</span>
                   {salteados.includes(paso.id) && (
                     <span className="resumen-marca">
-                      Lo salteaste en el paso {i + 1}
+                      {t(idioma, "armres.volverPaso")} {i + 1}
                     </span>
                   )}
                 </span>
@@ -133,9 +143,9 @@ function ArmadorResumen({
                     type="button"
                     className="ht-btn ht-btn-ghost"
                     onClick={() => irAPaso(i)}
-                    aria-label={`Elegir ${paso.titulo}`}
+                    aria-label={`${t(idioma, "armcard.elegir")} ${nombrePaso(paso)}`}
                   >
-                    <FaPen aria-hidden="true" /> Elegir
+                    <FaPen aria-hidden="true" /> {t(idioma, "armcard.elegir")}
                   </button>
                 </span>
               </>
@@ -176,9 +186,9 @@ function ArmadorResumen({
                 type="button"
                 className="ht-btn ht-btn-ghost"
                 onClick={() => irAPaso(PASOS.length)}
-                aria-label={`Cambiar extras: quitar ${extra.nombre}`}
+                aria-label={`${t(idioma, "armres.cambiar")} extras: ${t(idioma, "armres.quitar")} ${extra.nombre}`}
               >
-                <FaMinus aria-hidden="true" /> Quitar
+                <FaMinus aria-hidden="true" /> {t(idioma, "armres.quitar")}
               </button>
             </span>
           </li>
@@ -190,11 +200,11 @@ function ArmadorResumen({
         aria-labelledby="informe-titulo"
         aria-live="polite"
       >
-        <h3 id="informe-titulo">Informe de compatibilidad</h3>
+        <h3 id="informe-titulo">{t(idioma, "armres.compatibilidad")}</h3>
         <p className="informe-resumen-linea" role="status">
           {resumen.total === 0
-            ? "Todavía no hay nada para evaluar: elegí al menos dos componentes."
-            : `${resumen.ok} bien · ${resumen.warn} avisos · ${resumen.error} errores · ${resumen.unknown} pendientes`}
+            ? t(idioma, "arm.elegiDos")
+            : `${resumen.ok} ${t(idioma, "arm.bien")} · ${resumen.warn} ${t(idioma, "arm.avisos")} · ${resumen.error} ${t(idioma, "arm.errores")} · ${resumen.unknown} ${t(idioma, "arm.pendientes")}`}
         </p>
         {resultados.length > 0 && (
           <ul className="informe-lista">
@@ -212,37 +222,35 @@ function ArmadorResumen({
       </section>
 
       <section className="consumo" aria-labelledby="consumo-titulo">
-        <h3 id="consumo-titulo">Consumo vs. fuente</h3>
+        <h3 id="consumo-titulo">{idioma === "en" ? "Power vs. PSU" : "Consumo vs. fuente"}</h3>
         {consumo == null ? (
           <p>
-            Todavía no puedo estimar el consumo: me falta el procesador
-            {build.gpu ? "" : " o los datos de consumo"}.
-            Elegí el CPU (y la GPU si vas a poner una) y lo calculamos.
+            {idioma === "en"
+              ? "We can't estimate power draw yet: we're missing the processor or power data. Pick the CPU (and GPU if you'll add one) and we'll calculate it."
+              : "Todavía no puedo estimar el consumo: me falta el procesador o los datos de consumo. Elegí el CPU (y la GPU si vas a poner una) y lo calculamos."}
           </p>
         ) : typeof fuenteW === "number" ? (
           <p>
-            Estimamos <strong>~{consumo}W</strong> con margen del 30% y tu
-            fuente es de <strong>{fuenteW}W</strong>.
+            {idioma === "en" ? "We estimate" : "Estimamos"} <strong>~{consumo}W</strong> {idioma === "en" ? "with a 30% margin and your PSU is" : "con margen del 30% y tu fuente es de"} <strong>{fuenteW}W</strong>.
             {consumo <= fuenteW * 0.8
-              ? " Vas holgado, bien ahí."
-              : " Vas justito: si podés, estirate a más potencia."}
+              ? idioma === "en" ? " You've got headroom, nice." : " Vas holgado, bien ahí."
+              : idioma === "en" ? " That's tight: consider more wattage if you can." : " Vas justito: si podés, estirate a más potencia."}
           </p>
         ) : (
           <p>
-            Estimamos <strong>~{consumo}W</strong> con margen del 30%.
-            Elegí la fuente y te digo si banca.
+            {idioma === "en" ? "We estimate" : "Estimamos"} <strong>~{consumo}W</strong> {idioma === "en" ? "with a 30% margin. Pick the PSU and we'll tell you if it holds." : "con margen del 30%. Elegí la fuente y te digo si banca."}
           </p>
         )}
       </section>
 
       <section className="desglose" aria-labelledby="desglose-titulo">
-        <h3 id="desglose-titulo">Desglose</h3>
+        <h3 id="desglose-titulo">{idioma === "en" ? "Breakdown" : "Desglose"}</h3>
         <dl className="desglose-lista">
           {elegidos.map(
             ({ paso, producto }) =>
               producto && (
                 <div key={paso.id} className="desglose-fila">
-                  <dt>{paso.titulo}</dt>
+                  <dt>{nombrePaso(paso)}</dt>
                   <dd>${precioFinal(producto).toLocaleString("es-AR")}</dd>
                 </div>
               )
@@ -254,7 +262,7 @@ function ArmadorResumen({
             </div>
           ))}
           <div className="desglose-fila is-total">
-            <dt>Total</dt>
+            <dt>{t(idioma, "arm.total")}</dt>
             <dd>${total.toLocaleString("es-AR")}</dd>
           </div>
         </dl>
@@ -268,21 +276,26 @@ function ArmadorResumen({
           onClick={agregarTodo}
           aria-label={
             bloqueado
-              ? "No podés agregar el armado: hay errores de compatibilidad"
-              : `Agregar todo al carrito por $${total.toLocaleString("es-AR")}`
+              ? idioma === "en"
+                ? "You can't add the build: there are compatibility errors"
+                : "No podés agregar el armado: hay errores de compatibilidad"
+              : `${t(idioma, "armres.agregarCarrito")} $${total.toLocaleString("es-AR")}`
           }
         >
-          <FaCartPlus aria-hidden="true" /> Agregar todo al carrito
+          <FaCartPlus aria-hidden="true" /> {t(idioma, "armres.agregarCarrito")}
         </button>
         {bloqueado && (
           <p className="resumen-bloqueo" role="alert">
-            Hay errores de compatibilidad: resolvelos antes de llevarte el
-            armado.
+            {idioma === "en"
+              ? "There are compatibility errors: fix them before taking the build."
+              : "Hay errores de compatibilidad: resolvelos antes de llevarte el armado."}
           </p>
         )}
         {!bloqueado && conAvisos && (
           <p className="resumen-aviso">
-            Tenés avisos o pendientes: leé el informe antes de confirmar.
+            {idioma === "en"
+              ? "You have warnings or pending items: read the report before confirming."
+              : "Tenés avisos o pendientes: leé el informe antes de confirmar."}
           </p>
         )}
       </div>

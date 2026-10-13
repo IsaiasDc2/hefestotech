@@ -3,6 +3,7 @@ import { FaChevronLeft, FaChevronRight, FaBoxOpen } from "react-icons/fa6";
 import Marca from "../brand/Marca";
 import SectionHeader from "../ui/SectionHeader";
 import ProductCard from "./ProductCard";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./ProductCarousel.css";
 
 function slugId(titulo) {
@@ -62,6 +63,8 @@ export default function ProductCarousel({
 
   const tituloId = slugId(titulo);
 
+  const idioma = useIdiomaStore((s) => s.idioma);
+
   if (!productos.length) {
     return (
       <section className="carrusel" aria-labelledby={tituloId}>
@@ -73,8 +76,8 @@ export default function ProductCarousel({
           <span className="carrusel-vacio-icono" aria-hidden="true">
             <FaBoxOpen />
           </span>
-          <p className="carrusel-vacio-titulo">Nada por acá todavía</p>
-          <p className="carrusel-vacio-texto">Volvé en un rato o explorá el catálogo completo.</p>
+          <p className="carrusel-vacio-titulo">{t(idioma, "carr.vacioTitulo")}</p>
+          <p className="carrusel-vacio-texto">{t(idioma, "carr.vacioTexto")}</p>
         </div>
       </section>
     );
@@ -89,16 +92,16 @@ export default function ProductCarousel({
         verTodo={verTodo}
         accionExtra={
           <>
-            <button type="button" onClick={() => desplazar(-1)} aria-label="Ver productos anteriores">
+            <button type="button" onClick={() => desplazar(-1)} aria-label={t(idioma, "carr.anteriores")}>
               <FaChevronLeft aria-hidden="true" />
             </button>
-            <button type="button" onClick={() => desplazar(1)} aria-label="Ver productos siguientes">
+            <button type="button" onClick={() => desplazar(1)} aria-label={t(idioma, "carr.siguientes")}>
               <FaChevronRight aria-hidden="true" />
             </button>
           </>
         }
       />
-      <div className="carrusel-pista" ref={pista} role="region" aria-label={`${titulo}: lista desplazable`} tabIndex="0">
+      <div className="carrusel-pista" ref={pista} role="region" aria-label={`${titulo}: ${t(idioma, "carr.lista")}`} tabIndex="0">
         {productos.map((p) => (
           <div key={p.id} className="carrusel-item">
             <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />

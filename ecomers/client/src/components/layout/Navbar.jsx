@@ -28,10 +28,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const refHead = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const { tema, alternar } = useTema();
-  const etiquetaTema = idioma === "en"
-    ? (tema === "light" ? "Switch to dark mode" : "Switch to light mode")
-    : (tema === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
-  const etiquetaMenu = idioma === "en" ? "Open menu" : "Abrir menú";
+  const etiquetaTema = t(idioma, tema === "light" ? "nav.temaClaro" : "nav.temaOscuro");
+  const etiquetaMenu = t(idioma, "nav.menu");
   const primeraVez = useRef(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -161,7 +159,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           >
             <FaBars aria-hidden="true" />
           </button>
-          <Link to="/" className="logo" aria-label="HefestoTech, ir al inicio">
+          <Link to="/" className="logo" aria-label={t(idioma, "nav.logoAria")}>
             <Marca variante="simbolo" ancho={36} alto={36} eager alt="HefestoTech" />
             <span className="logo-nombre">
               Hefesto<span>Tech</span>
@@ -190,8 +188,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               onClick={abrirMenu}
               aria-expanded={menuAbierto}
               aria-controls="menu-movil"
-              aria-label={idioma === "en" ? "More options" : "Más opciones"}
-              title={idioma === "en" ? "More options" : "Más opciones"}
+              aria-label={t(idioma, "nav.masOpciones")}
+              title={t(idioma, "nav.masOpciones")}
             >
               <FaBars aria-hidden="true" />
             </button>
@@ -207,16 +205,16 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               <Link
                 to="/admin"
                 className="link-cuenta link-panel"
-                aria-label={idioma === "en" ? "Admin panel" : "Panel de control"}
+                aria-label={t(idioma, "nav.panel")}
               >
                 <FaShieldHalved aria-hidden="true" />
-                <span>{idioma === "en" ? "Admin" : "Panel"}</span>
+                <span>{t(idioma, "nav.panelCorto")}</span>
               </Link>
             )}
             <button
               className={`carrito-btn${pop ? " is-pop" : ""}`}
               onClick={abrirCarrito}
-              aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${t(idioma, "nav.productos")}`}
+              aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos")}`}
               aria-live="polite"
             >
               <FaCartShopping aria-hidden="true" />

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../../components/brand/Marca";
 
 function Registro() {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,10 +25,10 @@ function Registro() {
       <div className="login-pagina">
         <div className="login card anim-entrada">
           <p className="badge badge-ok hero-kicker">
-            <FaCircleCheck aria-hidden="true" /> Cuenta creada
+            <FaCircleCheck aria-hidden="true" /> {t(idioma, "reg.cuentaCreada")}
           </p>
-          <h2>Sesión iniciada</h2>
-          <p className="texto-mutado">Estás registrado como {usuario.email}.</p>
+          <h2>{t(idioma, "reg.sesionIniciada")}</h2>
+          <p className="texto-mutado">{t(idioma, "reg.registradoComo")} {usuario.email}.</p>
         </div>
       </div>
     );
@@ -37,12 +39,11 @@ function Registro() {
       <div className="login-pagina">
         <div className="login card anim-entrada">
           <p className="badge badge-info hero-kicker">
-            <FaEnvelope aria-hidden="true" /> Revisá tu email
+            <FaEnvelope aria-hidden="true" /> {t(idioma, "reg.revisa")}
           </p>
-          <h2>Cuenta creada</h2>
+          <h2>{t(idioma, "reg.cuentaCreada")}</h2>
           <p className="texto-mutado">
-            Te enviamos un correo de confirmación a {email}. Abrilo para
-            activar tu cuenta y después iniciá sesión.
+            {t(idioma, "reg.enviamos")} {email}. {t(idioma, "reg.activa")}
           </p>
         </div>
       </div>
@@ -53,11 +54,11 @@ function Registro() {
     e.preventDefault();
     setLocalError("");
     if (password.length < 6) {
-      setLocalError("La contraseña debe tener al menos 6 caracteres.");
+      setLocalError(t(idioma, "reg.passCorta"));
       return;
     }
     if (password !== confirmar) {
-      setLocalError("Las contraseñas no coinciden.");
+      setLocalError(t(idioma, "reg.noCoinciden"));
       return;
     }
     try {
@@ -74,14 +75,14 @@ function Registro() {
           <Marca variante="simbolo" ancho={22} alto={22} decorativa />
           HefestoTech
         </p>
-        <h2>Crear cuenta</h2>
+        <h2>{t(idioma, "reg.titulo")}</h2>
 
         <div className="input-con-icono">
           <FaUser className="input-icono" aria-hidden="true" />
           <input
             type="text"
-            placeholder="Nombre"
-            aria-label="Nombre"
+            placeholder={t(idioma, "reg.nombrePh")}
+            aria-label={t(idioma, "reg.nombrePh")}
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             required
@@ -93,8 +94,8 @@ function Registro() {
           <FaEnvelope className="input-icono" aria-hidden="true" />
           <input
             type="email"
-            placeholder="Correo electrónico"
-            aria-label="Correo electrónico"
+            placeholder={t(idioma, "reg.emailPh")}
+            aria-label={t(idioma, "reg.emailPh")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -106,8 +107,8 @@ function Registro() {
           <FaLock className="input-icono" aria-hidden="true" />
           <input
             type="password"
-            placeholder="Contraseña (mínimo 6 caracteres)"
-            aria-label="Contraseña"
+            placeholder={t(idioma, "reg.passPh")}
+            aria-label={t(idioma, "login.passPh")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -120,8 +121,8 @@ function Registro() {
           <FaLock className="input-icono" aria-hidden="true" />
           <input
             type="password"
-            placeholder="Repetir contraseña"
-            aria-label="Repetir contraseña"
+            placeholder={t(idioma, "reg.repetirPh")}
+            aria-label={t(idioma, "reg.repetirPh")}
             value={confirmar}
             onChange={(e) => setConfirmar(e.target.value)}
             required
@@ -136,7 +137,7 @@ function Registro() {
         )}
 
         <button type="submit" className="btn-primary" disabled={cargando}>
-          {cargando ? "Creando cuenta..." : "Crear cuenta"}
+          {cargando ? t(idioma, "reg.creando") : t(idioma, "reg.crear")}
         </button>
       </form>
     </div>

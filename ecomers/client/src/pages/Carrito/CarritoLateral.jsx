@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { FaCartShopping, FaXmark, FaTrashCan, FaMinus, FaPlus, FaTruckFast, FaCircleCheck, FaArrowRight } from "react-icons/fa6";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./CarritoLateral.css";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
@@ -49,6 +50,7 @@ function CarritoLateral({
   }, [isOpen, onClose]);
 
   const panelRef = useRef(null);
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   const total = carrito.reduce(
     (acc, item) =>
@@ -78,7 +80,7 @@ function CarritoLateral({
         className={`cart ${isOpen ? "open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Carrito de compras"
+        aria-label={t(idioma, "cl.titulo")}
         aria-hidden={!isOpen}
       >
 
@@ -87,12 +89,12 @@ function CarritoLateral({
             <span className="cart-header-icono" aria-hidden="true">
               <FaCartShopping />
             </span>
-            Mi carrito
+            {t(idioma, "cl.miCarrito")}
             {cantidadTotal > 0 && (
               <span className="cart-header-conteo">{cantidadTotal}</span>
             )}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Cerrar carrito">
+          <button type="button" onClick={onClose} aria-label={t(idioma, "cl.cerrar")}>
             <FaXmark aria-hidden="true" />
           </button>
         </div>
@@ -103,12 +105,12 @@ function CarritoLateral({
               {envioGratis ? (
                 <>
                   <FaCircleCheck aria-hidden="true" />
-                  ¡Tenés envío gratis!
+                  {t(idioma, "cl.envioGratis")}
                 </>
               ) : (
                 <>
                   <FaTruckFast aria-hidden="true" />
-                  Te faltan ${faltante.toLocaleString("es-AR")} para el envío gratis
+                  {t(idioma, "cl.faltan")} ${faltante.toLocaleString("es-AR")} {t(idioma, "cl.paraEnvio")}
                 </>
               )}
             </p>
@@ -118,7 +120,7 @@ function CarritoLateral({
               aria-valuenow={Math.round(progreso * 100)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Progreso hacia el envío gratis"
+              aria-label={t(idioma, "cl.progreso")}
             >
               <span
                 className={`cart-envio-relleno${envioGratis ? " is-completo" : ""}`}
@@ -135,10 +137,10 @@ function CarritoLateral({
                 <span className="cart-vacio-anillo" />
                 <FaCartShopping className="cart-vacio-icono" />
               </div>
-              <p className="cart-vacio-titulo">Tu carrito está vacío</p>
-              <p className="cart-vacio-texto">Sumá productos y aparecen acá.</p>
+              <p className="cart-vacio-titulo">{t(idioma, "cl.vacioT")}</p>
+              <p className="cart-vacio-texto">{t(idioma, "cl.vacioS")}</p>
               <button type="button" className="cart-vacio-cta" onClick={onClose}>
-                Ver productos
+                {t(idioma, "cl.verProd")}
                 <FaArrowRight aria-hidden="true" />
               </button>
             </div>
@@ -166,11 +168,11 @@ function CarritoLateral({
 
                   <div className="cart-item-pie">
                     <div className="cantidad">
-                      <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label="Quitar uno">
+                      <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label={t(idioma, "cl.quitarUno")}>
                         <FaMinus aria-hidden="true" />
                       </button>
-                      <span aria-live="polite" aria-label={`Cantidad: ${item.cantidad}`}>{item.cantidad}</span>
-                      <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label="Agregar uno">
+                      <span aria-live="polite" aria-label={`${t(idioma, "cl.cantidad")}: ${item.cantidad}`}>{item.cantidad}</span>
+                      <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label={t(idioma, "cl.agregarUno")}>
                         <FaPlus aria-hidden="true" />
                       </button>
                     </div>
@@ -185,7 +187,7 @@ function CarritoLateral({
                     onClick={() => eliminarDelCarrito(item.id)}
                   >
                     <FaTrashCan aria-hidden="true" />
-                    Eliminar
+                    {t(idioma, "cl.eliminar")}
                   </button>
                 </div>
               </div>
@@ -196,24 +198,24 @@ function CarritoLateral({
 
         <div className="cart-footer">
           <div className="subtotal" aria-live="polite">
-            <span>Subtotal</span>
+            <span>{t(idioma, "cl.subtotal")}</span>
             <strong>${total.toLocaleString("es-AR")}</strong>
           </div>
-          <p className="cart-nota">Impuestos incluidos. El envío se calcula al finalizar.</p>
+          <p className="cart-nota">{t(idioma, "cl.nota")}</p>
 
           {carrito.length === 0 ? (
             <button type="button" className="btnComprar" disabled>
-              Finalizar compra
+              {t(idioma, "cl.finalizar")}
               <FaArrowRight aria-hidden="true" />
             </button>
           ) : (
             <Link to="/checkout" className="btnComprar" onClick={onClose}>
-              Finalizar compra
+              {t(idioma, "cl.finalizar")}
               <FaArrowRight aria-hidden="true" />
             </Link>
           )}
           <Link to="/productos" className="cart-seguir" onClick={onClose}>
-            Seguir comprando
+            {t(idioma, "cl.seguir")}
           </Link>
         </div>
 

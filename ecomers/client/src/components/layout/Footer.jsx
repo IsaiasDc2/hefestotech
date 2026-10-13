@@ -44,7 +44,7 @@ function Footer() {
       if (!respuesta.ok) throw new Error();
       setSuscrito(true);
     } catch {
-      setErrorNews("No pudimos suscribirte. Probá de nuevo.");
+      setErrorNews(t(idioma, "ft.newsError"));
     }
   };
 
@@ -77,7 +77,7 @@ function Footer() {
                 id="newsletter-email"
                 type="email"
                 required
-                placeholder="tu@correo.com"
+                placeholder={t(idioma, "ft.newsPh")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

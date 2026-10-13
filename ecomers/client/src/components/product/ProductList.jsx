@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./ProductoDetalle.css";
 
 function formatearClave(clave) {
@@ -10,6 +11,7 @@ function formatearClave(clave) {
 
 function ProductoDetalle({ agregarAlCarrito }) {
   const { id } = useParams();
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   const [producto, setProducto] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -29,7 +31,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
           .eq("id", id)
           .single();
 
-        if (error) throw new Error("Producto no encontrado");
+        if (error) throw new Error(t(idioma, "pd.noEncontrado"));
 
         setProducto(data);
       } catch (err) {
@@ -43,23 +45,23 @@ function ProductoDetalle({ agregarAlCarrito }) {
   }, [id, reintento]);
 
   if (cargando) {
-    return <p className="detalle-estado">Cargando producto...</p>;
+    return <p className="detalle-estado">{t(idioma, "pd.cargando")}</p>;
   }
 
   if (error) {
-    const esConexion = error !== "Producto no encontrado";
+    const esConexion = error !== "Producto no encontrado" && error !== "Product not found" && error !== t(idioma, "pd.noEncontrado");
     return (
       <div className="detalle-estado" role="alert">
-        <p>{esConexion ? "No pudimos cargar el producto. Revisá tu conexión." : error}</p>
+        <p>{esConexion ? t(idioma, "pd.errorConexion") : t(idioma, "pd.noEncontrado")}</p>
         <div className="detalle-acciones-error">
           <button
             type="button"
             className="btn-limpiar"
             onClick={() => setReintento((n) => n + 1)}
           >
-            ↻ Reintentar
+            ↻ {t(idioma, "pd.reintentar")}
           </button>
-          <Link to="/productos">← Volver al catálogo</Link>
+          <Link to="/productos">← {t(idioma, "pd.volver")}</Link>
         </div>
       </div>
     );
@@ -74,15 +76,15 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
   return (
     <section className="detalle-container">
-      <nav className="migajas" aria-label="Miga de pan">
-        <Link to="/">Inicio</Link>
+      <nav className="migajas" aria-label={t(idioma, "pd.migas")}>
+        <Link to="/">{t(idioma, "pd.inicio")}</Link>
         <span className="migajas-sep" aria-hidden="true">/</span>
-        <Link to="/productos">Catálogo</Link>
+        <Link to="/productos">{t(idioma, "pd.catalogo")}</Link>
         <span className="migajas-sep" aria-hidden="true">/</span>
         <span className="migajas-actual">{producto.nombre}</span>
       </nav>
       <Link to="/productos" className="volver">
-        ← Volver al catálogo
+        ← {t(idioma, "pd.volver")}
       </Link>
 
       <div className="detalle-grid">
@@ -90,7 +92,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
           <div className="detalle-imagen">
             {tieneOferta && (
               <span className="detalle-oferta-flotante">
-                OFERTA -{Math.round(Number(producto.descuento_porcentaje ?? 0))}%
+                {t(idioma, "card.oferta")} -{Math.round(Number(producto.descuento_porcentaje ?? 0))}%
               </span>
             )}
             {producto.imagen ? (
@@ -130,15 +132,15 @@ function ProductoDetalle({ agregarAlCarrito }) {
             ) : (
               <strong>${precio.toLocaleString("es-AR")}</strong>
             )}
-            <p className="cuotas">6 cuotas sin interés</p>
-            {producto.envio_gratis && <p className="envio">Envío gratis</p>}
+            <p className="cuotas">{t(idioma, "pd.cuotas")}</p>
+            {producto.envio_gratis && <p className="envio">{t(idioma, "pd.envio")}</p>}
           </div>
 
           <div className="detalle-stock">
             {producto.stock ? (
-              <span className="disponible"><span className="stock-dot" aria-hidden="true" />Disponible</span>
+              <span className="disponible"><span className="stock-dot" aria-hidden="true" />{t(idioma, "pd.disponible")}</span>
             ) : (
-              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />Sin stock</span>
+              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />{t(idioma, "pd.sinStock")}</span>
             )}
           </div>
 
@@ -147,12 +149,12 @@ function ProductoDetalle({ agregarAlCarrito }) {
             disabled={!producto.stock}
             onClick={() => agregarAlCarrito?.(producto)}
           >
-            {producto.stock ? "Agregar al carrito" : "Sin stock"}
+            {producto.stock ? t(idioma, "pd.agregar") : t(idioma, "pd.sinStock")}
           </button>
 
           {Object.keys(especificaciones).length > 0 && (
             <div className="detalle-especificaciones">
-              <h2>Características</h2>
+              <h2>{t(idioma, "pd.caracteristicas")}</h2>
               <table>
                 <tbody>
                   {Object.entries(especificaciones).map(([clave, valor]) => (
