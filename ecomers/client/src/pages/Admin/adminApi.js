@@ -61,6 +61,33 @@ export const adminApi = {
     ),
   crearProducto: (d) => api("/api/admin/productos", { method: "POST", body: d }),
   editarProducto: (id, d) => api(`/api/admin/productos/${q(id)}`, { method: "PUT", body: d }),
+  subirImagenProducto: async (archivo) => {
+    const t = await sesionToken();
+    const forma = new FormData();
+    forma.append("archivo", archivo);
+    let respuesta;
+    try {
+      respuesta = await fetch(`${API_BASE}/api/admin/productos/imagen`, {
+        method: "POST",
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+        body: forma,
+      });
+    } catch {
+      const e = new Error("Sin conexión con el backend.");
+      e.status = 0;
+      throw e;
+    }
+    let datos = {};
+    try {
+      datos = await respuesta.json();
+    } catch {
+      datos = {};
+    }
+    if (!respuesta.ok) {
+      throw new Error(datos?.detail || `Error ${respuesta.status}`);
+    }
+    return datos;
+  },
   borrarProducto: (id) => api(`/api/admin/productos/${q(id)}`, { method: "DELETE" }),
   restaurarProducto: (id) => api(`/api/admin/productos/${q(id)}/restaurar`, { method: "POST" }),
   lotes: (id) => api(`/api/admin/productos/${q(id)}/lotes`),

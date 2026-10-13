@@ -16,6 +16,7 @@ Panel admin (/api/admin/* + /api/buscar).
 from __future__ import annotations
 
 import os
+import secrets
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timezone
@@ -329,6 +330,7 @@ class ProductoCrear(BaseModel):
     descripcion: str = ""
     categoria: str = "General"
     codigo: str = ""
+    imagen: str = ""
 
     @field_validator("nombre")
     @classmethod
@@ -777,6 +779,10 @@ def crear_producto(d: ProductoCrear, request: Request,
         "nombre": d.nombre, "marca": d.marca, "precio": d.precio,
         "stock": d.stock, "descripcion": d.descripcion, "categoria": d.categoria,
     }
+    if (d.imagen or "").strip():
+        if not _url_imagen_ok(d.imagen.strip()):
+            raise HTTPException(status_code=400, detail="URL de imagen inválida.")
+        fila["imagen"] = d.imagen.strip()
     if d.codigo.strip():
         fila["codigo"] = d.codigo.strip()
     else:  # codigo es NOT NULL (001): generamos el siguiente HT-NNNN.
@@ -804,6 +810,44 @@ def editar_producto(pid: str, d: ProductoEditar, request: Request,
     if not filas:
         raise HTTPException(status_code=404, detail="Producto inexistente o en papelera.")
     return {"producto": filas[0]}
+
+
+@router.post("/api/admin/productos/imagen", status_code=201)
+async def subir_imagen_producto(request: Request,
+                                admin: AdminActual = Depends(requiere("productos", "crear"))) -> dict[str, Any]:
+    """Sube una foto al bucket `productos`: valida firma real (JPEG/PNG/WebP),
+    tope 5 MB, nombre aleatorio. Sin SVG (pueden llevar scripts)."""
+    _limitar(request.client.host if request.client else "?", "producto-imagen", 20)
+    form = await request.form()
+    archivo = form.get("archivo")
+    if archivo is None or not hasattr(archivo, "read"):
+        raise HTTPException(status_code=400, detail="Falta el archivo.")
+    contenido = await archivo.read()
+    if not contenido or len(contenido) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Archivo vacío o mayor a 5 MB.")
+    if contenido[:3] == b"\xff\xd8\xff":
+        ext = "jpg"
+    elif contenido[:8] == b"\x89PNG\r\n\x1a\n":
+        ext = "png"
+    elif contenido[:4] == b"RIFF" and contenido[8:12] == b"WEBP":
+        ext = "webp"
+    else:
+        raise HTTPException(status_code=400, detail="Solo JPEG, PNG o WebP.")
+    base = os.getenv("SUPABASE_URL", "").rstrip("/")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    if not base or not key:
+        raise HTTPException(status_code=503, detail="Almacenamiento no configurado.")
+    nombre = f"admin/{secrets.token_hex(12)}.{ext}"
+    try:
+        r = httpx.post(f"{base}/storage/v1/object/productos/{nombre}",
+                       headers={"apikey": key, "Authorization": f"Bearer {key}",
+                                "Content-Type": f"image/{ext}", "x-upsert": "false"},
+                       content=contenido, timeout=30.0)
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="No se pudo subir. Intentá más tarde.")
+    if r.status_code not in (200, 201):
+        raise HTTPException(status_code=502, detail="No se pudo subir. Intentá más tarde.")
+    return {"url": f"{base}/storage/v1/object/public/productos/{nombre}"}
 
 
 @router.delete("/api/admin/productos/{pid}")

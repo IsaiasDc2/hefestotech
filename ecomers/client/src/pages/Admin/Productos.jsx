@@ -5,7 +5,7 @@ import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo } from "./ui";
 
-const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "" };
+const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
 
 export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
   const [q, setQ] = useState(presetQ);
@@ -37,6 +37,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
         if (form.precio !== "") cambios.precio = Number(form.precio);
         if (form.descripcion !== undefined) cambios.descripcion = form.descripcion;
         if (form.categoria !== undefined) cambios.categoria = form.categoria;
+        if (form.imagen !== undefined) cambios.imagen = form.imagen.trim();
         await adminApi.editarProducto(editando, cambios);
         avisar("Producto actualizado.");
       } else {
@@ -48,6 +49,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           descripcion: form.descripcion,
           categoria: form.categoria || "General",
           codigo: form.codigo.trim(),
+          imagen: form.imagen.trim(),
         });
         avisar("Producto creado.");
       }
@@ -104,6 +106,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
       descripcion: p.descripcion ?? "",
       categoria: p.categoria ?? "General",
       codigo: p.codigo ?? "",
+      imagen: p.imagen ?? "",
     });
     const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: sinMovimiento ? "auto" : "smooth" });
@@ -157,6 +160,41 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           <label>Descripción
             <input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
           </label>
+          <label>Imagen (URL)
+            <input
+              value={form.imagen}
+              onChange={(e) => setForm({ ...form, imagen: e.target.value })}
+              placeholder="https://…"
+              inputMode="url"
+            />
+          </label>
+          <div className="adm-fila-2">
+            <label>Subir foto
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={async (e) => {
+                  const archivo = e.target.files?.[0];
+                  if (!archivo) return;
+                  try {
+                    avisar("Subiendo imagen…");
+                    const r = await adminApi.subirImagenProducto(archivo);
+                    setForm((f) => ({ ...f, imagen: r.url }));
+                    avisar("Imagen subida.");
+                  } catch (err) {
+                    avisar(err?.message ?? "No se pudo subir.", { tono: "error" });
+                  } finally {
+                    e.target.value = "";
+                  }
+                }}
+              />
+            </label>
+            {form.imagen ? (
+              <span className="adm-miniatura">
+                <img src={form.imagen} alt="Vista previa" width={64} height={64} loading="lazy" />
+              </span>
+            ) : null}
+          </div>
           <div className="adm-form-acciones">
             <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
               {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear producto"}
@@ -202,6 +240,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           <Tabla
             columnas={[
               { clave: "nombre", titulo: "Producto", ver: (p) => <><strong>{p.nombre}</strong><br /><span className="texto-mutado">{p.codigo ?? ""} · {p.marca ?? ""}</span></> },
+              { clave: "imagen", titulo: "Foto", ver: (p) => (p.imagen ? <img src={p.imagen} alt="" width={44} height={44} loading="lazy" className="adm-miniatura-tabla" /> : <span className="texto-mutado">—</span>) },
               { clave: "precio", titulo: "Precio", ver: (p) => formatoARS(p.precio_centavos ?? 0) },
               { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} en stock · mín ${p.stock_minimo ?? 5}` },
               {
