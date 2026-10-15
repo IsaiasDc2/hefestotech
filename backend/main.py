@@ -159,4 +159,4 @@ async def asistente_ia(mensaje: MensajeUsuario, request: Request):
             # Error genérico
             print("ERROR /api/chat: fallo interno del servicio de IA.")
             print(f"Error técnico real: {e}")
-            return {"respuesta": "La forja está ardiendo..."}
+            return {"respuesta": "La forja se desbordo..."}
