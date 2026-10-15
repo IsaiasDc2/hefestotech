@@ -21,3 +21,5 @@ services:
         value: https://isaiasdc2.github.io/hefestotech
       - key: BACKEND_URL
         sync: false
+      - key: CORS_EXTRA_ORIGINS
+        sync: false

@@ -11,6 +11,25 @@ const CONFIG_KEYS = {
   fallido: { icono: "fallido", clase: "badge-peligro", tituloKey: "pago.fallido" },
 };
 
+// Anti redirección abierta: solo dominios oficiales de Mercado Pago.
+const esUrlMP = (url) => {
+  let destino = null;
+  try {
+    destino = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = destino.hostname.toLowerCase();
+  return (
+    destino.protocol === "https:" &&
+    (host === "mercadopago.com" ||
+      host === "mercadopago.com.ar" ||
+      host.endsWith(".mercadopago.com") ||
+      host.endsWith(".mercadopago.com.ar") ||
+      host.endsWith(".mercadolibre.com"))
+  );
+};
+
 /** Pantalla genérica de retorno de MP. Lee el estado DESDE la DB, nunca de la URL. */
 export default function PagoResultado({ tipo }) {
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -31,6 +50,7 @@ export default function PagoResultado({ tipo }) {
 
   useEffect(() => {
     let vivo = true;
+    let temporizador = 0;
     const cargar = async (intentos = 0) => {
       try {
         const o = await obtenerEstadoPedido(ordenId, tokenInvitado);
@@ -38,7 +58,7 @@ export default function PagoResultado({ tipo }) {
         setEstado(o);
         // El webhook puede tardar: reintenta hasta 5 veces si sigue pendiente.
         if (o.estado === "pendiente" && intentos < 5) {
-          setTimeout(() => vivo && cargar(intentos + 1), 2500);
+          temporizador = setTimeout(() => vivo && cargar(intentos + 1), 2500);
         } else {
           setCargando(false);
         }
@@ -53,13 +73,14 @@ export default function PagoResultado({ tipo }) {
       setError(t(idioma, "pago.faltaId"));
       setCargando(false);
     }
-    return () => { vivo = false; };
-  }, [ordenId]);
+    return () => { vivo = false; clearTimeout(temporizador); };
+  }, [ordenId, tokenInvitado, idioma]);
 
   const reintentar = async () => {
     setReintentando(true);
     try {
       const { link_pago } = await reintentarPago(ordenId, tokenInvitado);
+      if (!esUrlMP(link_pago)) throw new Error(t(idioma, "pago.noReintentar"));
       window.location.href = link_pago;
     } catch (err) {
       setError(err?.message || t(idioma, "pago.noReintentar"));

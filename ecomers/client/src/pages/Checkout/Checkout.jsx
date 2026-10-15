@@ -134,6 +134,12 @@ function Checkout({ carrito = [], vaciarCarrito }) {
       if (!esUrlMP(resp.init_point)) {
         throw new Error(t(idioma, "chk.respInvalida"));
       }
+      // Respaldo por si vuelve de MP con fallo/cancelación: permite restaurar.
+      try {
+        sessionStorage.setItem("ck_carrito_respaldo", JSON.stringify(carrito));
+      } catch {
+        /* respaldo opcional */
+      }
       vaciarCarrito?.();
       window.location.href = resp.init_point;
     } catch (err) {
