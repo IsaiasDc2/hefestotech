@@ -49,6 +49,11 @@
   min-width: 0;
 }
 
+/* El sticky del sidebar admin necesita ancestros sin recorte horizontal. */
+.layout-main:has(.adm) {
+  overflow-x: visible;
+}
+
 .layout-main:focus {
   outline: none;
 }
@@ -63,6 +68,11 @@
 .layout-main {
   min-width: 0;
   overflow-x: clip;
+}
+
+.layout:has(.adm),
+.layout:has(.adm) .layout-main {
+  overflow-x: visible;
 }
 
 @supports not (overflow: clip) {
