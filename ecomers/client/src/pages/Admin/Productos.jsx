@@ -15,7 +15,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
   const [guardando, setGuardando] = useState(false);
 
   const { estado, datos, recargar, setDatos } = useModulo(
-    () => adminApi.productos({ q: busqueda, limit: 50 }),
+    () => adminApi.productos({ busqueda, limit: 50 }),
     [busqueda]
   );
 
