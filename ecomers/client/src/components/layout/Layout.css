@@ -153,3 +153,9 @@ html[data-hero-visible="true"] .topbar-camion {
     display: none;
   }
 }
+
+/* En admin no hay header de tienda: sin padding-top compensatorio. Solo CSS con :has, sin JS. */
+body:has(.adm) .layout,
+.layout:has(.adm) {
+  padding-top: 0;
+}

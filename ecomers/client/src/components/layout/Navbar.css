@@ -978,3 +978,10 @@ button.link-cuenta {
     display: none;
   }
 }
+
+/* En admin se oculta por completo el header de la tienda (topbar + site-head). Solo CSS con :has, sin JS. Fuera del admin el header sigue normal. */
+body:has(.adm) .site-head-wrap,
+body:has(.adm) .site-head,
+body:has(.adm) .topbar {
+  display: none;
+}
