@@ -36,6 +36,8 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, field_validator
 
+from comprobantes import comprobante_pdf, obtener_comprobante
+
 router = APIRouter()
 
 # ------------------------------------------------- constantes de negocio ---
@@ -937,7 +939,6 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
 
 
 # ---------------------------------------------------- comprobantes ---
-from comprobantes import comprobante_pdf, obtener_comprobante
 
 
 @router.get("/api/comprobantes/{cid}")

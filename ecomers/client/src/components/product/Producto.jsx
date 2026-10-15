@@ -146,10 +146,6 @@ function Productos({ agregarAlCarrito }) {
 
 
       } catch(error){
-
-
-        console.error(error);
-
         setError(error.message);
 
 

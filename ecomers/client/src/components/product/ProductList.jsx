@@ -52,7 +52,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
     }
 
     cargarProducto();
-  }, [id, reintento]);
+  }, [id, reintento, idioma]);
 
   if (cargando) {
     return <p className="detalle-estado">{t(idioma, "pd.cargando")}</p>;

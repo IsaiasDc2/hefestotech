@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import os
+import urllib.request
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-from pagos_mp import _sb
 
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 LEYENDA = "Comprobante de compra – no válido como factura"
@@ -13,6 +13,23 @@ LEYENDA = "Comprobante de compra – no válido como factura"
 
 def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default)
+
+
+def _sb(path: str, query: str = ""):
+    """Lectura REST mínima a Supabase con service_role (solo backend)."""
+    base = _env("SUPABASE_URL").rstrip("/")
+    key = _env("SUPABASE_SERVICE_ROLE_KEY")
+    if not base or not key:
+        return []
+    url = f"{base}/rest/v1/{path}{query}"
+    req = urllib.request.Request(url, headers={
+        "apikey": key, "Authorization": f"Bearer {key}",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read().decode() or "[]")
+    except Exception:
+        return []
 
 
 def tienda() -> dict:

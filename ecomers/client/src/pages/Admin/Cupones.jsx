@@ -20,7 +20,7 @@ export default function Cupones({ avisar, pedirConfirm }) {
       await adminApi.crearCupon({
         codigo: form.codigo.trim(),
         tipo: form.tipo,
-        valor: Number(form.valor),
+        valor: form.tipo === "monto" ? Math.round(Number(form.valor || 0) * 100) : Number(form.valor),
         min_compra_centavos: Math.round(Number(form.min_compra || 0) * 100),
         usos_max: form.usos_max === "" ? null : Number(form.usos_max),
         activo: form.activo,

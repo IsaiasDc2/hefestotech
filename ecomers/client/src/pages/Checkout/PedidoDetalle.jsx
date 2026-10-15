@@ -36,7 +36,7 @@ export default function PedidoDetalle() {
       }
     })();
     return () => { vivo = false; };
-  }, [id, token]);
+  }, [id, token, idioma]);
 
   if (cargando) {
     return (

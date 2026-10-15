@@ -64,7 +64,8 @@ function Registro() {
     try {
       const data = await registro({ nombre: nombre.trim(), email: email.trim(), password });
       if (!data?.token) setPendienteEmail(true);
-    } catch {
+    } catch (err) {
+      setLocalError(err?.message ?? t(idioma, "reg.error"));
     }
   };
 

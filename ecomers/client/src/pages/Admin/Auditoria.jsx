@@ -38,7 +38,7 @@ export default function Auditoria() {
           }}
         >
           <label>Módulo <input value={modulo} onChange={(e) => setModulo(e.target.value)} placeholder="Ej: productos" /></label>
-          <label>Entidad <input value={entidad} onChange={(e) => setEntidad(e.target.value)} placeholder="Ej: id" /></label>
+          <label>Entidad <input value={entidad} onChange={(e) => setEntidad(e.target.value)} placeholder="Ej: productos" /></label>
           <button type="submit" className="btn-fantasma adm-btn">Filtrar</button>
         </form>
       </section>

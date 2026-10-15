@@ -31,7 +31,8 @@ export default function ReclamoPublico() {
       setMensaje(t(idioma, "recl.ok"));
       setForm({ nombre: "", email: "", orden: "", motivo: "", detalle: "" });
     } catch (err) {
-      setEstado("sin-sesion");
+      const sinSesion = err?.status === 401 || err?.status === 403;
+      setEstado(sinSesion ? "sin-sesion" : "error");
       setMensaje(
         err?.status === 401 || err?.status === 403
           ? idioma === "en"
@@ -71,7 +72,7 @@ export default function ReclamoPublico() {
           <label>{t(idioma, "recl.mensaje")}
             <textarea value={form.detalle} onChange={(e) => setForm({ ...form, detalle: e.target.value })} rows={4} maxLength={2000} />
           </label>
-          {mensaje && <p role={estado === "sin-sesion" ? "alert" : "status"} className="texto-mutado">{mensaje}</p>}
+          {mensaje && <p role="alert" className="texto-mutado">{mensaje}</p>}
           <div className="adm-form-acciones">
             <button type="submit" className="btn-primary adm-btn" disabled={estado === "enviando"}>
               {estado === "enviando" ? t(idioma, "recl.enviando") : t(idioma, "recl.enviar")}

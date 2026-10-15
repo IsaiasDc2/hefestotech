@@ -190,7 +190,7 @@ export function useFavoritos() {
       } finally {
         if (vivo) setCargando(false);
       }
-    });
+    })();
     const desuscribirStorage = suscribirIdsLocales((nuevos) => {
       if (vivo) {
         idsRef.current = nuevos;
