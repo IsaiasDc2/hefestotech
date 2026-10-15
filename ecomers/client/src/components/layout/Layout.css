@@ -71,7 +71,8 @@
 }
 
 .layout:has(.adm),
-.layout:has(.adm) .layout-main {
+.layout:has(.adm) .layout-main,
+#root:has(.adm) {
   overflow-x: visible;
 }
 

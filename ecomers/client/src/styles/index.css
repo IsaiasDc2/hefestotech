@@ -209,10 +209,12 @@ html,
 body {
   background-color: var(--bg);
   color: var(--text);
-  overflow-x: hidden;
   max-width: 100%;
   width: 100%;
 }
+
+/* Sin overflow-x en html/body: rompe todo position:sticky de la pagina
+   (bug clasico de Chromium). El recorte horizontal vive en #root. */
 
 #root {
   overflow-x: clip;
