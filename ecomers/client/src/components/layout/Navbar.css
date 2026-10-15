@@ -837,6 +837,38 @@ button.link-cuenta {
   }
 }
 
+/* En el panel admin el header de la tienda se repliega solo y vuelve
+   al pasar el cursor por el borde superior (o con teclado). Solo con
+   puntero fino y sin movimiento reducido. */
+@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
+  body:has(.adm) .site-head {
+    transform: translateY(-100%);
+    transition: transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  }
+  body:has(.adm) .site-head:hover,
+  body:has(.adm) .site-head:focus-within {
+    transform: none;
+  }
+  body:has(.adm) .site-head::after {
+    content: "";
+    position: absolute;
+    bottom: -14px;
+    left: 0;
+    right: 0;
+    height: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.adm) .site-head {
+    transform: none;
+    transition: none;
+  }
+  body:has(.adm) .site-head::after {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
   .topbar {
     overflow: hidden;

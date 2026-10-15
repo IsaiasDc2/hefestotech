@@ -128,6 +128,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
         }
       />
 
+      <div className="adm-grid-2 adm-grid-productos">
       <section className="card adm-panel" aria-label={editando ? "Editar producto" : "Nuevo producto"}>
         <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
         <form onSubmit={alGuardar} className="adm-form">
@@ -209,6 +210,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
       </section>
 
       <section className="card adm-panel" aria-label="Listado">
+        <h2 className="sr-only">Listado de productos</h2>
         <form
           className="adm-buscador-linea"
           onSubmit={(e) => {
@@ -259,6 +261,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           />
         )}
       </section>
+      </div>
     </div>
   );
 }
