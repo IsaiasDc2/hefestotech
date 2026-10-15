@@ -103,7 +103,14 @@ function Admin() {
     if (extra.q !== undefined) setPresetQ(extra.q);
     else if (id !== "productos") setPresetQ("");
     setVista(TITULOS[id] ? id : "inicio");
-    document.getElementById("admin-contenido")?.scrollIntoView({ block: "start" });
+    // El módulo es lazy: scrollear de entrada y reintentar cuando termine
+    // de montar, si no el título queda cortado bajo el topbar.
+    const alContenido = () => {
+      document.getElementById("admin-contenido")?.scrollIntoView({ block: "start" });
+    };
+    alContenido();
+    requestAnimationFrame(() => requestAnimationFrame(alContenido));
+    setTimeout(alContenido, 600);
   };
 
   const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: () => setNoLeidas(0) };
