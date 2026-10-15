@@ -8,6 +8,7 @@
     "footer";
   min-height: 100vh;
   background-color: var(--bg);
+  padding-top: var(--head-h, 200px);
 }
 
 .skip-link {

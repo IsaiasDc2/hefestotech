@@ -65,6 +65,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
       if (!head) return;
       head.style.minHeight = "";
       head.style.minHeight = `${head.offsetHeight}px`;
+      document.documentElement.style.setProperty("--head-h", `${head.offsetHeight + 10}px`);
     };
     const medir = () => {
       if (!head || document.hidden) return;
