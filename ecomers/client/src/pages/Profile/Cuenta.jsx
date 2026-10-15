@@ -9,14 +9,107 @@ import useAuthStore from "../../store/authStore";
 import useCartStore from "../../store/cartStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerProductosPorIds, useFavoritos } from "../../services/favoritos";
+import { supabase } from "../../components/lib/supabaseClient";
 import "./Cuenta.css";
 
 const VISTAS_KEYS = [
   { id: "login", key: "cuenta.ingresar" },
   { id: "registro", key: "cuenta.crear" },
   { id: "pedidos", key: "cuenta.pedidos" },
+  { id: "reclamos", key: "cuenta.reclamos" },
   { id: "favoritos", key: "cuenta.favoritos" },
 ];
+
+// Posventa del cliente: sus reclamos por RLS (propios) con estado real.
+// Sin sesión pide ingresar; sin datos muestra vacío con acceso a /reclamo.
+function SeccionReclamos() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [lista, setLista] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let vivo = true;
+    setCargando(true);
+    setError("");
+    (async () => {
+      try {
+        const { data, error: err } = await supabase
+          .from("reclamos")
+          .select("id,motivo,detalle,estado,orden_id,created_at")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (err) throw err;
+        if (vivo) setLista(data ?? []);
+      } catch (err) {
+        if (vivo) setError(err?.message || t(idioma, "cuenta.noReclamos"));
+      } finally {
+        if (vivo) setCargando(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [isAuthenticated, idioma]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+        <h2>{t(idioma, "cuenta.reclamos")}</h2>
+        <p>{t(idioma, "cuenta.sinReclamos")}</p>
+        <Link to="/reclamo" className="btn-fantasma">
+          {t(idioma, "recl.titulo")} <FaArrowRight aria-hidden="true" />
+        </Link>
+      </div>
+    );
+  }
+
+  if (cargando) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+        <h2>{t(idioma, "cuenta.reclamos")}</h2>
+        <p role="status">{t(idioma, "cuenta.cargandoReclamos")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel-cuenta card anim-entrada">
+      <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+      <h2>{t(idioma, "cuenta.reclamos")} ({lista.length})</h2>
+      {error && <p className="badge badge-peligro login-error" role="alert">{error}</p>}
+      {lista.length === 0 && !error ? (
+        <div className="vacio">
+          <p className="vacio-titulo">{t(idioma, "cuenta.sinReclamosT")}</p>
+          <p className="vacio-texto">{t(idioma, "cuenta.reclamoSeguimiento")}</p>
+          <Link to="/reclamo" className="btn-fantasma">
+            {t(idioma, "recl.titulo")} <FaArrowRight aria-hidden="true" />
+          </Link>
+        </div>
+      ) : (
+        <ul className="adm-tarjetas">
+          {lista.map((r) => (
+            <li key={r.id} className="card adm-pedido">
+              <div className="adm-pedido-head">
+                <strong>{String(r.motivo || "—").split("—")[0].trim().slice(0, 60) || "—"}</strong>
+                <span className={`adm-estado es-${r.estado}`}>{r.estado}</span>
+              </div>
+              <p className="texto-mutado">
+                {r.created_at ? new Date(r.created_at).toLocaleString("es-AR") : "—"}
+                {r.orden_id ? ` · #${String(r.orden_id).slice(0, 8)}` : ""}
+              </p>
+              {r.detalle && <p>{r.detalle}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // Seccion Favoritos: mismo ProductCard del catalogo, quitar con aviso y
 // deshacer, mover al carrito, vacio con acceso al catalogo y aviso para
@@ -189,6 +282,8 @@ function Cuenta() {
     const tab = params.get("tab");
     if (tab === "favoritos" || params.get("modo") === "favoritos") {
       setVista("favoritos");
+    } else if (tab === "reclamos") {
+      setVista("reclamos");
     }
   }, [params]);
 
@@ -245,6 +340,8 @@ function Cuenta() {
         )}
 
         {vista === "favoritos" && <SeccionFavoritos />}
+
+        {vista === "reclamos" && <SeccionReclamos />}
       </div>
     </div>
   );

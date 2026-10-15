@@ -21,11 +21,18 @@ export default function ReclamoPublico() {
     e.preventDefault();
     setEstado("enviando");
     setMensaje("");
+    // La API espera UUID de orden; si escriben el código corto se guarda
+    // como referencia en el detalle en vez de romper con 404.
+    const ordenTxt = form.orden.trim();
+    const esUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ordenTxt);
+    const detalleFinal = ordenTxt && !esUuid
+      ? `Orden indicada: ${ordenTxt}\n${form.detalle.trim()}`.slice(0, 2000)
+      : form.detalle.trim();
     try {
       await adminApi.crearReclamo({
-        orden_id: form.orden.trim() || null,
+        orden_id: esUuid ? ordenTxt : null,
         motivo: `${form.motivo.trim()} — ${form.nombre.trim()} <${form.email.trim()}>`,
-        detalle: form.detalle.trim(),
+        detalle: detalleFinal,
       });
       setEstado("ok");
       setMensaje(t(idioma, "recl.ok"));
@@ -53,7 +60,10 @@ export default function ReclamoPublico() {
       {estado === "ok" ? (
         <div className="card adm-panel" role="status">
           <p><strong>{mensaje}</strong></p>
-          <Link className="btn-fantasma adm-btn" to="/">{t(idioma, "ped.volver")}</Link>
+          <div className="adm-form-acciones">
+            <Link className="btn-primary adm-btn" to="/cuenta?tab=reclamos">{t(idioma, "cuenta.reclamos")}</Link>
+            <Link className="btn-fantasma adm-btn" to="/">{t(idioma, "ped.volver")}</Link>
+          </div>
         </div>
       ) : (
         <form onSubmit={enviar} className="card adm-panel adm-form">
