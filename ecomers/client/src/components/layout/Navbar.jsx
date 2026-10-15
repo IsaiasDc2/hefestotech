@@ -22,6 +22,8 @@ import "./Navbar.css";
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const ultimoY = useRef(0);
   const [pop, setPop] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [esAdmin, setEsAdmin] = useState(false);
@@ -68,6 +70,8 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
       if (!head || document.hidden) return;
       const y = window.scrollY || 0;
       setScrolled(y > 8);
+      setSubiendo(y < ultimoY.current - 4);
+      ultimoY.current = y;
       const total = document.documentElement.scrollHeight - window.innerHeight;
       const p = total > 0 ? Math.min(1, Math.max(0, y / total)) : 0;
       head.style.setProperty("--scroll-p", p.toFixed(4));
@@ -147,7 +151,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         </div>
       </div>
 
-      <div ref={refHead} className={`site-head${scrolled ? " is-scrolled" : ""}`}>
+      <div ref={refHead} className={`site-head${scrolled ? " is-scrolled" : ""}${subiendo ? " mostrar" : ""}`}>
         <div className="site-head-inner ht-contenedor">
           <button
             type="button"

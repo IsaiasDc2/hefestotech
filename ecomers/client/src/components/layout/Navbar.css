@@ -846,7 +846,8 @@ button.link-cuenta {
     transition: transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
   }
   body:has(.adm) .site-head:hover,
-  body:has(.adm) .site-head:focus-within {
+  body:has(.adm) .site-head:focus-within,
+  body:has(.adm) .site-head.mostrar {
     transform: none;
   }
   body:has(.adm) .site-head::after {
