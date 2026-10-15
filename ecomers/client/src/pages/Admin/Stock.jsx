@@ -11,12 +11,23 @@ export default function Stock({ avisar }) {
   const [motivo, setMotivo] = useState("ajuste");
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [q, setQ] = useState("");
 
   const { estado, datos, recargar } = useModulo(
     () => adminApi.productos({ limit: 200 }),
     []
   );
   const lista = datos?.productos ?? [];
+  const qN = q.trim().toLowerCase();
+  const filtrada = useMemo(
+    () =>
+      qN
+        ? lista.filter((p) =>
+            `${p.nombre ?? ""} ${p.codigo ?? ""} ${p.marca ?? ""}`.toLowerCase().includes(qN)
+          )
+        : lista,
+    [lista, qN]
+  );
 
   const bajo = useMemo(
     () => lista.filter((p) => Number(p.stock ?? 0) <= Number(p.stock_minimo ?? 5)),
@@ -101,13 +112,30 @@ export default function Stock({ avisar }) {
           </form>
         </section>
         <section className="card adm-panel" aria-label="Niveles">
-          <h2>Niveles ({lista.length})</h2>
+          <h2>Niveles ({filtrada.length})</h2>
+          <form
+            className="adm-buscador-linea"
+            onSubmit={(e) => e.preventDefault()}
+            role="search"
+          >
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Filtrar por nombre, código o marca…"
+              aria-label="Filtrar stock"
+            />
+            {q && (
+              <button type="button" className="btn-fantasma adm-btn" onClick={() => setQ("")}>
+                Limpiar
+              </button>
+            )}
+          </form>
           <Tabla
             columnas={[
               { clave: "nombre", titulo: "Producto", ver: (p) => p.nombre },
               { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} / mín ${p.stock_minimo ?? 5}` },
             ]}
-            filas={lista.slice(0, 30)}
+            filas={filtrada.slice(0, 50)}
             filaKey={(p) => p.id}
             vacio="Sin productos."
           />

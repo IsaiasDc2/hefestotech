@@ -21,8 +21,8 @@
   flex-direction: column;
   gap: 0.8rem;
   position: sticky;
-  top: 112px;
-  height: calc(100dvh - 112px);
+  top: 0;
+  height: 100dvh;
   overflow-y: auto;
 }
 
@@ -251,6 +251,27 @@
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   align-items: start;
+  min-width: 0;
+}
+
+/* Productos: formulario angosto + listado ancho con scroll interno. */
+.adm-grid-productos {
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+}
+
+.adm-grid-productos > .adm-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .adm-grid-productos {
+    grid-template-columns: 1fr;
+  }
+}
+
+#admin-contenido {
+  scroll-margin-top: 70px;
 }
 
 /* --- cabecera / paneles --- */
