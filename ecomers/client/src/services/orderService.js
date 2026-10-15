@@ -4,9 +4,14 @@
 // Se conservan las lecturas propias por RLS (mis órdenes / por id).
 import { supabase } from "../components/lib/supabaseClient";
 
-const API_BASE = String(
-  import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"
-).replace(/\/+$/, "");
+const API_BASE = (() => {
+  const base = String(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+  if (!base && import.meta.env.PROD) {
+    // En prod sin VITE_API_URL el pago apuntaría a localhost: falla claro.
+    throw new Error("Backend no configurado (VITE_API_URL).");
+  }
+  return base || "http://127.0.0.1:8000";
+})();
 
 const sesionToken = async () => {
   try {
