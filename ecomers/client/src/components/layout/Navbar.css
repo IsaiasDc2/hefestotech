@@ -249,15 +249,18 @@
 
 .site-head {
   position: sticky;
-  top: 0;
+  top: 0.6rem;
   z-index: 50;
-  max-width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  border-radius: 20px;
   overflow-x: clip;
+  overflow-y: visible;
   background-color: rgba(11, 14, 20, 0.72);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  border-bottom: 1px solid transparent;
-  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+  border: 1px solid transparent;
+  transition: background-color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), top var(--dur-2) var(--ease), border-radius var(--dur-2) var(--ease);
 }
 
 :root[data-theme="light"] .site-head {
@@ -270,10 +273,39 @@
   }
 }
 
+/* Al scrollear: pill flotante con fondo transparente (vidrio) y la
+   fila de navegacion colapsada. Vuelve con hover, foco o scroll arriba. */
 .site-head.is-scrolled {
-  background-color: rgba(11, 14, 20, 0.94);
-  border-bottom-color: var(--border);
+  top: 0.4rem;
+  background-color: rgba(11, 14, 20, 0.35);
+  border-color: var(--border-suave);
   box-shadow: var(--sombra-media);
+}
+
+:root[data-theme="light"] .site-head.is-scrolled {
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+.site-head.is-scrolled:not(:hover):not(:focus-within):not(.mostrar) .nav-categorias {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: grid-template-rows var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), margin var(--dur-2) var(--ease), padding var(--dur-2) var(--ease);
+}
+
+.site-head.is-scrolled .nav-categorias {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease), margin var(--dur-2) var(--ease), padding var(--dur-2) var(--ease);
+}
+
+.site-head.is-scrolled .nav-categorias > * {
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* Compacto al scroll: la altura esta fijada por JS (min-height),
