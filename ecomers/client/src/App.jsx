@@ -5,6 +5,8 @@ import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
 import useIdiomaStore, { t } from "./store/idiomaStore";
+import useDocumentTitle from "./hooks/useDocumentTitle";
+import useCanonical from "./hooks/useCanonical";
 
 const Home = lazy(() => import("./pages/Home/Home"));
 const Productos = lazy(() => import("./components/product/Producto"));
@@ -117,6 +119,7 @@ export default function App() {
 
   return (
     <>
+    <SeoRuta />
     <DesplazarArriba />
     <Routes>
       <Route
@@ -175,6 +178,14 @@ export default function App() {
       </Routes>
     </>
   );
+}
+
+function SeoRuta() {
+  // Se monta antes que las páginas: su efecto corre primero y la página
+  // de detalle puede sobreescribir el título con el nombre real.
+  useDocumentTitle();
+  useCanonical();
+  return null;
 }
 
 function DesplazarArriba() {

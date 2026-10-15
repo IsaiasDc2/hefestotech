@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { JsonLd, construirJsonLdProducto } from "../seo/JsonLd";
+import { NOMBRE_SITIO } from "../../seo/sitio";
+import CalculadoraCuotas from "./CalculadoraCuotas";
 import "./ProductoDetalle.css";
+import "./CalculadoraCuotas.css";
 
 function formatearClave(clave) {
   const conEspacios = clave.replace(/([A-Z])/g, " $1").toLowerCase();
@@ -17,6 +22,11 @@ function ProductoDetalle({ agregarAlCarrito }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [reintento, setReintento] = useState(0);
+
+  // Título dinámico con el nombre real; durante la carga rige el de ruta.
+  useDocumentTitle(
+    producto?.nombre ? `${producto.nombre} | ${NOMBRE_SITIO}` : undefined
+  );
 
   useEffect(() => {
     async function cargarProducto() {
@@ -76,6 +86,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
   return (
     <section className="detalle-container">
+      <JsonLd datos={construirJsonLdProducto(producto)} />
       <nav className="migajas" aria-label={t(idioma, "pd.migas")}>
         <Link to="/">{t(idioma, "pd.inicio")}</Link>
         <span className="migajas-sep" aria-hidden="true">/</span>
@@ -135,6 +146,8 @@ function ProductoDetalle({ agregarAlCarrito }) {
             <p className="cuotas">{t(idioma, "pd.cuotas")}</p>
             {producto.envio_gratis && <p className="envio">{t(idioma, "pd.envio")}</p>}
           </div>
+
+          <CalculadoraCuotas precio={precioFinal} />
 
           <div className="detalle-stock">
             {producto.stock ? (

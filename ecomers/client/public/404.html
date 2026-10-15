@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>HefestoTech</title>
+    <script>
+      // Fallback SPA para GitHub Pages (sitio estático sin rewrites):
+      // Pages sirve este 404.html ante rutas profundas (/hefestotech/<ruta>).
+      // Guarda la ruta pedida y vuelve a la base; la app la restaura desde
+      // sessionStorage al arrancar (ver src/main.jsx, clave "ht-redirect").
+      (function () {
+        var BASE = "/hefestotech/";
+        var ruta = window.location.pathname;
+        if (ruta.indexOf(BASE) === 0) ruta = ruta.slice(BASE.length);
+        ruta = ruta.replace(/^\/+|\/+$/g, "");
+        var destino = "/" + ruta + window.location.search + window.location.hash;
+        try {
+          sessionStorage.setItem("ht-redirect", destino === "/" ? "/" : destino);
+        } catch (e) {}
+        window.location.replace(BASE);
+      })();
+    </script>
+    <noscript>
+      <meta http-equiv="refresh" content="0; url=/hefestotech/" />
+    </noscript>
+  </head>
+  <body>
+    <p>HefestoTech — <a href="/hefestotech/">volver a la tienda</a>.</p>
+  </body>
+</html>

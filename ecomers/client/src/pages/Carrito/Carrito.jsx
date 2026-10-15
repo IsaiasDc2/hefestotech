@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { FaCartShopping } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import CotizadorEnvio from "./CotizadorEnvio";
+import "./CotizadorEnvio.css";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
 
@@ -104,6 +106,7 @@ function Carrito({
         <p className="carrito-subtotal">
           {t(idioma, "cart.subtotal")}: <strong>${subtotal.toLocaleString("es-AR")}</strong>
         </p>
+        <CotizadorEnvio subtotal={subtotal} />
         <div className="carrito-pagina-acciones">
           <Link to="/productos" className="carrito-secundario">← {t(idioma, "cart.seguir")}</Link>
           <Link to="/checkout" className="btn-primary">{t(idioma, "cart.finalizar")} →</Link>
