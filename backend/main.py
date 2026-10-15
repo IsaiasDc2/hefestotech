@@ -1,16 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pathlib import Path
 from pydantic import BaseModel, field_validator
 from collections import defaultdict, deque
-import pandas as pd
-import urllib.parse
 import os
 import time
 from dotenv import load_dotenv
 
 from google import genai
-import mercadopago
 
 from admin_api import router as admin_router
 from checkout_api import router as checkout_router
@@ -89,21 +85,6 @@ def _cliente_ia():
     return genai.Client(api_key=api_key)
 
 
-def _frontend_base() -> str:
-    base = os.getenv("FRONTEND_URL", "").rstrip("/") or "http://localhost:5173"
-    # Solo http(s): evita que un .env envenenado convierta back_urls en
-    # vector de redirección abierta.
-    if not base.lower().startswith(("http://", "https://")):
-        return "http://localhost:5173"
-    return base
-
-
-def _sdk_mp():
-    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
-    if not token:
-        return None
-    return mercadopago.SDK(token)
-
 @app.get("/")
 def estado_api():
     def hay(nombre):
@@ -122,20 +103,12 @@ def estado_api():
 
 @app.get("/api/productos")
 def obtener_productos():
-    csv_path = Path(__file__).resolve().parent / "datos" / "Inventario_Stock_Ecommerce.csv"
-    try:
-        df = pd.read_csv(csv_path)
-    except FileNotFoundError:
-        return {"error": "Archivo CSV no encontrado."}
-
-    productos_lista = []
-    for _, fila in df.iterrows():
-        producto = fila.to_dict()
-        texto_imagen = urllib.parse.quote(f"{producto['Marca']}\n{producto['Categoría']}")
-        producto['Imagen_URL'] = f"https://placehold.co/400x400/2c3e50/ecf0f1?text={texto_imagen}"
-        productos_lista.append(producto)
-
-    return {"total_stock": len(productos_lista), "productos": productos_lista}
+    # Deprecado: doble fuente con Supabase (lo que se cobra sale de la DB).
+    # Se mantiene 410 para no servir precios/stock distintos a los reales.
+    raise HTTPException(
+        status_code=410,
+        detail="Catálogo movido a Supabase. Usá /api/admin/productos o la tienda.",
+    )
 
 class MensajeUsuario(BaseModel):
     texto: str

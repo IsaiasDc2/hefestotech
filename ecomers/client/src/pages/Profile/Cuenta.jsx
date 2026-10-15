@@ -55,7 +55,7 @@ function SeccionFavoritos() {
     return () => {
       vivo = false;
     };
-  }, [ids]);
+  }, [ids, idioma]);
 
   const quitarAnimado = (id, nombre) => {
     setEliminandoId(String(id));

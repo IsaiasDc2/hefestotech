@@ -89,7 +89,7 @@ function Admin() {
       try {
         const r = await adminApi.notificaciones({ limit: 20 });
         const n = r?.notificaciones ?? [];
-        if (vivo) setNoLeidas(n.filter((x) => !x.leida_at && !x.leida).length);
+        if (vivo) setNoLeidas(n.filter((x) => !x.leida).length);
       } catch {
         /* campana en 0 */
       }
@@ -123,10 +123,10 @@ function Admin() {
         {vista === "stock" && <Stock {...props} />}
         {vista === "pedidos" && <Pedidos {...props} />}
         {vista === "reclamos" && <Reclamos {...props} />}
-        {vista === "whatsapp" && <WhatsApp />}
+        {vista === "whatsapp" && <WhatsApp {...props} />}
         {vista === "banners" && <Banners {...props} />}
         {vista === "cupones" && <Cupones {...props} />}
-        {vista === "reportes" && <Reportes />}
+        {vista === "reportes" && <Reportes {...props} />}
         {vista === "clientes" && <Clientes />}
         {vista === "config" && <Config />}
         {vista === "auditoria" && <Auditoria />}

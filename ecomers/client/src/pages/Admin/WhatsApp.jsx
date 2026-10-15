@@ -4,7 +4,7 @@
 // Nada se envía solo: responder por WhatsApp siempre abre wa.me para revisar.
 import { useEffect, useState } from "react";
 import { WHATSAPP_NUMERO_A_CONFIRMAR, WHATSAPP_URL, whatsappUrl } from "../../constants/whatsapp";
-import { api } from "./adminApi";
+import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio, useModulo } from "./ui";
 
 const PLANTILLAS = [
@@ -55,7 +55,7 @@ function textoWhatsAppRespuesta(conversacion, borrador) {
 }
 
 function Bandeja({ avisar }) {
-  const { estado, datos, recargar } = useModulo(() => api("/api/admin/bandeja"), []);
+  const { estado, datos, recargar } = useModulo(() => adminApi.bandeja(), []);
   const [elegido, setElegido] = useState(null);
   const [hilo, setHilo] = useState({ estado: "vacio", mensajes: [] });
   const [borrador, setBorrador] = useState("");
@@ -94,7 +94,7 @@ function Bandeja({ avisar }) {
     let vivo = true;
     setHilo({ estado: "cargando", mensajes: [] });
     setBorrador("");
-    api(`/api/admin/reclamos/${encodeURIComponent(elegido)}/mensajes`)
+    adminApi.mensajesReclamo(elegido)
       .then((r) => {
         if (vivo) setHilo({ estado: "ok", mensajes: r?.mensajes ?? [] });
       })
@@ -111,13 +111,10 @@ function Bandeja({ avisar }) {
     if (!actual || !texto || guardando) return;
     setGuardando(true);
     try {
-      await api(`/api/admin/reclamos/${encodeURIComponent(actual.id)}/mensajes`, {
-        method: "POST",
-        body: { texto, autor: "staff" },
-      });
+      await adminApi.crearMensajeReclamo(actual.id, { texto, autor: "staff" });
       avisar("Nota interna guardada.");
       setBorrador("");
-      const r = await api(`/api/admin/reclamos/${encodeURIComponent(actual.id)}/mensajes`);
+      const r = await adminApi.mensajesReclamo(actual.id);
       setHilo({ estado: "ok", mensajes: r?.mensajes ?? [] });
       recargar();
     } catch (err) {

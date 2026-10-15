@@ -88,7 +88,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     return () => {
       viva = false;
     };
-  }, [ordenIdUrl]);
+  }, [ordenIdUrl, idioma]);
 
   const subtotalEst = useMemo(
     () =>

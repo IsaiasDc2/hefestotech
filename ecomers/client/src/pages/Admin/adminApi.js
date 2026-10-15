@@ -108,6 +108,10 @@ export const adminApi = {
   crearReclamo: (d) => api("/api/admin/reclamos", { method: "POST", body: d }),
   cambiarEstadoReclamo: (id, estado) =>
     api(`/api/admin/reclamos/${q(id)}`, { method: "PATCH", body: { estado } }),
+  bandeja: () => api("/api/admin/bandeja"),
+  mensajesReclamo: (id) => api(`/api/admin/reclamos/${q(id)}/mensajes`),
+  crearMensajeReclamo: (id, d) =>
+    api(`/api/admin/reclamos/${q(id)}/mensajes`, { method: "POST", body: d }),
   cupones: ({ limit = 50, offset = 0 } = {}) =>
     api(`/api/admin/cupones?limit=${limit}&offset=${offset}`),
   crearCupon: (d) => api("/api/admin/cupones", { method: "POST", body: d }),
