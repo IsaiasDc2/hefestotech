@@ -265,3 +265,70 @@ def test_liberar_expiradas_fail_closed(monkeypatch):
                      headers={"x-cron-secret": "cron-prueba"})
     assert r.status_code == 200
     assert r.json()["revisadas"] == 0
+
+
+# ------------------------------------------------------------------- cuotas ---
+
+
+def test_cuotas_endpoint_con_cache(monkeypatch):
+    monkeypatch.setenv("MERCADOPAGO_ACCESS_TOKEN", "token-prueba")
+    llamadas = []
+
+    class FalsaRespuesta:
+        def __init__(self, data):
+            self._data = data
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self._data
+
+    def fake_get(url, params=None, headers=None, timeout=None):
+        llamadas.append(params["payment_method_id"])
+        if params["payment_method_id"] == "visa":
+            return FalsaRespuesta([{
+                "payment_method_id": "visa",
+                "payer_costs": [
+                    {"installments": 1, "total_amount": 100.0, "installment_amount": 100.0},
+                    {"installments": 3, "total_amount": 110.0, "installment_amount": 36.67},
+                    {"installments": 12, "total_amount": 160.0, "installment_amount": 13.34},
+                ],
+            }])
+        return FalsaRespuesta([{
+            "payment_method_id": "master",
+            "payer_costs": [
+                {"installments": 3, "total_amount": 130.0, "installment_amount": 43.34},
+                {"installments": 6, "total_amount": 120.0, "installment_amount": 20.0},
+            ],
+        }])
+
+    monkeypatch.setattr(checkout_api.httpx, "get", fake_get)
+    checkout_api._CUOTAS_CACHE.clear()
+
+    r = cliente.get("/api/checkout/cuotas?total_centavos=10000")
+    assert r.status_code == 200
+    opciones = r.json()["opciones"]
+    assert [o["cuotas"] for o in opciones] == [3, 6, 12]
+    # 3 cuotas: gana el mejor total (visa 110 sobre master 130).
+    assert opciones[0]["total_centavos"] == 11000
+    assert opciones[0]["sin_interes"] is False
+    # 6 cuotas: solo master (120 -> 20 c/u).
+    assert opciones[1]["valor_cuota_centavos"] == 2000
+
+    # Segunda llamada con el mismo monto: sale de caché, no pega a MP de nuevo.
+    antes = len(llamadas)
+    r = cliente.get("/api/checkout/cuotas?total_centavos=10000")
+    assert r.status_code == 200
+    assert len(llamadas) == antes
+    assert r.json()["opciones"] == opciones
+
+    # Monto fuera de rango: rechazado por validación.
+    assert cliente.get("/api/checkout/cuotas?total_centavos=0").status_code == 422
+
+
+def test_cuotas_sin_token(monkeypatch):
+    monkeypatch.delenv("MERCADOPAGO_ACCESS_TOKEN", raising=False)
+    checkout_api._CUOTAS_CACHE.clear()
+    r = cliente.get("/api/checkout/cuotas?total_centavos=10000")
+    assert r.status_code == 503

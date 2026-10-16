@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
-import { crearCheckout, obtenerEstadoCheckout } from "../../services/orderService";
+import { crearCheckout, obtenerCuotas, obtenerEstadoCheckout } from "../../services/orderService";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
@@ -75,6 +75,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   const [pasoPago, setPasoPago] = useState("");
   const [error, setError] = useState("");
   const [orden, setOrden] = useState(null);
+  const [cuotas, setCuotas] = useState([]);
 
   // Al volver de Mercado Pago (?orden_id=...) se lee el estado REAL desde
   // el servidor. Nada se da por pagado por el hecho de volver.
@@ -116,6 +117,26 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   }, [envio, subtotalEst, carrito.length]);
 
   const totalEst = subtotalEst + costoEnvioEst;
+
+  // Cuotas reales de MP para el total estimado (informativo). Si el backend
+  // no responde o no hay datos, el bloque no se muestra.
+  useEffect(() => {
+    if (totalEst <= 0) return;
+    let viva = true;
+    const temporizador = setTimeout(() => {
+      obtenerCuotas(Math.round(totalEst * 100))
+        .then((resp) => {
+          if (viva) setCuotas(Array.isArray(resp?.opciones) ? resp.opciones : []);
+        })
+        .catch(() => {
+          if (viva) setCuotas([]);
+        });
+    }, 400);
+    return () => {
+      viva = false;
+      clearTimeout(temporizador);
+    };
+  }, [totalEst]);
 
   const confirmar = async (e) => {
     e.preventDefault();
@@ -299,6 +320,22 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             <div><dt>{t(idioma, "chk.envio")}</dt><dd>{costoEnvioEst === 0 ? t(idioma, "chk.gratis") : pesos(costoEnvioEst)}</dd></div>
             <div className="total"><dt>{t(idioma, "chk.total")}</dt><dd>{pesos(totalEst)}</dd></div>
           </dl>
+          {cuotas.length > 0 && (
+            <div className="checkout-cuotas">
+              <p className="checkout-cuotas-titulo">{t(idioma, "chk.cuotasTitulo")}</p>
+              <ul>
+                {cuotas.map((op) => (
+                  <li key={op.cuotas}>
+                    <span>{op.cuotas} {t(idioma, "chk.cuotasDe")} {pesos(op.valor_cuota_centavos / 100)}</span>
+                    <em className={op.sin_interes ? "destacado" : ""}>
+                      {op.sin_interes ? t(idioma, "chk.sinInteres") : pesos(op.total_centavos / 100)}
+                    </em>
+                  </li>
+                ))}
+              </ul>
+              <p className="checkout-cuotas-nota">{t(idioma, "chk.cuotasNota")}</p>
+            </div>
+          )}
           <p className="texto-mutado checkout-nota">{t(idioma, "chk.nota")}</p>
           {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
           {enviando && pasoPago && <p className="badge badge-info" role="status">{pasoPago}</p>}

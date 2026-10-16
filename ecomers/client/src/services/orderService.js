@@ -61,6 +61,11 @@ export const obtenerEstadoCheckout = (ordenId, accesoToken = "") => {
   return backend(`/api/checkout/estado/${encodeURIComponent(ordenId)}${q}`);
 };
 
+// Cuotas informativas de Mercado Pago para el total estimado (solo display;
+// el cobro y las cuotas finales se confirman en MP).
+export const obtenerCuotas = (totalCentavos) =>
+  backend(`/api/checkout/cuotas?total_centavos=${Math.round(totalCentavos)}`);
+
 // Compatibilidad con las pantallas de resultado: el servidor habla en
 // estados (pendiente/pagada/cancelada) y centavos; el front muestra pesos.
 export const obtenerEstadoPedido = (ordenId, token = "") =>

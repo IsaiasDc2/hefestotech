@@ -14,6 +14,8 @@ Checkout con cálculo en servidor + webhook de Mercado Pago.
   vencida (>60 min) liberando la reserva.
 - GET /api/checkout/estado/{id}: estado real de la orden (el front lo usa
   al volver de MP en vez de inventar estados).
+- GET /api/checkout/cuotas: cuotas informativas de Mercado Pago (Visa y
+  Master) para el resumen; no interviene en el cobro.
 
 Patrones espejo de admin_api.py: REST a Supabase con service_role, RPC,
 montos en centavos enteros, rate-limit en memoria, errores genéricos.
@@ -34,7 +36,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel, field_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
@@ -522,6 +524,75 @@ def _liberar(orden_id: str, lineas: list[dict[str, Any]], motivo: str,
             })
         except HTTPException:
             print("ERROR checkout_api: no se pudo liberar stock.")
+
+
+# Cuotas informativas: consulta real a Mercado Pago con caché por monto
+# exacto (TTL 10 min). No interviene en el cobro: el medio y las cuotas
+# finales se eligen en la pantalla de MP.
+_CUOTAS_TTL_SEG = 600
+_CUOTAS_MEDIOS = ("visa", "master")
+_CUOTAS_CACHE: dict[int, tuple[float, list[dict[str, Any]]]] = {}
+
+
+def _cuotas_mp(monto_pesos: float) -> list[dict[str, Any]]:
+    """Mejor opción real por cantidad de cuotas (2 a 12), según MP."""
+    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
+    if not token:
+        raise HTTPException(status_code=503, detail="Pagos no configurados.")
+    mejor: dict[int, tuple[float, float]] = {}  # cuotas -> (total, valor)
+    for medio in _CUOTAS_MEDIOS:
+        try:
+            respuesta = httpx.get(
+                "https://api.mercadopago.com/v1/payment_methods/installments",
+                params={"amount": monto_pesos, "payment_method_id": medio},
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10,
+            )
+            respuesta.raise_for_status()
+            bloques = respuesta.json()
+        except Exception:
+            continue
+        for bloque in bloques if isinstance(bloques, list) else []:
+            for costo in (bloque.get("payer_costs") or []):
+                try:
+                    cuotas = int(costo.get("installments") or 0)
+                    total = float(costo.get("total_amount") or 0)
+                    valor = float(costo.get("installment_amount") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if not 2 <= cuotas <= 12 or total <= 0 or valor <= 0:
+                    continue
+                actual = mejor.get(cuotas)
+                if actual is None or total < actual[0]:
+                    mejor[cuotas] = (total, valor)
+    return [{
+        "cuotas": c,
+        "valor_cuota_centavos": round(mejor[c][1] * 100),
+        "total_centavos": round(mejor[c][0] * 100),
+        "sin_interes": mejor[c][0] <= monto_pesos + 0.01,
+    } for c in sorted(mejor)]
+
+
+@router.get("/api/checkout/cuotas")
+def cuotas_checkout(
+    request: Request,
+    total_centavos: int = Query(..., ge=100, le=10_000_000_000),
+) -> dict[str, Any]:
+    """Cuotas informativas de Mercado Pago para el total estimado del front.
+    Solo lectura: no crea orden ni toca stock."""
+    ip = request.client.host if request.client else "?"
+    _limitar(ip, "checkout-cuotas", 30)
+    ahora = time.time()
+    guardado = _CUOTAS_CACHE.get(total_centavos)
+    if guardado and (ahora - guardado[0]) < _CUOTAS_TTL_SEG:
+        opciones = guardado[1]
+    else:
+        opciones = _cuotas_mp(_a_pesos(total_centavos))
+        _CUOTAS_CACHE[total_centavos] = (ahora, opciones)
+        for clave, (marca, _) in list(_CUOTAS_CACHE.items()):
+            if ahora - marca > _CUOTAS_TTL_SEG:
+                _CUOTAS_CACHE.pop(clave, None)
+    return {"total_centavos": total_centavos, "opciones": opciones}
 
 
 @router.post("/api/checkout/crear", status_code=201)
