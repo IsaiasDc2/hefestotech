@@ -137,6 +137,52 @@
   font-size: 0.82rem;
 }
 
+.checkout-cuotas {
+  border-top: 1px solid var(--border-suave);
+  padding-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkout-cuotas-titulo {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.checkout-cuotas ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.checkout-cuotas li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.checkout-cuotas li em {
+  font-style: normal;
+  color: var(--muted);
+}
+
+.checkout-cuotas li em.destacado {
+  color: var(--oro);
+  font-weight: 600;
+}
+
+.checkout-cuotas-nota {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .checkout-resumen {
   position: sticky;
   top: 90px;
