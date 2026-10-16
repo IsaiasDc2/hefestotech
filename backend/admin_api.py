@@ -973,6 +973,79 @@ def comprobante_pedido_pdf(pid: str,
     )
 
 
+# --------------------------------------------------------------- clientes ---
+# Página "Personas": perfiles reales + métricas de sus pedidos. Solo lectura;
+# el permiso es el de la matriz (usuarios.leer, hoy solo owner).
+_ESTADOS_COMPRA = {"pagada", "preparacion", "enviada", "entregada"}
+
+
+def _emails_auth() -> dict[str, str]:
+    """id→email desde GoTrue (service_role). {} si no se puede consultar."""
+    url, key = _env()
+    try:
+        r = httpx.get(f"{url}/auth/v1/admin/users",
+                      headers={"apikey": key, "Authorization": f"Bearer {key}"},
+                      params={"page": 1, "per_page": 1000}, timeout=15.0)
+    except httpx.HTTPError:
+        return {}
+    if r.status_code != 200:
+        return {}
+    try:
+        usuarios = (r.json() or {}).get("users") or []
+    except Exception:
+        return {}
+    return {str(u.get("id")): (u.get("email") or "") for u in usuarios if u.get("id")}
+
+
+def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
+    """Conteo, total comprado y último pedido por user_id (sin inventar)."""
+    resumen: dict[str, dict[str, Any]] = {}
+    if not ids:
+        return resumen
+    filas = _sb_get("ordenes", {
+        "select": "user_id,estado,total_centavos,created_at",
+        "user_id": f"in.({','.join(ids)})",
+        "order": "created_at.desc",
+        "limit": 2000,
+    }) or []
+    for o in filas:
+        uid = str(o.get("user_id") or "")
+        if not uid:
+            continue
+        r = resumen.setdefault(uid, {"pedidos": 0, "comprado_centavos": 0,
+                                     "ultimo_pedido": None, "ultimo_estado": ""})
+        r["pedidos"] += 1
+        if str(o.get("estado")) in _ESTADOS_COMPRA:
+            r["comprado_centavos"] += int(o.get("total_centavos") or 0)
+        if r["ultimo_pedido"] is None:  # filas ya vienen desc por fecha
+            r["ultimo_pedido"] = o.get("created_at")
+            r["ultimo_estado"] = str(o.get("estado") or "")
+    return resumen
+
+
+@router.get("/api/admin/clientes")
+def listar_clientes(q: str = "",
+                    pag: dict[str, int] = Depends(_pag),
+                    admin: AdminActual = Depends(requiere("usuarios", "leer"))) -> dict[str, Any]:
+    params: dict[str, Any] = {
+        "select": "id,nombre,telefono,direccion,ciudad,codigo_postal,rol,created_at",
+        "order": "created_at.desc",
+        "limit": pag["limit"], "offset": pag["offset"],
+    }
+    if q.strip():
+        params["nombre"] = f"ilike.*{q.strip()}*"
+    perfiles = _sb_get("perfiles", params) or []
+    ids = [str(p.get("id")) for p in perfiles if p.get("id")]
+    resumen = _resumen_pedidos(ids)
+    correos = _emails_auth()
+    for p in perfiles:
+        uid = str(p.get("id"))
+        p["email"] = correos.get(uid, "")
+        p["resumen"] = resumen.get(uid, {"pedidos": 0, "comprado_centavos": 0,
+                                         "ultimo_pedido": None, "ultimo_estado": ""})
+    return {"clientes": perfiles}
+
+
 @router.get("/api/admin/reclamos")
 def listar_reclamos(estado: str = "",
                     pag: dict[str, int] = Depends(_pag),
