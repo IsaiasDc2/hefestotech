@@ -44,7 +44,7 @@ def tienda() -> dict:
 
 def obtener_comprobante(orden_id: str) -> dict | None:
     filas = _sb("comprobantes",
-                query=f"?orden_id=eq.{orden_id}&select=*,ordenes(nombre,email,documento,direccion,ciudad,provincia,codigo_postal,envio,subtotal,costo_envio,total,created_at)")
+                query=f"?orden_id=eq.{orden_id}&select=*,ordenes(nombre,email,direccion,ciudad,codigo_postal,envio,subtotal,costo_envio,total,created_at)")
     return filas[0] if filas else None
 
 
@@ -77,11 +77,23 @@ def _pdf_minimo(lineas: list[str]) -> bytes:
 def comprobante_pdf(c: dict) -> bytes:
     t = tienda()
     o = c.get("ordenes", {}) if isinstance(c.get("ordenes"), dict) else {}
+    tot = c.get("totales_snapshot", {}) if isinstance(c.get("totales_snapshot"), dict) else {}
     fecha = c.get("emitido_en") or c.get("created_at") or ""
     try:
         fecha = datetime.fromisoformat(fecha).astimezone(TZ).strftime("%d/%m/%Y %H:%M")
     except Exception:
         pass
+
+    def pesos(valor) -> int:
+        try:
+            return int(round(float(valor or 0)))
+        except (TypeError, ValueError):
+            return 0
+
+    subtotal = tot.get("subtotal", o.get("subtotal", 0))
+    descuento = tot.get("descuento", 0)
+    costo_envio = tot.get("costo_envio", o.get("costo_envio", 0))
+    total = tot.get("total", o.get("total", 0))
     lineas = [
         f"{t['nombre'] or 'HefestoTech'}",
         f"CUIT: {t['cuit'] or '-'}  |  {t['direccion'] or ''}",
@@ -89,17 +101,18 @@ def comprobante_pdf(c: dict) -> bytes:
         "=" * 58,
         f"COMPROBANTE {c.get('numero', '')}",
         f"Fecha (Bs.As.): {fecha}",
-        f"Cliente: {o.get('nombre', '')}  Doc: {o.get('documento', '')}",
-        f"{o.get('direccion', '')}, {o.get('ciudad', '')} ({o.get('provincia', '')}) CP {o.get('codigo_postal', '')}",
+        f"Cliente: {o.get('nombre', '')}  {o.get('email', '')}",
+        f"{o.get('direccion', '')}, {o.get('ciudad', '')} CP {o.get('codigo_postal', '')}",
         "-" * 58,
     ]
     for it in c.get("items_snapshot", []) or []:
-        lineas.append(f"{it.get('cantidad',1)}x {str(it.get('nombre',''))[:36]:36} ${int(it.get('precio_unitario',0)):>9,}".replace(",", "."))
+        lineas.append(f"{it.get('cantidad',1)}x {str(it.get('nombre',''))[:36]:36} ${pesos(it.get('precio_unitario')):>9,}".replace(",", "."))
     lineas += [
         "-" * 58,
-        f"Subtotal: ${int(o.get('subtotal', 0)):>,}".replace(",", "."),
-        f"Envio ({o.get('envio','')}): ${int(o.get('costo_envio', 0)):>,}".replace(",", "."),
-        f"TOTAL: ${int(o.get('total', 0)):>,}".replace(",", "."),
+        f"Subtotal: ${pesos(subtotal):>,}".replace(",", "."),
+        f"Descuento: -${pesos(descuento):>,}".replace(",", "."),
+        f"Envio ({o.get('envio','')}): ${pesos(costo_envio):>,}".replace(",", "."),
+        f"TOTAL: ${pesos(total):>,}".replace(",", "."),
         "=" * 58,
         LEYENDA,
         f"Verificacion: {_env('FRONTEND_URL', '')}/pedido/{c.get('orden_id','')}?token={c.get('token_verificacion','')}",

@@ -100,6 +100,31 @@ export const adminApi = {
     ),
   cambiarEstadoPedido: (id, d) =>
     api(`/api/admin/pedidos/${q(id)}/estado`, { method: "POST", body: d }),
+  comprobantePedidoPdf: async (id) => {
+    const t = await sesionToken();
+    let respuesta;
+    try {
+      respuesta = await fetch(`${API_BASE}/api/admin/pedidos/${q(id)}/comprobante/pdf`, {
+        headers: t ? { Authorization: `Bearer ${t}` } : {},
+      });
+    } catch {
+      const e = new Error("Sin conexión con el backend.");
+      e.status = 0;
+      throw e;
+    }
+    if (!respuesta.ok) {
+      let datos = {};
+      try {
+        datos = await respuesta.json();
+      } catch {
+        datos = {};
+      }
+      const e = new Error(datos?.detail || `Error ${respuesta.status}`);
+      e.status = respuesta.status;
+      throw e;
+    }
+    return respuesta.blob();
+  },
   reclamos: ({ estado = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/reclamos?limit=${limit}&offset=${offset}` +
