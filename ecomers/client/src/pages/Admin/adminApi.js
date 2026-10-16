@@ -163,6 +163,11 @@ export const adminApi = {
           ? `?${desde ? `desde=${q(desde)}` : ""}${desde && hasta ? "&" : ""}${hasta ? `hasta=${q(hasta)}` : ""}`
           : "")
     ),
+  clientes: ({ busqueda = "", limit = 50, offset = 0 } = {}) =>
+    api(
+      `/api/admin/clientes?limit=${limit}&offset=${offset}` +
+        (busqueda.trim() ? `&q=${q(busqueda.trim())}` : "")
+    ),
 };
 
 // Centavos enteros → "$ 12.345,67" (es-AR). Nunca floats para dinero.
