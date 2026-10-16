@@ -81,7 +81,7 @@ export default function PedidoDetalle() {
           <dl className="comprobante-datos">
             <div><dt>{t(idioma, "ped.emitido")}</dt><dd>{new Date(comp.emitido_en).toLocaleString(idioma === "en" ? "en-US" : "es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</dd></div>
             <div><dt>{t(idioma, "ped.cliente")}</dt><dd>{comp.ordenes?.nombre} — {comp.ordenes?.email}</dd></div>
-            <div><dt>{t(idioma, "ped.envio")}</dt><dd>{comp.ordenes?.direccion}, {comp.ordenes?.ciudad} ({comp.ordenes?.provincia}) CP {comp.ordenes?.codigo_postal}</dd></div>
+            <div><dt>{t(idioma, "ped.envio")}</dt><dd>{comp.ordenes?.direccion}, {comp.ordenes?.ciudad} · CP {comp.ordenes?.codigo_postal}</dd></div>
           </dl>
           <table className="comprobante-tabla">
             <thead>

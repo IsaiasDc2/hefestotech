@@ -625,6 +625,46 @@ def _pago_mp(payment_id: str) -> Optional[dict[str, Any]]:
         raise HTTPException(status_code=502, detail="No se pudo verificar el pago.")
 
 
+def _emitir_comprobante(o: dict[str, Any], pago_id: str) -> None:
+    """Alta idempotente del comprobante (UNIQUE orden_id) con snapshot real.
+
+    Si la base todavía no tiene la migración 012 (columnas snapshot), degrada
+    a la forma mínima: nunca se pierde un pago acreditado por esquema.
+    """
+    items = []
+    for i in o.get("orden_items") or []:
+        prod = i.get("productos") or {}
+        items.append({
+            "nombre": str(prod.get("nombre") or "Producto")[:200],
+            "cantidad": int(i.get("cantidad") or 1),
+            "precio_unitario": float(i.get("precio") or 0),
+        })
+    subtotal = int(o.get("subtotal_centavos") or 0)
+    descuento = int(o.get("descuento_centavos") or 0)
+    costo_envio = int(o.get("costo_envio_centavos") or 0)
+    total = int(o.get("total_centavos") or 0)
+    fila = {
+        "orden_id": o["id"],
+        "numero": "HT-" + str(o["id"]).replace("-", "")[:8].upper(),
+        "total_centavos": total,
+        "mp_payment_id": pago_id,
+        "items_snapshot": items,
+        "totales_snapshot": {
+            "subtotal": round(subtotal / 100, 2),
+            "descuento": round(descuento / 100, 2),
+            "costo_envio": round(costo_envio / 100, 2),
+            "total": round(total / 100, 2),
+        },
+        "token_verificacion": o.get("acceso_token") or "",
+    }
+    try:
+        _insertar_crudo("comprobantes", fila)
+    except HTTPException:
+        _insertar_crudo("comprobantes", {
+            "orden_id": o["id"], "total_centavos": total, "mp_payment_id": pago_id,
+        })
+
+
 @router.post("/api/webhooks/mercadopago")
 async def webhook_mercadopago(request: Request) -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "webhook-mp", 60)
@@ -679,8 +719,9 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
         return {"recibido": True, "ignorado": "sin external_reference"}
     filas = _sb_get("ordenes", {
         "select": ("id,user_id,estado,subtotal_centavos,descuento_centavos,"
-                   "total_centavos,cupon_codigo,mp_payment_id,"
-                   "orden_items(producto_id,cantidad)"),
+                   "costo_envio_centavos,total_centavos,cupon_codigo,mp_payment_id,"
+                   "acceso_token,"
+                   "orden_items(producto_id,cantidad,precio,productos(nombre))"),
         "id": f"eq.{orden_ref}", "limit": 1,
     }) or []
     if not filas:
@@ -710,11 +751,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
             # Reintento de MP tras marcar pagada pero sin comprobante:
             # reintenta emisión idempotente antes de declarar duplicado.
             if actual == "pagada":
-                _insertar_crudo("comprobantes", {
-                    "orden_id": orden_id,
-                    "total_centavos": int(o.get("total_centavos") or 0),
-                    "mp_payment_id": data_id,
-                })
+                _emitir_comprobante(o, data_id)
             return {"recibido": True, "duplicado": True, "estado": actual}
         _sb_patch("ordenes", {"id": f"eq.{orden_id}"},
                   {"mp_payment_id": data_id})
@@ -738,11 +775,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
             return {"recibido": True, "duplicado": True,
                     "detalle": _mensaje_seguro(e.detail)}
         # Comprobante idempotente (UNIQUE orden_id: 409 = ya emitido).
-        _insertar_crudo("comprobantes", {
-            "orden_id": orden_id,
-            "total_centavos": int(o.get("total_centavos") or 0),
-            "mp_payment_id": data_id,
-        })
+        _emitir_comprobante(o, data_id)
         if o.get("user_id"):
             try:
                 _rpc("notificar", {
@@ -825,7 +858,7 @@ def liberar_expiradas(request: Request) -> dict[str, Any]:
 
 # ------------------------------------------------------ reintentar ---
 def _orden_visible(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
-    """Orden si el llamante es dueño (Bearer) o invitado con token. 404/403 si no."""
+    """Orden si el llamante tiene el token de acceso o es el dueño (Bearer)."""
     filas = _sb_get("ordenes", {
         "select": "id,user_id,estado,total_centavos,acceso_token",
         "id": f"eq.{orden_id.strip()}", "limit": 1,
@@ -833,15 +866,15 @@ def _orden_visible(orden_id: str, request: Request, token: str = "") -> dict[str
     if not filas:
         raise HTTPException(status_code=404, detail="Orden inexistente.")
     o = filas[0]
+    esperado = o.get("acceso_token") or ""
+    if esperado and token and hmac.compare_digest(str(token), str(esperado)):
+        return o
     if o.get("user_id"):
         uid = _uid_desde_bearer(request.headers.get("authorization"))
-        if uid != o["user_id"]:
-            raise HTTPException(status_code=404, detail="Orden inexistente.")
-    else:
-        esperado = o.get("acceso_token") or ""
-        if not esperado or not token or not hmac.compare_digest(str(token), str(esperado)):
-            raise HTTPException(status_code=403, detail="Sin permiso sobre esa orden.")
-    return o
+        if uid == o["user_id"]:
+            return o
+        raise HTTPException(status_code=404, detail="Orden inexistente.")
+    raise HTTPException(status_code=403, detail="Sin permiso sobre esa orden.")
 
 
 @router.post("/api/checkout/{orden_id}/reintentar")
@@ -941,16 +974,22 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
 # ---------------------------------------------------- comprobantes ---
 
 
+def _comprobante_de(cid: str) -> dict[str, Any]:
+    """Comprobante por su id o por el id de la orden (links /pedido/:id)."""
+    cid = cid.strip()
+    for filtro in ({"orden_id": f"eq.{cid}"}, {"id": f"eq.{cid}"}):
+        filas = _sb_get("comprobantes", {"select": "id,orden_id", "limit": 1, **filtro}) or []
+        if filas:
+            return filas[0]
+    raise HTTPException(status_code=404, detail="Comprobante inexistente.")
+
+
 @router.get("/api/comprobantes/{cid}")
 def leer_comprobante(cid: str, request: Request, token: str = "") -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "comprobante-leer", 30)
-    filas = _sb_get("comprobantes", {
-        "select": "id,orden_id", "id": f"eq.{cid.strip()}", "limit": 1,
-    }) or []
-    if not filas:
-        raise HTTPException(status_code=404, detail="Comprobante inexistente.")
-    _orden_visible(filas[0]["orden_id"], request, token)
-    c = obtener_comprobante(filas[0]["orden_id"])
+    fila = _comprobante_de(cid)
+    _orden_visible(fila["orden_id"], request, token)
+    c = obtener_comprobante(fila["orden_id"])
     if not c:
         raise HTTPException(status_code=404, detail="Comprobante inexistente.")
     return c
@@ -959,16 +998,12 @@ def leer_comprobante(cid: str, request: Request, token: str = "") -> dict[str, A
 @router.get("/api/comprobantes/{cid}/pdf")
 def pdf_comprobante(cid: str, request: Request, token: str = "") -> Response:
     _limitar(request.client.host if request.client else "?", "comprobante-pdf", 30)
-    filas = _sb_get("comprobantes", {
-        "select": "id,orden_id", "id": f"eq.{cid.strip()}", "limit": 1,
-    }) or []
-    if not filas:
-        raise HTTPException(status_code=404, detail="Comprobante inexistente.")
-    _orden_visible(filas[0]["orden_id"], request, token)
-    c = obtener_comprobante(filas[0]["orden_id"])
+    fila = _comprobante_de(cid)
+    _orden_visible(fila["orden_id"], request, token)
+    c = obtener_comprobante(fila["orden_id"])
     if not c:
         raise HTTPException(status_code=404, detail="Comprobante inexistente.")
     return Response(
         content=comprobante_pdf(c), media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=comprobante-{c.get('numero', cid)}.pdf"},
+        headers={"Content-Disposition": f"attachment; filename=comprobante-{c.get('numero') or cid}.pdf"},
     )

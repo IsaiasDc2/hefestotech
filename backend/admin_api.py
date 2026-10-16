@@ -23,8 +23,10 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
 import httpx
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from pydantic import BaseModel, field_validator, model_validator
+
+from comprobantes import comprobante_pdf, obtener_comprobante
 
 router = APIRouter()
 
@@ -908,7 +910,7 @@ def listar_pedidos(estado: str = "",
                    pag: dict[str, int] = Depends(_pag),
                    admin: AdminActual = Depends(requiere("pedidos", "leer"))) -> dict[str, Any]:
     params: dict[str, Any] = {
-        "select": "*,orden_items(*)",
+        "select": "*,orden_items(*,productos(nombre))",
         "order": "created_at.desc",
         "limit": pag["limit"],
         "offset": pag["offset"],
@@ -918,6 +920,19 @@ def listar_pedidos(estado: str = "",
             raise HTTPException(status_code=400, detail="Estado inválido.")
         params["estado"] = f"eq.{estado}"
     pedidos = _sb_get("ordenes", params) or []
+    # Comprobante por pedido (UNIQUE orden_id). Si la base aún no tiene 012,
+    # el listado igual responde (queda sin comprobante hasta migrar).
+    ids = [str(p.get("id")) for p in pedidos if p.get("id")]
+    por_orden: dict[str, dict[str, Any]] = {}
+    if ids:
+        try:
+            comps = _sb_get("comprobantes", {
+                "select": "id,orden_id,numero,emitido_en,total_centavos",
+                "orden_id": f"in.({','.join(ids)})",
+            }) or []
+            por_orden = {str(c.get("orden_id")): c for c in comps}
+        except HTTPException:
+            por_orden = {}
     for p in pedidos:  # totales en centavos calculados en servidor
         sub = int(p.get("subtotal_centavos") or _a_centavos(p.get("subtotal")))
         cupon = None
@@ -930,6 +945,7 @@ def listar_pedidos(estado: str = "",
             p["totales"] = _totales_con_cupon(sub, cupon)
         except ValueError:
             p["totales"] = {"subtotal_centavos": sub, "descuento_centavos": 0, "total_centavos": sub}
+        p["comprobante"] = por_orden.get(str(p.get("id")))
     return {"pedidos": pedidos}
 
 
@@ -943,6 +959,18 @@ def cambiar_estado(pid: str, d: PedidoEstado, request: Request,
         "p_actor": admin.user_id,
     })
     return {"id": pid, "estado": d.a, "version": nueva_version}
+
+
+@router.get("/api/admin/pedidos/{pid}/comprobante/pdf")
+def comprobante_pedido_pdf(pid: str,
+                           admin: AdminActual = Depends(requiere("pedidos", "leer"))) -> Response:
+    c = obtener_comprobante(pid.strip())
+    if not c:
+        raise HTTPException(status_code=404, detail="Este pedido todavía no tiene comprobante.")
+    return Response(
+        content=comprobante_pdf(c), media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=comprobante-{c.get('numero') or pid}.pdf"},
+    )
 
 
 @router.get("/api/admin/reclamos")

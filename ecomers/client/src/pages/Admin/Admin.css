@@ -564,6 +564,97 @@
   gap: 0.6rem;
 }
 
+.adm-pedido-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.adm-pedido-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.adm-caret {
+  margin-left: auto;
+  flex: none;
+  transition: transform 0.18s ease;
+}
+
+.adm-pedido-toggle[aria-expanded="true"] .adm-caret {
+  transform: rotate(180deg);
+}
+
+.adm-pedido-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.8rem;
+}
+
+.adm-detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem 1rem;
+  margin: 0;
+}
+
+.adm-detalle-grid dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.adm-detalle-grid dd {
+  margin: 0.1rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.adm-detalle-subtitulo {
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+}
+
+.adm-detalle-totales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.adm-detalle-totales p {
+  margin: 0;
+}
+
+.adm-detalle-comprobante {
+  border-top: 1px dashed var(--border);
+  padding-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.adm-detalle-comprobante p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .adm-estado {
   font-size: 0.72rem;
   font-weight: 700;
