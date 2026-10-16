@@ -1,1 +1,0 @@
-import{j as e}from"./index-B_mrw20T.js";import{C as t,P as n}from"./Admin-BkMB2Pdt.js";import"./adminApi-Dc6r3TdD.js";function a(){return e.jsxs("div",{children:[e.jsx(t,{kicker:"Personas",titulo:"Clientes"}),e.jsx(n,{modulo:"Clientes",detalle:"El contrato del backend aún no expone /api/admin/clientes."})]})}export{a as default};
