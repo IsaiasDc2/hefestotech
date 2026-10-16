@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
@@ -41,6 +41,15 @@ const esUrlMP = (url) => {
 
 function Checkout({ carrito = [], vaciarCarrito }) {
   const idioma = useIdiomaStore((s) => s.idioma);
+  // Clave de idempotencia: una por intento de compra en esta pantalla. Si la
+  // red reintenta el envío, el servidor reutiliza la orden (no duplica).
+  const idemRef = useRef(null);
+  if (!idemRef.current) {
+    idemRef.current =
+      globalThis.crypto?.randomUUID?.() ??
+      `ck-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+  const enviandoRef = useRef(false);
   const ESTADO_TXT = {
     pendiente: t(idioma, "chk.pendiente"),
     pagada: t(idioma, "chk.pagada"),
@@ -111,7 +120,8 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   const confirmar = async (e) => {
     e.preventDefault();
     setError("");
-    if (carrito.length === 0 || enviando) return;
+    if (carrito.length === 0 || enviando || enviandoRef.current) return;
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       setPasoPago(t(idioma, "chk.creando"));
@@ -126,6 +136,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         ciudad: ciudad.trim(),
         codigo_postal: codigoPostal.trim(),
         envio,
+        idem: idemRef.current,
         ...(cupon.trim() ? { cupon_codigo: cupon.trim() } : {}),
       });
       if (resp.acceso_token) {
@@ -145,6 +156,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     } catch (err) {
       setError(err?.message || t(idioma, "chk.noOrden"));
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
       setPasoPago("");
     }

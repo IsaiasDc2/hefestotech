@@ -1,0 +1,267 @@
+"""Tests de seguridad (Fase 2 de la auditoría). Sin red: todo se monkeypatchea.
+
+Correr desde backend/:
+    pip install -r requirements-dev.txt
+    python -m pytest tests -q
+"""
+import hashlib
+import hmac
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+import admin_api  # noqa: E402
+import checkout_api  # noqa: E402
+import main  # noqa: E402
+
+cliente = TestClient(main.app)
+
+PRODUCTO = "00000000-0000-0000-0000-000000000001"
+
+PAYLOAD = {
+    "items": [{"producto_id": PRODUCTO, "cantidad": 1}],
+    "nombre": "Ana",
+    "email": "ana@example.com",
+    "direccion": "Calle 1",
+    "ciudad": "CABA",
+    "codigo_postal": "1000",
+    "envio": "estandar",
+}
+
+# ------------------------------------------------------- superficie de API ---
+
+
+def test_docs_apagados_por_defecto():
+    """En producción no se expone /docs ni /openapi.json (MOSTRAR_DOCS=1 solo
+    para desarrollo local)."""
+    assert cliente.get("/openapi.json").status_code == 404
+    assert cliente.get("/docs").status_code == 404
+    assert cliente.get("/redoc").status_code == 404
+
+
+def test_cabeceras_seguridad_y_raiz_sin_flags():
+    r = cliente.get("/")
+    assert r.status_code == 200
+    assert r.headers["x-content-type-options"] == "nosniff"
+    assert r.headers["x-frame-options"] == "DENY"
+    assert r.headers["referrer-policy"] == "no-referrer"
+    assert "strict-transport-security" in r.headers
+    assert "env" not in r.json()  # sin MOSTRAR_ENV no revela configuración
+
+
+def test_limite_de_cuerpo(monkeypatch):
+    monkeypatch.setattr(main, "_LIMITE_BODY_BYTES", 10)
+    r = cliente.post(
+        "/api/contacto", content=b"x" * 11,
+        headers={"Content-Type": "application/json"},
+    )
+    assert r.status_code == 413
+
+
+# ------------------------------------------------------------- autorización ---
+
+
+def test_sin_token_no_entra_al_panel():
+    r = cliente.get("/api/admin/productos")
+    assert r.status_code == 401
+
+
+def test_cliente_no_entra_al_panel(monkeypatch):
+    monkeypatch.setattr(admin_api, "_validar_jwt", lambda bearer: "uid-1")
+    monkeypatch.setattr(
+        admin_api, "_sb_get",
+        lambda tabla, params: [{"id": "uid-1", "rol": "cliente"}],
+    )
+    r = cliente.get("/api/admin/productos", headers={"Authorization": "Bearer x"})
+    assert r.status_code == 403
+
+
+def test_rol_desconocido_no_entra(monkeypatch):
+    monkeypatch.setattr(admin_api, "_validar_jwt", lambda bearer: "uid-1")
+    monkeypatch.setattr(
+        admin_api, "_sb_get",
+        lambda tabla, params: [{"id": "uid-1", "rol": "superadmin_inventado"}],
+    )
+    r = cliente.get("/api/admin/productos", headers={"Authorization": "Bearer x"})
+    assert r.status_code == 403
+
+
+def test_owner_lista_productos(monkeypatch):
+    monkeypatch.setattr(admin_api, "_validar_jwt", lambda bearer: "uid-2")
+
+    def fake_get(tabla, params):
+        if tabla == "perfiles":
+            return [{"id": "uid-2", "rol": "owner"}]
+        return []
+
+    monkeypatch.setattr(admin_api, "_sb_get", fake_get)
+    r = cliente.get("/api/admin/productos", headers={"Authorization": "Bearer x"})
+    assert r.status_code == 200
+    assert r.json()["productos"] == []
+
+
+# --------------------------------------------------------------- checkout ---
+
+
+def test_total_calculado_en_servidor(monkeypatch):
+    """El cliente no puede imponer precios: total y envío salen de la DB."""
+    capturado = {}
+
+    def fake_get(tabla, params):
+        if tabla == "productos":
+            return [{
+                "id": PRODUCTO, "nombre": "GPU", "precio": 100000,
+                "precio_con_descuento": None, "stock": 5,
+                "activo": True, "deleted_at": None,
+            }]
+        return []
+
+    def fake_post(tabla, fila, prefer="return=representation"):
+        if tabla == "ordenes":
+            capturado["orden"] = fila
+            return [{"id": "orden-1"}]
+        return []
+
+    monkeypatch.setattr(checkout_api, "_sb_get", fake_get)
+    monkeypatch.setattr(checkout_api, "_sb_post", fake_post)
+    monkeypatch.setattr(checkout_api, "_sb_patch", lambda *a, **k: [])
+    monkeypatch.setattr(checkout_api, "_reservar", lambda *a, **k: None)
+    monkeypatch.setattr(
+        checkout_api, "_pref_mp",
+        lambda *a, **k: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1",
+    )
+
+    # Intento de manipulación: manda precio y total falsos (se ignoran).
+    r = cliente.post("/api/checkout/crear",
+                     json={**PAYLOAD, "precio": 1, "total": 1})
+    assert r.status_code == 201
+    subtotal = 100000 * 100  # precio de la DB en centavos
+    assert capturado["orden"]["subtotal_centavos"] == subtotal
+    assert capturado["orden"]["total_centavos"] == subtotal + checkout_api.ENVIO_ESTANDAR_CENT
+    assert r.json()["total_centavos"] == subtotal + checkout_api.ENVIO_ESTANDAR_CENT
+
+
+def test_idem_no_duplica_orden(monkeypatch):
+    """Doble submit con la misma clave: reutiliza la orden existente."""
+    creadas = []
+
+    def fake_get(tabla, params):
+        if tabla == "ordenes" and params.get("idem_key"):
+            return [{
+                "id": "orden-existente", "estado": "pendiente",
+                "acceso_token": "tok-123", "expira_at": None,
+                "costo_envio_centavos": 0, "total_centavos": 9900,
+                "mp_preference_id": "42",
+                "orden_items": [{
+                    "producto_id": PRODUCTO, "cantidad": 1,
+                    "precio": 99, "productos": {"nombre": "GPU"},
+                }],
+            }]
+        return []
+
+    def fake_post(*a, **k):
+        creadas.append(a)
+        return []
+
+    monkeypatch.setattr(checkout_api, "_sb_get", fake_get)
+    monkeypatch.setattr(checkout_api, "_sb_post", fake_post)
+    monkeypatch.setattr(
+        checkout_api, "_pref_mp",
+        lambda *a, **k: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=42",
+    )
+
+    r = cliente.post("/api/checkout/crear", json={**PAYLOAD, "idem": "ck-prueba-1"})
+    assert r.status_code == 201
+    assert r.json()["orden_id"] == "orden-existente"
+    assert r.json()["acceso_token"] == "tok-123"
+    assert creadas == []  # no se insertó otra orden
+
+
+def test_idem_invalida_rechazada(monkeypatch):
+    r = cliente.post("/api/checkout/crear",
+                     json={**PAYLOAD, "idem": "no vale!!!"})
+    assert r.status_code == 422
+
+
+# ---------------------------------------------------------------- pedidos ---
+
+
+def test_pedido_de_otro_no_visible(monkeypatch):
+    monkeypatch.setattr(checkout_api, "_sb_get", lambda t, p: [{
+        "id": "o1", "user_id": "otro", "estado": "pendiente",
+        "total_centavos": 1, "acceso_token": "abc",
+        "subtipo": None, "subtotal_centavos": 1, "descuento_centavos": 0,
+        "costo_envio_centavos": 0, "expira_at": None, "mp_payment_id": "",
+        "created_at": None, "orden_items": [],
+    }])
+    monkeypatch.setattr(checkout_api, "_uid_desde_bearer", lambda a: None)
+    # Sin sesión del dueño ni token correcto: 404 (no revela existencia).
+    r = cliente.get("/api/checkout/estado/o1?token=malo")
+    assert r.status_code == 404
+
+
+def test_pedido_invitado_con_token_correcto(monkeypatch):
+    monkeypatch.setattr(checkout_api, "_sb_get", lambda t, p: [{
+        "id": "o2", "user_id": None, "estado": "pendiente",
+        "subtotal_centavos": 100, "descuento_centavos": 0,
+        "costo_envio_centavos": 0, "total_centavos": 100,
+        "expira_at": None, "mp_payment_id": "", "created_at": None,
+        "acceso_token": "tok-bueno", "orden_items": [],
+    }])
+    r = cliente.get("/api/checkout/estado/o2?token=malo")
+    assert r.status_code == 403
+    r = cliente.get("/api/checkout/estado/o2?token=tok-bueno")
+    assert r.status_code == 200
+    assert r.json()["orden_id"] == "o2"
+
+
+# ---------------------------------------------------------------- webhook ---
+
+
+def test_webhook_exige_secreto_y_firma(monkeypatch):
+    monkeypatch.delenv("MP_WEBHOOK_SECRET", raising=False)
+    r = cliente.post("/api/webhooks/mercadopago?data.id=1&type=payment")
+    assert r.status_code == 503  # fail-closed sin secreto
+
+    monkeypatch.setenv("MP_WEBHOOK_SECRET", "secreto-prueba")
+    r = cliente.post(
+        "/api/webhooks/mercadopago?data.id=1&type=payment",
+        headers={"x-signature": "ts=1,v1=mala", "x-request-id": "req1"},
+    )
+    assert r.status_code == 401  # firma inválida
+
+    # Firma válida pero el pago no existe en MP: se ignora sin tocar nada.
+    ts = str(int(time.time()))
+    plantilla = f"id:1;request-id:req1;ts:{ts};"
+    v1 = hmac.new(b"secreto-prueba", plantilla.encode(), hashlib.sha256).hexdigest()
+    monkeypatch.setattr(checkout_api, "_pago_mp", lambda pid: None)
+    r = cliente.post(
+        "/api/webhooks/mercadopago?data.id=1&type=payment",
+        headers={"x-signature": f"ts={ts},v1={v1}", "x-request-id": "req1"},
+    )
+    assert r.status_code == 200
+    assert r.json().get("ignorado") == "pago inexistente en MP"
+
+
+# -------------------------------------------------------- liberar expiradas ---
+
+
+def test_liberar_expiradas_fail_closed(monkeypatch):
+    monkeypatch.delenv("CRON_SECRET", raising=False)
+    monkeypatch.delenv("MP_WEBHOOK_SECRET", raising=False)
+    r = cliente.post("/api/checkout/liberar-expiradas")
+    assert r.status_code == 503  # sin secreto no se ejecuta
+
+    monkeypatch.setenv("CRON_SECRET", "cron-prueba")
+    r = cliente.post("/api/checkout/liberar-expiradas")
+    assert r.status_code == 403  # sin cabecera
+
+    monkeypatch.setattr(checkout_api, "_sb_get", lambda t, p: [])
+    r = cliente.post("/api/checkout/liberar-expiradas",
+                     headers={"x-cron-secret": "cron-prueba"})
+    assert r.status_code == 200
+    assert r.json()["revisadas"] == 0

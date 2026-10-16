@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from collections import defaultdict, deque
 import os
@@ -14,7 +15,19 @@ from contacto_api import router as contacto_router
 
 load_dotenv()
 
-app = FastAPI(title="Hefesto Tech API")
+def _flag(nombre: str) -> bool:
+    return os.getenv(nombre, "").strip().lower() in ("1", "true", "si", "sí", "yes")
+
+
+# Documentación interactiva deshabilitada por defecto (en producción no se
+# expone el esquema de la API). Para desarrollo local: MOSTRAR_DOCS=1.
+_docs = _flag("MOSTRAR_DOCS")
+app = FastAPI(
+    title="Hefesto Tech API",
+    docs_url="/docs" if _docs else None,
+    redoc_url="/redoc" if _docs else None,
+    openapi_url="/openapi.json" if _docs else None,
+)
 app.include_router(admin_router)
 app.include_router(checkout_router)
 app.include_router(contacto_router)
@@ -53,6 +66,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---- Límite de cuerpo y cabeceras de seguridad ----
+_LIMITE_BODY_BYTES = 6 * 1024 * 1024  # 6 MB (la imagen tiene su tope de 5 MB)
+
+
+@app.middleware("http")
+async def _limite_body(request: Request, call_next):
+    if request.method in ("POST", "PUT", "PATCH"):
+        largo = request.headers.get("content-length", "")
+        if largo.isdigit() and int(largo) > _LIMITE_BODY_BYTES:
+            return JSONResponse(
+                status_code=413, content={"detail": "Cuerpo demasiado grande."}
+            )
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def _cabeceras_seguridad(request: Request, call_next):
+    respuesta = await call_next(request)
+    respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+    respuesta.headers.setdefault("Referrer-Policy", "no-referrer")
+    respuesta.headers.setdefault("X-Frame-Options", "DENY")
+    respuesta.headers.setdefault(
+        "Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"
+    )
+    respuesta.headers.setdefault("Strict-Transport-Security", "max-age=15552000")
+    return respuesta
+
 # ---- Rate limit simple en memoria (por IP y endpoint) ----
 _LIMITE_VENTANA_SEG = 60
 _LIMITE_CHAT = 20          # 20 req/min por IP
@@ -87,10 +127,16 @@ def _cliente_ia():
 
 @app.get("/")
 def estado_api():
+    mensaje = "La API de Hefesto Tech está funcionando correctamente"
+    # Los flags de entorno solo se muestran si se pide explícitamente
+    # (MOSTRAR_ENV=1); por defecto la raíz no revela configuración.
+    if not _flag("MOSTRAR_ENV"):
+        return {"mensaje": mensaje}
+
     def hay(nombre):
         return bool(os.getenv(nombre))
     return {
-        "mensaje": "La API de Hefesto Tech está funcionando correctamente",
+        "mensaje": mensaje,
         "env": {
             "SUPABASE_URL": hay("SUPABASE_URL"),
             "SUPABASE_SERVICE_ROLE_KEY": hay("SUPABASE_SERVICE_ROLE_KEY"),
