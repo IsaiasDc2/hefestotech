@@ -16,6 +16,7 @@ Panel admin (/api/admin/* + /api/buscar).
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import time
 from collections import defaultdict, deque
@@ -730,6 +731,13 @@ def _pag(limit: int = Query(default=50, ge=1, le=200),
     return {"limit": limit, "offset": offset}
 
 
+def _filtro_texto(valor: str) -> str:
+    """Texto seguro para filtros PostgREST: sin comodines ni sintaxis
+    (*, %, comas, paréntesis) que puedan alterar el filtro."""
+    limpio = re.sub(r"[,()*%\\\"]", " ", str(valor or ""))
+    return " ".join(limpio.split())
+
+
 # ------------------------------------------------------------------ rutas ---
 @router.get("/api/admin/resumen")
 def resumen(admin: AdminActual = Depends(requiere("reportes", "leer"))) -> dict[str, Any]:
@@ -766,7 +774,9 @@ def listar_productos(papelera: bool = False, q: str = "",
         "deleted_at": "not.is.null" if papelera else "is.null",
     }
     if q.strip():
-        params["nombre"] = f"ilike.*{q.strip()}*"
+        limpio = _filtro_texto(q)
+        if limpio:
+            params["nombre"] = f"ilike.*{limpio}*"
     filas = _sb_get("productos", params) or []
     for f in filas:  # centavos para el panel, sin floats
         f["precio_centavos"] = _a_centavos(f.get("precio"))
@@ -1033,7 +1043,9 @@ def listar_clientes(q: str = "",
         "limit": pag["limit"], "offset": pag["offset"],
     }
     if q.strip():
-        params["nombre"] = f"ilike.*{q.strip()}*"
+        limpio = _filtro_texto(q)
+        if limpio:
+            params["nombre"] = f"ilike.*{limpio}*"
     perfiles = _sb_get("perfiles", params) or []
     ids = [str(p.get("id")) for p in perfiles if p.get("id")]
     resumen = _resumen_pedidos(ids)

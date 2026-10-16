@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import time
 from collections import defaultdict, deque
@@ -288,6 +289,7 @@ class CheckoutCrear(BaseModel):
     codigo_postal: str = ""
     envio: str = "estandar"
     cupon_codigo: str = ""
+    idem: str = ""
 
     @field_validator("items")
     @classmethod
@@ -318,6 +320,16 @@ class CheckoutCrear(BaseModel):
         v = (v or "").strip().upper()
         if len(v) > 40:
             raise ValueError("Código de cupón inválido.")
+        return v
+
+    @field_validator("idem")
+    @classmethod
+    def _idem(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 64:
+            raise ValueError("Clave de intento inválida.")
+        if v and not re.fullmatch(r"[A-Za-z0-9_-]+", v):
+            raise ValueError("Clave de intento inválida.")
         return v
 
 
@@ -384,6 +396,122 @@ def _reservar(orden_id: str, lineas: list[dict[str, Any]], actor: Optional[str])
         raise HTTPException(status_code=409, detail=_mensaje_seguro(e.detail))
 
 
+def _parsear_expira(valor: Any) -> datetime:
+    """Expiración vigente de una orden; si venció o es inválida, se renueva."""
+    if isinstance(valor, str) and valor.strip():
+        try:
+            cuando = datetime.fromisoformat(valor.strip().replace("Z", "+00:00"))
+            if cuando.tzinfo is None:
+                cuando = cuando.replace(tzinfo=timezone.utc)
+            if cuando > datetime.now(timezone.utc):
+                return cuando
+        except ValueError:
+            pass
+    return datetime.now(timezone.utc) + timedelta(minutes=EXPIRA_MINUTOS)
+
+
+def _pref_mp(orden_id: str, lineas: list[dict[str, Any]], envio_cent: int,
+             expira: datetime) -> str:
+    """Crea la preferencia de Checkout Pro y devuelve el init_point.
+    Montos siempre del servidor; nunca del payload del cliente."""
+    mp_token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
+    if not mp_token:
+        raise HTTPException(status_code=503, detail="Pagos no configurados.")
+    import mercadopago
+
+    sdk = mercadopago.SDK(mp_token)
+    front = _frontend_base()
+    pref = {
+        "items": [{
+            "title": lin["nombre"], "quantity": lin["cantidad"],
+            "unit_price": _a_pesos(lin["unit_centavos"]), "currency_id": "ARS",
+        } for lin in lineas],
+        "shipments": {"cost": _a_pesos(envio_cent), "mode": "not_specified"},
+        "external_reference": orden_id,
+        "back_urls": {
+            "success": f"{front}/checkout?orden_id={orden_id}&pago=exito",
+            "failure": f"{front}/checkout?orden_id={orden_id}&pago=fallo",
+            "pending": f"{front}/checkout?orden_id={orden_id}&pago=pendiente",
+        },
+        "notification_url": f"{_backend_publica_o_falla()}/api/webhooks/mercadopago",
+        "expires": True,
+        "expiration_date_to": expira.strftime("%Y-%m-%dT%H:%M:%S.000-03:00"),
+        "auto_return": "approved",
+    }
+    resp = sdk.preference().create(pref)
+    data = (resp or {}).get("response") or {}
+    # En prod se prefiere init_point; sandbox solo como fallback de dev.
+    init_point = data.get("init_point") or data.get("sandbox_init_point") or ""
+    if not init_point or not _es_url_mp(init_point):
+        raise ValueError("preferencia inválida")
+    if data.get("id"):
+        _sb_patch("ordenes", {"id": f"eq.{orden_id}"},
+                  {"mp_preference_id": str(data["id"])})
+    return init_point
+
+
+def _orden_por_idem(idem: str) -> Optional[dict[str, Any]]:
+    try:
+        filas = _sb_get("ordenes", {
+            "select": ("id,estado,acceso_token,expira_at,costo_envio_centavos,"
+                       "total_centavos,mp_preference_id,"
+                       "orden_items(producto_id,cantidad,precio,productos(nombre))"),
+            "idem_key": f"eq.{idem}", "limit": 1,
+        }) or []
+    except HTTPException:
+        # La columna idem_key llega con la migración 013; hasta entonces
+        # se trata como "sin intento previo" (sin idempotencia).
+        return None
+    return filas[0] if filas else None
+
+
+def _items_coinciden(previa: dict[str, Any], items: list[Any]) -> bool:
+    """True si el intento repetido pide lo mismo que la orden existente."""
+    pedidas = sorted((str(i.producto_id), int(i.cantidad)) for i in items)
+    actuales = sorted(
+        (str(i.get("producto_id")), int(i.get("cantidad") or 0))
+        for i in (previa.get("orden_items") or [])
+    )
+    return pedidas == actuales
+
+
+def _reusar_checkout(o: dict[str, Any]) -> dict[str, Any]:
+    """Segunda llamada con la misma clave de intento: no duplica la orden."""
+    duplicado = HTTPException(
+        status_code=409,
+        detail="Esa compra ya fue procesada. Revisá tus pedidos.",
+    )
+    if str(o.get("estado")) != "pendiente":
+        raise duplicado
+    lineas = [{
+        "producto_id": i.get("producto_id"),
+        "cantidad": int(i.get("cantidad") or 0),
+        "unit_centavos": _a_centavos(i.get("precio")),
+        "nombre": str(((i.get("productos") or {}) or {}).get("nombre") or "Producto")[:200],
+    } for i in (o.get("orden_items") or []) if i.get("producto_id")]
+    if not lineas:
+        raise duplicado
+    expira = _parsear_expira(o.get("expira_at"))
+    try:
+        init_point = _pref_mp(str(o["id"]), lineas,
+                              int(o.get("costo_envio_centavos") or 0), expira)
+    except HTTPException:
+        raise
+    except Exception:
+        print("ERROR checkout_api: fallo interno al regenerar preferencia.")
+        raise HTTPException(
+            status_code=502,
+            detail="No se pudo generar el link de pago. Intentá de nuevo más tarde.",
+        )
+    return {
+        "orden_id": o["id"],
+        "init_point": init_point,
+        "total_centavos": int(o.get("total_centavos") or 0),
+        "expira_at": expira.isoformat(),
+        "acceso_token": o.get("acceso_token") or "",
+    }
+
+
 def _liberar(orden_id: str, lineas: list[dict[str, Any]], motivo: str,
              actor: Optional[str] = None) -> None:
     for lin in lineas:
@@ -401,6 +529,25 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
     ip = request.client.host if request.client else "?"
     _limitar(ip, "checkout-crear", 10)
     uid = _uid_desde_bearer(request.headers.get("authorization"))
+
+    # Idempotencia: si esta clave de intento ya generó una orden vigente, se
+    # reutiliza (doble submit o reintento de red) en vez de duplicar.
+    idem = (d.idem or "").strip()
+    if idem:
+        previa = _orden_por_idem(idem)
+        if previa is not None:
+            estado_previa = str(previa.get("estado"))
+            if estado_previa == "pendiente" and _items_coinciden(previa, d.items):
+                return _reusar_checkout(previa)
+            if estado_previa in ("pendiente", "cancelada"):
+                # Intento distinto, fallido o expirado (stock ya liberado o
+                # pedido viejo): se suelta la clave y se crea una orden nueva.
+                _sb_patch("ordenes", {"id": f"eq.{previa['id']}"}, {"idem_key": None})
+            else:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Esa compra ya fue procesada. Revisá tus pedidos.",
+                )
 
     # 1. Precios y stock SIEMPRE desde la DB (lo que mande el cliente se ignora).
     ids = sorted({it.producto_id for it in d.items})
@@ -465,7 +612,7 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
     # 4. Orden pendiente + expiración + token de lectura para invitados.
     expira = datetime.now(timezone.utc) + timedelta(minutes=EXPIRA_MINUTOS)
     token = secrets.token_urlsafe(32)
-    creadas = _sb_post("ordenes", {
+    fila_orden: dict[str, Any] = {
         "user_id": uid,
         "nombre": d.nombre, "email": d.email, "direccion": d.direccion,
         "ciudad": d.ciudad, "codigo_postal": d.codigo_postal,
@@ -476,7 +623,28 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
         "total_centavos": total, "costo_envio_centavos": envio_cent,
         "cupon_codigo": d.cupon_codigo, "estado": "pendiente",
         "expira_at": expira.isoformat(), "acceso_token": token,
-    }) or []
+    }
+    if idem:
+        fila_orden["idem_key"] = idem
+    try:
+        creadas = _sb_post("ordenes", fila_orden) or []
+    except HTTPException as e:
+        detalle = str(e.detail or "")
+        if idem and e.status_code == 400 and "idem_key" in detalle:
+            # Migración 013 sin aplicar todavía: se sigue sin idempotencia
+            # en vez de romper el checkout.
+            fila_orden.pop("idem_key", None)
+            creadas = _sb_post("ordenes", fila_orden) or []
+        elif e.status_code == 409 and idem:
+            # Carrera de doble submit: otra petición con la misma clave ganó.
+            previa = _orden_por_idem(idem)
+            if (previa is not None
+                    and str(previa.get("estado")) == "pendiente"
+                    and _items_coinciden(previa, d.items)):
+                return _reusar_checkout(previa)
+            raise
+        else:
+            raise
     if not creadas:
         raise HTTPException(status_code=502, detail="No se pudo crear la orden.")
     orden_id = creadas[0]["id"]
@@ -493,45 +661,12 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
     _reservar(orden_id, lineas, uid)
 
     # 7. Preferencia MP (sandbox intacto): montos del servidor.
-    mp_token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
-    if not mp_token:
+    if not os.getenv("MERCADOPAGO_ACCESS_TOKEN", ""):
         _liberar(orden_id, lineas, "liberacion")
         _sb_patch("ordenes", {"id": f"eq.{orden_id}"}, {"estado": "cancelada"})
         raise HTTPException(status_code=503, detail="Pagos no configurados.")
-    backend_base = _backend_publica_o_falla()
     try:
-        import mercadopago
-
-        sdk = mercadopago.SDK(mp_token)
-        front = _frontend_base()
-        pref = {
-            "items": [{
-                "title": lin["nombre"], "quantity": lin["cantidad"],
-                "unit_price": _a_pesos(lin["unit_centavos"]), "currency_id": "ARS",
-            } for lin in lineas],
-            "shipments": {"cost": _a_pesos(envio_cent), "mode": "not_specified"},
-            "external_reference": orden_id,
-            "back_urls": {
-                "success": f"{front}/checkout?orden_id={orden_id}&pago=exito",
-                "failure": f"{front}/checkout?orden_id={orden_id}&pago=fallo",
-                "pending": f"{front}/checkout?orden_id={orden_id}&pago=pendiente",
-            },
-            "notification_url": f"{backend_base}/api/webhooks/mercadopago",
-            "expires": True,
-            "expiration_date_to": expira.strftime("%Y-%m-%dT%H:%M:%S.000-03:00"),
-            "auto_return": "approved",
-        }
-        resp = sdk.preference().create(pref)
-        data = (resp or {}).get("response") or {}
-        # En prod se prefiere init_point; sandbox solo como fallback de dev.
-        init_point = data.get("init_point") or data.get("sandbox_init_point") or ""
-        if not init_point or not _es_url_mp(init_point):
-            raise ValueError("preferencia inválida")
-        if data.get("id"):
-            _sb_patch("ordenes", {"id": f"eq.{orden_id}"},
-                      {"mp_preference_id": str(data["id"])})
-    except HTTPException:
-        raise
+        init_point = _pref_mp(orden_id, lineas, envio_cent, expira)
     except Exception:
         print("ERROR checkout_api: fallo interno al generar preferencia.")
         _liberar(orden_id, lineas, "liberacion")
@@ -665,6 +800,28 @@ def _emitir_comprobante(o: dict[str, Any], pago_id: str) -> None:
         })
 
 
+def _alertar_pago_tardio(orden_id: str, pago_id: str, estado_anterior: str) -> None:
+    """Pago aprobado fuera de tiempo: avisa al staff sin tocar stock ni orden."""
+    print(f"ERROR checkout_api: pago aprobado para orden {orden_id} "
+          f"(estado {estado_anterior}). Requiere revisión manual.")
+    try:
+        staff = _sb_get("perfiles", {"select": "id", "rol": "in.(owner,admin)"}) or []
+    except HTTPException:
+        return
+    for p in staff:
+        try:
+            _rpc("notificar", {
+                "p_user": p["id"],
+                "p_titulo": "Pago tardío a revisar",
+                "p_mensaje": (f"Se acreditó el pago {pago_id} de la orden {orden_id}, "
+                              f"que estaba en estado {estado_anterior}. "
+                              "Revisar y resolver a mano."),
+                "p_dedupe": f"pago-tardio:{orden_id}",
+            })
+        except HTTPException:
+            continue
+
+
 @router.post("/api/webhooks/mercadopago")
 async def webhook_mercadopago(request: Request) -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "webhook-mp", 60)
@@ -752,6 +909,11 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
             # reintenta emisión idempotente antes de declarar duplicado.
             if actual == "pagada":
                 _emitir_comprobante(o, data_id)
+                return {"recibido": True, "duplicado": True, "estado": actual}
+            # Pago aprobado cuando la orden ya no estaba pendiente (expiró,
+            # se canceló o se reembolsó): no se toca stock ni estado; se
+            # alerta al staff para que lo resuelva a mano.
+            _alertar_pago_tardio(orden_id, data_id, str(actual or ""))
             return {"recibido": True, "duplicado": True, "estado": actual}
         _sb_patch("ordenes", {"id": f"eq.{orden_id}"},
                   {"mp_payment_id": data_id})
@@ -824,13 +986,14 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
 @router.post("/api/checkout/liberar-expiradas")
 def liberar_expiradas(request: Request) -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "checkout-liberar", 10)
-    # Sin auth cualquiera podría dispararlo: exige secreto de cron cuando hay
-    # MP_WEBHOOK_SECRET configurado (mismo valor, solo servidor a servidor).
-    secreto = os.getenv("MP_WEBHOOK_SECRET", "")
-    if secreto:
-        cron = request.headers.get("x-cron-secret", "")
-        if not cron or not hmac.compare_digest(str(cron), secreto):
-            raise HTTPException(status_code=403, detail="Sin permiso.")
+    # Solo servidor a servidor: CRON_SECRET propio (o MP_WEBHOOK_SECRET como
+    # fallback de compatibilidad). Fail-closed: sin secreto no se ejecuta.
+    secreto = os.getenv("CRON_SECRET", "").strip() or os.getenv("MP_WEBHOOK_SECRET", "").strip()
+    if not secreto:
+        raise HTTPException(status_code=503, detail="Liberador no configurado.")
+    cron = request.headers.get("x-cron-secret", "")
+    if not cron or not hmac.compare_digest(str(cron), secreto):
+        raise HTTPException(status_code=403, detail="Sin permiso.")
     ahora = datetime.now(timezone.utc).isoformat()
     vencidas = _sb_get("ordenes", {
         "select": "id,orden_items(producto_id,cantidad)",
