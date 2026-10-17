@@ -15,6 +15,7 @@ import {
   FaCube,
 } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { useFavoritoDe } from "../../services/favoritos";
 import "./ProductCard.css";
 
 /* Icono de respaldo según categoría (estado de error de imagen). */
@@ -31,7 +32,7 @@ function iconoPorCategoria(categoria = "") {
 
 function ProductCard({ producto, agregarAlCarrito }) {
   const idioma = useIdiomaStore((s) => s.idioma);
-  const [favorito, setFavorito] = useState(false);
+  const { activo: favorito, alternar: alternarFavorito } = useFavoritoDe(producto.id);
   const [imgError, setImgError] = useState(false);
   const [agregado, setAgregado] = useState(false);
   const timerAgregado = useRef(null);
@@ -123,7 +124,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
         <button
           type="button"
           className={`favorito ${favorito ? "activo" : ""}`}
-          onClick={() => setFavorito((prev) => !prev)}
+          onClick={alternarFavorito}
           aria-pressed={favorito}
           aria-label={
             favorito ? t(idioma, "card.favQuitar") : t(idioma, "card.favAgregar")

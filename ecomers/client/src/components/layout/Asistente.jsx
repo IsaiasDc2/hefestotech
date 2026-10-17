@@ -8,10 +8,10 @@ import {
   FaWhatsapp,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca.jsx";
+import { WHATSAPP_URL } from "../../constants/whatsapp";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Asistente.css";
 
-const WHATSAPP_URL = "https://wa.me/5491112345678";
 const MAX_LARGO = 500;
 
 function horaCorta(marca) {

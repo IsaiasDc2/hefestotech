@@ -36,6 +36,8 @@ export function leerIdsLocales() {
   }
 }
 
+const EVENTO_LOCAL = "hefestotech-favoritos-cambio";
+
 export function guardarIdsLocales(ids) {
   try {
     window.localStorage.setItem(
@@ -45,14 +47,25 @@ export function guardarIdsLocales(ids) {
   } catch (_) {
     // Almacenamiento lleno o bloqueado: la lista en memoria sigue valiendo.
   }
+  // "storage" no dispara en la pestaña que escribe: avisamos a mano.
+  try {
+    window.dispatchEvent(new Event(EVENTO_LOCAL));
+  } catch (_) {
+    // Entornos sin window.dispatchEvent: no hay a quién avisar.
+  }
 }
 
 export function suscribirIdsLocales(callback) {
   const alCambiar = (evento) => {
     if (evento.key === FAVORITOS_CLAVE) callback(leerIdsLocales());
   };
+  const alCambiarLocal = () => callback(leerIdsLocales());
   window.addEventListener("storage", alCambiar);
-  return () => window.removeEventListener("storage", alCambiar);
+  window.addEventListener(EVENTO_LOCAL, alCambiarLocal);
+  return () => {
+    window.removeEventListener("storage", alCambiar);
+    window.removeEventListener(EVENTO_LOCAL, alCambiarLocal);
+  };
 }
 
 async function obtenerUsuarioId() {
@@ -331,6 +344,31 @@ export function useFavoritos() {
     deshacerQuitado,
     limpiarError: () => setError(""),
   };
+}
+
+// Corazón de una tarjeta: sin getUser ni fusiones por cada tarjeta del grid.
+// Escribe en la lista local (misma clave que useFavoritos) y, si hay sesión,
+// replica en la tabla remota. El merge completo ocurre en /cuenta.
+export function useFavoritoDe(productoId) {
+  const id = String(productoId ?? "");
+  const [ids, setIds] = useState(() => leerIdsLocales());
+  useEffect(() => suscribirIdsLocales(setIds), []);
+  const activo = ids.includes(id);
+
+  const alternar = useCallback(async () => {
+    if (!id) return;
+    const previos = leerIdsLocales();
+    const agregar = !previos.includes(id);
+    guardarIdsLocales(agregar ? [...previos, id] : previos.filter((x) => x !== id));
+    try {
+      if (agregar) await agregarFavoritoRemoto(id);
+      else await quitarFavoritoRemoto(id);
+    } catch (_) {
+      // Sin red o RLS: queda la copia local; /cuenta la reconcilia al entrar.
+    }
+  }, [id]);
+
+  return { activo, alternar };
 }
 
 // Contador liviano para el header: lee la misma clave versionada y

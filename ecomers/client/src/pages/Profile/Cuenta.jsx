@@ -10,6 +10,7 @@ import useCartStore from "../../store/cartStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerProductosPorIds, useFavoritos } from "../../services/favoritos";
 import { supabase } from "../../components/lib/supabaseClient";
+import { obtenerMisOrdenes } from "../../services/orderService";
 import "./Cuenta.css";
 
 const VISTAS_KEYS = [
@@ -19,6 +20,106 @@ const VISTAS_KEYS = [
   { id: "reclamos", key: "cuenta.reclamos" },
   { id: "favoritos", key: "cuenta.favoritos" },
 ];
+
+const formatoPesos = (centavos) =>
+  new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 })
+    .format((Number(centavos) || 0) / 100);
+
+// Pedidos del cliente: sus órdenes por RLS (propias) con estado real.
+// Cada fila enlaza al comprobante en /pedido/:id.
+function SeccionPedidos() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [lista, setLista] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let vivo = true;
+    setCargando(true);
+    setError("");
+    (async () => {
+      try {
+        const data = await obtenerMisOrdenes();
+        if (vivo) setLista(data ?? []);
+      } catch {
+        if (vivo) setError(t(idioma, "cuenta.noPedidos"));
+      } finally {
+        if (vivo) setCargando(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [isAuthenticated, idioma]);
+
+  const encabezado = (
+    <>
+      <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+      <h2>{t(idioma, "cuenta.pedidos")}{lista.length > 0 ? ` (${lista.length})` : ""}</h2>
+    </>
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        {encabezado}
+        <p>{t(idioma, "cuenta.sinSesionPedidos")}</p>
+      </div>
+    );
+  }
+
+  if (cargando) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        {encabezado}
+        <p role="status">{t(idioma, "cuenta.cargandoPedidos")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel-cuenta card anim-entrada">
+      {encabezado}
+      {error && <p className="badge badge-peligro login-error" role="alert">{error}</p>}
+      {lista.length === 0 && !error ? (
+        <div className="vacio">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={40} alto={40} decorativa />
+          </span>
+          <span className="vacio-icono" aria-hidden="true">
+            <FaBoxOpen />
+          </span>
+          <p className="vacio-titulo">{t(idioma, "cuenta.sinPedidosT")}</p>
+          <p className="vacio-texto">{t(idioma, "cuenta.seguimiento")}</p>
+          <Link to="/productos" className="btn-fantasma">
+            {t(idioma, "cuenta.verProd")} <FaArrowRight aria-hidden="true" />
+          </Link>
+        </div>
+      ) : (
+        <ul className="adm-tarjetas">
+          {lista.map((o) => (
+            <li key={o.id} className="card adm-pedido">
+              <div className="adm-pedido-head">
+                <strong>{o.comprobante_numero || `#${String(o.id).slice(0, 8)}`}</strong>
+                <span className={`adm-estado es-${o.estado}`}>{o.estado}</span>
+              </div>
+              <p className="texto-mutado">
+                {o.created_at ? new Date(o.created_at).toLocaleString("es-AR") : "—"}
+                {" · "}
+                {formatoPesos(o.total_centavos)}
+              </p>
+              <Link to={`/pedido/${o.id}`} className="btn-fantasma">
+                {t(idioma, "cuenta.verPedido")} <FaArrowRight aria-hidden="true" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // Posventa del cliente: sus reclamos por RLS (propios) con estado real.
 // Sin sesión pide ingresar; sin datos muestra vacío con acceso a /reclamo.
@@ -318,26 +419,7 @@ function Cuenta() {
 
         {vista === "registro" && <Registro />}
 
-        {vista === "pedidos" && (
-          <div className="panel-cuenta card anim-entrada">
-            <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
-            <h2>{t(idioma, "cuenta.pedidos")}</h2>
-            <p>{t(idioma, "cuenta.sinPedidos")}</p>
-            <div className="vacio">
-              <span className="marca-centrada" aria-hidden="true">
-                <Marca variante="simbolo" ancho={40} alto={40} decorativa />
-              </span>
-              <span className="vacio-icono" aria-hidden="true">
-                <FaBoxOpen />
-              </span>
-              <p className="vacio-titulo">{t(idioma, "cuenta.sinPedidosT")}</p>
-              <p className="vacio-texto">{t(idioma, "cuenta.seguimiento")}</p>
-              <Link to="/productos" className="btn-fantasma">
-                {t(idioma, "cuenta.verProd")} <FaArrowRight aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-        )}
+        {vista === "pedidos" && <SeccionPedidos />}
 
         {vista === "favoritos" && <SeccionFavoritos />}
 

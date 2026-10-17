@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../brand/Marca";
+import { WHATSAPP_URL } from "../../constants/whatsapp";
 
 import {
   FaLocationDot,
@@ -143,7 +144,7 @@ function Footer() {
             </a>
 
             <a
-              href="https://wa.me/5491112345678"
+              href={WHATSAPP_URL}
               target="_blank"
               rel="noreferrer"
               aria-label="WhatsApp"

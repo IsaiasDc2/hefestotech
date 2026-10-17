@@ -15,9 +15,9 @@ import {
 import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
+import { WHATSAPP_URL } from "../../constants/whatsapp";
 import "./MobileDrawer.css";
 
-const WHATSAPP_URL = "https://wa.me/5491112345678";
 
 function MobileDrawer({ abierto, alCerrar }) {
   const panelRef = useRef(null);
