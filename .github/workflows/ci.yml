@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Permite disparar el CI a mano desde la pestaña Actions.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
