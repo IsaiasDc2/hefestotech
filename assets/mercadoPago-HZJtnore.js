@@ -1,0 +1,1 @@
+var e=[`mercadopago.com`,`mercadopago.com.ar`,`mercadolibre.com`];function t(t){let n;try{n=new URL(t)}catch{return!1}let r=n.hostname.toLowerCase();return n.protocol===`https:`&&e.some(e=>r===e||r.endsWith(`.${e}`))}export{t};

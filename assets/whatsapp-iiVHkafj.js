@@ -1,0 +1,1 @@
+var e=`https://wa.me/5491112345678`;function t(t){let n=String(t??``).trim();return n?`${e}?text=${encodeURIComponent(n)}`:e}export{t as n,e as t};

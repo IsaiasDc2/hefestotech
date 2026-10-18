@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-AR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="32x32" href="./brand/favicon-32.png" />
@@ -16,7 +16,7 @@
       actualizar acá (VITE_API_URL). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self' https://wa.me; script-src 'self' 'sha256-9N92KsvN2b43e09GVdU4m/LbVSnOuJATMNMeq+KCJ8I='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://hefestotech.onrender.com http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:5173 http://localhost:5173"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self' https://wa.me; script-src 'self' 'sha256-9N92KsvN2b43e09GVdU4m/LbVSnOuJATMNMeq+KCJ8I='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://hefestotech.onrender.com"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="canonical" href="https://IsaiasDc2.github.io/hefestotech/" />
@@ -91,17 +91,17 @@
         ]
       }
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Imagen principal del banner (LCP): se pide antes que el JS. -->
+    <link rel="preload" as="image" href="./banners/hero-banner.webp" fetchpriority="high" />
     <title>HefestoTech | Hardware, PCs armadas y componentes</title>
-    <script type="module" crossorigin src="/hefestotech/assets/index-D_FBwz5J.js"></script>
-    <link rel="stylesheet" crossorigin href="/hefestotech/assets/index-Cvs4CWq0.css">
+    <script type="module" crossorigin src="/hefestotech/assets/index-Bx_3hupq.js"></script>
+    <link rel="modulepreload" crossorigin href="/hefestotech/assets/rolldown-runtime-XKyaHtl9.js">
+    <link rel="modulepreload" crossorigin href="/hefestotech/assets/react-Ds-RR4NC.js">
+    <link rel="modulepreload" crossorigin href="/hefestotech/assets/iconos-CvLZWHz7.js">
+    <link rel="modulepreload" crossorigin href="/hefestotech/assets/supabase-DtuMx0jC.js">
+    <link rel="stylesheet" crossorigin href="/hefestotech/assets/index-DVi03Psd.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>
