@@ -308,6 +308,15 @@ class CheckoutCrear(BaseModel):
             raise ValueError("Dato demasiado largo.")
         return v
 
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        # Va al comprobante y a los avisos: vacío se admite (compra con
+        # sesión), pero si viene tiene que ser un email con forma real.
+        if v and (len(v) > 200 or not _EMAIL_RE.match(v)):
+            raise ValueError("Email inválido.")
+        return v.lower()
+
     @field_validator("envio")
     @classmethod
     def _envio(cls, v: str) -> str:
@@ -333,6 +342,15 @@ class CheckoutCrear(BaseModel):
         if v and not re.fullmatch(r"[A-Za-z0-9_-]+", v):
             raise ValueError("Clave de intento inválida.")
         return v
+
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _token_acceso(request: Request, token: str = "") -> str:
+    """Token de invitado: header X-Orden-Token (preferido) o ?token= (links
+    viejos y PDF). Por header no queda en logs de proxies ni en el historial."""
+    return (request.headers.get("x-orden-token") or token or "").strip()
 
 
 # ------------------------------------------------------------------ urls ---
@@ -760,8 +778,9 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
 @router.get("/api/checkout/estado/{orden_id}")
 def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "checkout-estado", 30)
+    token = _token_acceso(request, token)
     filas = _sb_get("ordenes", {
-        "select": ("id,user_id,estado,subtotal_centavos,descuento_centavos,"
+        "select": ("id,user_id,estado,acceso_token,subtotal_centavos,descuento_centavos,"
                    "costo_envio_centavos,total_centavos,expira_at,mp_payment_id,"
                    "created_at,orden_items(producto_id,cantidad,precio)"),
         "id": f"eq.{orden_id.strip()}", "limit": 1,
@@ -1093,6 +1112,7 @@ def liberar_expiradas(request: Request) -> dict[str, Any]:
 # ------------------------------------------------------ reintentar ---
 def _orden_visible(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
     """Orden si el llamante tiene el token de acceso o es el dueño (Bearer)."""
+    token = _token_acceso(request, token)
     filas = _sb_get("ordenes", {
         "select": "id,user_id,estado,total_centavos,acceso_token",
         "id": f"eq.{orden_id.strip()}", "limit": 1,
@@ -1154,16 +1174,24 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
     total = int(det.get("total_centavos") or 0)
     if total <= 0:
         raise HTTPException(status_code=409, detail="La orden no tiene total válido.")
-    # Cancelada → re-reserva stock antes de reactivar.
-    if det.get("estado") == "cancelada":
-        _reservar(det["id"], [
-            {"producto_id": str(i["producto_id"]), "cantidad": int(i.get("cantidad") or 0)}
-            for i in items
-        ], None)
     mp_token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
     if not mp_token:
         raise HTTPException(status_code=503, detail="Pagos no configurados.")
     backend_base = _backend_publica_o_falla()
+    # Cancelada → re-reserva stock antes de reactivar. La transición es un
+    # compare-and-set (solo si sigue "cancelada"): de dos reintentos
+    # simultáneos, uno solo reserva; el otro recibe 409.
+    reservadas: list[dict[str, Any]] = []
+    if det.get("estado") == "cancelada":
+        tomada = _sb_patch("ordenes", {"id": f"eq.{det['id']}", "estado": "eq.cancelada"},
+                           {"estado": "pendiente"}) or []
+        if not tomada:
+            raise HTTPException(status_code=409, detail="La orden ya se está reintentando.")
+        reservadas = [
+            {"producto_id": str(i["producto_id"]), "cantidad": int(i.get("cantidad") or 0)}
+            for i in items
+        ]
+        _reservar(det["id"], reservadas, None)
     try:
         import mercadopago
 
@@ -1194,9 +1222,17 @@ def reintentar_checkout(orden_id: str, request: Request, token: str = "") -> dic
         if data.get("id"):
             cambios["mp_preference_id"] = str(data["id"])
         _sb_patch("ordenes", {"id": f"eq.{o['id']}"}, cambios)
-    except HTTPException:
-        raise
-    except Exception:
+    except Exception as e:
+        # Sin link de pago la reserva recién tomada no se puede usar: se
+        # devuelve el stock y la orden vuelve a cancelada (sin fugas).
+        if reservadas:
+            _liberar(det["id"], reservadas, "liberacion", None)
+            try:
+                _sb_patch("ordenes", {"id": f"eq.{det['id']}"}, {"estado": "cancelada"})
+            except HTTPException:
+                print("ERROR checkout_api: no se pudo re-cancelar la orden.")
+        if isinstance(e, HTTPException):
+            raise
         print("ERROR checkout_api: fallo al reintentar preferencia.")
         raise HTTPException(
             status_code=502,

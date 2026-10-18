@@ -1,88 +1,152 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Link } from "react-router";
+import { FaMinus, FaPlus, FaWhatsapp, FaCartPlus } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { JsonLd, construirJsonLdProducto } from "../seo/JsonLd";
+import useCatalogo from "../../hooks/useCatalogo";
+import { obtenerProductoPorId, precioFinal as calcularPrecioFinal } from "../../services/productService";
+import { CATEGORIAS } from "../../constants/categorias";
+import { whatsappUrl } from "../../constants/whatsapp";
+import { topeDeStock } from "../../store/cartStore";
+import { JsonLd } from "../seo/JsonLd";
+import { construirJsonLdProducto } from "../seo/jsonLdProducto";
 import { NOMBRE_SITIO } from "../../seo/sitio";
 import CalculadoraCuotas from "./CalculadoraCuotas";
+import ProductCard from "./ProductCard";
+import "./ProductCard.css";
 import "./ProductoDetalle.css";
 import "./CalculadoraCuotas.css";
+
+const ULTIMAS_UNIDADES = 3;
 
 function formatearClave(clave) {
   const conEspacios = clave.replace(/([A-Z])/g, " $1").toLowerCase();
   return conEspacios.charAt(0).toUpperCase() + conEspacios.slice(1);
 }
 
+function formatearValor(valor, idioma) {
+  if (typeof valor === "boolean") return valor ? t(idioma, "pd.si") : t(idioma, "pd.no");
+  if (Array.isArray(valor)) return valor.join(", ");
+  return String(valor);
+}
+
+const pesos = (n) => `$${Number(n ?? 0).toLocaleString("es-AR")}`;
+
+/* Producto por id con estado derivado del intento (sin setState sincrónico
+   en el efecto). `null` = no existe o no está publicado → 404 amable. */
+function useProducto(id) {
+  const [intento, setIntento] = useState(0);
+  const clave = `${id}#${intento}`;
+  const [res, setRes] = useState({ clave: null, producto: null, error: null });
+
+  useEffect(() => {
+    let vivo = true;
+    obtenerProductoPorId(id).then(
+      (producto) => vivo && setRes({ clave, producto, error: null }),
+      (error) => vivo && setRes({ clave, producto: null, error })
+    );
+    return () => {
+      vivo = false;
+    };
+  }, [id, clave]);
+
+  const cargando = res.clave !== clave;
+  return {
+    producto: cargando ? null : res.producto,
+    error: cargando ? null : res.error,
+    cargando,
+    reintentar: () => setIntento((n) => n + 1),
+  };
+}
+
+function SelectorCantidad({ cantidad, maximo, onCambio, idioma }) {
+  return (
+    <div className="detalle-cantidad" role="group" aria-label={t(idioma, "pd.cantidad")}>
+      <button
+        type="button"
+        aria-label={t(idioma, "pd.menos")}
+        disabled={cantidad <= 1}
+        onClick={() => onCambio(cantidad - 1)}
+      >
+        <FaMinus aria-hidden="true" />
+      </button>
+      <output aria-live="polite">{cantidad}</output>
+      <button
+        type="button"
+        aria-label={t(idioma, "pd.mas")}
+        disabled={cantidad >= maximo}
+        onClick={() => onCambio(cantidad + 1)}
+      >
+        <FaPlus aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 function ProductoDetalle({ agregarAlCarrito }) {
   const { id } = useParams();
   const idioma = useIdiomaStore((s) => s.idioma);
-
-  const [producto, setProducto] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
-  const [reintento, setReintento] = useState(0);
+  const { producto, error, cargando, reintentar } = useProducto(id);
+  const { productos: catalogo } = useCatalogo();
+  const [compra, setCompra] = useState({ id, cantidad: 1 });
+  const [imgError, setImgError] = useState({ id: null });
+  const cantidad = compra.id === id ? compra.cantidad : 1;
 
   // Título dinámico con el nombre real; durante la carga rige el de ruta.
-  useDocumentTitle(
-    producto?.nombre ? `${producto.nombre} | ${NOMBRE_SITIO}` : undefined
-  );
+  useDocumentTitle(producto?.nombre ? `${producto.nombre} | ${NOMBRE_SITIO}` : undefined);
 
-  useEffect(() => {
-    async function cargarProducto() {
-      try {
-        setCargando(true);
-        setError(null);
-        setProducto(null);
-
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (error) throw new Error(t(idioma, "pd.noEncontrado"));
-
-        setProducto(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    cargarProducto();
-  }, [id, reintento, idioma]);
+  const relacionados = useMemo(() => {
+    if (!producto) return [];
+    return catalogo
+      .filter(
+        (p) =>
+          p.id !== producto.id &&
+          p.categoria === producto.categoria &&
+          p.stock > 0 &&
+          calcularPrecioFinal(p) > 0
+      )
+      .slice(0, 4);
+  }, [catalogo, producto]);
 
   if (cargando) {
-    return <p className="detalle-estado">{t(idioma, "pd.cargando")}</p>;
+    return (
+      <p className="detalle-estado" role="status">
+        {t(idioma, "pd.cargando")}
+      </p>
+    );
   }
 
-  if (error) {
-    const esConexion = error !== "Producto no encontrado" && error !== "Product not found" && error !== t(idioma, "pd.noEncontrado");
+  if (error || !producto) {
     return (
       <div className="detalle-estado" role="alert">
-        <p>{esConexion ? t(idioma, "pd.errorConexion") : t(idioma, "pd.noEncontrado")}</p>
+        <p className="vacio-titulo">
+          {error ? t(idioma, "pd.errorConexion") : t(idioma, "pd.noEncontrado")}
+        </p>
         <div className="detalle-acciones-error">
-          <button
-            type="button"
-            className="btn-limpiar"
-            onClick={() => setReintento((n) => n + 1)}
-          >
-            ↻ {t(idioma, "pd.reintentar")}
-          </button>
+          {error && (
+            <button type="button" className="btn-limpiar" onClick={reintentar}>
+              ↻ {t(idioma, "pd.reintentar")}
+            </button>
+          )}
           <Link to="/productos">← {t(idioma, "pd.volver")}</Link>
         </div>
       </div>
     );
   }
 
-  if (!producto) return null;
-
   const especificaciones = producto.especificaciones || {};
-  const tieneOferta = (producto.descuento_porcentaje ?? 0) > 0;
+  const tieneOferta = Number(producto.descuento_porcentaje ?? 0) > 0;
   const precio = Number(producto.precio ?? 0);
-  const precioFinal = Number(producto.precio_con_descuento ?? producto.precio ?? 0);
+  const final = calcularPrecioFinal(producto);
+  const tienePrecio = final > 0;
+  const stock = Number(producto.stock ?? 0);
+  const hayStock = stock > 0;
+  const maximo = Math.min(topeDeStock(producto), 99);
+  const categoria = CATEGORIAS.find((c) => c.db === producto.categoria);
+  const sinImagen = !producto.imagen || imgError.id === producto.id;
+  const consulta = whatsappUrl(
+    `Hola! Quiero consultar por ${producto.nombre}${producto.codigo ? ` (${producto.codigo})` : ""}.`
+  );
 
   return (
     <section className="detalle-container">
@@ -91,79 +155,112 @@ function ProductoDetalle({ agregarAlCarrito }) {
         <Link to="/">{t(idioma, "pd.inicio")}</Link>
         <span className="migajas-sep" aria-hidden="true">/</span>
         <Link to="/productos">{t(idioma, "pd.catalogo")}</Link>
+        {categoria && (
+          <>
+            <span className="migajas-sep" aria-hidden="true">/</span>
+            <Link to={`/productos?categoria=${categoria.slug}`}>{categoria.label}</Link>
+          </>
+        )}
         <span className="migajas-sep" aria-hidden="true">/</span>
-        <span className="migajas-actual">{producto.nombre}</span>
+        <span className="migajas-actual" aria-current="page">{producto.nombre}</span>
       </nav>
-      <Link to="/productos" className="volver">
-        ← {t(idioma, "pd.volver")}
-      </Link>
 
       <div className="detalle-grid">
         <div className="detalle-galeria">
           <div className="detalle-imagen">
-            {tieneOferta && (
+            {tieneOferta && tienePrecio && (
               <span className="detalle-oferta-flotante">
                 {t(idioma, "card.oferta")} -{Math.round(Number(producto.descuento_porcentaje ?? 0))}%
               </span>
             )}
-            {producto.imagen ? (
+            {sinImagen ? (
+              <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
+            ) : (
               <img
                 src={producto.imagen}
                 alt={producto.nombre || "Producto"}
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                width="600"
+                height="600"
+                fetchPriority="high"
+                onError={() => setImgError({ id: producto.id })}
               />
-            ) : (
-              <div className="detalle-sin-imagen" aria-hidden="true">HefestoTech</div>
             )}
           </div>
         </div>
 
         <div className="detalle-info">
-          {producto.marca && (
-            <span className="detalle-marca">{producto.marca}</span>
-          )}
+          {producto.marca && <span className="detalle-marca">{producto.marca}</span>}
 
           <h1>{producto.nombre}</h1>
-          <p className="detalle-categoria">{producto.categoria}</p>
+          <p className="detalle-categoria">
+            {categoria?.label ?? producto.categoria}
+            {producto.codigo && (
+              <>
+                {" · "}
+                <span className="detalle-codigo">
+                  {t(idioma, "pd.codigo")} {producto.codigo}
+                </span>
+              </>
+            )}
+          </p>
 
-          {producto.descripcion && (
-            <p className="detalle-descripcion">{producto.descripcion}</p>
-          )}
+          {producto.descripcion && <p className="detalle-descripcion">{producto.descripcion}</p>}
 
           <div className="detalle-precio">
-            {tieneOferta ? (
+            {!tienePrecio ? (
+              <strong className="precio-a-confirmar">{t(idioma, "catl.sinPrecio")}</strong>
+            ) : tieneOferta ? (
               <>
-                <span className="precio-anterior">
-                  ${precio.toLocaleString("es-AR")}
-                </span>
-                <strong>
-                  ${precioFinal.toLocaleString("es-AR")}
-                </strong>
+                <span className="precio-anterior">{pesos(precio)}</span>
+                <strong>{pesos(final)}</strong>
               </>
             ) : (
-              <strong>${precio.toLocaleString("es-AR")}</strong>
+              <strong>{pesos(precio)}</strong>
             )}
-            <p className="cuotas">{t(idioma, "pd.cuotas")}</p>
+            {tienePrecio && <p className="detalle-iva">{t(idioma, "pd.ivaIncluido")}</p>}
             {producto.envio_gratis && <p className="envio">{t(idioma, "pd.envio")}</p>}
           </div>
 
-          <CalculadoraCuotas precio={precioFinal} />
+          {tienePrecio && <CalculadoraCuotas precio={final} />}
 
           <div className="detalle-stock">
-            {producto.stock ? (
-              <span className="disponible"><span className="stock-dot" aria-hidden="true" />{t(idioma, "pd.disponible")}</span>
+            {hayStock ? (
+              <span className="disponible">
+                <span className="stock-dot" aria-hidden="true" />
+                {stock <= ULTIMAS_UNIDADES
+                  ? `${t(idioma, "pd.ultimas")} (${stock})`
+                  : t(idioma, "pd.disponible")}
+              </span>
             ) : (
-              <span className="sin-stock"><span className="stock-dot" aria-hidden="true" />{t(idioma, "pd.sinStock")}</span>
+              <span className="sin-stock">
+                <span className="stock-dot" aria-hidden="true" />
+                {t(idioma, "pd.sinStock")}
+              </span>
             )}
           </div>
 
-          <button
-            className="btn-carrito"
-            disabled={!producto.stock}
-            onClick={() => agregarAlCarrito?.(producto)}
-          >
-            {producto.stock ? t(idioma, "pd.agregar") : t(idioma, "pd.sinStock")}
-          </button>
+          {tienePrecio && hayStock ? (
+            <div className="detalle-compra">
+              <SelectorCantidad
+                cantidad={cantidad}
+                maximo={maximo}
+                onCambio={(n) => setCompra({ id, cantidad: Math.min(Math.max(1, n), maximo) })}
+                idioma={idioma}
+              />
+              <button
+                type="button"
+                className="btn-carrito"
+                onClick={() => agregarAlCarrito?.(producto, cantidad)}
+              >
+                <FaCartPlus aria-hidden="true" /> {t(idioma, "pd.agregar")}
+              </button>
+            </div>
+          ) : (
+            <a className="btn-carrito btn-consultar" href={consulta} target="_blank" rel="noopener noreferrer">
+              <FaWhatsapp aria-hidden="true" />{" "}
+              {hayStock ? t(idioma, "catl.consultar") : t(idioma, "pd.avisarStock")}
+            </a>
+          )}
 
           {Object.keys(especificaciones).length > 0 && (
             <div className="detalle-especificaciones">
@@ -172,10 +269,8 @@ function ProductoDetalle({ agregarAlCarrito }) {
                 <tbody>
                   {Object.entries(especificaciones).map(([clave, valor]) => (
                     <tr key={clave}>
-                      <td className="clave">{formatearClave(clave)}</td>
-                      <td className="valor">
-                        {Array.isArray(valor) ? valor.join(", ") : String(valor)}
-                      </td>
+                      <th scope="row" className="clave">{formatearClave(clave)}</th>
+                      <td className="valor">{formatearValor(valor, idioma)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -184,6 +279,19 @@ function ProductoDetalle({ agregarAlCarrito }) {
           )}
         </div>
       </div>
+
+      {relacionados.length > 0 && (
+        <section className="detalle-relacionados" aria-labelledby="detalle-relacionados">
+          <h2 id="detalle-relacionados">{t(idioma, "pd.relacionados")}</h2>
+          <ul>
+            {relacionados.map((p) => (
+              <li key={p.id}>
+                <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </section>
   );
 }

@@ -171,3 +171,23 @@ body:has(.adm) .layout,
 .layout:has(.adm) {
   padding-top: 0;
 }
+
+/* Indicador fijo del modo demo: los precios no son del comercio. */
+.aviso-demo {
+  position: fixed;
+  left: max(0.75rem, env(safe-area-inset-left));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 60;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--oro-borde);
+  border-radius: var(--radio-full);
+  background: var(--surface);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-humo);
+  text-transform: uppercase;
+  box-shadow: var(--sombra-suave);
+  cursor: help;
+}

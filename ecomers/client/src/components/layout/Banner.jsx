@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useHeroVisible, useScrollLigado } from "../../hooks/useMotion";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Banner.css";
@@ -74,7 +74,8 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
   const total = SLIDES.length;
   const [indice, setIndice] = useState(0);
   // Motivos de pausa independientes: ninguno pisa la intencion de otro.
-  const [pausaUsuario, setPausaUsuario] = useState(reduceMovimiento);
+  // Hoy solo se fija al montar (movimiento reducido): no hay control de pausa.
+  const [pausaUsuario] = useState(reduceMovimiento);
   const [pausaPuntero, setPausaPuntero] = useState(false);
   const [pausaFoco, setPausaFoco] = useState(false);
   const [oculto, setOculto] = useState(
@@ -135,7 +136,6 @@ export default function Banner({ intervalo = INTERVALO_MS }) {
     sumar();
   }, [indice, total]);
 
-  const irA = useCallback((i) => setIndice(envolver(i, total)), [total]);
   const anterior = useCallback(() => setIndice((i) => envolver(i - 1, total)), [total]);
   const siguiente = useCallback(() => setIndice((i) => envolver(i + 1, total)), [total]);
 

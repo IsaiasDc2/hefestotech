@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { crearCheckout, obtenerCuotas, obtenerEstadoCheckout } from "../../services/orderService";
+import useCartStore from "../../store/cartStore";
+import { esUrlMP } from "../../utils/mercadoPago";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
@@ -19,36 +21,38 @@ const unitarioEstimado = (item) =>
 
 const pesos = (v) => `$${Number(v ?? 0).toLocaleString("es-AR")}`;
 
-// Anti redirección abierta: solo dominios oficiales de Mercado Pago.
-// Si el backend (o un MITM sin TLS) devuelve otra URL, no navegar.
-const esUrlMP = (url) => {
-  let destino = null;
+const RESPALDO_CARRITO = "ck_carrito_respaldo";
+
+const nuevaClaveIdem = () =>
+  globalThis.crypto?.randomUUID?.() ??
+  `ck-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+
+// Al volver de MP: si la compra no se concretó, el carrito vuelve tal cual
+// estaba (se vació antes de redirigir). Si se pagó, el respaldo se descarta.
+function resolverRespaldo(estado, pagoUrl) {
   try {
-    destino = new URL(url);
+    if (estado === "pagada") {
+      sessionStorage.removeItem(RESPALDO_CARRITO);
+      return false;
+    }
+    if (estado !== "cancelada" && pagoUrl !== "fallo") return false;
+    const crudo = sessionStorage.getItem(RESPALDO_CARRITO);
+    const { carrito, restaurarCarrito } = useCartStore.getState();
+    if (!crudo || carrito.length > 0) return false;
+    restaurarCarrito(JSON.parse(crudo));
+    sessionStorage.removeItem(RESPALDO_CARRITO);
+    return true;
   } catch {
+    // Respaldo ilegible o storage bloqueado: el carrito queda como está.
     return false;
   }
-  const host = destino.hostname.toLowerCase();
-  return (
-    destino.protocol === "https:" &&
-    (host === "mercadopago.com" ||
-      host === "mercadopago.com.ar" ||
-      host.endsWith(".mercadopago.com") ||
-      host.endsWith(".mercadopago.com.ar") ||
-      host.endsWith(".mercadolibre.com"))
-  );
-};
+}
 
 function Checkout({ carrito = [], vaciarCarrito }) {
   const idioma = useIdiomaStore((s) => s.idioma);
   // Clave de idempotencia: una por intento de compra en esta pantalla. Si la
   // red reintenta el envío, el servidor reutiliza la orden (no duplica).
-  const idemRef = useRef(null);
-  if (!idemRef.current) {
-    idemRef.current =
-      globalThis.crypto?.randomUUID?.() ??
-      `ck-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-  }
+  const [idem] = useState(nuevaClaveIdem);
   const enviandoRef = useRef(false);
   const ESTADO_TXT = {
     pendiente: t(idioma, "chk.pendiente"),
@@ -71,34 +75,40 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   const [envio, setEnvio] = useState("estandar");
   const [cupon, setCupon] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [consultando, setConsultando] = useState(false);
   const [pasoPago, setPasoPago] = useState("");
   const [error, setError] = useState("");
-  const [orden, setOrden] = useState(null);
+  const [consulta, setConsulta] = useState({ id: "", orden: null, error: "", restaurado: false });
   const [cuotas, setCuotas] = useState([]);
 
   // Al volver de Mercado Pago (?orden_id=...) se lee el estado REAL desde
   // el servidor. Nada se da por pagado por el hecho de volver.
   useEffect(() => {
-    if (!ordenIdUrl) return;
+    if (!ordenIdUrl) return undefined;
     let viva = true;
-    setConsultando(true);
-    setError("");
     const acceso = sessionStorage.getItem(`ck_token_${ordenIdUrl}`) || "";
     obtenerEstadoCheckout(ordenIdUrl, acceso)
       .then((r) => {
-        if (viva) setOrden(r);
+        if (!viva) return;
+        const restaurado = resolverRespaldo(r?.estado, pagoUrl);
+        setConsulta({ id: ordenIdUrl, orden: r, error: "", restaurado });
       })
       .catch((err) => {
-        if (viva) setError(err?.message || t(idioma, "chk.noEstado"));
-      })
-      .finally(() => {
-        if (viva) setConsultando(false);
+        if (!viva) return;
+        setConsulta({
+          id: ordenIdUrl,
+          orden: null,
+          error: err?.message || t(idioma, "chk.noEstado"),
+          restaurado: false,
+        });
       });
     return () => {
       viva = false;
     };
-  }, [ordenIdUrl, idioma]);
+  }, [ordenIdUrl, pagoUrl, idioma]);
+
+  const consultaVigente = consulta.id === ordenIdUrl;
+  const consultando = Boolean(ordenIdUrl) && !consultaVigente;
+  const orden = consultaVigente ? consulta.orden : null;
 
   const subtotalEst = useMemo(
     () =>
@@ -157,7 +167,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         ciudad: ciudad.trim(),
         codigo_postal: codigoPostal.trim(),
         envio,
-        idem: idemRef.current,
+        idem,
         ...(cupon.trim() ? { cupon_codigo: cupon.trim() } : {}),
       });
       if (resp.acceso_token) {
@@ -168,7 +178,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
       }
       // Respaldo por si vuelve de MP con fallo/cancelación: permite restaurar.
       try {
-        sessionStorage.setItem("ck_carrito_respaldo", JSON.stringify(carrito));
+        sessionStorage.setItem(RESPALDO_CARRITO, JSON.stringify(carrito));
       } catch {
         /* respaldo opcional */
       }
@@ -214,9 +224,14 @@ function Checkout({ carrito = [], vaciarCarrito }) {
               </p>
             </>
           )}
+          {consultaVigente && consulta.restaurado && (
+            <p className="badge badge-info" role="status">
+              {t(idioma, "chk.carritoRecuperado")} <Link to="/carrito">{t(idioma, "chk.verCarrito")}</Link>
+            </p>
+          )}
           {!consultando && !orden && (
             <>
-              {error && <p className="badge badge-peligro checkout-error" role="alert">{error}</p>}
+              {consulta.error && <p className="badge badge-peligro checkout-error" role="alert">{consulta.error}</p>}
               <p className="texto-mutado">{t(idioma, "chk.noEncontrada")}</p>
             </>
           )}
@@ -273,10 +288,10 @@ function Checkout({ carrito = [], vaciarCarrito }) {
               </label>
               <div className="checkout-fila">
                 <label>{t(idioma, "chk.ciudad")}
-                  <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required />
+                  <input value={ciudad} onChange={(e) => setCiudad(e.target.value)} required autoComplete="address-level2" />
                 </label>
                 <label>{t(idioma, "chk.cp")}
-                  <input value={codigoPostal} onChange={(e) => setCodigoPostal(e.target.value)} required inputMode="numeric" />
+                  <input value={codigoPostal} onChange={(e) => setCodigoPostal(e.target.value)} required inputMode="numeric" autoComplete="postal-code" />
                 </label>
               </div>
               <label>{t(idioma, "chk.cupon")}

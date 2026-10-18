@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { tituloPara } from "../seo/sitio";
 
 // Fija document.title según la ruta actual (títulos únicos en ES).

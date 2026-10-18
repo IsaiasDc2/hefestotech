@@ -1,33 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { FaCircleCheck, FaClock, FaCircleXmark } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
+import { esUrlMP } from "../../utils/mercadoPago";
 
 const CONFIG_KEYS = {
   exito: { icono: "exito", clase: "badge-ok", tituloKey: "pago.exito" },
   pendiente: { icono: "pendiente", clase: "badge-info", tituloKey: "pago.pendiente" },
   fallido: { icono: "fallido", clase: "badge-peligro", tituloKey: "pago.fallido" },
-};
-
-// Anti redirección abierta: solo dominios oficiales de Mercado Pago.
-const esUrlMP = (url) => {
-  let destino = null;
-  try {
-    destino = new URL(url);
-  } catch {
-    return false;
-  }
-  const host = destino.hostname.toLowerCase();
-  return (
-    destino.protocol === "https:" &&
-    (host === "mercadopago.com" ||
-      host === "mercadopago.com.ar" ||
-      host.endsWith(".mercadopago.com") ||
-      host.endsWith(".mercadopago.com.ar") ||
-      host.endsWith(".mercadolibre.com"))
-  );
 };
 
 /** Pantalla genérica de retorno de MP. Lee el estado DESDE la DB, nunca de la URL. */
@@ -36,7 +18,8 @@ export default function PagoResultado({ tipo }) {
   const [params] = useSearchParams();
   const [estado, setEstado] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
+  const [errorCarga, setErrorCarga] = useState("");
+  const [errorReintento, setErrorReintento] = useState("");
   const [reintentando, setReintentando] = useState(false);
   const cfgKey = CONFIG_KEYS[tipo] ?? CONFIG_KEYS.pendiente;
   const cfgIcono = tipo === "exito" ? <FaCircleCheck aria-hidden="true" /> : tipo === "fallido" ? <FaCircleXmark aria-hidden="true" /> : <FaClock aria-hidden="true" />;
@@ -64,17 +47,17 @@ export default function PagoResultado({ tipo }) {
         }
       } catch {
         if (!vivo) return;
-        setError(t(idioma, "pago.noPedido"));
+        setErrorCarga(t(idioma, "pago.noPedido"));
         setCargando(false);
       }
     };
     if (ordenId) cargar();
-    else {
-      setError(t(idioma, "pago.faltaId"));
-      setCargando(false);
-    }
     return () => { vivo = false; clearTimeout(temporizador); };
   }, [ordenId, tokenInvitado, idioma]);
+
+  // Sin id de orden no hay nada que consultar: se deriva, no se guarda.
+  const error = !ordenId ? t(idioma, "pago.faltaId") : errorReintento || errorCarga;
+  const enCurso = Boolean(ordenId) && cargando;
 
   const reintentar = async () => {
     setReintentando(true);
@@ -83,7 +66,7 @@ export default function PagoResultado({ tipo }) {
       if (!esUrlMP(link_pago)) throw new Error(t(idioma, "pago.noReintentar"));
       window.location.href = link_pago;
     } catch (err) {
-      setError(err?.message || t(idioma, "pago.noReintentar"));
+      setErrorReintento(err?.message || t(idioma, "pago.noReintentar"));
       setReintentando(false);
     }
   };
@@ -96,7 +79,7 @@ export default function PagoResultado({ tipo }) {
         </span>
         <p className={`badge ${cfgKey.clase} hero-kicker`}>{cfgIcono} {cfgTitulo}</p>
         <h1>{cfgTitulo}</h1>
-        {cargando && <p className="badge badge-info" role="status">{t(idioma, "pago.confirmando")}</p>}
+        {enCurso && <p className="badge badge-info" role="status">{t(idioma, "pago.confirmando")}</p>}
         {error && <p className="badge badge-peligro" role="alert">{error}</p>}
         {estado && (
           <p className="texto-mutado">
@@ -108,12 +91,12 @@ export default function PagoResultado({ tipo }) {
         {estado?.estado === "pagado" && (
           <p className="texto-mutado">
             {t(idioma, "pago.comprobante")}{" "}
-            <Link to={`/pedido/${estado.id}?token=${tokenInvitado}`}>
+            <Link to={`/pedido/${estado.id}`}>
               {t(idioma, "pago.verComprobante")}
             </Link>
           </p>
         )}
-        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || estado?.estado === "cancelada" || tipo === "fallido") && !cargando && (
+        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || estado?.estado === "cancelada" || tipo === "fallido") && !enCurso && (
           <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
             {reintentando ? t(idioma, "pago.generando") : t(idioma, "pago.reintentar")}
           </button>

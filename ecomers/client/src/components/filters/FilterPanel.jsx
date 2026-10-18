@@ -58,9 +58,13 @@ function FilterPanel({
   const idioma = useIdiomaStore((s) => s.idioma);
   const TODAS_T = t(idioma, "filt.todas");
 
-  useEffect(() => {
+  // Si el texto cambia desde afuera (limpiar, URL), el borrador se alinea
+  // durante el render guardando el valor anterior de la prop.
+  const [textoPrevio, setTextoPrevio] = useState(texto);
+  if (texto !== textoPrevio) {
+    setTextoPrevio(texto);
     setBorrador(texto ?? "");
-  }, [texto]);
+  }
 
   useEffect(() => {
     if (borrador === texto) return undefined;
@@ -70,6 +74,7 @@ function FilterPanel({
 
   useEffect(() => {
     if (!abierto) return undefined;
+    const botonAbrir = abrirRef.current;
     const alTeclar = (e) => {
       if (e.key === "Escape") setAbierto(false);
     };
@@ -80,7 +85,7 @@ function FilterPanel({
     return () => {
       document.removeEventListener("keydown", alTeclar);
       document.body.style.overflow = previo;
-      abrirRef.current?.focus();
+      botonAbrir?.focus();
     };
   }, [abierto]);
 

@@ -1,0 +1,60 @@
+name: Deploy a GitHub Pages
+
+# Requiere una sola vez: Settings → Pages → Source: "GitHub Actions".
+# Variables del repo (Settings → Secrets and variables → Actions → Variables):
+#   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_API_URL
+# (son valores públicos del frontend; las claves privadas van solo en el backend).
+
+on:
+  # Deploy automático desactivado hasta completar la configuración inicial:
+  # 1) Settings → Pages → Source: "GitHub Actions"
+  # 2) Settings → Secrets and variables → Actions → Variables: crear
+  #    VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY y VITE_API_URL.
+  # Cuando esté lista, descomentar estas líneas para publicar en cada push a main:
+  # push:
+  #   branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ecomers/client
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ecomers/client/package-lock.json
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BASE: /hefestotech/
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ecomers/client/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

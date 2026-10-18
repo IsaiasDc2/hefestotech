@@ -202,9 +202,10 @@ function Contactanos() {
           </div>
 
           {enviando && (
-            <div className="contacto-cargando" aria-hidden="true">
-              <span className="skeleton" />
-              <span className="skeleton" />
+            <div className="contacto-cargando" role="status">
+              <span className="sr-only">{t(idioma, "cont.enviando")}</span>
+              <span className="skeleton" aria-hidden="true" />
+              <span className="skeleton" aria-hidden="true" />
             </div>
           )}
 

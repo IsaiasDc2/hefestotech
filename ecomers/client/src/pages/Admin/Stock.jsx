@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Stock({ avisar }) {
   const [productoId, setProductoId] = useState("");
@@ -17,7 +17,7 @@ export default function Stock({ avisar }) {
     () => adminApi.productos({ limit: 200 }),
     []
   );
-  const lista = datos?.productos ?? [];
+  const lista = useMemo(() => datos?.productos ?? [], [datos]);
   const qN = q.trim().toLowerCase();
   const filtrada = useMemo(
     () =>

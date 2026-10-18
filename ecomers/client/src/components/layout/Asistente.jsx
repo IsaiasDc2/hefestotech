@@ -107,7 +107,8 @@ function Asistente() {
   };
   const [abierto, setAbierto] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [chat, setChat] = useState([
+  // Inicializador perezoso: la hora del saludo se toma una sola vez al montar.
+  const [chat, setChat] = useState(() => [
     { rol: "ia", texto: SALUDO, hora: Date.now() },
   ]);
   const [estado, setEstado] = useState("listo");

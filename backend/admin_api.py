@@ -411,11 +411,12 @@ class ProductoEditar(BaseModel):
 
 
 def _url_imagen_ok(v: str) -> bool:
+    # Solo rutas internas o https: http:// da contenido mixto (bloqueado por
+    # el navegador en el sitio https) y "//host" es una URL externa disfrazada.
     u = v.strip()
     if u.startswith("/"):
-        return True
-    bajo = u.lower()
-    return bajo.startswith("https://") or bajo.startswith("http://")
+        return not u.startswith("//")
+    return u.lower().startswith("https://")
 
 
 def _url_link_ok(v: str) -> bool:

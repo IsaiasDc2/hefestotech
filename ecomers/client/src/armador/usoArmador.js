@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { supabase } from "../components/lib/supabaseClient";
+import { obtenerCatalogo } from "../services/productService";
 import { evaluarBuild, potenciaEstimada } from "./motor";
 import { PASOS, SLOT_MOTOR, TOTAL_PASOS } from "./pasos";
 import { adaptarProducto, mapaSpecs, precioFinal } from "./adaptar";
@@ -116,11 +117,7 @@ export function useArmador() {
       try {
         setErrorCarga(false);
         setCargando(true);
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*")
-          .limit(100);
-        if (error) throw error;
+        const data = await obtenerCatalogo({ forzar: reintento > 0 });
         let specsPorProducto = new Map();
         try {
           const { data: specs, error: errorSpecs } = await supabase

@@ -1,7 +1,7 @@
 // HefestoTech · Admin · Notificaciones: bandeja (campana del topbar).
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Notificaciones({ onLeidas }) {
   const { estado, datos, recargar } = useModulo(() => adminApi.notificaciones({ limit: 30 }), []);

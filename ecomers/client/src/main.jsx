@@ -1,7 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import App from "./App.jsx";
+// Fuentes variables autoalojadas (sin Google Fonts: nada bloqueante de
+// terceros y la CSP no necesita hosts externos). Solo pesos usados.
+import "@fontsource-variable/inter/wght.css";
+import "@fontsource-variable/oswald/wght.css";
 import "./styles/index.css";
 
 const BASENAME =

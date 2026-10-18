@@ -1,5 +1,5 @@
 // HefestoTech · Admin · Inicio: resumen operativo (GET /api/admin/resumen).
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FaBox,
   FaBoxesStacked,
@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Inicio({ onIr }) {
   const { estado, datos, detalle, recargar } = useModulo(() => adminApi.resumen(), []);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FaGoogle, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
@@ -43,11 +43,15 @@ function Login({ onIrRegistro }) {
         <h2>{t(idioma, "login.titulo")}</h2>
 
         <div className="input-con-icono">
+          <label htmlFor="login-email" className="sr-only">
+            {t(idioma, "login.emailPh")}
+          </label>
           <FaEnvelope className="input-icono" aria-hidden="true" />
           <input
+            id="login-email"
             type="email"
+            autoComplete="email"
             placeholder={t(idioma, "login.emailPh")}
-            aria-label={t(idioma, "login.emailPh")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -55,11 +59,15 @@ function Login({ onIrRegistro }) {
         </div>
 
         <div className="input-con-icono">
+          <label htmlFor="login-pass" className="sr-only">
+            {t(idioma, "login.passPh")}
+          </label>
           <FaLock className="input-icono" aria-hidden="true" />
           <input
+            id="login-pass"
             type="password"
+            autoComplete="current-password"
             placeholder={t(idioma, "login.passPh")}
-            aria-label={t(idioma, "login.passPh")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -73,10 +81,6 @@ function Login({ onIrRegistro }) {
         )}
 
         <div className="opciones-login">
-          <label>
-            <input type="checkbox" />
-            {t(idioma, "login.recordarme")}
-          </label>
 
           <Link to="/contactanos">
             <FaLock className="icono-link" aria-hidden="true" />

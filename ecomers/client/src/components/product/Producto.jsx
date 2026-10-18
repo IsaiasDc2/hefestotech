@@ -1,577 +1,455 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
-import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import { FaMagnifyingGlass, FaSliders, FaXmark } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import useCatalogo from "../../hooks/useCatalogo";
+import { CATEGORIAS } from "../../constants/categorias";
+import {
+  ORDENES,
+  POR_PAGINA,
+  aplicarCatalogo,
+  cantidadFiltrosActivos,
+  filtrosAParams,
+  leerFiltros,
+} from "./catalogo";
+import { formatearPesos } from "../../utils/dinero";
 import ProductCard from "./ProductCard";
-import "./Productos.css";
+import "./ProductCard.css";
+import "./Catalogo.css";
 
+const MARCAS_VISIBLES = 8;
 
-function usarVisibleUnaVez() {
-  const obsRef = useRef(null);
-  const [visible, setVisible] = useState(false);
+/* Input con borrador local que se confirma con debounce. Si el valor
+   externo cambia (link, "limpiar"), el borrador se resincroniza durante
+   el render: patrón recomendado por React en vez de un efecto. */
+function useBorrador(valor, alConfirmar, demora = 300) {
+  const [borrador, setBorrador] = useState(valor);
+  const [previo, setPrevio] = useState(valor);
+  if (valor !== previo) {
+    setPrevio(valor);
+    if (borrador.trim() !== valor) setBorrador(valor);
+  }
+  useEffect(() => {
+    if (borrador.trim() === valor) return undefined;
+    const id = setTimeout(() => alConfirmar(borrador.trim()), demora);
+    return () => clearTimeout(id);
+  }, [borrador, valor, alConfirmar, demora]);
+  return [borrador, setBorrador];
+}
 
-  useEffect(() => () => obsRef.current?.disconnect(), []);
-
-  const ref = useCallback(
-    (el) => {
-      obsRef.current?.disconnect();
-      obsRef.current = null;
-      if (!el || visible) return;
-      if (
-        typeof IntersectionObserver === "undefined" ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        setVisible(true);
-        return;
-      }
-      const obs = new IntersectionObserver(
-        (entradas) => {
-          if (entradas.some((e) => e.isIntersecting)) {
-            setVisible(true);
-            obs.disconnect();
-          }
-        },
-        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
-      );
-      obs.observe(el);
-      obsRef.current = obs;
-    },
-    [visible]
+function Buscador({ valor, onCambio, idioma }) {
+  const [borrador, setBorrador] = useBorrador(valor, onCambio);
+  return (
+    <div className="catl-buscador" role="search">
+      <FaMagnifyingGlass className="catl-buscador-icono" aria-hidden="true" />
+      <input
+        type="search"
+        enterKeyHint="search"
+        value={borrador}
+        onChange={(e) => setBorrador(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onCambio(borrador.trim());
+        }}
+        placeholder={t(idioma, "filt.buscarPh")}
+        aria-label={t(idioma, "filt.buscarAria")}
+      />
+      {borrador && (
+        <button
+          type="button"
+          className="catl-icono-btn"
+          aria-label={t(idioma, "filt.borrar")}
+          onClick={() => {
+            setBorrador("");
+            onCambio("");
+          }}
+        >
+          <FaXmark aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
+}
 
-  return [ref, visible];
+function RangoPrecio({ min, max, rango, onCambio, idioma }) {
+  const id = useId();
+  const confirmarMin = useCallback((v) => onCambio({ min: v ? Number(v) : null }), [onCambio]);
+  const confirmarMax = useCallback((v) => onCambio({ max: v ? Number(v) : null }), [onCambio]);
+  const [desde, setDesde] = useBorrador(min == null ? "" : String(min), confirmarMin, 600);
+  const [hasta, setHasta] = useBorrador(max == null ? "" : String(max), confirmarMax, 600);
+  const soloDigitos = (v) => v.replace(/\D/g, "").slice(0, 9);
+  return (
+    <div className="catl-rango">
+      <label htmlFor={`${id}-min`}>
+        <span>{t(idioma, "catl.desde")}</span>
+        <input
+          id={`${id}-min`}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={rango.min ? formatearPesos(rango.min) : "$"}
+          value={desde}
+          onChange={(e) => setDesde(soloDigitos(e.target.value))}
+        />
+      </label>
+      <label htmlFor={`${id}-max`}>
+        <span>{t(idioma, "catl.hasta")}</span>
+        <input
+          id={`${id}-max`}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={rango.max ? formatearPesos(rango.max) : "$"}
+          value={hasta}
+          onChange={(e) => setHasta(soloDigitos(e.target.value))}
+        />
+      </label>
+    </div>
+  );
+}
+
+function PanelFiltros({ filtros, facetas, cambiar, idioma, sufijo }) {
+  const [todasMarcas, setTodasMarcas] = useState(false);
+  const marcas = todasMarcas ? facetas.marcas : facetas.marcas.slice(0, MARCAS_VISIBLES);
+  const nombreGrupo = `catl-cat-${sufijo}`;
+
+  const alternarMarca = (nombre) => {
+    const activas = filtros.marcas.includes(nombre)
+      ? filtros.marcas.filter((m) => m !== nombre)
+      : [...filtros.marcas, nombre];
+    cambiar({ marcas: activas });
+  };
+
+  return (
+    <div className="catl-panel">
+      <fieldset className="catl-grupo">
+        <legend>{t(idioma, "catl.categoria")}</legend>
+        <label className="catl-opcion">
+          <input
+            type="radio"
+            name={nombreGrupo}
+            checked={filtros.categoria === "Todas"}
+            onChange={() => cambiar({ categoria: "Todas", marcas: [] })}
+          />
+          <span>{t(idioma, "filt.todas")}</span>
+        </label>
+        {facetas.categorias.map((c) => (
+          <label key={c.value} className="catl-opcion">
+            <input
+              type="radio"
+              name={nombreGrupo}
+              checked={filtros.categoria === c.value}
+              onChange={() => cambiar({ categoria: c.value, marcas: [] })}
+            />
+            <span>{c.label}</span>
+            <span className="catl-conteo">{c.conteo}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      {facetas.marcas.length > 0 && (
+        <fieldset className="catl-grupo">
+          <legend>{t(idioma, "catl.marca")}</legend>
+          {marcas.map((m) => (
+            <label key={m.nombre} className="catl-opcion">
+              <input
+                type="checkbox"
+                checked={filtros.marcas.includes(m.nombre)}
+                disabled={m.conteo === 0 && !filtros.marcas.includes(m.nombre)}
+                onChange={() => alternarMarca(m.nombre)}
+              />
+              <span>{m.nombre}</span>
+              <span className="catl-conteo">{m.conteo}</span>
+            </label>
+          ))}
+          {facetas.marcas.length > MARCAS_VISIBLES && (
+            <button
+              type="button"
+              className="catl-link"
+              aria-expanded={todasMarcas}
+              onClick={() => setTodasMarcas((v) => !v)}
+            >
+              {todasMarcas ? t(idioma, "catl.verMenosMarcas") : t(idioma, "catl.verMasMarcas")}
+            </button>
+          )}
+        </fieldset>
+      )}
+
+      <fieldset className="catl-grupo">
+        <legend>{t(idioma, "catl.precio")}</legend>
+        <RangoPrecio
+          min={filtros.min}
+          max={filtros.max}
+          rango={facetas.rangoPrecios}
+          onCambio={cambiar}
+          idioma={idioma}
+        />
+      </fieldset>
+
+      <fieldset className="catl-grupo">
+        <legend>{t(idioma, "catl.disponibilidad")}</legend>
+        <label className="catl-opcion">
+          <input
+            type="checkbox"
+            checked={filtros.stock}
+            onChange={(e) => cambiar({ stock: e.target.checked })}
+          />
+          <span>{t(idioma, "catl.conStock")}</span>
+          <span className="catl-conteo">{facetas.conStock}</span>
+        </label>
+        <label className="catl-opcion">
+          <input
+            type="checkbox"
+            checked={filtros.ofertas}
+            onChange={(e) => cambiar({ ofertas: e.target.checked })}
+          />
+          <span>{t(idioma, "catl.enOferta")}</span>
+          <span className="catl-conteo">{facetas.enOferta}</span>
+        </label>
+      </fieldset>
+    </div>
+  );
+}
+
+function ChipsActivos({ filtros, cambiar, limpiar, idioma }) {
+  const chips = [];
+  if (filtros.q) chips.push({ k: "q", texto: `“${filtros.q}”`, quitar: { q: "" } });
+  if (filtros.categoria !== "Todas") {
+    const label = CATEGORIAS.find((c) => c.db === filtros.categoria)?.label ?? filtros.categoria;
+    chips.push({ k: "cat", texto: label, quitar: { categoria: "Todas", marcas: [] } });
+  }
+  for (const m of filtros.marcas) {
+    chips.push({ k: `m-${m}`, texto: m, quitar: { marcas: filtros.marcas.filter((x) => x !== m) } });
+  }
+  if (filtros.min != null || filtros.max != null) {
+    const desde = filtros.min != null ? formatearPesos(filtros.min) : "$0";
+    const hasta = filtros.max != null ? formatearPesos(filtros.max) : "∞";
+    chips.push({ k: "precio", texto: `${desde} – ${hasta}`, quitar: { min: null, max: null } });
+  }
+  if (filtros.stock) chips.push({ k: "stock", texto: t(idioma, "catl.conStock"), quitar: { stock: false } });
+  if (filtros.ofertas) chips.push({ k: "of", texto: t(idioma, "catl.enOferta"), quitar: { ofertas: false } });
+  if (chips.length === 0) return null;
+
+  return (
+    <ul className="catl-chips" aria-label={t(idioma, "filt.activos")}>
+      {chips.map((c) => (
+        <li key={c.k}>
+          <button
+            type="button"
+            className="catl-chip"
+            aria-label={`${t(idioma, "catl.quitar")}: ${c.texto}`}
+            onClick={() => cambiar(c.quitar)}
+          >
+            {c.texto}
+            <FaXmark aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+      {chips.length > 1 && (
+        <li>
+          <button type="button" className="catl-link" onClick={limpiar}>
+            {t(idioma, "filt.limpiar")}
+          </button>
+        </li>
+      )}
+    </ul>
+  );
 }
 
 function Productos({ agregarAlCarrito }) {
-
-
   const idioma = useIdiomaStore((s) => s.idioma);
-  const [productos, setProductos] = useState([]);
-
-  const [cargando, setCargando] = useState(true);
-
-  const [error, setError] = useState(null);
-
-  const [params] = useSearchParams();
-
-  const [busqueda, setBusqueda] = useState(params.get("q") || "");
-
-  const categoriaInicial = resolverCategoria(params.get("categoria"));
-  const [categoria, setCategoria] = useState(categoriaInicial.db);
-  const [soloOfertas, setSoloOfertas] = useState(categoriaInicial.ofertas);
-
-  const [precioMin, setPrecioMin] = useState("");
-
-  const [precioMax, setPrecioMax] = useState("");
-
-  const [busquedaDif, setBusquedaDif] = useState(busqueda);
-
-  const [precioMinDif, setPrecioMinDif] = useState(precioMin);
-
-  const [precioMaxDif, setPrecioMaxDif] = useState(precioMax);
-
-  const [orden, setOrden] = useState(() => {
-    const o = params.get("orden");
-    return o === "mayor" || o === "menor" ? o : "";
-  });
-
-  const [reintento, setReintento] = useState(0);
-
-  const [grillaRef, grillaVisible] = usarVisibleUnaVez();
-
-
-  useEffect(() => {
-    const r = resolverCategoria(params.get("categoria"));
-    setCategoria(r.db);
-    setSoloOfertas(r.ofertas);
-    setBusqueda(params.get("q") || "");
-    const o = params.get("orden");
-    setOrden(o === "mayor" || o === "menor" ? o : "");
-  }, [params]);
-
-
-  useEffect(() => {
-    const t = setTimeout(() => setBusquedaDif(busqueda), 250);
-    return () => clearTimeout(t);
-  }, [busqueda]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setPrecioMinDif(precioMin), 250);
-    return () => clearTimeout(t);
-  }, [precioMin]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setPrecioMaxDif(precioMax), 250);
-    return () => clearTimeout(t);
-  }, [precioMax]);
-
-
-  useEffect(() => {
-
-
-    async function cargarProductos(){
-
-
-      try {
-
-
-        setCargando(true);
-
-        setError(null);
-
-
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*");
-
-
-        if(error){
-
-          throw new Error(error.message);
-
-        }
-
-
-        const filas = (Array.isArray(data) ? data : []).map((p) => ({
-          ...p,
-          precio: Number(p.precio ?? 0),
-          stock: Number(p.stock ?? 0),
-          descuento_porcentaje: Number(p.descuento_porcentaje ?? 0),
-          imagen: p.imagen || "",
-          categoria: p.categoria || "General",
-        }));
-
-        setProductos(filas);
-
-
-      } catch(error){
-        setError(error.message);
-
-
-      } finally{
-
-
-        setCargando(false);
-
-
-      }
-
-
-    }
-
-
-    cargarProductos();
-
-
-  }, [reintento]);
-
-
-  const etiquetaCategoria =
-    CATEGORIAS.find((c) => c.db === categoria)?.label || categoria;
-
-
-  const categorias = useMemo(()=>{
-
-
-    return [
-
-      "Todas",
-
-      ...new Set(
-        productos.map(
-          producto=>producto.categoria
-        )
-      )
-
-    ];
-
-
-  },[productos]);
-
-
-  const limpiarFiltros = ()=>{
-
-
-    setBusqueda("");
-
-    setCategoria("Todas");
-
-    setSoloOfertas(false);
-
-    setPrecioMin("");
-
-    setPrecioMax("");
-
-    setOrden("");
-
-
-  };
-
-
-  const productosOrdenados = useMemo(()=>{
-
-
-    let resultado = productos.filter(producto=>{
-
-
-      const nombre =
-      producto.nombre
-      ?.toLowerCase()
-      || "";
-
-
-      const texto =
-      busquedaDif
-      .toLowerCase();
-
-
-      const coincideNombre =
-      nombre.includes(texto);
-
-
-      const coincideCategoria =
-      categoria==="Todas"
-      ||
-      producto.categoria===categoria;
-
-
-      const coincideOferta =
-      !soloOfertas
-      ||
-      (producto.descuento_porcentaje ?? 0) > 0;
-
-
-      const coincideMin =
-      precioMinDif===""
-
-      ||
-
-      producto.precio >= Number(precioMinDif);
-
-
-      const coincideMax =
-      precioMaxDif===""
-
-      ||
-
-      producto.precio <= Number(precioMaxDif);
-
-
-      return (
-
-        coincideNombre &&
-        coincideCategoria &&
-        coincideOferta &&
-        coincideMin &&
-        coincideMax
-
+  const { productos, cargando, error, reintentar } = useCatalogo();
+  const [params, setParams] = useSearchParams();
+  const filtros = useMemo(() => leerFiltros(params), [params]);
+  const facetas = useMemo(() => aplicarCatalogo(productos, filtros), [productos, filtros]);
+  const dialogoRef = useRef(null);
+
+  const clave = params.toString();
+  const [pagina, setPagina] = useState({ clave, n: POR_PAGINA });
+  const visibles = pagina.clave === clave ? pagina.n : POR_PAGINA;
+
+  const cambiar = useCallback(
+    (parcial) => {
+      setParams(
+        (actuales) => filtrosAParams({ ...leerFiltros(actuales), ...parcial }),
+        // La búsqueda tipeada reemplaza la entrada del historial: "atrás"
+        // no tiene que recorrer cada letra.
+        { replace: "q" in parcial || "min" in parcial || "max" in parcial }
       );
-
-
-    });
-
-
-    if(orden==="mayor"){
-
-      resultado.sort(
-        (a,b)=>b.precio-a.precio
-      );
-
-    }
-
-
-    if(orden==="menor"){
-
-      resultado.sort(
-        (a,b)=>a.precio-b.precio
-      );
-
-    }
-
-
-    return resultado;
-
-
-  },[
-    productos,
-    busquedaDif,
-    categoria,
-    soloOfertas,
-    precioMinDif,
-    precioMaxDif,
-    orden
-  ]);
-
-
-  return (
-
-    <section className="productos-container">
-
-
-      <header className="productos-header">
-
-
-        <h1>
-          {soloOfertas ? t(idioma, "prod.ofertas") : etiquetaCategoria === "Todas" ? t(idioma, "prod.tituloGeneral") : etiquetaCategoria}
-        </h1>
-
-
-        <p className="subtitulo-productos">
-
-          {soloOfertas
-            ? t(idioma, "prod.subOfertas")
-            : t(idioma, "prod.subGeneral")}
-
-        </p>
-
-
-      </header>
-
-
-      <div className="filtros">
-
-
-        <input
-
-          className="buscador"
-
-          type="text"
-
-          placeholder={t(idioma, "prod.buscarPh")}
-
-          aria-label={t(idioma, "prod.buscarAria")}
-
-          value={busqueda}
-
-          onChange={
-            e=>setBusqueda(e.target.value)
-          }
-
-        />
-
-
-        <select
-
-          value={categoria}
-
-          aria-label={t(idioma, "prod.filtrarPor")}
-
-          onChange={
-            e=>{ setCategoria(e.target.value); setSoloOfertas(false); }
-          }
-
-        >
-
-
-          {
-            categorias.map(cat=>(
-
-
-              <option
-
-                key={cat}
-
-                value={cat}
-
-              >
-
-                {cat === "Todas" ? t(idioma, "filt.todas") : cat}
-
-              </option>
-
-
-            ))
-          }
-
-
-        </select>
-
-
-        <input
-
-          type="number"
-
-          placeholder={t(idioma, "prod.precioMin")}
-
-          aria-label={t(idioma, "prod.precioMin")}
-
-          min="0"
-
-          inputMode="numeric"
-
-          value={precioMin}
-
-          onChange={
-            e=>setPrecioMin(e.target.value)
-          }
-
-        />
-
-
-        <input
-
-          type="number"
-
-          placeholder={t(idioma, "prod.precioMax")}
-
-          aria-label={t(idioma, "prod.precioMax")}
-
-          min="0"
-
-          inputMode="numeric"
-
-          value={precioMax}
-
-          onChange={
-            e=>setPrecioMax(e.target.value)
-          }
-
-        />
-
-
-        <select
-
-          value={orden}
-
-          aria-label={t(idioma, "prod.ordenarPor")}
-
-          onChange={
-            e=>setOrden(e.target.value)
-          }
-
-        >
-
-          <option value="">
-            {t(idioma, "prod.ordenar")}
-          </option>
-
-
-          <option value="mayor">
-            {t(idioma, "prod.mayor")}
-          </option>
-
-
-          <option value="menor">
-            {t(idioma, "prod.menor")}
-          </option>
-
-
-        </select>
-
-
-        <button
-
-          className="btn-limpiar"
-
-          onClick={limpiarFiltros}
-
-        >
-
-          ↻ {t(idioma, "prod.limpiar")}
-
-        </button>
-
-
-      </div>
-
-
-      {
-        cargando &&
-
-        <p className="estado-carga">
-          {t(idioma, "prod.cargando")}
-        </p>
-
-      }
-
-
-      {
-        error && !cargando &&
-
-        <div className="vacio" role="alert">
-          <p className="vacio-titulo">{t(idioma, "prod.errorTitulo")}</p>
-          <p className="vacio-texto">{t(idioma, "prod.errorTexto")}</p>
-          <button
-            type="button"
-            className="btn-limpiar"
-            onClick={() => setReintento((n) => n + 1)}
-          >
-            ↻ {t(idioma, "prod.reintentar")}
-          </button>
-        </div>
-
-      }
-
-
-      {
-        !cargando &&
-        !error &&
-
-        <p className="resultados-contador" role="status">
-          <strong>{productosOrdenados.length}</strong>
-          &nbsp;{t(idioma, "prod.resultados")}
-        </p>
-      }
-
-
-      {
-        !cargando &&
-        !error &&
-
-
-        <div ref={grillaRef} className={`grid-productos${grillaVisible ? " is-visible" : ""}`}>
-
-
-          {
-
-          productosOrdenados.length===0
-
-          ?
-
-          (
-
-            <h2>
-              {t(idioma, "prod.vacio")}
-            </h2>
-
-          )
-
-
-          :
-
-
-          productosOrdenados.map(producto=>(
-
-
-            <ProductCard
-
-              key={producto.id}
-
-              producto={producto}
-
-              agregarAlCarrito={agregarAlCarrito}
-
-            />
-
-
-          ))
-
-
-          }
-
-
-        </div>
-
-
-      }
-
-
-    </section>
-
+    },
+    [setParams]
+  );
+  const cambiarBusqueda = useCallback((q) => cambiar({ q }), [cambiar]);
+  const limpiar = useCallback(() => setParams({}), [setParams]);
+
+  const total = facetas.resultados.length;
+  const activos = cantidadFiltrosActivos(filtros);
+  const etiquetaCategoria = CATEGORIAS.find((c) => c.db === filtros.categoria)?.label;
+  const titulo = filtros.q
+    ? `${t(idioma, "catl.resultadosPara")} “${filtros.q}”`
+    : etiquetaCategoria ??
+      (filtros.ofertas ? t(idioma, "prod.ofertas") : t(idioma, "prod.tituloGeneral"));
+  const unidad = total === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos");
+
+  const panel = (sufijo) => (
+    <PanelFiltros
+      filtros={filtros}
+      facetas={facetas}
+      cambiar={cambiar}
+      idioma={idioma}
+      sufijo={sufijo}
+    />
   );
 
-}
+  return (
+    <section className="catl" aria-labelledby="catl-titulo">
+      <header className="catl-cabecera">
+        <nav aria-label={t(idioma, "pd.migas")} className="catl-migas">
+          <Link to="/">{t(idioma, "pd.inicio")}</Link>
+          <span aria-hidden="true">/</span>
+          {etiquetaCategoria ? (
+            <>
+              <Link to="/productos">{t(idioma, "pd.catalogo")}</Link>
+              <span aria-hidden="true">/</span>
+              <span aria-current="page">{etiquetaCategoria}</span>
+            </>
+          ) : (
+            <span aria-current="page">{t(idioma, "pd.catalogo")}</span>
+          )}
+        </nav>
+        <h1 id="catl-titulo">{titulo}</h1>
+      </header>
 
+      <div className="catl-barra">
+        <Buscador valor={filtros.q} onCambio={cambiarBusqueda} idioma={idioma} />
+        <button
+          type="button"
+          className="catl-btn-filtros"
+          aria-haspopup="dialog"
+          onClick={() => dialogoRef.current?.showModal()}
+        >
+          <FaSliders aria-hidden="true" />
+          {t(idioma, "filt.filtros")}
+          {activos > 0 && <span className="catl-badge">{activos}</span>}
+        </button>
+        <label className="catl-orden">
+          <span>{t(idioma, "catl.ordenar")}</span>
+          <select value={filtros.orden} onChange={(e) => cambiar({ orden: e.target.value })}>
+            {ORDENES.map((o) => (
+              <option key={o} value={o}>
+                {t(idioma, `catl.o.${o}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="catl-layout">
+        <aside className="catl-lateral" aria-label={t(idioma, "filt.titulo")}>
+          {panel("lateral")}
+        </aside>
+
+        <dialog
+          ref={dialogoRef}
+          className="catl-dialogo"
+          aria-label={t(idioma, "filt.titulo")}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) e.currentTarget.close();
+          }}
+        >
+          <div className="catl-dialogo-cuerpo">
+            <div className="catl-dialogo-cabecera">
+              <h2>{t(idioma, "filt.filtros")}</h2>
+              <button
+                type="button"
+                className="catl-icono-btn"
+                aria-label={t(idioma, "filt.cerrar")}
+                onClick={() => dialogoRef.current?.close()}
+              >
+                <FaXmark aria-hidden="true" />
+              </button>
+            </div>
+            {panel("movil")}
+            <div className="catl-dialogo-pie">
+              {activos > 0 && (
+                <button type="button" className="catl-btn-secundario" onClick={limpiar}>
+                  {t(idioma, "filt.limpiar")}
+                </button>
+              )}
+              <button
+                type="button"
+                className="catl-btn-primario"
+                onClick={() => dialogoRef.current?.close()}
+              >
+                {t(idioma, "filt.ver")} {total} {unidad}
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+        <div className="catl-resultados">
+          <div className="catl-estado">
+            <p role="status" aria-live="polite" className="catl-total">
+              {cargando ? t(idioma, "prod.cargando") : `${total} ${unidad}`}
+            </p>
+            <ChipsActivos filtros={filtros} cambiar={cambiar} limpiar={limpiar} idioma={idioma} />
+          </div>
+
+          {cargando && productos.length === 0 ? (
+            <div className="catl-grilla" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="card-skeleton" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="catl-vacio" role="alert">
+              <p className="catl-vacio-titulo">{t(idioma, "prod.errorTitulo")}</p>
+              <p>{t(idioma, "prod.errorTexto")}</p>
+              <button type="button" className="catl-btn-primario" onClick={reintentar}>
+                {t(idioma, "prod.reintentar")}
+              </button>
+            </div>
+          ) : total === 0 ? (
+            <div className="catl-vacio">
+              <p className="catl-vacio-titulo">{t(idioma, "prod.vacio")}</p>
+              <p>{t(idioma, "catl.vacioTexto")}</p>
+              {activos > 0 && (
+                <button type="button" className="catl-btn-secundario" onClick={limpiar}>
+                  {t(idioma, "filt.limpiar")}
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <ul className="catl-grilla">
+                {facetas.resultados.slice(0, visibles).map((p, i) => (
+                  <li key={p.id} style={{ "--i": i % POR_PAGINA }}>
+                    <ProductCard
+                      producto={p}
+                      agregarAlCarrito={agregarAlCarrito}
+                      prioridad={i < 4}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {visibles < total && (
+                <div className="catl-paginacion">
+                  <p>
+                    {t(idioma, "catl.mostrando")} {visibles} {t(idioma, "catl.de")} {total}
+                  </p>
+                  <progress max={total} value={visibles} aria-hidden="true" />
+                  <button
+                    type="button"
+                    className="catl-btn-secundario"
+                    onClick={() => setPagina({ clave, n: visibles + POR_PAGINA })}
+                  >
+                    {t(idioma, "catl.mostrarMas")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default Productos;

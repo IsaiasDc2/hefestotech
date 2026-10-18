@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { createElement, useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import {
   FaHeart,
   FaRegHeart,
@@ -13,8 +13,11 @@ import {
   FaKeyboard,
   FaDesktop,
   FaCube,
+  FaWhatsapp,
 } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { useEsFavorito } from "../../services/favoritos";
+import { whatsappUrl } from "../../constants/whatsapp";
 import "./ProductCard.css";
 
 /* Icono de respaldo según categoría (estado de error de imagen). */
@@ -29,9 +32,9 @@ function iconoPorCategoria(categoria = "") {
   return FaCube;
 }
 
-function ProductCard({ producto, agregarAlCarrito }) {
+function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
   const idioma = useIdiomaStore((s) => s.idioma);
-  const [favorito, setFavorito] = useState(false);
+  const [favorito, alternarFavorito] = useEsFavorito(producto.id);
   const [imgError, setImgError] = useState(false);
   const [agregado, setAgregado] = useState(false);
   const timerAgregado = useRef(null);
@@ -53,7 +56,10 @@ function ProductCard({ producto, agregarAlCarrito }) {
   const precioFinal = Number(
     producto.precio_con_descuento ?? producto.precio ?? 0
   );
+  // Precio 0 = carga pendiente del dueño (ver mig. 007): no se vende a $0.
+  const tienePrecio = precioFinal > 0;
   const hayStock = Number(producto.stock ?? 0) > 0;
+  const comprable = hayStock && tienePrecio;
   const imagen = producto.imagen || "";
   const nombre = producto.nombre || t(idioma, "card.producto");
   const marca = (producto.marca || "").trim();
@@ -72,7 +78,6 @@ function ProductCard({ producto, agregarAlCarrito }) {
     typeof producto.cuotas_texto === "string" && producto.cuotas_texto.trim()
       ? producto.cuotas_texto.trim()
       : null;
-  const IconoRespaldo = iconoPorCategoria(categoria);
 
   return (
     <div className={`card-producto${hayStock ? "" : " is-sin-stock"}`}>
@@ -101,7 +106,9 @@ function ProductCard({ producto, agregarAlCarrito }) {
               alt={nombre}
               width="600"
               height="600"
-              loading="lazy"
+              sizes="(min-width: 1280px) 280px, (min-width: 640px) 33vw, 50vw"
+              loading={prioridad ? "eager" : "lazy"}
+              fetchPriority={prioridad ? "high" : "auto"}
               decoding="async"
               onError={() => {
                 setImgError(true);
@@ -113,7 +120,10 @@ function ProductCard({ producto, agregarAlCarrito }) {
               role="img"
               aria-label={`${t(idioma, "card.sinImagen")} ${nombre}`}
             >
-              <IconoRespaldo className="sin-imagen-icono" aria-hidden="true" />
+              {createElement(iconoPorCategoria(categoria), {
+                className: "sin-imagen-icono",
+                "aria-hidden": true,
+              })}
               <span className="sin-imagen-texto" aria-hidden="true">
                 HefestoTech
               </span>
@@ -123,7 +133,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
         <button
           type="button"
           className={`favorito ${favorito ? "activo" : ""}`}
-          onClick={() => setFavorito((prev) => !prev)}
+          onClick={alternarFavorito}
           aria-pressed={favorito}
           aria-label={
             favorito ? t(idioma, "card.favQuitar") : t(idioma, "card.favAgregar")
@@ -144,6 +154,7 @@ function ProductCard({ producto, agregarAlCarrito }) {
       {tieneRating && (
         <span
           className="card-rating"
+          role="img"
           aria-label={`${t(idioma, "card.rating")} ${rating.toFixed(1)} ${t(idioma, "card.de")} 5`}
         >
           <span className="estrellas" aria-hidden="true">
@@ -170,7 +181,11 @@ function ProductCard({ producto, agregarAlCarrito }) {
         )}
       </div>
 
-      {tieneOferta ? (
+      {!tienePrecio ? (
+        <strong className="precio-actual precio-a-confirmar">
+          {t(idioma, "catl.sinPrecio")}
+        </strong>
+      ) : tieneOferta ? (
         <div className="precios">
           <span className="precio-anterior">
             ${precio.toLocaleString("es-AR")}
@@ -200,12 +215,21 @@ function ProductCard({ producto, agregarAlCarrito }) {
         </p>
       )}
 
+      {!tienePrecio ? (
+        <a
+          className="btn-carrito btn-consultar"
+          href={whatsappUrl(`Hola! Quiero consultar precio y stock de ${nombre}${producto.codigo ? ` (${producto.codigo})` : ""}.`)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FaWhatsapp aria-hidden="true" /> {t(idioma, "catl.consultar")}
+        </a>
+      ) : (
       <button
         type="button"
         className={`btn-carrito${agregado ? " is-added" : ""}`}
-        disabled={!hayStock}
+        disabled={!comprable}
         onClick={manejarAgregar}
-        aria-live="polite"
         aria-label={
           hayStock ? `${t(idioma, "card.agregar")} ${nombre}` : `${nombre} ${t(idioma, "card.sinStock")}`
         }
@@ -224,6 +248,10 @@ function ProductCard({ producto, agregarAlCarrito }) {
           t(idioma, "card.sinStock")
         )}
       </button>
+      )}
+      <span className="sr-only" aria-live="polite">
+        {agregado ? `${nombre}: ${t(idioma, "card.agregado")}` : ""}
+      </span>
     </div>
   );
 }

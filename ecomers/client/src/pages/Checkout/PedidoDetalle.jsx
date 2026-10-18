@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router";
 import { FaFileArrowDown, FaPrint, FaReceipt } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
@@ -12,8 +12,10 @@ export default function PedidoDetalle() {
   const { id } = useParams();
   const idioma = useIdiomaStore((s) => s.idioma);
   const [params] = useSearchParams();
-  const token = params.get("token") ?? "";
+  const token =
+    params.get("token") ?? (id ? sessionStorage.getItem(`ck_token_${id}`) ?? "" : "");
   const [comp, setComp] = useState(null);
+  const [qr, setQr] = useState("");
   const [estado, setEstado] = useState(null);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
@@ -38,6 +40,18 @@ export default function PedidoDetalle() {
     return () => { vivo = false; };
   }, [id, token, idioma]);
 
+  // QR generado en el navegador: el link de verificación lleva el token del
+  // pedido y no tiene que viajar a un servicio de terceros.
+  const verificacion = `${window.location.origin}${window.location.pathname}?token=${encodeURIComponent(token)}`;
+  useEffect(() => {
+    let vivo = true;
+    import("qrcode")
+      .then((QR) => QR.toDataURL(verificacion, { width: 140, margin: 1, errorCorrectionLevel: "M" }))
+      .then((url) => vivo && setQr(url))
+      .catch(() => vivo && setQr(""));
+    return () => { vivo = false; };
+  }, [verificacion]);
+
   if (cargando) {
     return (
       <div className="checkout centrado">
@@ -59,8 +73,6 @@ export default function PedidoDetalle() {
 
   const items = comp.items_snapshot ?? [];
   const tot = comp.totales_snapshot ?? {};
-  const verificacion = `${window.location.origin}${window.location.pathname}?token=${token}`;
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(verificacion)}`;
 
   return (
     <div className="checkout">
@@ -104,8 +116,12 @@ export default function PedidoDetalle() {
           </table>
           <p className="badge badge-aviso" role="note">{t(idioma, "ped.nota")}</p>
           <div className="comprobante-verif">
-            <img src={qr} alt={t(idioma, "ped.qr")} width={140} height={140} loading="lazy" />
-            <p className="texto-mutado">{t(idioma, "ped.verifica")}<br /><Link to={verificacion}>{verificacion}</Link></p>
+            {qr ? (
+              <img src={qr} alt={t(idioma, "ped.qr")} width={140} height={140} />
+            ) : (
+              <span className="comprobante-qr-espacio" aria-hidden="true" />
+            )}
+            <p className="texto-mutado">{t(idioma, "ped.verifica")}<br /><a href={verificacion}>{verificacion}</a></p>
           </div>
         </section>
 

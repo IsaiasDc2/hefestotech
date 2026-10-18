@@ -1,16 +1,14 @@
 import { useState } from "react";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { formatearCuota } from "../../utils/dinero";
 import "./CalculadoraCuotas.css";
 
 const OPCIONES_CUOTAS = [3, 6, 12, 18];
-
-const pesos = (v) => `$${Number(v ?? 0).toLocaleString("es-AR")}`;
 
 function CalculadoraCuotas({ precio = 0 }) {
   const idioma = useIdiomaStore((s) => s.idioma);
   const [cuotas, setCuotas] = useState(6);
   const base = Number(precio ?? 0);
-  const porCuota = cuotas > 0 ? base / cuotas : 0;
 
   return (
     <section className="calc-cuotas" aria-labelledby="calc-cuotas-titulo">
@@ -40,7 +38,7 @@ function CalculadoraCuotas({ precio = 0 }) {
       </fieldset>
       <p className="calc-cuotas-resultado" role="status" aria-live="polite">
         <strong>
-          {cuotas} {t(idioma, "pd.cuotasDe")} {pesos(porCuota)}
+          {cuotas} {t(idioma, "pd.cuotasDe")} {formatearCuota(base, cuotas)}
         </strong>
       </p>
       <p className="calc-cuotas-aviso">{t(idioma, "pd.cuotasRef")}</p>

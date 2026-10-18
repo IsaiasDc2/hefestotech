@@ -3,7 +3,7 @@
 // backend con la sesión actual; si no hay sesión, ofrece WhatsApp (nivel 1)
 // con el texto ya armado a partir de lo que escribió la persona.
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { WHATSAPP_NUMERO_A_CONFIRMAR, whatsappUrl } from "../../constants/whatsapp";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { adminApi } from "./adminApi";

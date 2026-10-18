@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./SectionHeader.css";
+
+const sinRevelado = () =>
+  typeof IntersectionObserver === "undefined" ||
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 
 function SectionHeader({ num = null, kicker = null, titulo, id, verTodo = null, accionExtra = null }) {
   const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+  // Sin IntersectionObserver o con movimiento reducido arranca ya revelado.
+  const [visible, setVisible] = useState(sinRevelado);
   const idioma = useIdiomaStore((s) => s.idioma);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
+    if (!el || sinRevelado()) return;
     const obs = new IntersectionObserver(
       (entradas) => {
         if (entradas.some((e) => e.isIntersecting)) {

@@ -1,5 +1,5 @@
 import { lazy, useEffect, useState } from "react";
-import { Link, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/layout/Layout";
 import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";

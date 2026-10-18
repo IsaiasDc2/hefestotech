@@ -1,9 +1,9 @@
 // HefestoTech · Admin · Productos: alta, edición, borrado lógico (papelera)
 // con Deshacer (10s) y lotes. Sin datos inventados: vacío real si no hay.
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
 
@@ -14,15 +14,19 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
 
-  const { estado, datos, recargar, setDatos } = useModulo(
+  const [presetPrevio, setPresetPrevio] = useState(presetQ);
+
+  const { estado, datos, recargar } = useModulo(
     () => adminApi.productos({ busqueda, limit: 50 }),
     [busqueda]
   );
 
-  useEffect(() => {
+  // Si llega otro presetQ (p. ej. desde la paleta ⌘K), se ajusta durante el render.
+  if (presetQ !== presetPrevio) {
+    setPresetPrevio(presetQ);
     setQ(presetQ);
     setBusqueda(presetQ);
-  }, [presetQ]);
+  }
 
   const lista = datos?.productos ?? [];
 
