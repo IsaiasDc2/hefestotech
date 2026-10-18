@@ -30,18 +30,20 @@ const useCartStore = create(
       abrirCarrito: () => set({ isCartOpen: true }),
       cerrarCarrito: () => set({ isCartOpen: false }),
 
-      agregarAlCarrito: (producto, cantidad = 1) => {
+      // abrir: false lo usa el asistente, que confirma el alta en su propia
+      // tarjeta sin tapar el chat con el carrito lateral.
+      agregarAlCarrito: (producto, cantidad = 1, { abrir = true } = {}) => {
         const n = Math.max(1, Math.floor(Number(cantidad) || 1));
-        set({ carrito: sumar(get().carrito, producto, n), isCartOpen: true });
+        set({ carrito: sumar(get().carrito, producto, n), ...(abrir ? { isCartOpen: true } : {}) });
       },
 
       // Alta en lote (armador): un solo cambio de estado y una sola apertura
       // del carrito, en vez de abrirlo una vez por componente.
-      agregarVarios: (productos = []) => {
+      agregarVarios: (productos = [], { abrir = true } = {}) => {
         const carrito = productos
           .filter(Boolean)
           .reduce((acc, producto) => sumar(acc, producto, 1), get().carrito);
-        set({ carrito, isCartOpen: true });
+        set({ carrito, ...(abrir ? { isCartOpen: true } : {}) });
       },
 
       eliminarDelCarrito: (id) => {

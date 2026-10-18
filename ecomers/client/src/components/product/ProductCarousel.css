@@ -1,150 +1,26 @@
+/* Fila horizontal de productos con scroll-snap nativo. */
 .carrusel {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: var(--space-6) 1.5rem 0;
-  min-width: 0;
-  width: 100%;
-}
-
-.carrusel .seccion-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.6rem 1rem;
-  margin-bottom: 1.4rem;
   min-width: 0;
 }
 
-.carrusel .seccion-head.editorial {
-  align-items: flex-end;
-  border-bottom: 1px solid var(--border-suave);
-  padding-bottom: 1rem;
-}
-
-.carrusel .seccion-titular {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-.carrusel .kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: var(--tracking-humo);
-  text-transform: uppercase;
-  color: var(--oro);
-}
-
-.carrusel .kicker-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.9rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  color: var(--on-accent);
-  background: var(--grad-marca);
-  box-shadow: 0 2px 12px var(--primary-resplandor);
-}
-
-.carrusel .seccion-head h2 {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.carrusel-acciones {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.carrusel-acciones a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 44px;
-  color: var(--primary);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-  text-underline-offset: 3px;
-  white-space: nowrap;
-}
-
-.carrusel-acciones a:hover {
-  text-decoration: underline;
-}
-
-.carrusel-flecha {
-  font-size: 0.8rem;
-}
-
-.carrusel-acciones button {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--velo);
-  backdrop-filter: blur(6px);
-  color: var(--text);
-  font-size: 0.95rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 1;
-  transform: none;
-  transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease-rapida);
-}
-
-
-.carrusel-acciones button:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-suave);
-}
-
-.carrusel-acciones button:active {
-  transform: scale(0.97);
-}
-
-.carrusel-acciones a:focus-visible,
-.carrusel-acciones button:focus-visible,
-.carrusel-pista:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--anillo-foco);
-}
-
-.carrusel-acciones button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  border-color: var(--border);
-  color: var(--muted);
+.carrusel-flechas {
+  display: none;
+  gap: var(--space-2);
 }
 
 .carrusel-pista {
-  display: flex;
-  gap: 1.1rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 72%);
+  gap: var(--space-3);
   overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scroll-behavior: smooth;
-  scroll-padding-inline: 0.25rem;
-  scrollbar-width: none;
-  padding: 0.6rem 0.15rem 1.2rem;
-  margin: 0 -0.15rem;
-  touch-action: pan-x pan-y;
   overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-4);
+  list-style: none;
+  margin: 0 calc(var(--space-4) * -1);
+  padding: var(--space-1) var(--space-4) var(--space-3);
+  scrollbar-width: none;
 }
 
 .carrusel-pista::-webkit-scrollbar {
@@ -152,110 +28,40 @@
 }
 
 .carrusel-item {
-  flex: 0 0 min(270px, 72vw);
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   display: flex;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 300ms cubic-bezier(.2,.8,.2,1), transform 300ms cubic-bezier(.2,.8,.2,1);
+  min-width: 0;
+  scroll-snap-align: start;
 }
-
-.carrusel.is-visible .carrusel-item {
-  opacity: 1;
-  transform: none;
-}
-
-.carrusel.is-visible .carrusel-item:nth-child(2) { transition-delay: 60ms; }
-.carrusel.is-visible .carrusel-item:nth-child(3) { transition-delay: 120ms; }
-.carrusel.is-visible .carrusel-item:nth-child(4) { transition-delay: 180ms; }
-.carrusel.is-visible .carrusel-item:nth-child(n + 5) { transition-delay: 240ms; }
 
 .carrusel-item > * {
   flex: 1;
-  min-width: 0;
 }
 
-.carrusel-vacio {
-  text-align: center;
-  padding: 2rem 1.5rem;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-}
-
-.carrusel-vacio.is-error {
-  border-color: var(--danger-borde);
-  background: var(--danger-suave);
-}
-
-.carrusel-pista[aria-busy="true"] {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.carrusel-vacio-icono {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: var(--primary-suave);
-  border: 1px solid var(--primary-borde);
-  color: var(--primary);
-  font-size: 1.4rem;
-  margin-bottom: 0.9rem;
-}
-
-.carrusel-vacio-titulo {
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.015em;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 0.4rem;
-}
-
-.carrusel-vacio-texto {
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.6;
-  margin: 0;
-  text-wrap: pretty;
-}
-
-
-@media (hover: none) {
-  .carrusel-acciones button {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-  }
-}
-
-@media (max-width: 560px) {
-  .carrusel {
-    padding-inline: 1rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 640px) {
   .carrusel-pista {
-    scroll-behavior: auto;
+    grid-auto-columns: minmax(220px, 40%);
+    margin-inline: calc(var(--space-5) * -1);
+    padding-inline: var(--space-5);
+    scroll-padding-inline: var(--space-5);
+  }
+}
+
+@media (min-width: 1024px) {
+  .carrusel-flechas {
+    display: inline-flex;
   }
 
-  .carrusel-item {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  .carrusel-pista {
+    grid-auto-columns: calc((100% - 3 * var(--space-4)) / 4);
+    gap: var(--space-4);
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
   }
+}
 
-  .carrusel-acciones button {
-    transition: none;
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
+@media (min-width: 1280px) {
+  .carrusel-pista {
+    grid-auto-columns: calc((100% - 4 * var(--space-4)) / 5);
   }
 }

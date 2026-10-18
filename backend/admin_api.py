@@ -47,6 +47,9 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("reportes", "leer"), ("buscar", "leer"),
         ("config", "leer"), ("config", "gestionar"),
         ("usuarios", "leer"), ("usuarios", "gestionar"),
+        ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"), ("proveedores", "borrar"),
+        ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
+        ("compras", "recibir"),
     },
     "admin": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"), ("productos", "borrar"),
@@ -58,6 +61,9 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("notificaciones", "leer"), ("auditoria", "leer"),
         ("reportes", "leer"), ("buscar", "leer"),
         ("config", "leer"),
+        ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"), ("proveedores", "borrar"),
+        ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
+        ("compras", "recibir"),
     },
     "operador": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"),
@@ -66,6 +72,9 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("reclamos", "leer"),
         ("cupones", "leer"), ("banners", "leer"),
         ("notificaciones", "leer"), ("reportes", "leer"), ("buscar", "leer"),
+        ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"),
+        ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
+        ("compras", "recibir"),
     },
     "soporte": {
         ("productos", "leer"), ("pedidos", "leer"),
@@ -78,6 +87,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("cupones", "leer"), ("banners", "leer"),
         ("notificaciones", "leer"), ("auditoria", "leer"),
         ("reportes", "leer"), ("buscar", "leer"),
+        ("proveedores", "leer"), ("compras", "leer"),
     },
     # Clientes: solo pueden radicar reclamos propios (el formulario /reclamo
     # es su única vía al backend). Sin esto, el reclamo público exige rol
@@ -98,6 +108,8 @@ _ERRORES_SEGUROS = {
     "stock insuficiente", "delta no puede ser cero",
     "producto inexistente o en papelera", "pedido inexistente",
     "conflicto de versión: recargá el pedido",
+    "orden de compra inexistente", "la orden no admite recepción", "recepción sin ítems",
+    "cantidad inválida", "producto fuera de la orden", "recepción excede lo pedido",
 }
 
 
@@ -1391,3 +1403,922 @@ def reporte_ventas(desde: str = "", hasta: str = "",
         "por_estado": dict(por_estado),
         "por_dia": [{"dia": d, **v} for d, v in sorted(por_dia.items())],
     }
+
+
+# --------------------------------------------------- proveedores y compras ---
+# Módulo §5.3 (alcance MVP). Tablas y RPC en 014_proveedores_compras.sql.
+# Montos en centavos enteros en la moneda de cada proveedor/orden (ARS|USD).
+CONDICIONES_IVA = {"responsable_inscripto", "monotributo", "exento", "no_responsable", "consumidor_final"}
+CONDICIONES_PAGO = {"contado", "15_dias", "30_dias", "60_dias"}
+MONEDAS = {"ARS", "USD"}
+ESTADOS_PROVEEDOR = {"activo", "inactivo", "en_evaluacion"}
+ESTADOS_OC = {"borrador", "enviada", "confirmada", "recibida_parcial", "recibida", "cancelada"}
+OC_ABIERTAS = {"borrador", "enviada", "confirmada", "recibida_parcial"}
+OC_RECIBIBLES = {"enviada", "confirmada", "recibida_parcial"}
+# Transiciones manuales. recibida_parcial/recibida solo las fija la RPC de
+# recepción; cancelar una parcial cierra el saldo pendiente (lo recibido queda).
+TRANSICIONES_OC: dict[str, set[str]] = {
+    "borrador": {"enviada", "cancelada"},
+    "enviada": {"confirmada", "cancelada"},
+    "confirmada": {"cancelada"},
+    "recibida_parcial": {"cancelada"},
+}
+_PREFIJOS_CUIT = {"20", "23", "24", "25", "26", "27", "30", "33", "34"}
+_RE_UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+_RE_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_RE_ALIAS_CBU = re.compile(r"^[A-Za-z0-9.\-]{6,20}$")
+_MAX_CENTAVOS = 10_000_000_000_00
+
+
+def _solo_digitos(valor: Any) -> str:
+    return re.sub(r"\D", "", str(valor or ""))
+
+
+def _cuit_valido(cuit: str) -> bool:
+    """CUIT/CUIL de 11 dígitos con dígito verificador módulo 11.
+    Espejo de `cuit_valido()` (014). Resto 10 = inválido (AFIP reasigna
+    prefijo 23/33 en ese caso, así que nunca se emite)."""
+    if not re.fullmatch(r"\d{11}", cuit or "") or cuit[:2] not in _PREFIJOS_CUIT:
+        return False
+    suma = sum(int(d) * p for d, p in zip(cuit[:10], (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)))
+    resto = 11 - (suma % 11)
+    dv = 0 if resto == 11 else resto
+    return dv != 10 and dv == int(cuit[10])
+
+
+def _cbu_valido(cbu: str) -> bool:
+    """CBU de 22 dígitos: bloque banco/sucursal (8) y bloque cuenta (14),
+    cada uno con su dígito verificador."""
+    if not re.fullmatch(r"\d{22}", cbu or ""):
+        return False
+
+    def bloque_ok(digitos: str, pesos: tuple[int, ...]) -> bool:
+        suma = sum(int(d) * p for d, p in zip(digitos[:-1], pesos))
+        return (10 - suma % 10) % 10 == int(digitos[-1])
+
+    return (bloque_ok(cbu[:8], (7, 1, 3, 9, 7, 1, 3))
+            and bloque_ok(cbu[8:], (3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3)))
+
+
+def _proveedor_salida(p: dict[str, Any]) -> dict[str, Any]:
+    """El CBU nunca sale completo del servidor: solo los últimos 4 dígitos."""
+    fila = dict(p)
+    cbu = str(fila.pop("cbu", "") or "")
+    fila["cbu_mascara"] = f"•••• {cbu[-4:]}" if cbu else ""
+    return fila
+
+
+def _uuid(valor: str, que: str = "Identificador") -> str:
+    v = (valor or "").strip()
+    if not _RE_UUID.match(v):
+        raise HTTPException(status_code=400, detail=f"{que} inválido.")
+    return v
+
+
+def _codigo_oc(numero: Any) -> str:
+    try:
+        return f"OC-{int(numero):06d}"
+    except (TypeError, ValueError):
+        return "OC-—"
+
+
+def _resumen_oc(oc: dict[str, Any]) -> dict[str, Any]:
+    """Agrega código, total y avance de recepción calculados en servidor."""
+    items = oc.get("ordenes_compra_items") or []
+    oc["codigo"] = _codigo_oc(oc.get("numero"))
+    oc["total_centavos"] = sum(int(i.get("cantidad") or 0) * int(i.get("costo_unitario_centavos") or 0)
+                               for i in items)
+    oc["unidades_pedidas"] = sum(int(i.get("cantidad") or 0) for i in items)
+    oc["unidades_recibidas"] = sum(int(i.get("cantidad_recibida") or 0) for i in items)
+    return oc
+
+
+def _validar_recepcion(estado: str, lineas: list[dict[str, Any]],
+                       items: list[dict[str, Any]]) -> Optional[tuple[int, str]]:
+    """Chequeo previo a la RPC (misma regla que `recibir_orden_compra`):
+    (status, mensaje) si la recepción no procede, None si está bien."""
+    if estado not in OC_RECIBIBLES:
+        return 409, f"La orden está en estado «{estado}» y no admite recepción."
+    por_producto = {str(l.get("producto_id")): l for l in lineas}
+    for it in items:
+        linea = por_producto.get(str(it.get("producto_id")))
+        if linea is None:
+            return 400, "Hay productos que no están en la orden."
+        pendiente = int(linea.get("cantidad") or 0) - int(linea.get("cantidad_recibida") or 0)
+        if int(it.get("cantidad") or 0) > pendiente:
+            return 400, f"Recepción excede lo pedido (quedan {pendiente} unidades pendientes)."
+    return None
+
+
+def _sugerencias_reposicion(productos: list[dict[str, Any]],
+                            relaciones: list[dict[str, Any]],
+                            proveedores: list[dict[str, Any]],
+                            en_ordenes: dict[str, int]) -> list[dict[str, Any]]:
+    """Productos con stock < stock_mínimo agrupados por proveedor principal.
+
+    Objetivo: 2 × mínimo. Sugerida = objetivo − stock − lo ya pedido en OC
+    abiertas (incluye borradores, para no duplicar pedidos), llevada como
+    mínimo a la cantidad mínima del proveedor. Si lo pedido ya cubre, no se
+    sugiere. Sin proveedor principal → grupo con proveedor None.
+    """
+    rel_por_producto = {str(r.get("producto_id")): r for r in relaciones}
+    prov_por_id = {str(p.get("id")): p for p in proveedores}
+    grupos: dict[str, dict[str, Any]] = {}
+    for p in productos:
+        stock = int(p.get("stock") or 0)
+        minimo = int(p.get("stock_minimo") if p.get("stock_minimo") is not None else 5)
+        if stock >= minimo:
+            continue
+        pid = str(p.get("id"))
+        pedidas = int(en_ordenes.get(pid, 0))
+        faltan = 2 * minimo - stock - pedidas
+        if faltan <= 0:
+            continue
+        rel = rel_por_producto.get(pid)
+        prov = prov_por_id.get(str(rel.get("proveedor_id"))) if rel else None
+        if not prov:
+            rel = None  # principal en papelera: cuenta como sin proveedor
+        sugerida = max(faltan, int(rel.get("cantidad_minima") or 1)) if rel else faltan
+        costo = int(rel.get("costo_centavos") or 0) if rel else 0
+        grupo = grupos.setdefault(str(prov.get("id")) if prov else "", {
+            "proveedor": ({k: prov.get(k) for k in ("id", "nombre", "moneda", "estado", "pedido_minimo_centavos")}
+                          if prov else None),
+            "items": [], "total_centavos": 0,
+        })
+        grupo["items"].append({
+            "producto_id": pid, "nombre": p.get("nombre") or "", "codigo": p.get("codigo") or "",
+            "stock": stock, "stock_minimo": minimo, "en_ordenes": pedidas, "sugerida": sugerida,
+            "costo_unitario_centavos": costo,
+            "codigo_proveedor": (rel.get("codigo_proveedor") or "") if rel else "",
+        })
+        grupo["total_centavos"] += sugerida * costo
+    return sorted(grupos.values(),
+                  key=lambda g: (g["proveedor"] is None, str((g["proveedor"] or {}).get("nombre") or "").lower()))
+
+
+class Contacto(BaseModel):
+    nombre: str
+    cargo: str = ""
+    email: str = ""
+    telefono: str = ""
+
+    @field_validator("nombre", "cargo", "email", "telefono")
+    @classmethod
+    def _textos(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 200:
+            raise ValueError("Dato de contacto demasiado largo (máximo 200 caracteres).")
+        return v
+
+    @model_validator(mode="after")
+    def _completo(self):
+        if not self.nombre:
+            raise ValueError("Cada contacto necesita un nombre.")
+        if self.email and not _RE_EMAIL.match(self.email):
+            raise ValueError("Email de contacto inválido.")
+        return self
+
+
+class ProveedorDatos(BaseModel):
+    """Alta y edición. En la edición solo se aplica lo enviado
+    (exclude_unset): el CBU se manda solo para reemplazarlo ("" lo borra)."""
+    nombre: Optional[str] = None  # razón social
+    nombre_comercial: Optional[str] = None
+    cuit: Optional[str] = None
+    condicion_iva: Optional[str] = None
+    email: Optional[str] = None
+    telefono: Optional[str] = None
+    whatsapp: Optional[str] = None
+    sitio_web: Optional[str] = None
+    direccion: Optional[str] = None
+    provincia: Optional[str] = None
+    ciudad: Optional[str] = None
+    contactos: Optional[list[Contacto]] = None
+    condicion_pago: Optional[str] = None
+    moneda: Optional[str] = None
+    plazo_entrega_dias: Optional[int] = None
+    pedido_minimo_centavos: Optional[int] = None
+    descuento_pct: Optional[float] = None
+    cbu: Optional[str] = None
+    alias_cbu: Optional[str] = None
+    notas: Optional[str] = None
+    etiquetas: Optional[list[str]] = None
+    calificacion: Optional[int] = None
+    estado: Optional[str] = None
+
+    @field_validator("nombre")
+    @classmethod
+    def _nombre(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if not v or len(v) > 200:
+            raise ValueError("Razón social requerida (máximo 200 caracteres).")
+        return v
+
+    @field_validator("nombre_comercial", "telefono", "whatsapp", "direccion", "provincia", "ciudad")
+    @classmethod
+    def _textos(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 300:
+            raise ValueError("Texto demasiado largo (máximo 300 caracteres).")
+        return v
+
+    @field_validator("notas")
+    @classmethod
+    def _notas(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if len(v) > 2000:
+            raise ValueError("Notas demasiado largas (máximo 2000 caracteres).")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if v and (len(v) > 200 or not _RE_EMAIL.match(v)):
+            raise ValueError("Email inválido.")
+        return v
+
+    @field_validator("sitio_web")
+    @classmethod
+    def _web(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if v and (len(v) > 300 or not v.lower().startswith(("https://", "http://"))):
+            raise ValueError("Sitio web inválido (https://…).")
+        return v
+
+    @field_validator("cuit")
+    @classmethod
+    def _cuit(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        digitos = _solo_digitos(v)
+        if digitos and not _cuit_valido(digitos):
+            raise ValueError("CUIT inválido (revisá el dígito verificador).")
+        return digitos
+
+    @field_validator("cbu")
+    @classmethod
+    def _cbu(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        digitos = _solo_digitos(v)
+        if digitos and not _cbu_valido(digitos):
+            raise ValueError("CBU inválido (22 dígitos con verificadores correctos).")
+        return digitos
+
+    @field_validator("alias_cbu")
+    @classmethod
+    def _alias(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        if v and not _RE_ALIAS_CBU.match(v):
+            raise ValueError("Alias inválido (6 a 20 letras, números, puntos o guiones).")
+        return v
+
+    @field_validator("condicion_iva")
+    @classmethod
+    def _iva(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in CONDICIONES_IVA:
+            raise ValueError("Condición frente al IVA inválida.")
+        return v
+
+    @field_validator("condicion_pago")
+    @classmethod
+    def _pago(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in CONDICIONES_PAGO:
+            raise ValueError("Condición de pago inválida (contado | 15_dias | 30_dias | 60_dias).")
+        return v
+
+    @field_validator("moneda")
+    @classmethod
+    def _moneda(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in MONEDAS:
+            raise ValueError("Moneda inválida (ARS | USD).")
+        return v
+
+    @field_validator("estado")
+    @classmethod
+    def _estado(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ESTADOS_PROVEEDOR:
+            raise ValueError("Estado inválido (activo | inactivo | en_evaluacion).")
+        return v
+
+    @field_validator("plazo_entrega_dias")
+    @classmethod
+    def _plazo(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and not 0 <= int(v) <= 365:
+            raise ValueError("Plazo de entrega inválido (0 a 365 días).")
+        return v
+
+    @field_validator("pedido_minimo_centavos")
+    @classmethod
+    def _pedido_min(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and not 0 <= int(v) <= _MAX_CENTAVOS:
+            raise ValueError("Pedido mínimo inválido.")
+        return v
+
+    @field_validator("descuento_pct")
+    @classmethod
+    def _descuento(cls, v: Optional[float]) -> Optional[float]:
+        if v is None:
+            return None
+        if not 0 <= float(v) <= 100:
+            raise ValueError("Descuento inválido (0 a 100%).")
+        return round(float(v), 2)
+
+    @field_validator("calificacion")
+    @classmethod
+    def _calificacion(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and not 1 <= int(v) <= 5:
+            raise ValueError("Calificación inválida (1 a 5).")
+        return v
+
+    @field_validator("etiquetas")
+    @classmethod
+    def _etiquetas(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        if v is None:
+            return None
+        limpias: list[str] = []
+        for e in v:
+            e = str(e or "").strip()
+            if len(e) > 40:
+                raise ValueError("Etiqueta demasiado larga (máximo 40 caracteres).")
+            if e and e not in limpias:
+                limpias.append(e)
+        if len(limpias) > 20:
+            raise ValueError("Máximo 20 etiquetas.")
+        return limpias
+
+    @field_validator("contactos")
+    @classmethod
+    def _contactos(cls, v: Optional[list[Contacto]]) -> Optional[list[Contacto]]:
+        if v is not None and len(v) > 20:
+            raise ValueError("Máximo 20 contactos.")
+        return v
+
+
+class ProductoProveedorDatos(BaseModel):
+    costo_centavos: int = 0
+    moneda: str = "ARS"
+    codigo_proveedor: str = ""
+    cantidad_minima: int = 1
+    tiempo_entrega_dias: int = 7
+    es_principal: bool = False
+
+    @field_validator("costo_centavos")
+    @classmethod
+    def _costo(cls, v: int) -> int:
+        if v is None or not 0 <= int(v) <= _MAX_CENTAVOS:
+            raise ValueError("Costo inválido.")
+        return int(v)
+
+    @field_validator("moneda")
+    @classmethod
+    def _moneda(cls, v: str) -> str:
+        if v not in MONEDAS:
+            raise ValueError("Moneda inválida (ARS | USD).")
+        return v
+
+    @field_validator("codigo_proveedor")
+    @classmethod
+    def _codigo(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 80:
+            raise ValueError("Código del proveedor demasiado largo (máximo 80 caracteres).")
+        return v
+
+    @field_validator("cantidad_minima")
+    @classmethod
+    def _cant_min(cls, v: int) -> int:
+        if v is None or not 1 <= int(v) <= 1_000_000:
+            raise ValueError("Cantidad mínima inválida.")
+        return int(v)
+
+    @field_validator("tiempo_entrega_dias")
+    @classmethod
+    def _plazo(cls, v: int) -> int:
+        if v is None or not 0 <= int(v) <= 365:
+            raise ValueError("Plazo de entrega inválido (0 a 365 días).")
+        return int(v)
+
+
+class ItemOrdenCompra(BaseModel):
+    producto_id: str
+    cantidad: int
+    costo_unitario_centavos: int = 0
+
+    @field_validator("producto_id")
+    @classmethod
+    def _producto(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not _RE_UUID.match(v):
+            raise ValueError("Producto inválido.")
+        return v
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad(cls, v: int) -> int:
+        if v is None or not 1 <= int(v) <= 1_000_000:
+            raise ValueError("Cantidad inválida (1 a 1000000).")
+        return int(v)
+
+    @field_validator("costo_unitario_centavos")
+    @classmethod
+    def _costo(cls, v: int) -> int:
+        if v is None or not 0 <= int(v) <= _MAX_CENTAVOS:
+            raise ValueError("Costo unitario inválido.")
+        return int(v)
+
+
+def _items_sin_repetir(items: Optional[list[Any]]) -> Optional[list[Any]]:
+    if items is None:
+        return None
+    if not items or len(items) > 200:
+        raise ValueError("Se necesitan entre 1 y 200 productos.")
+    ids = [i.producto_id for i in items]
+    if len(set(ids)) != len(ids):
+        raise ValueError("Hay productos repetidos: unificá las cantidades en una sola línea.")
+    return items
+
+
+def _fecha_opcional(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    v = v.strip()
+    if v and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+        raise ValueError("Fecha inválida (AAAA-MM-DD).")
+    return v or None
+
+
+def _notas_opcional(v: Optional[str]) -> Optional[str]:
+    if v is None:
+        return None
+    v = v.strip()
+    if len(v) > 2000:
+        raise ValueError("Notas demasiado largas (máximo 2000 caracteres).")
+    return v
+
+
+class OrdenCompraCrear(BaseModel):
+    proveedor_id: str
+    items: list[ItemOrdenCompra]
+    notas: str = ""
+    fecha_esperada: Optional[str] = None
+
+    @field_validator("proveedor_id")
+    @classmethod
+    def _proveedor(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not _RE_UUID.match(v):
+            raise ValueError("Proveedor inválido.")
+        return v
+
+    @field_validator("items")
+    @classmethod
+    def _items(cls, v: list[ItemOrdenCompra]) -> list[ItemOrdenCompra]:
+        return _items_sin_repetir(v)
+
+    @field_validator("notas")
+    @classmethod
+    def _notas(cls, v: str) -> str:
+        return _notas_opcional(v or "")
+
+    @field_validator("fecha_esperada")
+    @classmethod
+    def _fecha(cls, v: Optional[str]) -> Optional[str]:
+        return _fecha_opcional(v)
+
+
+class OrdenCompraEditar(BaseModel):
+    items: Optional[list[ItemOrdenCompra]] = None
+    notas: Optional[str] = None
+    fecha_esperada: Optional[str] = None
+
+    @field_validator("items")
+    @classmethod
+    def _items(cls, v: Optional[list[ItemOrdenCompra]]) -> Optional[list[ItemOrdenCompra]]:
+        return _items_sin_repetir(v)
+
+    @field_validator("notas")
+    @classmethod
+    def _notas(cls, v: Optional[str]) -> Optional[str]:
+        return _notas_opcional(v)
+
+    @field_validator("fecha_esperada")
+    @classmethod
+    def _fecha(cls, v: Optional[str]) -> Optional[str]:
+        return _fecha_opcional(v)
+
+
+class OrdenCompraEstado(BaseModel):
+    a: str
+
+    @field_validator("a")
+    @classmethod
+    def _estado(cls, v: str) -> str:
+        if v not in ("enviada", "confirmada", "cancelada"):
+            raise ValueError("Estado inválido (enviada | confirmada | cancelada).")
+        return v
+
+
+class ItemRecepcion(BaseModel):
+    producto_id: str
+    cantidad: int
+
+    @field_validator("producto_id")
+    @classmethod
+    def _producto(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not _RE_UUID.match(v):
+            raise ValueError("Producto inválido.")
+        return v
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad(cls, v: int) -> int:
+        if v is None or not 1 <= int(v) <= 1_000_000:
+            raise ValueError("Cantidad inválida (1 a 1000000).")
+        return int(v)
+
+
+class RecepcionCrear(BaseModel):
+    items: list[ItemRecepcion]
+    nota: str = ""
+    actualizar_costo: bool = True
+
+    @field_validator("items")
+    @classmethod
+    def _items(cls, v: list[ItemRecepcion]) -> list[ItemRecepcion]:
+        return _items_sin_repetir(v)
+
+    @field_validator("nota")
+    @classmethod
+    def _nota(cls, v: str) -> str:
+        return _notas_opcional(v or "")
+
+
+def _proveedor_vivo(pid: str, select: str = "*") -> dict[str, Any]:
+    filas = _sb_get("proveedores", {"select": select, "id": f"eq.{pid}", "deleted_at": "is.null", "limit": 1}) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Proveedor inexistente o en papelera.")
+    return filas[0]
+
+
+def _sin_duplicados_proveedor(cambios: dict[str, Any], excluir_id: str = "") -> None:
+    """Choques de unicidad con mensaje claro (si no, el 23505 de la base
+    llega como error genérico)."""
+    if cambios.get("nombre"):
+        params: dict[str, Any] = {"select": "id,deleted_at", "nombre": f"eq.{cambios['nombre']}", "limit": 1}
+        if excluir_id:
+            params["id"] = f"neq.{excluir_id}"
+        filas = _sb_get("proveedores", params) or []
+        if filas:
+            extra = " (está en la papelera)" if filas[0].get("deleted_at") else ""
+            raise HTTPException(status_code=409, detail=f"Ya existe un proveedor con esa razón social{extra}.")
+    if cambios.get("cuit"):
+        params = {"select": "id", "cuit": f"eq.{cambios['cuit']}", "deleted_at": "is.null", "limit": 1}
+        if excluir_id:
+            params["id"] = f"neq.{excluir_id}"
+        if _sb_get("proveedores", params):
+            raise HTTPException(status_code=409, detail="Ya existe un proveedor con ese CUIT.")
+
+
+def _orden_compra(oid: str, select: str = "*") -> dict[str, Any]:
+    filas = _sb_get("ordenes_compra", {"select": select, "id": f"eq.{oid}", "limit": 1}) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Orden de compra inexistente.")
+    return filas[0]
+
+
+def _productos_vivos(ids: list[str]) -> None:
+    filas = _sb_get("productos", {
+        "select": "id", "id": f"in.({','.join(ids)})", "deleted_at": "is.null",
+    }) or []
+    if len({str(f.get("id")) for f in filas}) != len(set(ids)):
+        raise HTTPException(status_code=400, detail="Hay productos inexistentes o en papelera.")
+
+
+@router.get("/api/admin/proveedores")
+def listar_proveedores(q: str = "", estado: str = "", provincia: str = "", moneda: str = "",
+                       papelera: bool = False,
+                       pag: dict[str, int] = Depends(_pag),
+                       admin: AdminActual = Depends(requiere("proveedores", "leer"))) -> dict[str, Any]:
+    params: dict[str, Any] = {
+        "select": "*", "order": "nombre.asc",
+        "limit": pag["limit"], "offset": pag["offset"],
+        "deleted_at": "not.is.null" if papelera else "is.null",
+    }
+    limpio = _filtro_texto(q)
+    if limpio:
+        filtros = [f"nombre.ilike.*{limpio}*", f"nombre_comercial.ilike.*{limpio}*"]
+        digitos = _solo_digitos(limpio)
+        if digitos:
+            filtros.append(f"cuit.like.*{digitos}*")
+        params["or"] = f"({','.join(filtros)})"
+    if estado.strip():
+        if estado not in ESTADOS_PROVEEDOR:
+            raise HTTPException(status_code=400, detail="Estado inválido.")
+        params["estado"] = f"eq.{estado}"
+    if moneda.strip():
+        if moneda not in MONEDAS:
+            raise HTTPException(status_code=400, detail="Moneda inválida.")
+        params["moneda"] = f"eq.{moneda}"
+    if _filtro_texto(provincia):
+        params["provincia"] = f"ilike.{_filtro_texto(provincia)}"
+    filas = _sb_get("proveedores", params) or []
+    return {"proveedores": [_proveedor_salida(p) for p in filas], "papelera": papelera}
+
+
+@router.get("/api/admin/proveedores/{pid}")
+def ficha_proveedor(pid: str,
+                    admin: AdminActual = Depends(requiere("proveedores", "leer"))) -> dict[str, Any]:
+    pid = _uuid(pid, "Proveedor")
+    filas = _sb_get("proveedores", {"select": "*", "id": f"eq.{pid}", "limit": 1}) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Proveedor inexistente.")
+    productos = _sb_get("producto_proveedor", {
+        "select": "*,productos(id,nombre,codigo,stock,stock_minimo)",
+        "proveedor_id": f"eq.{pid}", "order": "updated_at.desc", "limit": 500,
+    }) or []
+    for r in productos:
+        r.pop("costo", None)  # numeric heredado de 003: hacia el panel, solo centavos
+    # Órdenes solo si el rol puede ver compras (la ficha es de proveedores).
+    ordenes: Optional[list[dict[str, Any]]] = None
+    if ("compras", "leer") in PERMISOS.get(admin.rol, set()):
+        ordenes = [_resumen_oc(o) for o in (_sb_get("ordenes_compra", {
+            "select": "id,numero,estado,moneda,fecha_esperada,created_at,"
+                      "ordenes_compra_items(cantidad,cantidad_recibida,costo_unitario_centavos)",
+            "proveedor_id": f"eq.{pid}", "order": "created_at.desc", "limit": 100,
+        }) or [])]
+        for o in ordenes:
+            o.pop("ordenes_compra_items", None)
+    return {"proveedor": _proveedor_salida(filas[0]), "productos": productos, "ordenes": ordenes}
+
+
+@router.post("/api/admin/proveedores", status_code=201)
+def crear_proveedor(d: ProveedorDatos, request: Request,
+                    admin: AdminActual = Depends(requiere("proveedores", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "proveedor-crear", 30)
+    fila = d.model_dump(exclude_none=True)
+    if not fila.get("nombre"):
+        raise HTTPException(status_code=400, detail="Razón social requerida.")
+    _sin_duplicados_proveedor(fila)
+    creadas = _sb_post("proveedores", fila) or []
+    return {"proveedor": _proveedor_salida(creadas[0] if creadas else fila)}
+
+
+@router.put("/api/admin/proveedores/{pid}")
+def editar_proveedor(pid: str, d: ProveedorDatos, request: Request,
+                     admin: AdminActual = Depends(requiere("proveedores", "editar"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "proveedor-editar", 30)
+    pid = _uuid(pid, "Proveedor")
+    # Solo lo enviado. Un null explícito se ignora (columnas NOT NULL), salvo
+    # la calificación, que sí puede quedar vacía.
+    cambios = {k: v for k, v in d.model_dump(exclude_unset=True).items()
+               if v is not None or k == "calificacion"}
+    if not cambios:
+        raise HTTPException(status_code=400, detail="Sin cambios para aplicar.")
+    _sin_duplicados_proveedor(cambios, excluir_id=pid)
+    filas = _sb_patch("proveedores", {"id": f"eq.{pid}", "deleted_at": "is.null"}, cambios) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Proveedor inexistente o en papelera.")
+    return {"proveedor": _proveedor_salida(filas[0])}
+
+
+@router.delete("/api/admin/proveedores/{pid}")
+def borrar_proveedor(pid: str, request: Request,
+                     admin: AdminActual = Depends(requiere("proveedores", "borrar"))) -> dict[str, Any]:
+    """Borrado lógico. No procede con órdenes de compra abiertas."""
+    _limitar(request.client.host if request.client else "?", "proveedor-borrar", 20)
+    pid = _uuid(pid, "Proveedor")
+    abiertas = _sb_get("ordenes_compra", {
+        "select": "id", "proveedor_id": f"eq.{pid}",
+        "estado": f"in.({','.join(sorted(OC_ABIERTAS))})", "limit": 1,
+    }) or []
+    if abiertas:
+        raise HTTPException(status_code=409,
+                            detail="Tiene órdenes de compra abiertas: recibilas o cancelalas antes de borrarlo.")
+    ahora = datetime.now(timezone.utc).isoformat()
+    filas = _sb_patch("proveedores", {"id": f"eq.{pid}", "deleted_at": "is.null"},
+                      {"deleted_at": ahora, "deleted_by": admin.user_id}) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Proveedor inexistente o ya en papelera.")
+    return {"ok": True, "id": pid}
+
+
+@router.post("/api/admin/proveedores/{pid}/restaurar")
+def restaurar_proveedor(pid: str,
+                        admin: AdminActual = Depends(requiere("proveedores", "editar"))) -> dict[str, Any]:
+    pid = _uuid(pid, "Proveedor")
+    filas = _sb_get("proveedores", {"select": "id,cuit", "id": f"eq.{pid}", "limit": 1}) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Proveedor inexistente.")
+    _sin_duplicados_proveedor({"cuit": filas[0].get("cuit") or ""}, excluir_id=pid)
+    filas = _sb_patch("proveedores", {"id": f"eq.{pid}"}, {"deleted_at": None, "deleted_by": None}) or []
+    return {"proveedor": _proveedor_salida(filas[0]) if filas else {"id": pid}}
+
+
+@router.put("/api/admin/proveedores/{pid}/productos/{producto_id}")
+def vincular_producto_proveedor(pid: str, producto_id: str, d: ProductoProveedorDatos, request: Request,
+                                admin: AdminActual = Depends(requiere("proveedores", "editar"))) -> dict[str, Any]:
+    """Alta o edición del vínculo (upsert por PK). Marcar principal desmarca
+    al principal anterior de ese producto (índice único parcial en 014)."""
+    _limitar(request.client.host if request.client else "?", "proveedor-producto", 60)
+    pid = _uuid(pid, "Proveedor")
+    producto_id = _uuid(producto_id, "Producto")
+    _proveedor_vivo(pid, "id")
+    _productos_vivos([producto_id])
+    if d.es_principal:
+        _sb_patch("producto_proveedor", {
+            "producto_id": f"eq.{producto_id}", "proveedor_id": f"neq.{pid}", "es_principal": "eq.true",
+        }, {"es_principal": False})
+    fila = {"producto_id": producto_id, "proveedor_id": pid, **d.model_dump()}
+    filas = _sb_post("producto_proveedor", fila,
+                     prefer="resolution=merge-duplicates,return=representation") or []
+    vinculo = filas[0] if filas else fila
+    vinculo.pop("costo", None)
+    return {"vinculo": vinculo}
+
+
+@router.delete("/api/admin/proveedores/{pid}/productos/{producto_id}")
+def desvincular_producto_proveedor(pid: str, producto_id: str,
+                                   admin: AdminActual = Depends(requiere("proveedores", "editar"))) -> dict[str, Any]:
+    pid = _uuid(pid, "Proveedor")
+    producto_id = _uuid(producto_id, "Producto")
+    filas = _sb_delete("producto_proveedor", {
+        "proveedor_id": f"eq.{pid}", "producto_id": f"eq.{producto_id}",
+    }) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Ese producto no está vinculado al proveedor.")
+    return {"ok": True}
+
+
+@router.get("/api/admin/compras/sugerencias")
+def sugerencias_reposicion(admin: AdminActual = Depends(requiere("compras", "leer"))) -> dict[str, Any]:
+    productos = _sb_get("productos", {
+        "select": "id,nombre,codigo,stock,stock_minimo",
+        "deleted_at": "is.null", "activo": "eq.true", "order": "nombre.asc", "limit": 5000,
+    }) or []
+    # PostgREST no compara columnas entre sí: el filtro stock < mínimo va acá.
+    bajo = [p for p in productos
+            if int(p.get("stock") or 0) < int(p.get("stock_minimo") if p.get("stock_minimo") is not None else 5)]
+    if not bajo:
+        return {"grupos": []}
+    ids = ",".join(str(p.get("id")) for p in bajo)
+    relaciones = _sb_get("producto_proveedor", {
+        "select": "producto_id,proveedor_id,costo_centavos,moneda,cantidad_minima,codigo_proveedor",
+        "producto_id": f"in.({ids})", "es_principal": "eq.true",
+    }) or []
+    prov_ids = sorted({str(r.get("proveedor_id")) for r in relaciones})
+    proveedores = (_sb_get("proveedores", {
+        "select": "id,nombre,moneda,estado,pedido_minimo_centavos",
+        "id": f"in.({','.join(prov_ids)})", "deleted_at": "is.null",
+    }) or []) if prov_ids else []
+    abiertas = _sb_get("ordenes_compra", {
+        "select": "id", "estado": f"in.({','.join(sorted(OC_ABIERTAS))})", "limit": 5000,
+    }) or []
+    en_ordenes: dict[str, int] = defaultdict(int)
+    if abiertas:
+        items = _sb_get("ordenes_compra_items", {
+            "select": "producto_id,cantidad,cantidad_recibida",
+            "orden_id": f"in.({','.join(str(o.get('id')) for o in abiertas)})",
+            "producto_id": f"in.({ids})", "limit": 5000,
+        }) or []
+        for it in items:
+            en_ordenes[str(it.get("producto_id"))] += (int(it.get("cantidad") or 0)
+                                                       - int(it.get("cantidad_recibida") or 0))
+    return {"grupos": _sugerencias_reposicion(bajo, relaciones, proveedores, en_ordenes)}
+
+
+@router.get("/api/admin/compras/ordenes")
+def listar_ordenes_compra(estado: str = "", proveedor_id: str = "",
+                          pag: dict[str, int] = Depends(_pag),
+                          admin: AdminActual = Depends(requiere("compras", "leer"))) -> dict[str, Any]:
+    params: dict[str, Any] = {
+        "select": "*,proveedores(id,nombre),"
+                  "ordenes_compra_items(cantidad,cantidad_recibida,costo_unitario_centavos)",
+        "order": "created_at.desc", "limit": pag["limit"], "offset": pag["offset"],
+    }
+    if estado.strip():
+        if estado not in ESTADOS_OC:
+            raise HTTPException(status_code=400, detail="Estado inválido.")
+        params["estado"] = f"eq.{estado}"
+    if proveedor_id.strip():
+        params["proveedor_id"] = f"eq.{_uuid(proveedor_id, 'Proveedor')}"
+    ordenes = [_resumen_oc(o) for o in (_sb_get("ordenes_compra", params) or [])]
+    for o in ordenes:
+        o.pop("ordenes_compra_items", None)
+    return {"ordenes": ordenes}
+
+
+@router.get("/api/admin/compras/ordenes/{oid}")
+def detalle_orden_compra(oid: str,
+                         admin: AdminActual = Depends(requiere("compras", "leer"))) -> dict[str, Any]:
+    oid = _uuid(oid, "Orden")
+    oc = _resumen_oc(_orden_compra(oid, "*,proveedores(id,nombre,email,moneda,condicion_pago),"
+                                        "ordenes_compra_items(*,productos(id,nombre,codigo,stock))"))
+    recepciones = _sb_get("recepciones_compra", {
+        "select": "*", "orden_id": f"eq.{oid}", "order": "created_at.desc", "limit": 100,
+    }) or []
+    return {"orden": oc, "recepciones": recepciones}
+
+
+@router.post("/api/admin/compras/ordenes", status_code=201)
+def crear_orden_compra(d: OrdenCompraCrear, request: Request,
+                       admin: AdminActual = Depends(requiere("compras", "crear"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "oc-crear", 20)
+    prov = _proveedor_vivo(d.proveedor_id, "id,estado,moneda")
+    if prov.get("estado") == "inactivo":
+        raise HTTPException(status_code=409, detail="El proveedor está inactivo.")
+    _productos_vivos([i.producto_id for i in d.items])
+    creadas = _sb_post("ordenes_compra", {
+        "proveedor_id": d.proveedor_id, "moneda": prov.get("moneda") or "ARS",
+        "notas": d.notas, "fecha_esperada": d.fecha_esperada, "creado_por": admin.user_id,
+    }) or []
+    if not creadas:
+        raise HTTPException(status_code=502, detail="No se pudo crear la orden.")
+    oc = creadas[0]
+    try:
+        _sb_post("ordenes_compra_items", [
+            {"orden_id": oc["id"], **i.model_dump()} for i in d.items
+        ], prefer="return=minimal")
+    except HTTPException:
+        # Sin transacción por REST: se deshace el borrador recién creado.
+        _sb_delete("ordenes_compra", {"id": f"eq.{oc['id']}", "estado": "eq.borrador"})
+        raise
+    oc["codigo"] = _codigo_oc(oc.get("numero"))
+    return {"orden": oc}
+
+
+@router.put("/api/admin/compras/ordenes/{oid}")
+def editar_orden_compra(oid: str, d: OrdenCompraEditar, request: Request,
+                        admin: AdminActual = Depends(requiere("compras", "editar"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "oc-editar", 30)
+    oid = _uuid(oid, "Orden")
+    if _orden_compra(oid, "id,estado").get("estado") != "borrador":
+        raise HTTPException(status_code=409, detail="Solo se edita una orden en borrador.")
+    if d.items is not None:
+        _productos_vivos([i.producto_id for i in d.items])
+        _sb_delete("ordenes_compra_items", {"orden_id": f"eq.{oid}"})
+        _sb_post("ordenes_compra_items", [
+            {"orden_id": oid, **i.model_dump()} for i in d.items
+        ], prefer="return=minimal")
+    cambios = d.model_dump(exclude_unset=True, exclude={"items"})
+    if cambios:
+        _sb_patch("ordenes_compra", {"id": f"eq.{oid}", "estado": "eq.borrador"}, cambios)
+    return detalle_orden_compra(oid, admin)
+
+
+@router.post("/api/admin/compras/ordenes/{oid}/estado")
+def estado_orden_compra(oid: str, d: OrdenCompraEstado, request: Request,
+                        admin: AdminActual = Depends(requiere("compras", "cambiar_estado"))) -> dict[str, Any]:
+    _limitar(request.client.host if request.client else "?", "oc-estado", 30)
+    oid = _uuid(oid, "Orden")
+    oc = _orden_compra(oid, "id,estado,ordenes_compra_items(id)")
+    actual = str(oc.get("estado") or "")
+    if d.a not in TRANSICIONES_OC.get(actual, set()):
+        raise HTTPException(status_code=409, detail=f"Transición inválida: {actual} → {d.a}.")
+    if d.a == "enviada" and not oc.get("ordenes_compra_items"):
+        raise HTTPException(status_code=400, detail="La orden no tiene productos.")
+    cambios: dict[str, Any] = {"estado": d.a}
+    ahora = datetime.now(timezone.utc).isoformat()
+    if d.a == "enviada":
+        cambios["enviada_at"] = ahora
+    elif d.a == "cancelada":
+        cambios["cancelada_at"] = ahora
+    # Control optimista: si otro la movió (o la recibió) entre medio, 409.
+    filas = _sb_patch("ordenes_compra", {"id": f"eq.{oid}", "estado": f"eq.{actual}"}, cambios) or []
+    if not filas:
+        raise HTTPException(status_code=409, detail="La orden cambió mientras tanto: recargala.")
+    return {"id": oid, "estado": d.a}
+
+
+@router.post("/api/admin/compras/ordenes/{oid}/recepciones", status_code=201)
+def recibir_orden_compra(oid: str, d: RecepcionCrear, request: Request,
+                         admin: AdminActual = Depends(requiere("compras", "recibir"))) -> dict[str, Any]:
+    """Recepción total o parcial: la RPC suma stock con adjust_stock (deja el
+    movimiento de inventario), actualiza el costo del proveedor y fija el
+    estado de la orden, todo en una transacción."""
+    _limitar(request.client.host if request.client else "?", "oc-recibir", 30)
+    oid = _uuid(oid, "Orden")
+    oc = _orden_compra(oid, "id,estado,ordenes_compra_items(producto_id,cantidad,cantidad_recibida)")
+    items = [i.model_dump() for i in d.items]
+    error = _validar_recepcion(str(oc.get("estado") or ""), oc.get("ordenes_compra_items") or [], items)
+    if error:
+        raise HTTPException(status_code=error[0], detail=error[1])
+    resultado = _rpc("recibir_orden_compra", {
+        "p_orden": oid, "p_items": items, "p_nota": d.nota,
+        "p_actor": admin.user_id, "p_actualizar_costo": d.actualizar_costo,
+    }) or {}
+    return {"id": oid, **resultado}

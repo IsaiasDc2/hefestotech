@@ -8,15 +8,16 @@ Frontend: `ecomers/client/src/pages/Admin/`. Ruta pública extra: `/reclamo`.
 
 ## Matriz de permisos (espejo de `admin_permisos`, migración 005)
 
-| Rol | Productos | Pedidos | Stock | Reclamos | Cupones | Banners | Notif. | Auditoría | Reportes | Buscar | Config | Usuarios |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| owner | leer/crear/editar/borrar | leer/crear/editar/cambiar_estado | leer/ajustar | leer/crear/editar/cambiar_estado | leer/crear/editar/borrar | leer/crear/editar/borrar | leer | leer | leer | leer | leer/gestionar | leer/gestionar |
-| admin | igual que owner | igual que owner | leer/ajustar | igual que owner | igual que owner | igual que owner | leer | leer | leer | leer | leer | — |
-| operador | leer/crear/editar | leer/cambiar_estado | leer/ajustar | leer | leer | leer | leer | — | leer | leer | — | — |
-| soporte | leer | leer | — | leer/crear/editar/cambiar_estado | — | — | leer | — | — | leer | — | — |
-| solo_lectura | leer | leer | leer | leer | leer | leer | leer | leer | leer | leer | — | — |
+| Rol | Productos | Pedidos | Stock | Reclamos | Cupones | Banners | Notif. | Auditoría | Reportes | Buscar | Config | Usuarios | Proveedores | Compras |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| owner | leer/crear/editar/borrar | leer/crear/editar/cambiar_estado | leer/ajustar | leer/crear/editar/cambiar_estado | leer/crear/editar/borrar | leer/crear/editar/borrar | leer | leer | leer | leer | leer/gestionar | leer/gestionar | leer/crear/editar/borrar | leer/crear/editar/cambiar_estado/recibir |
+| admin | igual que owner | igual que owner | leer/ajustar | igual que owner | igual que owner | igual que owner | leer | leer | leer | leer | leer | — | igual que owner | igual que owner |
+| operador | leer/crear/editar | leer/cambiar_estado | leer/ajustar | leer | leer | leer | leer | — | leer | leer | — | — | leer/crear/editar | leer/crear/editar/cambiar_estado/recibir |
+| soporte | leer | leer | — | leer/crear/editar/cambiar_estado | — | — | leer | — | — | leer | — | — | — | — |
+| solo_lectura | leer | leer | leer | leer | leer | leer | leer | leer | leer | leer | — | — | leer | leer |
 
-Fuente de verdad RLS: tabla SQL `admin_permisos`. El espejo `PERMISOS` en
+Fuente de verdad RLS: tabla SQL `admin_permisos` (Proveedores y Compras se
+suman en la migración 014). El espejo `PERMISOS` en
 `backend/admin_api.py` solo decide el acceso a ese backend. Roles fuera de
 la matriz (p. ej. `cliente`) no entran a ningún endpoint. El JWT se valida
 contra Supabase (`/auth/v1/user`); nunca se confía en el rol del cliente.
@@ -29,6 +30,44 @@ El token nunca se loguea ni se renderiza.
   `cambiar_estado_pedido` con control optimista de versión (409 ante
   conflicto: "recargá el pedido").
 - **Reclamo** (`ESTADOS_RECLAMO`): `abierto → en_revision → resuelto | rechazado`.
+- **Orden de compra** (`TRANSICIONES_OC`): `borrador → enviada → confirmada`,
+  y `recibida_parcial → recibida` solo por recepción. `cancelada` desde
+  borrador, enviada, confirmada o recibida parcial (cierra el saldo; lo
+  recibido queda). Cambio manual con control optimista (`estado=eq.<actual>`;
+  409 "recargala" si otro la movió).
+
+## Proveedores y Compras (migración 014)
+
+- **Ficha**: razón social (`nombre`, única), nombre comercial, CUIT con
+  dígito verificador (módulo 11, se guarda en 11 dígitos; validado en
+  servidor por `_cuit_valido`, en SQL por `cuit_valido()` y en el formulario
+  por `compras.js`), condición IVA, contactos (jsonb), pago contado/15/30/60
+  días, moneda ARS/USD, plazo, pedido mínimo (centavos), descuento, CBU
+  (verificadores validados; **nunca sale del servidor**: solo `cbu_mascara`
+  con los últimos 4), alias, notas, etiquetas, calificación 1–5 y estado
+  `activo | en_evaluacion | inactivo`. Borrado lógico con papelera y
+  restaurar; **no se borra con órdenes abiertas** (409).
+- **Producto ↔ proveedor**: costo en centavos (`costo_centavos`; el `costo`
+  numeric de 003 queda sin uso), moneda, SKU del proveedor, cantidad mínima,
+  plazo y **un solo principal por producto** (índice único parcial).
+  `producto_proveedor_costos` guarda el historial de cada cambio de costo.
+- **Reposición**: productos activos con `stock < stock_minimo`, agrupados
+  por proveedor principal. Sugerida = `2 × mínimo − stock − lo pendiente en
+  OC abiertas` (incluye borradores), llevada a la cantidad mínima del
+  proveedor; si lo pedido ya cubre, no aparece. Sin principal → grupo aparte
+  (no se puede crear borrador hasta asignarlo).
+- **Recepción**: RPC `recibir_orden_compra` (SECURITY DEFINER, solo
+  service_role) en una transacción: valida lo pendiente por línea, suma
+  stock con `adjust_stock` (movimiento `motivo=recepcion_compra`,
+  `nota=OC-000123`), actualiza el costo del proveedor (opcional), fija
+  `recibida_parcial`/`recibida` y guarda la recepción en
+  `recepciones_compra`. Si una línea falla, no se aplica ninguna. El backend
+  pre-valida con `_validar_recepcion` para responder 400/409 claros.
+- RLS: `proveedores` y `producto_proveedor` dejan de ser de lectura pública
+  (costos y CBU); lectura solo staff con `proveedores/leer`, compras con
+  `compras/leer`. Escritura de compras solo vía backend.
+- Fuera del MVP (pendiente): cuenta corriente y pagos, documentos adjuntos,
+  importación de listas de precios, PDF/email de la OC, reportes de compras.
 
 ## Cupones
 
@@ -59,6 +98,8 @@ El token nunca se loguea ni se renderiza.
 | Inicio | `GET /api/admin/resumen` | Terminado |
 | Productos (+lotes, +Deshacer 10s) | `GET/POST /api/admin/productos`, `PUT/DELETE`, `restaurar`, `lotes` | Terminado |
 | Stock | `POST /api/admin/stock/ajustar` | Terminado |
+| Proveedores (ficha, productos, papelera) | `GET/POST /api/admin/proveedores`, `GET/PUT/DELETE /{id}`, `restaurar`, `PUT/DELETE /{id}/productos/{producto_id}` | Terminado (MVP) |
+| Compras (reposición, OC, recepción) | `GET /api/admin/compras/sugerencias`, `GET/POST /api/admin/compras/ordenes`, `GET/PUT /{id}`, `POST /{id}/estado`, `POST /{id}/recepciones` | Terminado (MVP) |
 | Pedidos | `GET /api/admin/pedidos`, `POST estado` | Terminado |
 | Reclamos (bandeja) + `/reclamo` público | `GET/POST`, `PATCH` | Terminado |
 | WhatsApp Nivel 1 (wa.me + plantillas) | sin backend (enlaces) | Terminado |

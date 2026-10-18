@@ -18,6 +18,7 @@ import {
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { useEsFavorito } from "../../services/favoritos";
 import { whatsappUrl } from "../../constants/whatsapp";
+import { formatearPesos } from "../../utils/dinero";
 import "./ProductCard.css";
 
 /* Icono de respaldo según categoría (estado de error de imagen). */
@@ -80,30 +81,13 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
       : null;
 
   return (
-    <div className={`card-producto${hayStock ? "" : " is-sin-stock"}`}>
-      {tieneOferta && (
-        <span className="oferta">
-          <span>{t(idioma, "card.oferta")}</span>
-          {descuento > 0 && <span className="oferta-pct">-{descuento}%</span>}
-        </span>
-      )}
-
-      {marca && (
-        <span className="card-marca" title={marca}>
-          {marca}
-        </span>
-      )}
-
+    <article className={`card-producto${hayStock ? "" : " is-sin-stock"}`} aria-label={nombre}>
       <div className="card-media">
-        <Link
-          to={urlProducto}
-          className="card-media-link"
-          aria-label={`${t(idioma, "card.ver")} ${nombre}`}
-        >
+        <Link to={urlProducto} className="card-media-link" tabIndex={-1} aria-hidden="true">
           {imagen && !imgError ? (
             <img
               src={imagen}
-              alt={nombre}
+              alt=""
               width="600"
               height="600"
               sizes="(min-width: 1280px) 280px, (min-width: 640px) 33vw, 50vw"
@@ -115,37 +99,37 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
               }}
             />
           ) : (
-            <span
-              className="producto-sin-imagen"
-              role="img"
-              aria-label={`${t(idioma, "card.sinImagen")} ${nombre}`}
-            >
+            <span className="producto-sin-imagen">
               {createElement(iconoPorCategoria(categoria), {
                 className: "sin-imagen-icono",
                 "aria-hidden": true,
               })}
-              <span className="sin-imagen-texto" aria-hidden="true">
-                HefestoTech
-              </span>
             </span>
           )}
         </Link>
+        {tieneOferta && tienePrecio && descuento > 0 && (
+          <span className="oferta" aria-label={`${t(idioma, "card.oferta")} ${descuento}%`}>
+            -{descuento}%
+          </span>
+        )}
         <button
           type="button"
           className={`favorito ${favorito ? "activo" : ""}`}
           onClick={alternarFavorito}
           aria-pressed={favorito}
-          aria-label={
-            favorito ? t(idioma, "card.favQuitar") : t(idioma, "card.favAgregar")
-          }
+          aria-label={`${favorito ? t(idioma, "card.favQuitar") : t(idioma, "card.favAgregar")}: ${nombre}`}
         >
-          {favorito ? (
-            <FaHeart aria-hidden="true" />
-          ) : (
-            <FaRegHeart aria-hidden="true" />
-          )}
+          {favorito ? <FaHeart aria-hidden="true" /> : <FaRegHeart aria-hidden="true" />}
         </button>
       </div>
+
+      <p className="card-meta">
+        {marca && <span className="card-marca">{marca}</span>}
+        <span className={`card-stock${hayStock ? " disponible" : " agotado"}`}>
+          <span className="stock-dot" aria-hidden="true" />
+          {hayStock ? t(idioma, "card.disponible") : t(idioma, "card.sinStock")}
+        </span>
+      </p>
 
       <Link to={urlProducto} className="card-titulo-link">
         <h3>{nombre}</h3>
@@ -157,62 +141,36 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
           role="img"
           aria-label={`${t(idioma, "card.rating")} ${rating.toFixed(1)} ${t(idioma, "card.de")} 5`}
         >
-          <span className="estrellas" aria-hidden="true">
-            ★★★★★
-          </span>
+          <span className="estrellas" aria-hidden="true">★</span>
           <span className="rating-num">{rating.toFixed(1)}</span>
-          {resenas != null && (
-            <span className="rating-count">({resenas})</span>
-          )}
+          {resenas != null && <span className="rating-count">({resenas})</span>}
         </span>
       )}
 
-      <p className="categoria">{categoria}</p>
-
-      <div className="stock">
-        {hayStock ? (
-          <span className="stock-linea disponible">
-            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.disponible")}
-          </span>
+      <div className="card-precio">
+        {!tienePrecio ? (
+          <strong className="precio-actual precio-a-confirmar">{t(idioma, "catl.sinPrecio")}</strong>
         ) : (
-          <span className="stock-linea agotado">
-            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.sinStock")}
-          </span>
+          <>
+            {tieneOferta && <span className="precio-anterior">{formatearPesos(precio)}</span>}
+            <strong className="precio-actual">{formatearPesos(precioFinal)}</strong>
+          </>
         )}
       </div>
 
-      {!tienePrecio ? (
-        <strong className="precio-actual precio-a-confirmar">
-          {t(idioma, "catl.sinPrecio")}
-        </strong>
-      ) : tieneOferta ? (
-        <div className="precios">
-          <span className="precio-anterior">
-            ${precio.toLocaleString("es-AR")}
-          </span>
-          {descuento > 0 && (
-            <span className="descuento-badge">-{descuento}%</span>
+      {(cuotasTexto || producto.envio_gratis) && (
+        <ul className="card-extras">
+          {cuotasTexto && (
+            <li>
+              <FaCreditCard aria-hidden="true" /> {cuotasTexto}
+            </li>
           )}
-          <strong className="precio-actual">
-            ${precioFinal.toLocaleString("es-AR")}
-          </strong>
-        </div>
-      ) : (
-        <strong className="precio-actual">
-          ${precio.toLocaleString("es-AR")}
-        </strong>
-      )}
-
-      {cuotasTexto && (
-        <p className="cuotas">
-          <FaCreditCard aria-hidden="true" /> {cuotasTexto}
-        </p>
-      )}
-
-      {producto.envio_gratis && (
-        <p className="envio">
-          <FaTruckFast aria-hidden="true" /> {t(idioma, "card.envioGratis")}
-        </p>
+          {producto.envio_gratis && (
+            <li>
+              <FaTruckFast aria-hidden="true" /> {t(idioma, "card.envioGratis")}
+            </li>
+          )}
+        </ul>
       )}
 
       {!tienePrecio ? (
@@ -225,17 +183,18 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
           <FaWhatsapp aria-hidden="true" /> {t(idioma, "catl.consultar")}
         </a>
       ) : (
-      <button
-        type="button"
-        className={`btn-carrito${agregado ? " is-added" : ""}`}
-        disabled={!comprable}
-        onClick={manejarAgregar}
-        aria-label={
-          hayStock ? `${t(idioma, "card.agregar")} ${nombre}` : `${nombre} ${t(idioma, "card.sinStock")}`
-        }
-      >
-        {hayStock ? (
-          agregado ? (
+        <button
+          type="button"
+          className={`btn-carrito${agregado ? " is-added" : ""}`}
+          disabled={!comprable}
+          onClick={manejarAgregar}
+          aria-label={
+            hayStock ? `${t(idioma, "card.agregar")}: ${nombre}` : `${nombre}: ${t(idioma, "card.sinStock")}`
+          }
+        >
+          {!hayStock ? (
+            t(idioma, "card.sinStock")
+          ) : agregado ? (
             <>
               <FaCheck aria-hidden="true" /> {t(idioma, "card.agregado")}
             </>
@@ -243,16 +202,13 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
             <>
               <FaCartPlus aria-hidden="true" /> {t(idioma, "card.agregar")}
             </>
-          )
-        ) : (
-          t(idioma, "card.sinStock")
-        )}
-      </button>
+          )}
+        </button>
       )}
       <span className="sr-only" aria-live="polite">
         {agregado ? `${nombre}: ${t(idioma, "card.agregado")}` : ""}
       </span>
-    </div>
+    </article>
   );
 }
 

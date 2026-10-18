@@ -1,74 +1,33 @@
+/* Layout de la tienda: header sticky en el flujo normal (sin padding
+   compensatorio), contenido y footer. */
 .layout {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    "header"
-    "main"
-    "footer";
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-width: 0;
+  overflow-x: clip;
   background-color: var(--bg);
-  padding-top: var(--head-h, 200px);
-}
-
-.skip-link {
-  position: absolute;
-  left: 1rem;
-  top: -100px;
-  z-index: 1000;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  background: var(--grad-marca);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.85rem;
-  text-decoration: none;
-  box-shadow: var(--sombra-marca);
-  transition: top 0.2s ease;
-}
-
-.skip-link:focus-visible {
-  top: 0.75rem;
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.layout > header,
-.layout > .site-head,
-.layout > .site-head-wrap {
-  grid-area: header;
-  min-width: 0;
-}
-
-.site-head-wrap {
-  min-width: 0;
 }
 
 .layout-main {
-  grid-area: main;
-  min-height: 60vh;
+  flex: 1;
   min-width: 0;
-}
-
-/* El sticky del sidebar admin necesita ancestros sin recorte horizontal. */
-.layout-main:has(.adm) {
-  overflow-x: visible;
+  min-height: 60vh;
+  overflow-x: clip;
+  scroll-margin-top: var(--head-h, 120px);
 }
 
 .layout-main:focus {
   outline: none;
 }
 
-.layout > footer {
-  grid-area: footer;
-  min-width: 0;
-}
-
-
-.layout,
-.layout-main {
-  min-width: 0;
-  overflow-x: clip;
+/* El panel admin trae su propia barra: sin cromo de tienda y sin recorte
+   horizontal (rompería el sticky del lateral). */
+.layout:has(.adm) .hd-aviso,
+.layout:has(.adm) .hd,
+.layout:has(.adm) > footer {
+  display: none;
 }
 
 .layout:has(.adm),
@@ -77,99 +36,51 @@
   overflow-x: visible;
 }
 
-@supports not (overflow: clip) {
-  .layout,
-  .layout-main {
-    overflow-x: hidden;
+.contenedor {
+  width: 100%;
+  max-width: var(--contenedor);
+  margin-inline: auto;
+  padding-inline: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .contenedor {
+    padding-inline: var(--space-5);
   }
 }
 
-
-.layout-main {
-  scroll-margin-top: 120px;
-}
-
-@media (max-width: 480px) {
-  .layout-main {
-    padding-inline: 0;
+@media (min-width: 1024px) {
+  .contenedor {
+    padding-inline: var(--space-6);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skip-link {
-    transition: none;
-  }
-}
-
-/* ============================================================
-   Fondo circuito: cuadricula sutil (<= 0.08 opacidad) + 2 pulsos.
-   Capa fija decorativa: no toca layout, no recibe eventos.
-   Los pulsos SOLO corren con el hero en pantalla
-   (html[data-hero-visible]) y se pausan con pestana oculta:
-   maximo 1-2 loops visibles a la vez (el camioncito se pausa
-   mientras el hero esta visible).
-   ============================================================ */
-.ht-circuito {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(var(--primary-borde) 1px, transparent 1px),
-    linear-gradient(90deg, var(--primary-borde) 1px, transparent 1px);
-  background-size: 56px 56px;
-  opacity: 0.08;
-}
-
-.ht-pulso {
+.skip-link {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--accent-sky) 0%, transparent 70%);
-  opacity: 0;
-  animation: ht-pulso 6s ease-out infinite;
-  animation-play-state: paused;
+  left: var(--space-4);
+  top: -100px;
+  z-index: 1000;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radio-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
 }
 
-.ht-pulso--a {
-  top: 22%;
-  left: 12%;
+.skip-link:focus-visible {
+  top: var(--space-3);
 }
 
-.ht-pulso--b {
-  top: 38%;
-  right: 14%;
-  animation-delay: 3s;
+/* Carga entre rutas */
+.cargando-marca {
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-html[data-hero-visible="true"] .ht-pulso {
-  animation-play-state: running;
-}
-
-/* Presupuesto de loops: sin hero visible el camioncito corre;
-   con hero visible corre el sistema hero + pulsos, no el camion. */
-html[data-hero-visible="true"] .topbar-camion {
-  animation: none;
-  opacity: 0;
-}
-
-@keyframes ht-pulso {
-  0%, 100% { opacity: 0; transform: scale(0.6); }
-  12% { opacity: 0.9; transform: scale(1); }
-  28% { opacity: 0; transform: scale(1.6); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ht-circuito {
-    display: none;
-  }
-}
-
-/* En admin no hay header de tienda: sin padding-top compensatorio. Solo CSS con :has, sin JS. */
-body:has(.adm) .layout,
-.layout:has(.adm) {
-  padding-top: 0;
+.cargando-marca-fila {
+  display: flex;
+  gap: var(--space-2);
 }
 
 /* Indicador fijo del modo demo: los precios no son del comercio. */
@@ -179,15 +90,15 @@ body:has(.adm) .layout,
   bottom: max(0.75rem, env(safe-area-inset-bottom));
   z-index: 60;
   margin: 0;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--oro-borde);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radio-full);
   background: var(--surface);
-  color: var(--gold);
-  font-size: 0.72rem;
-  font-weight: var(--weight-bold);
+  color: var(--warning);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-humo);
   text-transform: uppercase;
-  box-shadow: var(--sombra-suave);
   cursor: help;
 }

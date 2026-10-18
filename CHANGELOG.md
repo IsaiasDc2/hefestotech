@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
+## [Sin publicar]
+
+### Agregado
+- **Asistente de IA** (`backend/asistente/`): interfaz `LLMProvider` (`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`) con Gemini y modo `mock` determinístico que funciona sin clave ni internet; streaming por SSE; herramientas sobre datos reales (búsqueda, ficha, stock, compatibilidad con el motor del armador portado y verificado por paridad, armado por presupuesto, envío con la regla del checkout, estado de pedido con número + email, políticas con su fuente y derivación a WhatsApp); rate limit por IP y sesión; system prompt en `prompts/assistant.system.md`.
+- **Chat**: tarjetas de producto con "Agregar al carrito" y "Ver producto", armado completo con "Agregar todo al carrito", estado de la herramienta en curso, reintento, nueva conversación, 👍/👎, persistencia por 24 h, pantalla completa en móvil y minimizado en el checkout.
+- `docs/QA-ASISTENTE.md`: 47 conversaciones de prueba con esperado vs. obtenido, también corridas por pytest.
+
+### Corregido
+- El asistente anterior respondía sin acceso al catálogo, bloqueaba el servidor con `time.sleep` y devolvía errores como respuestas `200` (detalle IA01–IA10 en `AUDITORIA.md`).
+- Datos de tarjeta escritos en el chat se borran antes de llegar al modelo, a los logs y al almacenamiento del navegador.
+
 ## [1.0.0] · 2026-10-17
 
 ### Stack

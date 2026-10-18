@@ -24,6 +24,8 @@ import {
   FaSun,
   FaTrashCan,
   FaTriangleExclamation,
+  FaTruck,
+  FaFileInvoiceDollar,
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 
@@ -31,6 +33,8 @@ const NAV = [
   { id: "inicio", etiqueta: "Inicio", Icono: FaHouse },
   { id: "productos", etiqueta: "Productos", Icono: FaBox },
   { id: "stock", etiqueta: "Stock", Icono: FaBoxesStacked },
+  { id: "proveedores", etiqueta: "Proveedores", Icono: FaTruck },
+  { id: "compras", etiqueta: "Compras", Icono: FaFileInvoiceDollar },
   { id: "pedidos", etiqueta: "Pedidos", Icono: FaCartShopping },
   { id: "reclamos", etiqueta: "Reclamos", Icono: FaMessage },
   { id: "whatsapp", etiqueta: "WhatsApp", Icono: FaClipboardList },

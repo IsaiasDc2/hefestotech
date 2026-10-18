@@ -7,8 +7,7 @@
     <link rel="apple-touch-icon" href="./brand/apple-touch-icon.png" />
     <link rel="manifest" href="./site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F6FB" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0E14" />
+        <meta name="theme-color" content="#0A0B0D" />
     <meta name="color-scheme" content="dark light" />
     <!-- Pages estático: sin headers de servidor. CSP vía meta como
       mitigación en profundidad (XSS/clickjacking). connect-src lista los
@@ -16,17 +15,14 @@
       actualizar acá (VITE_API_URL). -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self' https://wa.me; script-src 'self' 'sha256-9N92KsvN2b43e09GVdU4m/LbVSnOuJATMNMeq+KCJ8I='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://hefestotech.onrender.com http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:5173 http://localhost:5173"
+      content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self' https://wa.me; script-src 'self' 'sha256-1DDJ+myts/YoiJryqrhLrUkImKYPIlvteghnwljJZmA='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://hefestotech.onrender.com http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:5173 http://localhost:5173"
     />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="canonical" href="https://IsaiasDc2.github.io/hefestotech/" />
     <script>
       (function () {
         try {
-          var t = localStorage.getItem("ht-tema");
-          if (t !== "light" && t !== "dark") {
-            t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-          }
+          var t = localStorage.getItem("ht-tema") === "light" ? "light" : "dark";
           document.documentElement.dataset.theme = t;
           document.documentElement.style.colorScheme = t;
         } catch (e) {
@@ -91,8 +87,6 @@
         ]
       }
     </script>
-    <!-- Imagen principal del banner (LCP): se pide antes que el JS. -->
-    <link rel="preload" as="image" href="./banners/hero-banner.webp" fetchpriority="high" />
     <title>HefestoTech | Hardware, PCs armadas y componentes</title>
   </head>
   <body>

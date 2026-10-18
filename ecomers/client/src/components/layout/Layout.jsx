@@ -26,10 +26,6 @@ function Layout({
   const idioma = useIdiomaStore((s) => s.idioma);
   return (
     <div className="layout">
-      <div className="ht-circuito" aria-hidden="true">
-        <span className="ht-pulso ht-pulso--a" />
-        <span className="ht-pulso ht-pulso--b" />
-      </div>
       <a className="skip-link" href="#contenido">
         {t(idioma, "lay.saltar")}
       </a>

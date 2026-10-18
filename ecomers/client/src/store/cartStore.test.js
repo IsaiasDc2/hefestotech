@@ -52,4 +52,12 @@ describe("carrito", () => {
     agregarAlCarrito({ ...cpu, precio_con_descuento: 450 }, 2);
     expect(getTotal()).toBe(900);
   });
+
+  test("el asistente agrega sin abrir el carrito lateral", () => {
+    const { agregarAlCarrito, agregarVarios } = useCartStore.getState();
+    agregarAlCarrito(cpu, 1, { abrir: false });
+    agregarVarios([gpu], { abrir: false });
+    expect(carrito().map((i) => i.id)).toEqual(["cpu", "gpu"]);
+    expect(useCartStore.getState().isCartOpen).toBe(false);
+  });
 });

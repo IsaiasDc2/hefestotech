@@ -1,5 +1,5 @@
 .checkout {
-  max-width: min(1280px, 100%);
+  max-width: min(var(--contenedor), 100%);
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
   overflow-x: hidden;
@@ -37,6 +37,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  font-size: var(--text-h3);
 }
 
 .checkout-campos {

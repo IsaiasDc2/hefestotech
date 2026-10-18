@@ -43,7 +43,6 @@
   font-weight: var(--weight-display);
   letter-spacing: var(--tracking-display);
   line-height: var(--leading-tight);
-  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
@@ -244,7 +243,7 @@
   padding: 0 var(--space-1);
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--accent-texto);
   font: inherit;
   font-size: var(--text-small);
   font-weight: var(--weight-semibold);
@@ -253,9 +252,6 @@
   text-underline-offset: 3px;
 }
 
-:root[data-theme="dark"] .catl-link {
-  color: #a5b4fc;
-}
 
 /* ---------- Grilla ---------- */
 .catl-grilla {
@@ -524,7 +520,6 @@
 .catl-dialogo-cabecera h2 {
   font-family: var(--font-display);
   font-size: var(--text-h3);
-  text-transform: uppercase;
   letter-spacing: var(--tracking-display);
 }
 

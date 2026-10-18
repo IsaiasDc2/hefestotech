@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { formatearCuota, formatearPesos } from "./dinero";
 import { esUrlMP } from "./mercadoPago";
+import { nombreSpec, valorSpec } from "./specs";
 
 describe("dinero", () => {
   test("pesos sin decimales y con el $ pegado", () => {
@@ -30,4 +31,21 @@ describe("esUrlMP (anti redirección abierta)", () => {
     "javascript:alert(1)",
     "no es una url",
   ])("rechaza %s", (url) => expect(esUrlMP(url)).toBe(false));
+});
+
+describe("nombreSpec", () => {
+  test.each([
+    ["compatibilidadPCIe", "Compatibilidad PCIe"],
+    ["cacheL3", "Caché L3"],
+    ["tdp", "TDP"],
+    ["nucleosCuda", "Núcleos CUDA"],
+    ["paisOrigen", "País origen"],
+    ["iluminacionRGB", "Iluminación RGB"],
+    ["puertosM2", "Puertos M2"],
+  ])("%s → %s", (clave, esperado) => expect(nombreSpec(clave)).toBe(esperado));
+
+  test("valores", () => {
+    expect(valorSpec(true)).toBe("Sí");
+    expect(valorSpec(["A", "B"])).toBe("A, B");
+  });
 });

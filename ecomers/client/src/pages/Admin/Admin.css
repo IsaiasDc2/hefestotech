@@ -626,6 +626,7 @@
 
 .adm-detalle-subtitulo {
   font-weight: 700;
+  font-size: 0.95rem;
   margin: 0 0 0.3rem;
 }
 
@@ -1513,4 +1514,130 @@
   .ht-burbuja {
     max-width: 94%;
   }
+}
+
+/* --- Proveedores y Compras --- */
+.adm-pila {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.adm-ficha-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.adm-ficha-cab p {
+  margin: 0.2rem 0 0;
+}
+
+.adm-panel-interno {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.9rem;
+}
+
+.adm-fieldset {
+  border: 1px solid var(--border-suave);
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.adm-fieldset legend {
+  padding: 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.adm-contacto,
+.adm-linea-oc {
+  display: grid;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.adm-contacto {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.adm-contacto > button {
+  justify-self: start;
+}
+
+.adm-linea-oc {
+  grid-template-columns: minmax(0, 1fr) 6rem 8rem auto;
+}
+
+@media (max-width: 640px) {
+  .adm-contacto,
+  .adm-linea-oc {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-celda-input {
+  min-height: 44px;
+  width: 6.5rem;
+  border: 1px solid var(--border-suave);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--text);
+  padding: 0.4rem 0.6rem;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.adm-error-campo {
+  color: var(--danger);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.adm-form input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.adm-pie-grupo {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.adm-pie-grupo > span {
+  display: inline-flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.adm-texto-pre {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.adm-btn.es-peligro {
+  color: var(--danger);
+}
+
+.adm-estado.es-recibida,
+.adm-estado.es-confirmada {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.adm-estado.es-borrador,
+.adm-estado.es-recibida_parcial {
+  color: var(--warning);
+  border-color: var(--warning);
 }

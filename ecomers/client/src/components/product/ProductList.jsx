@@ -8,6 +8,7 @@ import { obtenerProductoPorId, precioFinal as calcularPrecioFinal } from "../../
 import { CATEGORIAS } from "../../constants/categorias";
 import { whatsappUrl } from "../../constants/whatsapp";
 import { topeDeStock } from "../../store/cartStore";
+import { nombreSpec, valorSpec } from "../../utils/specs";
 import { JsonLd } from "../seo/JsonLd";
 import { construirJsonLdProducto } from "../seo/jsonLdProducto";
 import { NOMBRE_SITIO } from "../../seo/sitio";
@@ -18,17 +19,6 @@ import "./ProductoDetalle.css";
 import "./CalculadoraCuotas.css";
 
 const ULTIMAS_UNIDADES = 3;
-
-function formatearClave(clave) {
-  const conEspacios = clave.replace(/([A-Z])/g, " $1").toLowerCase();
-  return conEspacios.charAt(0).toUpperCase() + conEspacios.slice(1);
-}
-
-function formatearValor(valor, idioma) {
-  if (typeof valor === "boolean") return valor ? t(idioma, "pd.si") : t(idioma, "pd.no");
-  if (Array.isArray(valor)) return valor.join(", ");
-  return String(valor);
-}
 
 const pesos = (n) => `$${Number(n ?? 0).toLocaleString("es-AR")}`;
 
@@ -269,8 +259,8 @@ function ProductoDetalle({ agregarAlCarrito }) {
                 <tbody>
                   {Object.entries(especificaciones).map(([clave, valor]) => (
                     <tr key={clave}>
-                      <th scope="row" className="clave">{formatearClave(clave)}</th>
-                      <td className="valor">{formatearValor(valor, idioma)}</td>
+                      <th scope="row" className="clave">{nombreSpec(clave)}</th>
+                      <td className="valor">{valorSpec(valor, { si: t(idioma, "pd.si"), no: t(idioma, "pd.no") })}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -168,6 +168,36 @@ export const adminApi = {
       `/api/admin/clientes?limit=${limit}&offset=${offset}` +
         (busqueda.trim() ? `&q=${q(busqueda.trim())}` : "")
     ),
+  proveedores: ({ busqueda = "", estado = "", papelera = false, limit = 100, offset = 0 } = {}) =>
+    api(
+      `/api/admin/proveedores?limit=${limit}&offset=${offset}` +
+        `&papelera=${papelera ? "true" : "false"}` +
+        (busqueda.trim() ? `&q=${q(busqueda.trim())}` : "") +
+        (estado ? `&estado=${q(estado)}` : "")
+    ),
+  proveedor: (id) => api(`/api/admin/proveedores/${q(id)}`),
+  crearProveedor: (d) => api("/api/admin/proveedores", { method: "POST", body: d }),
+  editarProveedor: (id, d) => api(`/api/admin/proveedores/${q(id)}`, { method: "PUT", body: d }),
+  borrarProveedor: (id) => api(`/api/admin/proveedores/${q(id)}`, { method: "DELETE" }),
+  restaurarProveedor: (id) => api(`/api/admin/proveedores/${q(id)}/restaurar`, { method: "POST" }),
+  vincularProducto: (proveedorId, productoId, d) =>
+    api(`/api/admin/proveedores/${q(proveedorId)}/productos/${q(productoId)}`, { method: "PUT", body: d }),
+  desvincularProducto: (proveedorId, productoId) =>
+    api(`/api/admin/proveedores/${q(proveedorId)}/productos/${q(productoId)}`, { method: "DELETE" }),
+  sugerenciasCompra: () => api("/api/admin/compras/sugerencias"),
+  ordenesCompra: ({ estado = "", proveedorId = "", limit = 100, offset = 0 } = {}) =>
+    api(
+      `/api/admin/compras/ordenes?limit=${limit}&offset=${offset}` +
+        (estado ? `&estado=${q(estado)}` : "") +
+        (proveedorId ? `&proveedor_id=${q(proveedorId)}` : "")
+    ),
+  ordenCompra: (id) => api(`/api/admin/compras/ordenes/${q(id)}`),
+  crearOrdenCompra: (d) => api("/api/admin/compras/ordenes", { method: "POST", body: d }),
+  editarOrdenCompra: (id, d) => api(`/api/admin/compras/ordenes/${q(id)}`, { method: "PUT", body: d }),
+  estadoOrdenCompra: (id, a) =>
+    api(`/api/admin/compras/ordenes/${q(id)}/estado`, { method: "POST", body: { a } }),
+  recibirOrdenCompra: (id, d) =>
+    api(`/api/admin/compras/ordenes/${q(id)}/recepciones`, { method: "POST", body: d }),
 };
 
 // Centavos enteros → "$ 12.345,67" (es-AR). Nunca floats para dinero.

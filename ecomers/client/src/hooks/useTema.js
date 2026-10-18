@@ -1,20 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 const CLAVE = "ht-tema";
-const OSCURO = "#0B0E14";
-const CLARO = "#F4F6FB";
+const OSCURO = "#0A0B0D";
+const CLARO = "#F5F6F8";
 
-function temaInicial() {
+// Estado único de tema para toda la app (header, menú móvil): antes cada
+// componente tenía su propia copia y el botón del header quedaba desfasado.
+const oyentes = new Set();
+
+// Oscuro es la identidad de la marca: claro solo si el cliente lo eligió.
+function leer() {
+  if (typeof document !== "undefined" && document.documentElement.dataset.theme) {
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  }
   try {
-    const guardado = localStorage.getItem(CLAVE);
-    if (guardado === "light" || guardado === "dark") return guardado;
+    return localStorage.getItem(CLAVE) === "light" ? "light" : "dark";
   } catch {
-    // localStorage bloqueado (modo privado, cookies off): se usa la preferencia del sistema.
+    // Storage bloqueado: queda el tema de la marca.
+    return "dark";
   }
-  if (typeof window !== "undefined" && window.matchMedia) {
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  }
-  return "dark";
 }
 
 function aplicar(tema) {
@@ -23,58 +27,25 @@ function aplicar(tema) {
   html.style.colorScheme = tema;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", tema === "light" ? CLARO : OSCURO);
+  try {
+    localStorage.setItem(CLAVE, tema);
+  } catch {
+    // Sin storage el cambio vale para esta visita.
+  }
+  oyentes.forEach((fn) => fn());
 }
 
+function suscribir(fn) {
+  oyentes.add(fn);
+  return () => oyentes.delete(fn);
+}
 
 export function useTema() {
-  const [tema, setTema] = useState(temaInicial);
+  const tema = useSyncExternalStore(suscribir, leer, () => "dark");
 
-  useEffect(() => {
-    aplicar(tema);
-  }, [tema]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return undefined;
-    const mq = window.matchMedia("(prefers-color-scheme: light)");
-    const alCambiar = (e) => {
-      let guardado = null;
-      try {
-        guardado = localStorage.getItem(CLAVE);
-      } catch {
-        // Sin acceso a localStorage: se trata como "sin eleccion guardada".
-      }
-      if (guardado !== "light" && guardado !== "dark") {
-        setTema(e.matches ? "light" : "dark");
-      }
-    };
-    if (mq.addEventListener) mq.addEventListener("change", alCambiar);
-    else mq.addListener(alCambiar);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", alCambiar);
-      else mq.removeListener(alCambiar);
-    };
-  }, []);
-
-  const alternar = useCallback(() => {
-    setTema((prev) => {
-      const next = prev === "light" ? "dark" : "light";
-      try {
-        localStorage.setItem(CLAVE, next);
-      } catch {
-        // No se pudo persistir: el tema cambia igual, solo por esta sesion.
-      }
-      return next;
-    });
-  }, []);
-
+  const alternar = useCallback(() => aplicar(leer() === "light" ? "dark" : "light"), []);
   const fijarTema = useCallback((valor) => {
-    if (valor !== "light" && valor !== "dark") return;
-    try {
-      localStorage.setItem(CLAVE, valor);
-    } catch {
-      // No se pudo persistir: el tema cambia igual, solo por esta sesion.
-    }
-    setTema(valor);
+    if (valor === "light" || valor === "dark") aplicar(valor);
   }, []);
 
   return { tema, alternar, fijarTema };

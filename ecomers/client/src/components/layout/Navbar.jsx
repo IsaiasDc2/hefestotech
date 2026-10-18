@@ -2,42 +2,49 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
   FaBars,
-  FaCartShopping,
+  FaBagShopping,
   FaMagnifyingGlass,
+  FaRegHeart,
+  FaRegUser,
   FaShieldHalved,
-  FaUser,
-  FaTruckFast,
   FaMoon,
   FaScrewdriverWrench,
   FaSun,
+  FaBolt,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca";
 import { FILA_CATEGORIAS, esClaveActiva } from "./navLinks";
 import MobileDrawer from "./MobileDrawer";
 import { supabase } from "../lib/supabaseClient";
+import { useCantidadFavoritos } from "../../services/favoritos";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
 import "./Navbar.css";
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
-  const [scrolled, setScrolled] = useState(false);
-  const [subiendo, setSubiendo] = useState(false);
-  const ultimoY = useRef(0);
-  const [pop, setPop] = useState(false);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [esAdmin, setEsAdmin] = useState(false);
-  const refHead = useRef(null);
+  const [pop, setPop] = useState({ cantidad: cantidadCarrito, activo: false });
+  const fijoRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
   const { tema, alternar } = useTema();
-  const etiquetaTema = t(idioma, tema === "light" ? "nav.temaClaro" : "nav.temaOscuro");
-  const etiquetaMenu = t(idioma, "nav.menu");
-  const primeraVez = useRef(true);
+  const favoritos = useCantidadFavoritos();
   const navigate = useNavigate();
   const location = useLocation();
 
   const abrirMenu = useCallback(() => setMenuAbierto(true), []);
   const cerrarMenu = useCallback(() => setMenuAbierto(false), []);
+
+  // Pulso del contador cuando cambia la cantidad (ajuste durante el render).
+  if (pop.cantidad !== cantidadCarrito) {
+    setPop({ cantidad: cantidadCarrito, activo: cantidadCarrito > pop.cantidad });
+  }
+  useEffect(() => {
+    if (!pop.activo) return undefined;
+    const id = setTimeout(() => setPop((p) => ({ ...p, activo: false })), 320);
+    return () => clearTimeout(id);
+  }, [pop.activo]);
 
   useEffect(() => {
     let vivo = true;
@@ -55,68 +62,22 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
         /* sin sesión o sin red: sin botón de panel */
       }
     })();
-    return () => { vivo = false; };
-  }, []);
-
-  useEffect(() => {
-    const head = refHead.current;
-    // Altura fijada una vez: el compacto cambia padding sin refluir (CLS 0).
-    const fijarAltura = () => {
-      if (!head) return;
-      head.style.minHeight = "";
-      head.style.minHeight = `${head.offsetHeight}px`;
-      document.documentElement.style.setProperty("--head-h", `${head.offsetHeight + 10}px`);
-    };
-    const medir = () => {
-      if (!head || document.hidden) return;
-      const y = window.scrollY || 0;
-      setScrolled(y > 8);
-      setSubiendo(y < ultimoY.current - 4);
-      ultimoY.current = y;
-      const total = document.documentElement.scrollHeight - window.innerHeight;
-      const p = total > 0 ? Math.min(1, Math.max(0, y / total)) : 0;
-      head.style.setProperty("--scroll-p", p.toFixed(4));
-    };
-    let raf = 0;
-    let sucio = false;
-    const pedir = () => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        setScrolled((window.scrollY || 0) > 8);
-        return;
-      }
-      if (!sucio) {
-        sucio = true;
-        raf = requestAnimationFrame(() => {
-          sucio = false;
-          medir();
-        });
-      }
-    };
-    fijarAltura();
-    medir();
-    window.addEventListener("scroll", pedir, { passive: true });
-    window.addEventListener("resize", pedir);
-    window.addEventListener("resize", fijarAltura);
     return () => {
-      window.removeEventListener("scroll", pedir);
-      window.removeEventListener("resize", pedir);
-      window.removeEventListener("resize", fijarAltura);
-      cancelAnimationFrame(raf);
+      vivo = false;
     };
   }, []);
 
+  // Altura real del header fijo para los elementos sticky de las páginas.
   useEffect(() => {
-    if (primeraVez.current) {
-      primeraVez.current = false;
-      return;
-    }
-    setPop(true);
-    const t = setTimeout(() => setPop(false), 200);
-    return () => clearTimeout(t);
-  }, [cantidadCarrito]);
-
-  const esActiva = (clave) =>
-    esClaveActiva(location.pathname, location.search, clave) ? "activo" : "";
+    const el = fijoRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+    const obs = new ResizeObserver(([entrada]) => {
+      const alto = Math.round(entrada.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight);
+      document.documentElement.style.setProperty("--head-h", `${alto}px`);
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const buscar = (e) => {
     e.preventDefault();
@@ -125,149 +86,131 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   };
 
   const etiquetaCantidad = cantidadCarrito > 99 ? "99+" : String(cantidadCarrito);
+  const etiquetaTema = t(idioma, tema === "light" ? "nav.temaClaro" : "nav.temaOscuro");
+  const unidad = cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos");
 
   return (
-    <header className="site-head-wrap">
-      <div className="topbar">
-        <div className="topbar-inner ht-contenedor">
-          <span className="topbar-envio">
-            <FaTruckFast aria-hidden="true" />
-            {t(idioma, "topbar.envio")}
-          </span>
-          <span className="topbar-links">
-            <button
-              type="button"
-              className="topbar-tema"
-              onClick={alternar}
-              aria-pressed={tema === "light"}
-              aria-label={etiquetaTema}
-              title={etiquetaTema}
-            >
-              {tema === "light" ? <FaSun aria-hidden="true" /> : <FaMoon aria-hidden="true" />}
-            </button>
-          </span>
-          <span className="topbar-camion" aria-hidden="true">
-            <FaTruckFast aria-hidden="true" />
-          </span>
-        </div>
+    <>
+      <div className="hd-aviso">
+        <p className="contenedor">{t(idioma, "hd.aviso")}</p>
       </div>
 
-      <div ref={refHead} className={`site-head${scrolled ? " is-scrolled" : ""}${subiendo ? " mostrar" : ""}`}>
-        <div className="site-head-inner ht-contenedor">
+      <header ref={fijoRef} className="hd">
+        <div className="hd-main contenedor">
           <button
             type="button"
-            className="menu-btn"
+            className="hd-icono hd-menu"
             onClick={abrirMenu}
             aria-expanded={menuAbierto}
             aria-controls="menu-movil"
-            aria-label={etiquetaMenu}
+            aria-label={t(idioma, "nav.menu")}
           >
             <FaBars aria-hidden="true" />
           </button>
-          <Link to="/" className="logo" aria-label={t(idioma, "nav.logoAria")}>
-            <Marca variante="simbolo" ancho={36} alto={36} eager alt="HefestoTech" />
-            <span className="logo-nombre">
-              Hefesto<span>Tech</span>
+
+          <Link to="/" className="hd-logo" aria-label={t(idioma, "nav.logoAria")}>
+            <Marca variante="simbolo" ancho={32} alto={32} eager alt="" decorativa />
+            <span>
+              Hefesto<b>Tech</b>
             </span>
           </Link>
 
-          <form className="buscador-head" onSubmit={buscar} role="search">
-            <FaMagnifyingGlass className="buscador-icono" aria-hidden="true" />
+          <form className="hd-buscador" onSubmit={buscar} role="search">
+            <FaMagnifyingGlass className="hd-buscador-icono" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              enterKeyHint="search"
               placeholder={t(idioma, "nav.buscarPh")}
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               aria-label={t(idioma, "nav.buscarAria")}
             />
-            <button type="submit" aria-label={t(idioma, "nav.buscar")}>
-              <FaMagnifyingGlass aria-hidden="true" />
-              <span className="buscador-texto">{t(idioma, "nav.buscar")}</span>
+            <button type="submit" className="hd-buscador-btn">
+              {t(idioma, "nav.buscar")}
             </button>
           </form>
 
-          <nav className="nav-cuenta" aria-label={`${t(idioma, "nav.sesion")} / ${t(idioma, "nav.carrito")}`}>
+          <nav className="hd-acciones" aria-label={t(idioma, "nav.cuentaYCarrito")}>
             <button
               type="button"
-              className="link-cuenta"
-              onClick={abrirMenu}
-              aria-expanded={menuAbierto}
-              aria-controls="menu-movil"
-              aria-label={t(idioma, "nav.masOpciones")}
-              title={t(idioma, "nav.masOpciones")}
+              className="hd-icono hd-solo-escritorio"
+              onClick={alternar}
+              aria-pressed={tema === "light"}
+              aria-label={etiquetaTema}
+              title={etiquetaTema}
             >
-              <FaBars aria-hidden="true" />
+              {tema === "light" ? <FaMoon aria-hidden="true" /> : <FaSun aria-hidden="true" />}
             </button>
             <Link
+              to="/cuenta?tab=favoritos"
+              className="hd-icono hd-solo-escritorio"
+              aria-label={`${t(idioma, "nav.favoritos")}: ${favoritos}`}
+              title={t(idioma, "nav.favoritos")}
+            >
+              <FaRegHeart aria-hidden="true" />
+              {favoritos > 0 && (
+                <span className="hd-contador hd-contador--suave" aria-hidden="true">
+                  {favoritos > 99 ? "99+" : favoritos}
+                </span>
+              )}
+            </Link>
+            <Link
               to="/cuenta"
-              className="link-cuenta link-cuenta-icono"
+              className="hd-icono"
               aria-label={t(idioma, "nav.sesion")}
               title={t(idioma, "nav.sesion")}
             >
-              <FaUser aria-hidden="true" />
+              <FaRegUser aria-hidden="true" />
             </Link>
             {esAdmin && (
-              <Link
-                to="/admin"
-                className="link-cuenta link-panel"
-                aria-label={t(idioma, "nav.panel")}
-              >
+              <Link to="/admin" className="hd-panel" aria-label={t(idioma, "nav.panel")}>
                 <FaShieldHalved aria-hidden="true" />
                 <span>{t(idioma, "nav.panelCorto")}</span>
               </Link>
             )}
             <button
-              className={`carrito-btn${pop ? " is-pop" : ""}`}
+              type="button"
+              className={`hd-carrito${pop.activo ? " is-pop" : ""}`}
               onClick={abrirCarrito}
-              aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos")}`}
+              aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${unidad}`}
             >
-              <FaCartShopping aria-hidden="true" />
-              <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">
-                {etiquetaCantidad}
-              </span>
+              <FaBagShopping aria-hidden="true" />
+              <span className="hd-carrito-texto">{t(idioma, "nav.carritoCorto")}</span>
+              {cantidadCarrito > 0 && (
+                <span className="hd-contador" aria-hidden="true">
+                  {etiquetaCantidad}
+                </span>
+              )}
             </button>
             <span className="sr-only" aria-live="polite" aria-atomic="true">
-              {`${t(idioma, "nav.carrito")}: ${etiquetaCantidad} ${cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos")}`}
+              {`${t(idioma, "nav.carrito")}: ${etiquetaCantidad} ${unidad}`}
             </span>
           </nav>
         </div>
 
-        <nav className="nav-categorias" aria-label={t(idioma, "nav.categorias")}>
-          <div className="nav-categorias-inner ht-contenedor">
-            <ul className="nav-categorias-lista">
-              {FILA_CATEGORIAS.map((c) => {
-                const activa = esActiva(c.clave);
-                const esOutlet = c.clave === "outlet";
-                const esArma = c.clave === "combo";
-                const clase = [
-                  esOutlet ? "nav-ofertas" : "",
-                  esArma ? "nav-arma" : "",
-                  activa,
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-                return (
-                  <li key={c.clave}>
-                    <Link
-                      to={c.to}
-                      className={clase || undefined}
-                      aria-current={activa ? "page" : undefined}
-                    >
-                      {esArma && (
-                        <FaScrewdriverWrench aria-hidden="true" className="nav-icono" />
-                      )}
-                      {t(idioma, c.labelKey)}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        <nav className="hd-cats" aria-label={t(idioma, "nav.categorias")}>
+          <ul className="contenedor">
+            {FILA_CATEGORIAS.map((c) => {
+              const activa = esClaveActiva(location.pathname, location.search, c.clave);
+              return (
+                <li key={c.clave}>
+                  <Link
+                    to={c.to}
+                    className={`hd-cat hd-cat--${c.tipo}${activa ? " activo" : ""}`}
+                    aria-current={activa ? "page" : undefined}
+                  >
+                    {c.tipo === "armar" && <FaScrewdriverWrench aria-hidden="true" />}
+                    {c.tipo === "ofertas" && <FaBolt aria-hidden="true" />}
+                    {c.labelKey ? t(idioma, c.labelKey) : c.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </nav>
-        <span className="site-head-progreso" aria-hidden="true" />
-      </div>
+      </header>
       <MobileDrawer abierto={menuAbierto} alCerrar={cerrarMenu} />
-    </header>
+    </>
   );
 }
 

@@ -12,6 +12,8 @@ import "./Admin.css";
 const Inicio = lazy(() => import("./Inicio"));
 const Productos = lazy(() => import("./Productos"));
 const Stock = lazy(() => import("./Stock"));
+const Proveedores = lazy(() => import("./Proveedores"));
+const Compras = lazy(() => import("./Compras"));
 const Pedidos = lazy(() => import("./Pedidos"));
 const Reclamos = lazy(() => import("./Reclamos"));
 const WhatsApp = lazy(() => import("./WhatsApp"));
@@ -25,7 +27,8 @@ const Papelera = lazy(() => import("./Papelera"));
 const Notificaciones = lazy(() => import("./Notificaciones"));
 
 const TITULOS = {
-  inicio: "Inicio", productos: "Productos", stock: "Stock", pedidos: "Pedidos",
+  inicio: "Inicio", productos: "Productos", stock: "Stock", proveedores: "Proveedores",
+  compras: "Compras", pedidos: "Pedidos",
   reclamos: "Reclamos", whatsapp: "WhatsApp", banners: "Banners", cupones: "Cupones",
   reportes: "Reportes", clientes: "Clientes", config: "Configuración",
   auditoria: "Auditoría", papelera: "Papelera", notificaciones: "Notificaciones",
@@ -122,6 +125,8 @@ function Admin() {
         {vista === "inicio" && <Inicio onIr={ir} />}
         {vista === "productos" && <Productos {...props} />}
         {vista === "stock" && <Stock {...props} />}
+        {vista === "proveedores" && <Proveedores {...props} />}
+        {vista === "compras" && <Compras {...props} />}
         {vista === "pedidos" && <Pedidos {...props} />}
         {vista === "reclamos" && <Reclamos {...props} />}
         {vista === "whatsapp" && <WhatsApp {...props} />}

@@ -181,3 +181,26 @@ Verificado contra el código con `npm run check` (lint 0/0, 93 tests, build), `p
 | ❌ Pendiente | F07, F16 (un solo disco en el armador), SEC-01 (corregido en la 005, falta confirmar que esté aplicado), SEC-02, PRIV-01, P02, P03, P06, P07, P12, P14, C01–C04, Q01 |
 
 Detalle de lo corregido en `CHANGELOG.md`; próximos pasos en `docs/ROADMAP.md`.
+
+## Asistente de IA (Fase 6) — 17/10/2026
+
+**Diagnóstico (reproducido antes de tocar):** con `TestClient` sobre el `/api/chat` anterior, sin clave respondía `200` con «Mis circuitos están en mantenimiento» y con una clave inválida tardaba 4,1 s y respondía `200` con «Soy Hefesto, Dios de la forja… no pierdo tiempo con tonterías». El front mostraba ambos como respuestas válidas.
+
+| ID | Sev | Causa raíz | Corrección | Estado |
+|---|---|---|---|---|
+| IA01 | P0 | El modelo no tenía acceso a la tienda: el prompt pedía «usar solo el catálogo» pero no le pasaba ninguno, así que precio, stock o compatibilidad eran imposibles o inventados | Herramientas sobre datos reales (`backend/asistente/herramientas.py`): búsqueda, ficha, stock, compatibilidad con el motor del armador portado 1:1 (paridad verificada en 307 casos), armado por presupuesto, envío con la regla del checkout, pedido con número + email, políticas con fuente y derivación | ✅ |
+| IA02 | P1 | `time.sleep(3)` y cliente síncrono de Gemini dentro de `async def`: bloqueaban todo el servidor durante el reintento | Cliente async, timeout por turno, reintentos con backoff solo ante fallas transitorias (los 4xx no se reintentan) | ✅ |
+| IA03 | P1 | Errores devueltos como `200` con texto | Eventos SSE `error` + derivación a WhatsApp; el front muestra aviso con Reintentar | ✅ |
+| IA04 | P1 | Cada mensaje viajaba solo, sin historial | Ventana de 12 mensajes / 9000 caracteres con resumen de lo anterior | ✅ |
+| IA05 | P2 | Sin streaming | `POST /api/chat` por SSE (texto, herramienta en curso, tarjetas, armado, derivación) | ✅ |
+| IA06 | P2 | Proveedor fijo, sin modo sin internet | Interfaz `LLMProvider` (`LLM_PROVIDER`/`LLM_API_KEY`/`LLM_MODEL`) con Gemini y `mock` determinístico | ✅ |
+| IA07 | P2 | Rate limit solo por IP; sin freno a adivinar pedidos | Límite por IP y por sesión; 5 consultas de pedido por sesión cada 10 min y misma respuesta exista o no el email | ✅ |
+| IA08 | P2 | WhatsApp hardcodeado en `Asistente.jsx`; límite 500 en el front contra 2000 en el back (F14 seguía abierto en el código) | `constants/whatsapp.js` con mensaje precargado; 2000 en ambos lados | ✅ |
+| IA09 | P2 | En móvil `.card` (index.css) pisaba `position: fixed` del panel: el chat quedaba cortado arriba | Selector con más especificidad; verificado a 375 px | ✅ |
+| IA10 | P2 | Datos de tarjeta podían llegar al modelo y a los logs | Se borran (Luhn + CVV) en el front y en el back antes del modelo; los logs no llevan texto | ✅ |
+
+Pendiente (dueño o próxima sesión):
+- Probar las conversaciones de `docs/QA-ASISTENTE.md` con `LLM_PROVIDER=gemini` y una clave de prueba. En esta sesión el camino real se verificó con un cliente simulado y con una clave inválida contra la API de Google, que cae al fallback en 1,8 s.
+- Confirmar lo que el sitio publica sin regla en el checkout (el asistente lo cita como «figura en el sitio», sin prometerlo): 6 cuotas sin interés, 10 % off por transferencia (el checkout no ofrece transferencia), garantía de 12 meses, retiro en Salta y plazos de despacho.
+- El número de WhatsApp sigue siendo un placeholder (`WHATSAPP_NUMERO_A_CONFIRMAR`).
+- Persistir conversaciones y feedback en la base (`assistant_conversations` del Anexo D). Hoy el feedback solo queda en logs sin texto.

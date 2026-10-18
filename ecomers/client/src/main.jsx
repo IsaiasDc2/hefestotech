@@ -2,10 +2,11 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import App from "./App.jsx";
+import ErrorGeneral from "./components/ErrorGeneral.jsx";
 // Fuentes variables autoalojadas (sin Google Fonts: nada bloqueante de
 // terceros y la CSP no necesita hosts externos). Solo pesos usados.
-import "@fontsource-variable/inter/wght.css";
-import "@fontsource-variable/oswald/wght.css";
+import "@fontsource-variable/geist/wght.css";
+import "@fontsource-variable/geist-mono/wght.css";
 import "./styles/index.css";
 
 const BASENAME =
@@ -30,8 +31,10 @@ try {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter basename={BASENAME === "/" ? undefined : BASENAME}>
-      <App />
-    </BrowserRouter>
+    <ErrorGeneral>
+      <BrowserRouter basename={BASENAME === "/" ? undefined : BASENAME}>
+        <App />
+      </BrowserRouter>
+    </ErrorGeneral>
   </React.StrictMode>
 );

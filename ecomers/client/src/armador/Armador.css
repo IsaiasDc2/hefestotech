@@ -23,8 +23,7 @@
 
 .armador-titulo {
   font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.015em;
+  letter-spacing: var(--tracking-display);
   font-size: clamp(1.5rem, 1.15rem + 1.75vw, 2.25rem);
   margin: 0;
 }
@@ -70,7 +69,6 @@
 
 .armador-intro h1 {
   font-family: var(--font-display);
-  text-transform: uppercase;
   font-size: clamp(2rem, 1.4rem + 3vw, 3rem);
   margin: 0;
   line-height: 1.1;
@@ -441,7 +439,6 @@
 
 .resumen-titulo {
   font-family: var(--font-display);
-  text-transform: uppercase;
   margin: 0;
 }
 
