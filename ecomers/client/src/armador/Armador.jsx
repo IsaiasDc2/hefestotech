@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -27,16 +27,21 @@ const RANGO_ESTADO = { compatible: 0, revisar: 1, incompatible: 2 };
 
 function TotalAnimado({ valor }) {
   const [mostrado, setMostrado] = useState(valor);
-  useEffect(() => {
-    if (
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
-      mostrado === valor
-    ) {
+  const [valorPrevio, setValorPrevio] = useState(valor);
+  // Con movimiento reducido el total salta al valor nuevo en el mismo render
+  // (ajuste de estado al cambiar la prop, sin pasar por un efecto).
+  if (valorPrevio !== valor) {
+    setValorPrevio(valor);
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
       setMostrado(valor);
-      return undefined;
     }
+  }
+
+  // Effect Event: lee el valor mostrado mas reciente como punto de partida
+  // sin que la animacion se reinicie con cada cuadro.
+  const animarHacia = useEffectEvent((hasta) => {
+    if (mostrado === hasta) return undefined;
     const desde = mostrado;
-    const hasta = valor;
     const inicio = performance.now();
     const dur = 250;
     let raf = 0;
@@ -47,8 +52,9 @@ function TotalAnimado({ valor }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valor]);
+  });
+
+  useEffect(() => animarHacia(valor), [valor]);
   return <>{mostrado.toLocaleString("es-AR")}</>;
 }
 
@@ -128,6 +134,8 @@ function Armador() {
     return { min: Math.floor(min), max: Math.ceil(max) };
   }, [basePaso]);
 
+  // Se extrae la funcion: llamarla como a.estadoCandidato() haria depender el memo de todo "a".
+  const { estadoCandidato } = a;
   const candidatos = useMemo(() => {
     const f = a.filtros;
     const q = f.q.trim().toLowerCase();
@@ -155,7 +163,7 @@ function Armador() {
     }
     let conEstado = lista.map((p) => ({
       producto: p,
-      ...a.estadoCandidato(pasoDef, p),
+      ...estadoCandidato(pasoDef, p),
     }));
     if (!f.verIncomp) {
       conEstado = conEstado.filter((c) => c.estado !== "incompatible");
@@ -171,7 +179,7 @@ function Armador() {
       return porPrecio(x, y);
     });
     return conEstado;
-  }, [basePaso, a.filtros, a.extras, a.estadoCandidato, esExtras, pasoDef]);
+  }, [basePaso, a.filtros, a.extras, estadoCandidato, esExtras, pasoDef]);
 
   const global = estadoGlobal(a.evaluacion, a.cantidad, idioma);
   const seleccionadoActual = esExtras

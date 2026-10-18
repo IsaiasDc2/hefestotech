@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const VACIO = { titulo: "", imagen: "", link: "", orden: "0", activo: true };
 

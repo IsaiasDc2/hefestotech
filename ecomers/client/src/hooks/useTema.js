@@ -9,6 +9,7 @@ function temaInicial() {
     const guardado = localStorage.getItem(CLAVE);
     if (guardado === "light" || guardado === "dark") return guardado;
   } catch {
+    // localStorage bloqueado (modo privado, cookies off): se usa la preferencia del sistema.
   }
   if (typeof window !== "undefined" && window.matchMedia) {
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
@@ -40,6 +41,7 @@ export function useTema() {
       try {
         guardado = localStorage.getItem(CLAVE);
       } catch {
+        // Sin acceso a localStorage: se trata como "sin eleccion guardada".
       }
       if (guardado !== "light" && guardado !== "dark") {
         setTema(e.matches ? "light" : "dark");
@@ -59,6 +61,7 @@ export function useTema() {
       try {
         localStorage.setItem(CLAVE, next);
       } catch {
+        // No se pudo persistir: el tema cambia igual, solo por esta sesion.
       }
       return next;
     });
@@ -69,6 +72,7 @@ export function useTema() {
     try {
       localStorage.setItem(CLAVE, valor);
     } catch {
+      // No se pudo persistir: el tema cambia igual, solo por esta sesion.
     }
     setTema(valor);
   }, []);

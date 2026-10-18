@@ -31,23 +31,36 @@ export const precioFinal = (producto = {}) => {
   return precio;
 };
 
+// Solo lo publicable: activo y fuera de la papelera (deleted_at, mig. 005).
+// La RLS de lectura es pública, así que el filtro tiene que ir siempre.
+const consultaVisibles = () =>
+  supabase.from("productos").select("*").eq("activo", true).is("deleted_at", null);
+
 export const obtenerProductos = async () => {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("activo", true);
+  const { data, error } = await consultaVisibles();
   if (error) throw new Error(error.message);
   return (Array.isArray(data) ? data : []).map(normalizarProducto);
 };
 
+// Caché corta en memoria: home → catálogo → ficha no vuelve a pedir todo.
+const TTL_CATALOGO_MS = 60_000;
+let cacheCatalogo = null;
+
+export const obtenerCatalogo = ({ forzar = false } = {}) => {
+  const vigente = cacheCatalogo && Date.now() - cacheCatalogo.en < TTL_CATALOGO_MS;
+  if (!forzar && vigente) return cacheCatalogo.promesa;
+  const promesa = obtenerProductos().catch((err) => {
+    cacheCatalogo = null;
+    throw err;
+  });
+  cacheCatalogo = { en: Date.now(), promesa };
+  return promesa;
+};
+
 export const obtenerProductoPorId = async (id) => {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const { data, error } = await consultaVisibles().eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
-  return normalizarProducto(data);
+  return data ? normalizarProducto(data) : null;
 };
 
 export const buscarProductos = async (query) => {
@@ -56,20 +69,14 @@ export const buscarProductos = async (query) => {
   // el patrón. El cliente nunca arma SQL, pero tampoco inyecta filtros.
   const q = String(query ?? "").replace(/[%_,*()"'\\;!]/g, "").trim();
   if (!q) return obtenerProductos();
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("activo", true)
+  const { data, error } = await consultaVisibles()
     .or(`nombre.ilike.%${q}%,descripcion.ilike.%${q}%,marca.ilike.%${q}%`);
   if (error) throw new Error(error.message);
   return (Array.isArray(data) ? data : []).map(normalizarProducto);
 };
 
 export const obtenerProductosDestacados = async (limite = 8) => {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("activo", true)
+  const { data, error } = await consultaVisibles()
     .eq("destacado", true)
     .limit(limite);
   if (error) throw new Error(error.message);
@@ -77,10 +84,7 @@ export const obtenerProductosDestacados = async (limite = 8) => {
 };
 
 export const obtenerOfertas = async (limite = 10) => {
-  const { data, error } = await supabase
-    .from("productos")
-    .select("*")
-    .eq("activo", true)
+  const { data, error } = await consultaVisibles()
     .gt("descuento_porcentaje", 0)
     .limit(limite);
   if (error) throw new Error(error.message);

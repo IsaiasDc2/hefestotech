@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { supabase } from "../components/lib/supabaseClient";
 
 // HefestoTech · Favoritos reales.
@@ -25,7 +25,14 @@ function normalizarIds(valor) {
 
 export function leerIdsLocales() {
   try {
-    const crudo = window.localStorage.getItem(FAVORITOS_CLAVE);
+    return idsDesdeCrudo(window.localStorage.getItem(FAVORITOS_CLAVE));
+  } catch (_) {
+    return [];
+  }
+}
+
+function idsDesdeCrudo(crudo) {
+  try {
     if (!crudo) return [];
     const json = JSON.parse(crudo);
     if (json && json.v === FAVORITOS_VERSION) return normalizarIds(json.ids);
@@ -36,15 +43,21 @@ export function leerIdsLocales() {
   }
 }
 
+// El evento "storage" solo llega a OTRAS pestañas: los oyentes locales
+// mantienen sincronizados header, tarjetas y Mi cuenta en la misma pestaña.
+const oyentesLocales = new Set();
+
 export function guardarIdsLocales(ids) {
+  const lista = normalizarIds(ids);
   try {
     window.localStorage.setItem(
       FAVORITOS_CLAVE,
-      JSON.stringify({ v: FAVORITOS_VERSION, ids: normalizarIds(ids) })
+      JSON.stringify({ v: FAVORITOS_VERSION, ids: lista })
     );
   } catch (_) {
     // Almacenamiento lleno o bloqueado: la lista en memoria sigue valiendo.
   }
+  oyentesLocales.forEach((fn) => fn(lista));
 }
 
 export function suscribirIdsLocales(callback) {
@@ -52,7 +65,43 @@ export function suscribirIdsLocales(callback) {
     if (evento.key === FAVORITOS_CLAVE) callback(leerIdsLocales());
   };
   window.addEventListener("storage", alCambiar);
-  return () => window.removeEventListener("storage", alCambiar);
+  oyentesLocales.add(callback);
+  return () => {
+    window.removeEventListener("storage", alCambiar);
+    oyentesLocales.delete(callback);
+  };
+}
+
+function leerCrudo() {
+  try {
+    return window.localStorage.getItem(FAVORITOS_CLAVE) ?? "";
+  } catch (_) {
+    return "";
+  }
+}
+
+/**
+ * Estado de favorito de UN producto (tarjetas del catálogo). Liviano: no
+ * consulta la sesión al montar; la copia local ya está fusionada con la
+ * remota al iniciar sesión (fusionarAlLogin).
+ */
+export function useEsFavorito(productoId) {
+  const id = String(productoId ?? "");
+  const crudo = useSyncExternalStore(suscribirIdsLocales, leerCrudo, () => "");
+  const esFavorito = useMemo(() => idsDesdeCrudo(crudo).includes(id), [crudo, id]);
+
+  const alternar = useCallback(async () => {
+    const previos = leerIdsLocales();
+    const ya = previos.includes(id);
+    guardarIdsLocales(ya ? previos.filter((x) => x !== id) : [...previos, id]);
+    try {
+      await (ya ? quitarFavoritoRemoto(id) : agregarFavoritoRemoto(id));
+    } catch (_) {
+      guardarIdsLocales(previos);
+    }
+  }, [id]);
+
+  return [esFavorito, alternar];
 }
 
 async function obtenerUsuarioId() {

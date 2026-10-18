@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { FaChevronDown, FaFileArrowDown, FaReceipt } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio, useModulo } from "./ui";
+import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo } from "./hooks";
 
 const ESTADOS = ["", "pendiente", "pagada", "preparacion", "enviada", "entregada", "cancelada", "reembolsada"];
 

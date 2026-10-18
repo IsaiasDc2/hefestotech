@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FaCartPlus,
   FaPen,
@@ -37,7 +37,7 @@ function ArmadorResumen({
   total,
   irAPaso,
 }) {
-  const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
+  const agregarVarios = useCartStore((s) => s.agregarVarios);
   const idioma = useIdiomaStore((s) => s.idioma);
   const nombrePaso = (p) => {
     if (!p) return "";
@@ -65,10 +65,7 @@ function ArmadorResumen({
     }
     setAgregando(true);
     try {
-      for (const { producto } of elegidos) {
-        if (producto) agregarAlCarrito(producto);
-      }
-      for (const extra of extrasElegidos) agregarAlCarrito(extra);
+      agregarVarios([...elegidos.map(({ producto }) => producto), ...extrasElegidos]);
     } finally {
       setAgregando(false);
     }

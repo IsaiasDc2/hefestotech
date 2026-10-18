@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FaCartShopping } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";

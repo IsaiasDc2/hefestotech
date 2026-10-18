@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { canonicalPara } from "../seo/sitio";
 
 // Mantiene <link rel="canonical"> sincronizado con la ruta actual:

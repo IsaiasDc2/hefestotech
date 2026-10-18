@@ -1,7 +1,7 @@
 // HefestoTech · Admin · cliente HTTP del CONTRATO servido por backend/admin_api.py.
 // Base: VITE_API_URL (mismo patrón que Checkout/Asistente). Auth: JWT de Supabase.
 // Nunca se loguea ni se renderiza el token. Sin datos inventados: ante error,
-// el llamador muestra "Próximamente" (ver ui.jsx `useModulo`).
+// el llamador muestra "Próximamente" (ver hooks.jsx `useModulo`).
 import { supabase } from "../../components/lib/supabaseClient";
 
 export const API_BASE = String(
@@ -34,7 +34,7 @@ export async function api(path, { method = "GET", body } = {}) {
     e.status = 0;
     throw e;
   }
-  let datos = {};
+  let datos;
   try {
     datos = await respuesta.json();
   } catch {
@@ -77,7 +77,7 @@ export const adminApi = {
       e.status = 0;
       throw e;
     }
-    let datos = {};
+    let datos;
     try {
       datos = await respuesta.json();
     } catch {
@@ -113,7 +113,7 @@ export const adminApi = {
       throw e;
     }
     if (!respuesta.ok) {
-      let datos = {};
+      let datos;
       try {
         datos = await respuesta.json();
       } catch {

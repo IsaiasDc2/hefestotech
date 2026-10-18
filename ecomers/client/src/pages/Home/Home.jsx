@@ -1,5 +1,5 @@
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useDeferredValue, useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
   FaMicrochip,
   FaMemory,
@@ -11,7 +11,8 @@ import {
   FaShieldHalved,
   FaCreditCard,
 } from "react-icons/fa6";
-import { supabase } from "../../components/lib/supabaseClient";
+import useCatalogo from "../../hooks/useCatalogo";
+import useVisibleUnaVez from "../../hooks/useVisibleUnaVez";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import ProductCard from "../../components/product/ProductCard";
 import "../../components/product/ProductCard.css";
@@ -50,96 +51,35 @@ const CATEGORIAS = [
 
 const BASE = import.meta.env.BASE_URL || "/";
 
-function usarVisibleUnaVez() {
-  const obsRef = useRef(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => () => obsRef.current?.disconnect(), []);
-
-  const ref = useCallback(
-    (el) => {
-      obsRef.current?.disconnect();
-      obsRef.current = null;
-      if (!el || visible) return;
-      if (
-        typeof IntersectionObserver === "undefined" ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        setVisible(true);
-        return;
-      }
-      const obs = new IntersectionObserver(
-        (entradas) => {
-          if (entradas.some((e) => e.isIntersecting)) {
-            setVisible(true);
-            obs.disconnect();
-          }
-        },
-        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
-      );
-      obs.observe(el);
-      obsRef.current = obs;
-    },
-    [visible]
-  );
-
-  return [ref, visible];
-}
-
 function Home({ agregarAlCarrito }) {
   const idioma = useIdiomaStore((s) => s.idioma);
-  const [productos, setProductos] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(false);
-  const [reintento, setReintento] = useState(0);
+  const { productos, cargando, error, reintentar } = useCatalogo();
   const [filtroTexto, setFiltroTexto] = useState("");
   const filtroTextoDif = useDeferredValue(filtroTexto);
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const [marcasElegidas, setMarcasElegidas] = useState([]);
-  const [refCategorias, categoriasVisibles] = usarVisibleUnaVez();
-  const [refDestacados, destacadosVisibles] = usarVisibleUnaVez();
-  const [refMarcas, marcasVisibles] = usarVisibleUnaVez();
-  const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
+  const [refCategorias, categoriasVisibles] = useVisibleUnaVez();
+  const [refDestacados, destacadosVisibles] = useVisibleUnaVez();
+  const [refMarcas, marcasVisibles] = useVisibleUnaVez();
+  const [refBeneficios, beneficiosVisibles] = useVisibleUnaVez();
 
   const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
     label: t(idioma, c.nombreKey),
     value: c.db,
   }));
 
-  const normalizar = (data) =>
-    (data || []).map((p) => ({
-      ...p,
-      precio: Number(p.precio ?? 0),
-      stock: Number(p.stock ?? 0),
-      descuento_porcentaje: Number(p.descuento_porcentaje ?? 0),
-      imagen: p.imagen || "",
-      categoria: p.categoria || "General",
-    }));
-
-  useEffect(() => {
-    async function cargar() {
-      try {
-        setError(false);
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*")
-          .limit(100);
-        if (error) throw error;
-        setProductos(normalizar(data));
-      } catch {
-        setProductos([]);
-        setError(true);
-      } finally {
-        setCargando(false);
-      }
-    }
-    cargar();
-  }, [reintento]);
-
-  const destacados = productos.slice(0, 8);
-  const ofertas = productos
-    .filter((p) => p.descuento_porcentaje > 0)
-    .slice(0, 10);
+  // Destacados marcados por el comercio primero; se completa con el resto
+  // de lo que tiene precio y stock para no dejar el carrusel corto.
+  const destacados = useMemo(() => {
+    const vendibles = productos.filter((p) => p.precio > 0 && p.stock > 0);
+    const marcados = vendibles.filter((p) => p.destacado);
+    const resto = vendibles.filter((p) => !p.destacado);
+    return [...marcados, ...resto].slice(0, 8);
+  }, [productos]);
+  const ofertas = useMemo(
+    () => productos.filter((p) => p.descuento_porcentaje > 0 && p.stock > 0).slice(0, 10),
+    [productos]
+  );
 
   const conteosCategoria = contarCategorias(productos, {
     texto: filtroTextoDif,
@@ -232,7 +172,7 @@ function Home({ agregarAlCarrito }) {
         </div>
       </section>
 
-      {cargando ? (
+      {cargando && productos.length === 0 ? (
         <section className="seccion" aria-label={t(idioma, "home.cargandoCat")}>
           <p className="estado-carga" role="status">{t(idioma, "home.cargandoProd")}</p>
           <div className="grid-destacados" aria-hidden="true">
@@ -248,10 +188,7 @@ function Home({ agregarAlCarrito }) {
           <button
             type="button"
             className="btn-limpiar"
-            onClick={() => {
-              setCargando(true);
-              setReintento((n) => n + 1);
-            }}
+            onClick={reintentar}
           >
             ↻ {t(idioma, "home.reintentar")}
           </button>

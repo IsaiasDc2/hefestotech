@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Auditoria() {
   const [modulo, setModulo] = useState("");

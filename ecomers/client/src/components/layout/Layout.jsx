@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Asistente from "./Asistente";
@@ -7,6 +7,7 @@ import Marca from "../brand/Marca";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
 import { usePausaPestana } from "../../hooks/useMotion";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { MODO_DEMO } from "../lib/supabaseClient";
 import "../brand/Marca.css";
 import "./Layout.css";
 
@@ -65,6 +66,11 @@ function Layout({
 
       <Footer />
       <Asistente />
+      {MODO_DEMO && (
+        <p className="aviso-demo" role="note" title={t(idioma, "demo.detalle")}>
+          {t(idioma, "demo.etiqueta")}
+        </p>
+      )}
     </div>
   );
 }

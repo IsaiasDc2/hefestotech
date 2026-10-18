@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 // Utilidades de motion compartidas (HefestoTech).
 // Solo transform/opacity, IntersectionObserver + rAF, sin librerias.
@@ -45,18 +45,18 @@ export function usePausaPestana() {
   }, []);
 }
 
+const sinRevelado = () =>
+  typeof IntersectionObserver === "undefined" || movimientoReducido();
+
 // Observa un elemento una sola vez (reveal). Devuelve [ref, visible].
 export function useVisibleUnaVez(umbral = 0.15) {
   const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+  // Sin IntersectionObserver o con movimiento reducido arranca ya visible.
+  const [visible, setVisible] = useState(sinRevelado);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return undefined;
-    if (typeof IntersectionObserver === "undefined" || movimientoReducido()) {
-      setVisible(true);
-      return undefined;
-    }
+    if (!el || sinRevelado()) return undefined;
     const obs = new IntersectionObserver(
       (entradas) => {
         if (entradas.some((e) => e.isIntersecting)) {
@@ -103,8 +103,8 @@ export function useHeroVisible(ref) {
 // fn(rect, viewportH, el) solo corre si el elemento esta en pantalla,
 // la pestana esta visible y no hay movimiento reducido.
 export function useScrollLigado(ref, fn) {
-  const fnRef = useRef(fn);
-  fnRef.current = fn;
+  // Effect Event: siempre llama a la fn mas reciente sin re-suscribir.
+  const alCalcular = useEffectEvent(fn);
 
   useEffect(() => {
     const el = ref.current;
@@ -117,7 +117,7 @@ export function useScrollLigado(ref, fn) {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight || 1;
       if (rect.bottom <= 0 || rect.top >= vh) return;
-      fnRef.current(rect, vh, el);
+      alCalcular(rect, vh, el);
     };
     const pedir = () => {
       if (!sucio) {

@@ -3,7 +3,8 @@
 // Solo lectura; búsqueda por nombre contra /api/admin/clientes.
 import { useState } from "react";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio, useModulo } from "./ui";
+import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo } from "./hooks";
 
 const SIN_RESUMEN = { pedidos: 0, comprado_centavos: 0, ultimo_pedido: null, ultimo_estado: "" };
 

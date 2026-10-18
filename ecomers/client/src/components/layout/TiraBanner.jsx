@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useScrollLigado } from "../../hooks/useMotion";
 import "./TiraBanner.css";
 
@@ -8,6 +8,10 @@ import "./TiraBanner.css";
 // desplazamiento maximo (1.6%) nunca deja ver bordes.
 const PARALLAX_MAX = 0.016;
 const PARALLAX_ESCALA = 1.05;
+
+const sinRevelado = () =>
+  !("IntersectionObserver" in window) ||
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
  * Tira publicitaria de ancho de contenedor.
@@ -30,7 +34,8 @@ export default function TiraBanner({
   prioritario = false,
 }) {
   const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
+  // Sin IntersectionObserver o con movimiento reducido arranca ya revelada.
+  const [visible, setVisible] = useState(sinRevelado);
 
   // Solo escribe variables CSS (nada de tocar className: React lo pisaria).
   useScrollLigado(ref, (rect, vh, el) => {
@@ -43,14 +48,7 @@ export default function TiraBanner({
   // Revelado de entrada una sola vez.
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (
-      !("IntersectionObserver" in window) ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      setVisible(true);
-      return;
-    }
+    if (!el || sinRevelado()) return;
     const io = new IntersectionObserver(
       ([entrada]) => {
         if (entrada.isIntersecting) {

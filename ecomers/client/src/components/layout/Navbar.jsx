@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   FaBars,
   FaCartShopping,
@@ -220,13 +220,15 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
               className={`carrito-btn${pop ? " is-pop" : ""}`}
               onClick={abrirCarrito}
               aria-label={`${t(idioma, "nav.carrito")}, ${etiquetaCantidad} ${cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos")}`}
-              aria-live="polite"
             >
               <FaCartShopping aria-hidden="true" />
               <span className={`carrito-count${pop ? " is-pop" : ""}`} aria-hidden="true">
                 {etiquetaCantidad}
               </span>
             </button>
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {`${t(idioma, "nav.carrito")}: ${etiquetaCantidad} ${cantidadCarrito === 1 ? t(idioma, "nav.productoSing") : t(idioma, "nav.productos")}`}
+            </span>
           </nav>
         </div>
 

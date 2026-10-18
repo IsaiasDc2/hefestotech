@@ -5,7 +5,8 @@
 import { useEffect, useState } from "react";
 import { WHATSAPP_NUMERO_A_CONFIRMAR, WHATSAPP_URL, whatsappUrl } from "../../constants/whatsapp";
 import { adminApi } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio, useModulo } from "./ui";
+import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo } from "./hooks";
 
 const PLANTILLAS = [
   { id: "estado", titulo: "Estado de pedido", texto: "Hola, soy de HefestoTech. Te escribo por tu pedido #___ que está en estado ___. Cualquier duda respondeme por acá." },
@@ -77,23 +78,28 @@ function Bandeja({ avisar }) {
       )
     : conversaciones;
 
-  useEffect(() => {
+  // Ajustes durante el render (sin efecto): se compara con el valor previo.
+  const [datosPrevios, setDatosPrevios] = useState(datos);
+  const [elegidoPrevio, setElegidoPrevio] = useState(elegido);
+
+  if (datos !== datosPrevios) {
+    setDatosPrevios(datos);
     // Si la lista cambia (recarga/filtro), soltar la selección fantasma.
     if (elegido && !conversaciones.some((c) => c.id === elegido)) {
       setElegido(null);
       setHilo({ estado: "vacio", mensajes: [] });
     }
-  }, [datos]);
+  }
+
+  if (elegido !== elegidoPrevio) {
+    setElegidoPrevio(elegido);
+    setHilo(elegido ? { estado: "cargando", mensajes: [] } : { estado: "vacio", mensajes: [] });
+    setBorrador("");
+  }
 
   useEffect(() => {
-    if (!elegido) {
-      setHilo({ estado: "vacio", mensajes: [] });
-      setBorrador("");
-      return;
-    }
+    if (!elegido) return;
     let vivo = true;
-    setHilo({ estado: "cargando", mensajes: [] });
-    setBorrador("");
     adminApi.mensajesReclamo(elegido)
       .then((r) => {
         if (vivo) setHilo({ estado: "ok", mensajes: r?.mensajes ?? [] });

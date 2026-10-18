@@ -1,10 +1,10 @@
 // HefestoTech · Admin · Reclamos: bandeja con filtro y cambio de estado.
 // El formulario público vive en /reclamo (ReclamoPublico.jsx).
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const ESTADOS = ["", "abierto", "en_revision", "resuelto", "rechazado"];
 

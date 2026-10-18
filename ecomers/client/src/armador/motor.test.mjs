@@ -1,13 +1,12 @@
 /**
  * HefestoTech · Armador · Tests del motor de compatibilidad.
- * Runner: Node nativo, sin dependencias.
- *   node --test ecomers/client/src/armador/motor.test.mjs
+ * Runner: Vitest.
+ *   npm test (Vitest)
  */
-import { describe, test } from "node:test";
+import { describe, test } from "vitest";
 import assert from "node:assert/strict";
 import { evaluarBuild, esCompatible, cpuTieneIGPU, potenciaEstimada } from "./motor.js";
 
-const estadosDe = (res) => res.resultados.map((r) => r.estado);
 const porRegla = (res, regla) => res.resultados.filter((r) => r.regla === regla);
 const unSolo = (res, regla) => {
   const rs = porRegla(res, regla);

@@ -5,7 +5,8 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { supabase } from "../../components/lib/supabaseClient";
 import AdminLayout from "./AdminLayout";
 import { adminApi } from "./adminApi";
-import { Skeleton, ZonaToasts, useConfirm, useToasts } from "./ui";
+import { Skeleton, ZonaToasts } from "./ui";
+import { useConfirm, useToasts } from "./hooks";
 import "./Admin.css";
 
 const Inicio = lazy(() => import("./Inicio"));

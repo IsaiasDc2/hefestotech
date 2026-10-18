@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket, FaCartPlus, FaTrashCan, FaRotateLeft, FaTriangleExclamation } from "react-icons/fa6";
 import Login from "../Login/Login";
 import Registro from "../Login/Registro";
@@ -9,50 +9,136 @@ import useAuthStore from "../../store/authStore";
 import useCartStore from "../../store/cartStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerProductosPorIds, useFavoritos } from "../../services/favoritos";
+import { obtenerMisOrdenes } from "../../services/orderService";
 import { supabase } from "../../components/lib/supabaseClient";
+import useCarga from "../../hooks/useCarga";
+import { formatearPesos } from "../../utils/dinero";
 import "./Cuenta.css";
 
-const VISTAS_KEYS = [
+// Con sesión no tiene sentido ofrecer "Ingresar"/"Crear cuenta"; sin
+// sesión, "Mis pedidos" no tiene de dónde leer (RLS por usuario).
+const VISTAS_INVITADO = [
   { id: "login", key: "cuenta.ingresar" },
   { id: "registro", key: "cuenta.crear" },
-  { id: "pedidos", key: "cuenta.pedidos" },
-  { id: "reclamos", key: "cuenta.reclamos" },
   { id: "favoritos", key: "cuenta.favoritos" },
+  { id: "reclamos", key: "cuenta.reclamos" },
 ];
+const VISTAS_SESION = [
+  { id: "pedidos", key: "cuenta.pedidos" },
+  { id: "favoritos", key: "cuenta.favoritos" },
+  { id: "reclamos", key: "cuenta.reclamos" },
+];
+
+// Con comprobante (pagada en adelante) se abre el comprobante; si no, la
+// pantalla de estado del checkout, que permite seguir o reintentar.
+const ESTADOS_CON_COMPROBANTE = ["pagada", "preparacion", "enviada", "entregada", "reembolsada"];
+
+const totalDeOrden = (o) =>
+  o.total_centavos != null ? Number(o.total_centavos) / 100 : Number(o.total ?? 0);
+
+function SeccionPedidos() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const usuario = useAuthStore((s) => s.usuario);
+  const { datos, error, cargando } = useCarga(obtenerMisOrdenes, usuario?.id ?? null);
+  const pedidos = datos ?? [];
+
+  if (cargando) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+        <h2>{t(idioma, "cuenta.pedidos")}</h2>
+        <p role="status">{t(idioma, "cuenta.cargandoPedidos")}</p>
+      </div>
+    );
+  }
+
+  if (error || pedidos.length === 0) {
+    return (
+      <div className="panel-cuenta card anim-entrada">
+        <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+        <h2>{t(idioma, "cuenta.pedidos")}</h2>
+        {error && (
+          <p className="badge badge-peligro login-error" role="alert">
+            {t(idioma, "cuenta.noPedidos")}
+          </p>
+        )}
+        <div className="vacio">
+          <span className="marca-centrada" aria-hidden="true">
+            <Marca variante="simbolo" ancho={40} alto={40} decorativa />
+          </span>
+          <span className="vacio-icono" aria-hidden="true">
+            <FaBoxOpen />
+          </span>
+          <p className="vacio-titulo">{t(idioma, "cuenta.sinPedidosT")}</p>
+          <p className="vacio-texto">{t(idioma, "cuenta.seguimiento")}</p>
+          <Link to="/productos" className="btn-fantasma">
+            {t(idioma, "cuenta.verProd")} <FaArrowRight aria-hidden="true" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel-cuenta card anim-entrada">
+      <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
+      <h2>
+        {t(idioma, "cuenta.pedidos")} ({pedidos.length})
+      </h2>
+      <ul className="adm-tarjetas cuenta-pedidos">
+        {pedidos.map((o) => {
+          const unidades = (o.orden_items ?? []).reduce((acc, i) => acc + Number(i.cantidad ?? 0), 0);
+          const destino = ESTADOS_CON_COMPROBANTE.includes(o.estado)
+            ? `/pedido/${o.id}`
+            : `/checkout?orden_id=${o.id}`;
+          return (
+            <li key={o.id} className="card adm-pedido">
+              <div className="adm-pedido-head">
+                <strong>
+                  {t(idioma, "chk.orden")} #{String(o.id).slice(0, 8)}
+                </strong>
+                <span className={`adm-estado es-${o.estado}`}>
+                  {t(idioma, `chk.${o.estado}`)}
+                </span>
+              </div>
+              <p className="texto-mutado">
+                {o.created_at ? new Date(o.created_at).toLocaleDateString("es-AR") : "—"}
+                {" · "}
+                {unidades} {unidades === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
+                {" · "}
+                <strong>{formatearPesos(totalDeOrden(o))}</strong>
+              </p>
+              <Link to={destino} className="btn-fantasma">
+                {t(idioma, "cuenta.verDetalle")} <FaArrowRight aria-hidden="true" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+const leerReclamos = async () => {
+  const { data, error } = await supabase
+    .from("reclamos")
+    .select("id,motivo,detalle,estado,orden_id,created_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data ?? [];
+};
 
 // Posventa del cliente: sus reclamos por RLS (propios) con estado real.
 // Sin sesión pide ingresar; sin datos muestra vacío con acceso a /reclamo.
 function SeccionReclamos() {
   const idioma = useIdiomaStore((s) => s.idioma);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const [lista, setLista] = useState([]);
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!isAuthenticated) return undefined;
-    let vivo = true;
-    setCargando(true);
-    setError("");
-    (async () => {
-      try {
-        const { data, error: err } = await supabase
-          .from("reclamos")
-          .select("id,motivo,detalle,estado,orden_id,created_at")
-          .order("created_at", { ascending: false })
-          .limit(50);
-        if (err) throw err;
-        if (vivo) setLista(data ?? []);
-      } catch (err) {
-        if (vivo) setError(err?.message || t(idioma, "cuenta.noReclamos"));
-      } finally {
-        if (vivo) setCargando(false);
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, [isAuthenticated, idioma]);
+  const usuario = useAuthStore((s) => s.usuario);
+  const carga = useCarga(leerReclamos, isAuthenticated ? usuario?.id ?? "sesion" : null);
+  const lista = carga.datos ?? [];
+  const cargando = carga.cargando;
+  const error = carga.error ? t(idioma, "cuenta.noReclamos") : "";
 
   if (!isAuthenticated) {
     return (
@@ -118,37 +204,19 @@ function SeccionFavoritos() {
   const idioma = useIdiomaStore((s) => s.idioma);
   const { ids, cargando, error, ultimoQuitado, quitar, quitarMuchos, deshacerQuitado, limpiarError } = useFavoritos();
   const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
-  const [productos, setProductos] = useState([]);
-  const [ocultosIds, setOcultosIds] = useState([]);
-  const [cargandoProductos, setCargandoProductos] = useState(false);
-  const [errorProductos, setErrorProductos] = useState("");
   const [eliminandoId, setEliminandoId] = useState(null);
-
-  useEffect(() => {
-    let vivo = true;
-    if (ids.length === 0) {
-      setProductos([]);
-      setOcultosIds([]);
-      return undefined;
-    }
-    setCargandoProductos(true);
-    setErrorProductos("");
-    obtenerProductosPorIds(ids)
-      .then(({ visibles, ocultosIds: ocultos }) => {
-        if (!vivo) return;
-        setProductos(visibles);
-        setOcultosIds(ocultos);
-      })
-      .catch((err) => {
-        if (vivo) setErrorProductos(err?.message || t(idioma, "cuenta.noFav"));
-      })
-      .finally(() => {
-        if (vivo) setCargandoProductos(false);
-      });
-    return () => {
-      vivo = false;
-    };
-  }, [ids, idioma]);
+  const [errorOculto, setErrorOculto] = useState(null);
+  const claveIds = ids.length > 0 ? ids.join(",") : null;
+  const carga = useCarga(() => obtenerProductosPorIds(ids), claveIds);
+  // Mientras recarga tras quitar uno se sigue mostrando la lista anterior.
+  const [ultimaLista, setUltimaLista] = useState({ visibles: [], ocultosIds: [] });
+  if (carga.datos && carga.datos !== ultimaLista) setUltimaLista(carga.datos);
+  const lista = claveIds == null ? { visibles: [], ocultosIds: [] } : carga.datos ?? ultimaLista;
+  const productos = lista.visibles;
+  const ocultosIds = lista.ocultosIds;
+  const cargandoProductos = carga.cargando && ultimaLista.visibles.length === 0 && !carga.datos;
+  const errorProductos =
+    carga.error && errorOculto !== carga.error ? t(idioma, "cuenta.noFav") : "";
 
   const quitarAnimado = (id, nombre) => {
     setEliminandoId(String(id));
@@ -206,7 +274,7 @@ function SeccionFavoritos() {
       {(error || errorProductos) && (
         <p className="badge badge-peligro login-error" role="alert">
           {error || errorProductos}{" "}
-          <button type="button" className="registro-link" onClick={() => { limpiarError(); setErrorProductos(""); }}>
+          <button type="button" className="registro-link" onClick={() => { limpiarError(); setErrorOculto(carga.error); }}>
             {t(idioma, "cuenta.ocultar")}
           </button>
         </p>
@@ -227,7 +295,7 @@ function SeccionFavoritos() {
           </button>
         </p>
       )}
-      <div className="grid-productos">
+      <div className="cuenta-favoritos">
         {productos.map((producto) => (
           <div
             key={producto.id}
@@ -269,23 +337,18 @@ function SeccionFavoritos() {
 }
 
 function Cuenta() {
-  const [vista, setVista] = useState("login");
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const idioma = useIdiomaStore((s) => s.idioma);
   const usuario = useAuthStore((s) => s.usuario);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const logout = useAuthStore((s) => s.logout);
 
-  // Enlace profundo para el contador del header: /cuenta?tab=favoritos
-  // abre directo la seccion de guardados.
-  useEffect(() => {
-    const tab = params.get("tab");
-    if (tab === "favoritos" || params.get("modo") === "favoritos") {
-      setVista("favoritos");
-    } else if (tab === "reclamos") {
-      setVista("reclamos");
-    }
-  }, [params]);
+  // La pestaña vive en la URL (/cuenta?tab=favoritos): el contador del
+  // header enlaza directo y "atrás" respeta la navegación entre secciones.
+  const vistas = isAuthenticated ? VISTAS_SESION : VISTAS_INVITADO;
+  const pedida = params.get("modo") === "favoritos" ? "favoritos" : params.get("tab");
+  const vista = vistas.some((v) => v.id === pedida) ? pedida : vistas[0].id;
+  const setVista = (id) => setParams({ tab: id }, { replace: true });
 
   return (
     <div className="cuenta">
@@ -299,7 +362,7 @@ function Cuenta() {
         </div>
       )}
       <nav className="cuenta-tabs" aria-label={t(idioma, "cuenta.secciones")} role="tablist">
-        {VISTAS_KEYS.map((v) => (
+        {vistas.map((v) => (
           <button
             key={v.id}
             type="button"
@@ -318,26 +381,7 @@ function Cuenta() {
 
         {vista === "registro" && <Registro />}
 
-        {vista === "pedidos" && (
-          <div className="panel-cuenta card anim-entrada">
-            <p className="badge badge-info">{t(idioma, "cuenta.historial")}</p>
-            <h2>{t(idioma, "cuenta.pedidos")}</h2>
-            <p>{t(idioma, "cuenta.sinPedidos")}</p>
-            <div className="vacio">
-              <span className="marca-centrada" aria-hidden="true">
-                <Marca variante="simbolo" ancho={40} alto={40} decorativa />
-              </span>
-              <span className="vacio-icono" aria-hidden="true">
-                <FaBoxOpen />
-              </span>
-              <p className="vacio-titulo">{t(idioma, "cuenta.sinPedidosT")}</p>
-              <p className="vacio-texto">{t(idioma, "cuenta.seguimiento")}</p>
-              <Link to="/productos" className="btn-fantasma">
-                {t(idioma, "cuenta.verProd")} <FaArrowRight aria-hidden="true" />
-              </Link>
-            </div>
-          </div>
-        )}
+        {vista === "pedidos" && <SeccionPedidos />}
 
         {vista === "favoritos" && <SeccionFavoritos />}
 

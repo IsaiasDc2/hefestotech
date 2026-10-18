@@ -6,6 +6,10 @@ import ProductCard from "./ProductCard";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./ProductCarousel.css";
 
+const sinRevelado = () =>
+  typeof IntersectionObserver === "undefined" ||
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function slugId(titulo) {
   return (
     "carrusel-" +
@@ -27,18 +31,12 @@ export default function ProductCarousel({
 }) {
   const pista = useRef(null);
   const seccion = useRef(null);
-  const [visible, setVisible] = useState(false);
+  // Sin IntersectionObserver o con movimiento reducido arranca ya revelado.
+  const [visible, setVisible] = useState(sinRevelado);
 
   useEffect(() => {
     const el = seccion.current;
-    if (!el) return;
-    if (
-      typeof IntersectionObserver === "undefined" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      setVisible(true);
-      return;
-    }
+    if (!el || sinRevelado()) return;
     const obs = new IntersectionObserver(
       (entradas) => {
         if (entradas.some((e) => e.isIntersecting)) {
@@ -101,7 +99,7 @@ export default function ProductCarousel({
           </>
         }
       />
-      <div className="carrusel-pista" ref={pista} role="region" aria-label={`${titulo}: ${t(idioma, "carr.lista")}`} tabIndex="0">
+      <div className="carrusel-pista" ref={pista} role="region" aria-label={`${titulo}: ${t(idioma, "carr.lista")}`}>
         {productos.map((p) => (
           <div key={p.id} className="carrusel-item">
             <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />

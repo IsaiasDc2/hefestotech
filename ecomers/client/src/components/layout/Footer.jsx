@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../brand/Marca";
 

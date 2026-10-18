@@ -1,7 +1,7 @@
 // HefestoTech · Admin · layout propio: sidebar colapsable, topbar con ⌘K,
 // campana de notificaciones, tema y usuario. Responsive: drawer en móvil.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FaBars,
   FaBell,
@@ -27,7 +27,7 @@ import {
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 
-export const NAV = [
+const NAV = [
   { id: "inicio", etiqueta: "Inicio", Icono: FaHouse },
   { id: "productos", etiqueta: "Productos", Icono: FaBox },
   { id: "stock", etiqueta: "Stock", Icono: FaBoxesStacked },
@@ -84,16 +84,22 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
   const [texto, setTexto] = useState("");
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
+  const [abiertaPrevia, setAbiertaPrevia] = useState(abierta);
   const entrada = useRef(null);
 
+  // Al abrir o cerrar se limpia durante el render (al abrir, también el texto).
+  if (abierta !== abiertaPrevia) {
+    setAbiertaPrevia(abierta);
+    if (abierta) setTexto("");
+    setResultados([]);
+    setBuscando(false);
+  }
+
   useEffect(() => {
-    if (abierta) {
-      setTexto("");
-      setResultados([]);
-      const t = setTimeout(() => entrada.current?.focus(), 30);
-      return () => clearTimeout(t);
-    }
-  }, [abierta ]);
+    if (!abierta) return;
+    const t = setTimeout(() => entrada.current?.focus(), 30);
+    return () => clearTimeout(t);
+  }, [abierta]);
 
   useEffect(() => {
     if (!abierta) return;
@@ -104,14 +110,21 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
     return () => window.removeEventListener("keydown", alTeclar);
   }, [abierta, onCerrar]);
 
-  useEffect(() => {
-    const t = texto.trim();
-    if (!abierta || t.length < 2) {
+  // El estado "buscando"/limpieza se fija al tipear (alCambiarTexto); el efecto
+  // solo agenda la consulta con debounce.
+  const alCambiarTexto = (valor) => {
+    setTexto(valor);
+    if (valor.trim().length < 2) {
       setResultados([]);
       setBuscando(false);
-      return;
+    } else {
+      setBuscando(true);
     }
-    setBuscando(true);
+  };
+
+  useEffect(() => {
+    const t = texto.trim();
+    if (!abierta || t.length < 2) return;
     const id = setTimeout(async () => {
       try {
         const r = await adminApi.buscar(t, 8);
@@ -140,7 +153,7 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
           <input
             ref={entrada}
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e) => alCambiarTexto(e.target.value)}
             placeholder="Buscar módulo o producto… (Esc para cerrar)"
             aria-label="Buscar en el panel"
           />
@@ -218,6 +231,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (!drawer) return undefined;
     focoPrevio.current = document.activeElement;
+    const hamburguesa = hamburguesaRef.current;
     drawerRef.current?.querySelector("button")?.focus();
     const alTeclado = (e) => {
       if (e.key === "Escape") {
@@ -243,7 +257,7 @@ export default function AdminLayout({
     return () => {
       document.removeEventListener("keydown", alTeclado);
       if (focoPrevio.current instanceof HTMLElement) focoPrevio.current.focus();
-      else hamburguesaRef.current?.focus();
+      else hamburguesa?.focus();
     };
   }, [drawer]);
 

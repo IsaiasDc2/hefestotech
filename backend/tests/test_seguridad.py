@@ -126,6 +126,7 @@ def test_total_calculado_en_servidor(monkeypatch):
             return [{"id": "orden-1"}]
         return []
 
+    monkeypatch.setenv("MERCADOPAGO_ACCESS_TOKEN", "TEST-token")
     monkeypatch.setattr(checkout_api, "_sb_get", fake_get)
     monkeypatch.setattr(checkout_api, "_sb_post", fake_post)
     monkeypatch.setattr(checkout_api, "_sb_patch", lambda *a, **k: [])
@@ -332,3 +333,101 @@ def test_cuotas_sin_token(monkeypatch):
     checkout_api._CUOTAS_CACHE.clear()
     r = cliente.get("/api/checkout/cuotas?total_centavos=10000")
     assert r.status_code == 503
+
+
+# ------------------------------------------- regresiones de la auditoría ---
+
+
+def test_estado_invitado_pide_el_token_a_la_db(monkeypatch):
+    """F01: el select tiene que traer acceso_token o el invitado nunca entra."""
+    def fake_get(tabla, params):
+        fila = {
+            "id": "o3", "user_id": None, "estado": "pendiente",
+            "subtotal_centavos": 100, "descuento_centavos": 0,
+            "costo_envio_centavos": 0, "total_centavos": 100,
+            "expira_at": None, "mp_payment_id": "", "orden_items": [],
+        }
+        # Simula PostgREST: solo devuelve las columnas pedidas.
+        if "acceso_token" in params.get("select", ""):
+            fila["acceso_token"] = "tok-o3"
+        return [fila]
+
+    monkeypatch.setattr(checkout_api, "_sb_get", fake_get)
+    r = cliente.get("/api/checkout/estado/o3", headers={"X-Orden-Token": "tok-o3"})
+    assert r.status_code == 200
+    r = cliente.get("/api/checkout/estado/o3?token=tok-o3")
+    assert r.status_code == 200
+
+
+def _orden_cancelada(monkeypatch, patches):
+    def fake_get(tabla, params):
+        if tabla == "ordenes":
+            return [{
+                "id": "o4", "user_id": None, "estado": "cancelada",
+                "total_centavos": 10_000_00, "costo_envio_centavos": 0,
+                "acceso_token": "tok-o4",
+                "orden_items": [{"producto_id": PRODUCTO, "cantidad": 2, "precio": 5000}],
+            }]
+        if tabla == "productos":
+            return [{"id": PRODUCTO, "nombre": "GPU", "stock": 9,
+                     "activo": True, "deleted_at": None}]
+        return []
+
+    def fake_patch(tabla, params, cambios):
+        patches.append((params, cambios))
+        return [{"id": "o4"}] if params.get("estado") == "eq.cancelada" else []
+
+    monkeypatch.setenv("MERCADOPAGO_ACCESS_TOKEN", "TEST-token")
+    monkeypatch.setenv("BACKEND_URL", "https://api.example.test")
+    monkeypatch.setattr(checkout_api, "_sb_get", fake_get)
+    monkeypatch.setattr(checkout_api, "_sb_patch", fake_patch)
+
+
+def test_reintento_desde_cancelada_libera_si_falla_mp(monkeypatch):
+    """F02: si MP falla después de re-reservar, el stock vuelve y la orden
+    queda cancelada (antes quedaba reservado en una orden muerta)."""
+    patches, reservas, liberaciones = [], [], []
+    _orden_cancelada(monkeypatch, patches)
+    monkeypatch.setattr(checkout_api, "_reservar", lambda oid, lin, a: reservas.append(lin))
+    monkeypatch.setattr(checkout_api, "_liberar",
+                        lambda oid, lin, motivo, a=None: liberaciones.append(lin))
+
+    import mercadopago
+
+    class SdkRoto:
+        def __init__(self, *_a):
+            pass
+
+        def preference(self):
+            raise RuntimeError("MP caído")
+
+    monkeypatch.setattr(mercadopago, "SDK", SdkRoto)
+    r = cliente.post("/api/checkout/o4/reintentar", headers={"X-Orden-Token": "tok-o4"})
+    assert r.status_code == 502
+    assert len(reservas) == 1 and liberaciones == reservas
+    assert patches[0][0]["estado"] == "eq.cancelada"  # compare-and-set
+    assert patches[-1][1] == {"estado": "cancelada"}
+
+
+def test_reintento_concurrente_no_reserva_dos_veces(monkeypatch):
+    """F02: si otra petición ya tomó la orden, no se reserva de nuevo."""
+    patches, reservas = [], []
+    _orden_cancelada(monkeypatch, patches)
+    monkeypatch.setattr(checkout_api, "_sb_patch", lambda *a, **k: [])  # CAS perdido
+    monkeypatch.setattr(checkout_api, "_reservar", lambda *a, **k: reservas.append(a))
+    r = cliente.post("/api/checkout/o4/reintentar?token=tok-o4")
+    assert r.status_code == 409
+    assert reservas == []
+
+
+def test_checkout_rechaza_email_invalido():
+    r = cliente.post("/api/checkout/crear", json={**PAYLOAD, "email": "no-es-un-email"})
+    assert r.status_code == 422
+
+
+def test_imagenes_admin_solo_https_o_internas():
+    assert admin_api._url_imagen_ok("https://cdn.example.com/a.webp")
+    assert admin_api._url_imagen_ok("/productos/a.webp")
+    assert not admin_api._url_imagen_ok("http://cdn.example.com/a.webp")
+    assert not admin_api._url_imagen_ok("//evil.example.com/a.webp")
+    assert not admin_api._url_imagen_ok("javascript:alert(1)")

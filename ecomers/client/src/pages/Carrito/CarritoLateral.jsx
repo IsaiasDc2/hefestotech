@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { FaCartShopping, FaXmark, FaTrashCan, FaMinus, FaPlus, FaTruckFast, FaCircleCheck, FaArrowRight } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { topeDeStock } from "../../store/cartStore";
 import "./CarritoLateral.css";
 
 const UMBRAL_ENVIO_GRATIS = 150000;
@@ -14,6 +15,8 @@ function CarritoLateral({
   aumentarCantidad,
   disminuirCantidad
 }) {
+  const panelRef = useRef(null);
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -49,9 +52,6 @@ function CarritoLateral({
     };
   }, [isOpen, onClose]);
 
-  const panelRef = useRef(null);
-  const idioma = useIdiomaStore((s) => s.idioma);
-
   const total = carrito.reduce(
     (acc, item) =>
       acc +
@@ -81,7 +81,7 @@ function CarritoLateral({
         role="dialog"
         aria-modal="true"
         aria-label={t(idioma, "cl.titulo")}
-        aria-hidden={!isOpen}
+        inert={!isOpen}
       >
 
         <div className="cart-header">
@@ -168,11 +168,24 @@ function CarritoLateral({
 
                   <div className="cart-item-pie">
                     <div className="cantidad">
-                      <button type="button" onClick={() => disminuirCantidad(item.id)} aria-label={t(idioma, "cl.quitarUno")}>
+                      <button
+                        type="button"
+                        onClick={() => disminuirCantidad(item.id)}
+                        aria-label={t(idioma, "cl.quitarUno")}
+                        disabled={item.cantidad <= 1}
+                      >
                         <FaMinus aria-hidden="true" />
                       </button>
-                      <span aria-live="polite" aria-label={`${t(idioma, "cl.cantidad")}: ${item.cantidad}`}>{item.cantidad}</span>
-                      <button type="button" onClick={() => aumentarCantidad(item.id)} aria-label={t(idioma, "cl.agregarUno")}>
+                      <span aria-hidden="true">{item.cantidad}</span>
+                      <span className="sr-only" aria-live="polite" aria-atomic="true">
+                        {`${item.nombre}, ${t(idioma, "cl.cantidad")}: ${item.cantidad}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => aumentarCantidad(item.id)}
+                        aria-label={t(idioma, "cl.agregarUno")}
+                        disabled={item.cantidad >= topeDeStock(item)}
+                      >
                         <FaPlus aria-hidden="true" />
                       </button>
                     </div>

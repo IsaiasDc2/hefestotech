@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const VACIO = { codigo: "", tipo: "porcentaje", valor: "", min_compra: "", usos_max: "", activo: true, vence: "" };
 

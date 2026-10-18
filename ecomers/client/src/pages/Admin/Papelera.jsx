@@ -2,7 +2,7 @@
 // Purga a los 30 días (servidor). El Deshacer de 10s vive en Productos.
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Papelera({ avisar }) {
   const { estado, datos, recargar } = useModulo(
