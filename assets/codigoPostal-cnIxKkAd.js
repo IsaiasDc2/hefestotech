@@ -1,0 +1,1 @@
+var e=`ht-cp`,t=e=>/^[0-9]{4}$/.test(String(e??``).trim());function n(){try{let n=localStorage.getItem(e)??``;return t(n)?n:``}catch{return``}}function r(n){try{t(n)&&localStorage.setItem(e,String(n).trim())}catch{}}export{r as n,n as r,t};
