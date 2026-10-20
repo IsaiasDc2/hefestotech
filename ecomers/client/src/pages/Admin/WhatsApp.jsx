@@ -335,7 +335,7 @@ function Manual() {
           <input
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
-            placeholder="Número del cliente (ej: 54911…)"
+            placeholder="Número del cliente (ej: 549387…)"
             aria-label="Número del cliente"
             inputMode="tel"
           />

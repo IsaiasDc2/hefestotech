@@ -167,4 +167,4 @@ Tarjetas y usuarios de prueba: https://www.mercadopago.com.ar/developers/es/docs
 
 ## 8. Pendientes que necesitan al dueño
 
-Número real de WhatsApp (`ecomers/client/src/constants/whatsapp.js`), datos del comercio (`TIENDA_*`), precios y stock de los productos en $0 (migración 007), marcar como verificadas las specs del armador (`product_specs.verified = true`) y revisar los textos legales con un profesional. Detalle en `docs/ROADMAP.md`.
+Datos del comercio (`TIENDA_*`), precios y stock de los productos en $0 (migración 007), marcar como verificadas las specs del armador (`product_specs.verified = true`) y revisar los textos legales con un profesional. Detalle en `docs/ROADMAP.md`.

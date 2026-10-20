@@ -202,5 +202,4 @@ Detalle de lo corregido en `CHANGELOG.md`; próximos pasos en `docs/ROADMAP.md`.
 Pendiente (dueño o próxima sesión):
 - Probar las conversaciones de `docs/QA-ASISTENTE.md` con `LLM_PROVIDER=gemini` y una clave de prueba. En esta sesión el camino real se verificó con un cliente simulado y con una clave inválida contra la API de Google, que cae al fallback en 1,8 s.
 - Confirmar lo que el sitio publica sin regla en el checkout (el asistente lo cita como «figura en el sitio», sin prometerlo): 6 cuotas sin interés, 10 % off por transferencia (el checkout no ofrece transferencia), garantía de 12 meses, retiro en Salta y plazos de despacho.
-- El número de WhatsApp sigue siendo un placeholder (`WHATSAPP_NUMERO_A_CONFIRMAR`).
 - Persistir conversaciones y feedback en la base (`assistant_conversations` del Anexo D). Hoy el feedback solo queda en logs sin texto.
