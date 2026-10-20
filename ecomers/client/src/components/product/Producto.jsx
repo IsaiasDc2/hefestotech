@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { FaMagnifyingGlass, FaSliders, FaXmark } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useCatalogo from "../../hooks/useCatalogo";
-import { CATEGORIAS } from "../../constants/categorias";
+import { CATEGORIAS, nombreCategoria, nombreCategoriaDb } from "../../constants/categorias";
 import {
   ORDENES,
   POR_PAGINA,
@@ -138,7 +138,7 @@ function PanelFiltros({ filtros, facetas, cambiar, idioma, sufijo }) {
               checked={filtros.categoria === c.value}
               onChange={() => cambiar({ categoria: c.value, marcas: [] })}
             />
-            <span>{c.label}</span>
+            <span>{nombreCategoriaDb(c.value, idioma)}</span>
             <span className="catl-conteo">{c.conteo}</span>
           </label>
         ))}
@@ -212,7 +212,7 @@ function ChipsActivos({ filtros, cambiar, limpiar, idioma }) {
   const chips = [];
   if (filtros.q) chips.push({ k: "q", texto: `“${filtros.q}”`, quitar: { q: "" } });
   if (filtros.categoria !== "Todas") {
-    const label = CATEGORIAS.find((c) => c.db === filtros.categoria)?.label ?? filtros.categoria;
+    const label = nombreCategoriaDb(filtros.categoria, idioma);
     chips.push({ k: "cat", texto: label, quitar: { categoria: "Todas", marcas: [] } });
   }
   for (const m of filtros.marcas) {
@@ -281,7 +281,8 @@ function Productos({ agregarAlCarrito }) {
 
   const total = facetas.resultados.length;
   const activos = cantidadFiltrosActivos(filtros);
-  const etiquetaCategoria = CATEGORIAS.find((c) => c.db === filtros.categoria)?.label;
+  const categoriaActual = CATEGORIAS.find((c) => c.db === filtros.categoria);
+  const etiquetaCategoria = categoriaActual ? nombreCategoria(categoriaActual, idioma) : undefined;
   const titulo = filtros.q
     ? `${t(idioma, "catl.resultadosPara")} “${filtros.q}”`
     : etiquetaCategoria ??

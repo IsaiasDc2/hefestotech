@@ -64,7 +64,9 @@ async def _turno(proveedor: LLMProvider, sistema: str, mensajes: list[dict], her
             codigo = getattr(e, "code", None)
             # Clave inválida, modelo inexistente o pedido mal formado: reintentar no lo arregla.
             definitivo = isinstance(codigo, int) and 400 <= codigo < 500 and codigo != 429
-            if emitido[0] or definitivo or intento == REINTENTOS:
+            # Un modelo que se cuelga dos veces seguidas no se va a destrabar con un tercer intento.
+            colgado = isinstance(e, TimeoutError) and intento >= 1
+            if emitido[0] or definitivo or colgado or intento == REINTENTOS:
                 raise ProveedorCaido(interrumpido=emitido[0]) from None
             await asyncio.sleep(BACKOFF_SEG[min(intento, len(BACKOFF_SEG) - 1)])
 

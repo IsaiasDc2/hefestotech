@@ -65,7 +65,7 @@ def _es_url_mp(url: str) -> bool:
 
         u = urlparse(url)
         host = (u.hostname or "").lower()
-        return u.scheme == "https:" and any(
+        return u.scheme == "https" and any(
             host == h or host.endswith(f".{h}") for h in _MP_HOSTS
         )
     except Exception:
@@ -139,7 +139,8 @@ def _sb_post(tabla: str, fila: dict[str, Any], prefer: str = "return=representat
     try:
         r = _client().post(f"/{tabla}", json=fila, headers={"Prefer": prefer})
         r.raise_for_status()
-        return r.json()
+        # Con "return=minimal" Supabase responde 201 sin cuerpo: no hay JSON que leer.
+        return r.json() if r.content else None
     except httpx.HTTPStatusError as e:
         raise _sb_error(e)
     except httpx.HTTPError:

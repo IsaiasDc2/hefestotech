@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { aCentavos, centavosATexto, cuitValido, formatearCuit } from "./compras";
+import { aCentavos, centavosATexto, cuitValido, formatearCuit } from "./comprasUtil";
 
 describe("CUIT", () => {
   test("acepta dígito verificador correcto, con o sin guiones", () => {

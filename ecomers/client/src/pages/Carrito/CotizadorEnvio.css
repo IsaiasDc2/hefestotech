@@ -161,6 +161,16 @@
   color: var(--muted);
 }
 
+/* Dentro de la ficha de producto: sin margen propio (el grid ya separa). */
+.cotiz-envio--ficha {
+  margin-top: 0;
+  background: var(--surface);
+}
+
+.cotiz-envio--ficha .cotiz-envio-opcion {
+  background: var(--card);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cotiz-envio-opcion,
   .cotiz-envio-btn {

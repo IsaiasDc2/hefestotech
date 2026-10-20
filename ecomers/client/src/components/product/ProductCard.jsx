@@ -176,7 +176,12 @@ function ProductCard({ producto, agregarAlCarrito, prioridad = false }) {
       {!tienePrecio ? (
         <a
           className="btn-carrito btn-consultar"
-          href={whatsappUrl(`Hola! Quiero consultar precio y stock de ${nombre}${producto.codigo ? ` (${producto.codigo})` : ""}.`)}
+          href={whatsappUrl(
+            t(idioma, "wa.precioStock").replace(
+              "{producto}",
+              `${nombre}${producto.codigo ? ` (${producto.codigo})` : ""}`
+            )
+          )}
           target="_blank"
           rel="noopener noreferrer"
         >

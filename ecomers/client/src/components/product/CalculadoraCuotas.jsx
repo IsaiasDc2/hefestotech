@@ -5,13 +5,16 @@ import "./CalculadoraCuotas.css";
 
 const OPCIONES_CUOTAS = [3, 6, 12, 18];
 
-function CalculadoraCuotas({ precio = 0 }) {
+function CalculadoraCuotas({ precio = 0, incrustada = false }) {
   const idioma = useIdiomaStore((s) => s.idioma);
   const [cuotas, setCuotas] = useState(6);
   const base = Number(precio ?? 0);
 
   return (
-    <section className="calc-cuotas" aria-labelledby="calc-cuotas-titulo">
+    <section
+      className={`calc-cuotas${incrustada ? " calc-cuotas--incrustada" : ""}`}
+      aria-labelledby="calc-cuotas-titulo"
+    >
       <h2 id="calc-cuotas-titulo" className="calc-cuotas-titulo">
         {t(idioma, "pd.cuotasTitulo")}
       </h2>

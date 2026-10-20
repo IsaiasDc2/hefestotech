@@ -97,6 +97,21 @@
   color: var(--muted);
 }
 
+/* Dentro del panel de precio: sin caja propia, solo una línea divisoria. */
+.calc-cuotas--incrustada {
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+  border-radius: 0;
+  background: transparent;
+}
+
+.calc-cuotas--incrustada .calc-cuotas-titulo {
+  font-size: var(--text-small);
+  font-weight: var(--weight-semibold);
+  color: var(--text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .calc-cuotas-opcion {
     transition: none;

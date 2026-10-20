@@ -119,7 +119,13 @@ def _mensaje_seguro(detalle: str) -> str:
             return seguro
     if "transición inválida" in (detalle or ""):
         return "Transición de estado inválida."
+    if _es_duplicado(detalle):
+        return "Ya existe un registro con ese código o valor único."
     return "Operación no disponible. Intentá de nuevo más tarde."
+
+
+def _es_duplicado(detalle: Optional[str]) -> bool:
+    return "duplicate key" in (detalle or "").lower()
 
 
 # --------------------------------------------------------------- secretos ---
@@ -172,7 +178,8 @@ def _sb_error(exc: httpx.HTTPStatusError) -> HTTPException:
     except Exception:
         detalle = ""
     print(f"ERROR admin_api: supabase {exc.response.status_code}.")
-    return HTTPException(status_code=502, detail=_mensaje_seguro(str(detalle)))
+    estado = 409 if _es_duplicado(str(detalle)) else 502
+    return HTTPException(status_code=estado, detail=_mensaje_seguro(str(detalle)))
 
 
 def _sb_get(tabla: str, params: dict[str, Any]) -> Any:
@@ -191,7 +198,8 @@ def _sb_post(tabla: str, fila: dict[str, Any], prefer: str = "return=representat
     try:
         r = _client().post(f"/{tabla}", json=fila, headers={"Prefer": prefer})
         r.raise_for_status()
-        return r.json()
+        # Con "return=minimal" Supabase responde 201 sin cuerpo: no hay JSON que leer.
+        return r.json() if r.content else None
     except httpx.HTTPStatusError as e:
         raise _sb_error(e)
     except httpx.HTTPError:
@@ -981,7 +989,23 @@ def cambiar_estado(pid: str, d: PedidoEstado, request: Request,
         "p_nota": d.nota.strip(), "p_version": d.version,
         "p_actor": admin.user_id,
     })
+    # El checkout descuenta el stock al crear el pedido. La transición ya fue
+    # validada (una orden se cancela una sola vez): recién ahora se devuelve.
+    if d.a == "cancelada":
+        _devolver_stock_de_pedido(pid, admin.user_id)
     return {"id": pid, "estado": d.a, "version": nueva_version}
+
+
+def _devolver_stock_de_pedido(pid: str, actor: str) -> None:
+    items = _sb_get("orden_items", {"select": "producto_id,cantidad", "orden_id": f"eq.{pid}"}) or []
+    for it in items:
+        try:
+            _rpc("adjust_stock", {
+                "p_producto": it["producto_id"], "p_delta": int(it["cantidad"]),
+                "p_motivo": "cancelacion", "p_nota": pid, "p_actor": actor,
+            })
+        except HTTPException:
+            print("ERROR admin_api: no se pudo devolver el stock de un pedido cancelado.")
 
 
 @router.get("/api/admin/pedidos/{pid}/comprobante/pdf")

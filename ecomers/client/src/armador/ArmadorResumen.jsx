@@ -13,6 +13,7 @@ import useCartStore from "../store/cartStore";
 import useIdiomaStore, { t } from "../store/idiomaStore";
 import { precioFinal } from "./adaptar";
 import { PASOS } from "./pasos";
+import { traducirMensaje } from "./mensajesEn";
 
 const ICONO_ESTADO = {
   ok: FaCircleCheck,
@@ -210,7 +211,7 @@ function ArmadorResumen({
               return (
                 <li key={`${r.regla}-${i}`} className={`informe-item is-${r.estado}`}>
                   <Icono aria-hidden="true" />
-                  <span>{r.mensaje}</span>
+                  <span>{traducirMensaje(r.mensaje, idioma)}</span>
                 </li>
               );
             })}

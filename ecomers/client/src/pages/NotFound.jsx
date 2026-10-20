@@ -14,7 +14,7 @@ function NotFound() {
           decorativa
         />
       </span>
-      <p className="vacio-titulo">{t(idioma, "nf.titulo")}</p>
+      <h1 className="vacio-titulo">{t(idioma, "nf.titulo")}</h1>
       <p className="vacio-texto">
         {t(idioma, "nf.texto")}
       </p>

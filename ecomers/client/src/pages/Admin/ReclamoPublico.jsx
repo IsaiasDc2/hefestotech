@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { WHATSAPP_NUMERO_A_CONFIRMAR, whatsappUrl } from "../../constants/whatsapp";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { traducirError } from "../../utils/errores";
 import { adminApi } from "./adminApi";
 
 export default function ReclamoPublico() {
@@ -15,7 +16,7 @@ export default function ReclamoPublico() {
   const [mensaje, setMensaje] = useState("");
 
   const textoWhatsApp = () =>
-    `Hola HefestoTech, quiero hacer un reclamo.\nNombre: ${form.nombre}\nEmail: ${form.email}\nOrden: ${form.orden || "-"}\nMotivo: ${form.motivo}\nDetalle: ${form.detalle}`;
+    `${t(idioma, "wa.reclamoIntro")}\n${t(idioma, "wa.reclamoNombre")}: ${form.nombre}\nEmail: ${form.email}\n${t(idioma, "wa.reclamoOrden")}: ${form.orden || "-"}\n${t(idioma, "wa.reclamoMotivo")}: ${form.motivo}\n${t(idioma, "wa.reclamoDetalle")}: ${form.detalle}`;
 
   const enviar = async (e) => {
     e.preventDefault();
@@ -45,7 +46,7 @@ export default function ReclamoPublico() {
           ? idioma === "en"
             ? "To file it here you need to be signed in. You can send it via WhatsApp with the button below."
             : "Para registrarlo acá necesitás haber iniciado sesión. Podés enviarlo por WhatsApp con el botón de abajo."
-          : (err?.message ?? t(idioma, "recl.error"))
+          : (traducirError(err?.message, idioma) ?? t(idioma, "recl.error"))
       );
     }
   };

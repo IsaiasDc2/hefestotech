@@ -11,7 +11,7 @@ import {
   aCentavos,
   centavosATexto,
   formatoMoneda,
-} from "./compras";
+} from "./comprasUtil";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo } from "./hooks";
 

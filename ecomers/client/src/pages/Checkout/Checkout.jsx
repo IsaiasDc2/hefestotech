@@ -6,16 +6,15 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { crearCheckout, obtenerCuotas, obtenerEstadoCheckout } from "../../services/orderService";
 import useCartStore from "../../store/cartStore";
 import { esUrlMP } from "../../utils/mercadoPago";
+import { traducirError } from "../../utils/errores";
+import { leerCp } from "../../utils/codigoPostal";
+import { COSTO_ENVIO_ESTANDAR, COSTO_ENVIO_EXPRESS, UMBRAL_ENVIO_GRATIS, costoEnvio } from "../../constants/politicas";
 import logoMP from "../../assets/mercadopago.svg";
 import "./Checkout.css";
 
 // Estimación SOLO para mostrar en pantalla. El total que se cobra lo
 // calcula el servidor (POST /api/checkout/crear) desde precios/stock de
 // la DB: el front envía únicamente producto_id + cantidad.
-const UMBRAL_ENVIO_GRATIS = 150000;
-const COSTO_ENVIO_ESTANDAR = 5000;
-const COSTO_ENVIO_EXPRESS = 12000;
-
 const unitarioEstimado = (item) =>
   Number(item.precio_con_descuento ?? item.precio ?? 0);
 
@@ -71,7 +70,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   const [email, setEmail] = useState("");
   const [direccion, setDireccion] = useState("");
   const [ciudad, setCiudad] = useState("");
-  const [codigoPostal, setCodigoPostal] = useState("");
+  const [codigoPostal, setCodigoPostal] = useState(leerCp);
   const [envio, setEnvio] = useState("estandar");
   const [cupon, setCupon] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -97,7 +96,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         setConsulta({
           id: ordenIdUrl,
           orden: null,
-          error: err?.message || t(idioma, "chk.noEstado"),
+          error: traducirError(err?.message, idioma) || t(idioma, "chk.noEstado"),
           restaurado: false,
         });
       });
@@ -122,8 +121,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
 
   const costoEnvioEst = useMemo(() => {
     if (carrito.length === 0) return 0;
-    if (subtotalEst >= UMBRAL_ENVIO_GRATIS) return 0;
-    return envio === "express" ? COSTO_ENVIO_EXPRESS : COSTO_ENVIO_ESTANDAR;
+    return costoEnvio(subtotalEst, envio);
   }, [envio, subtotalEst, carrito.length]);
 
   const totalEst = subtotalEst + costoEnvioEst;
@@ -185,7 +183,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
       vaciarCarrito?.();
       window.location.href = resp.init_point;
     } catch (err) {
-      setError(err?.message || t(idioma, "chk.noOrden"));
+      setError(traducirError(err?.message, idioma) || t(idioma, "chk.noOrden"));
     } finally {
       enviandoRef.current = false;
       setEnviando(false);
@@ -251,7 +249,7 @@ function Checkout({ carrito = [], vaciarCarrito }) {
           <span className="marca-centrada" aria-hidden="true">
             <Marca variante="simbolo" ancho={44} alto={44} decorativa />
           </span>
-          <p className="vacio-titulo">{t(idioma, "chk.vacioT")}</p>
+          <h1 className="vacio-titulo">{t(idioma, "chk.vacioT")}</h1>
           <p className="vacio-texto">{t(idioma, "chk.vacioS")}</p>
           <Link to="/productos" className="btn-primary">{t(idioma, "chk.verProd")}</Link>
         </div>

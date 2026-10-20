@@ -3,6 +3,7 @@
 // solo producto_id + cantidad y el servidor recalcula todo desde la DB.
 // Se conservan las lecturas propias por RLS (mis órdenes / por id).
 import { supabase } from "../components/lib/supabaseClient";
+import { mensajeDeError } from "../utils/errores";
 
 // Se resuelve al usarse (no al importar): sin VITE_API_URL en producción
 // falla solo la llamada al backend, no la página entera que importa esto.
@@ -51,7 +52,7 @@ const backend = async (path, { method = "GET", body, tokenOrden = "" } = {}) => 
   } catch {
     datos = {};
   }
-  if (!respuesta.ok) throw new Error(datos?.detail || `Error ${respuesta.status}`);
+  if (!respuesta.ok) throw new Error(mensajeDeError(datos, respuesta.status));
   return datos;
 };
 

@@ -253,6 +253,11 @@
   display: none;
 }
 
+/* Selector de idioma del header: en móvil vive en el drawer. */
+.hd-idiomas {
+  display: none;
+}
+
 /* ---------- Categorías ---------- */
 .hd-cats {
   border-top: 1px solid var(--border-soft);
@@ -342,6 +347,36 @@
 
   .hd-solo-escritorio {
     display: inline-grid;
+  }
+
+  .hd-idiomas {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radio-full);
+  }
+
+  .hd-idiomas button {
+    min-width: 36px;
+    min-height: 32px;
+    border: 0;
+    border-radius: var(--radio-full);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition: background-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
+  }
+
+  .hd-idiomas button:hover {
+    color: var(--text);
+  }
+
+  .hd-idiomas button[aria-pressed="true"] {
+    background: var(--surface-elevated-2);
+    color: var(--text);
   }
 
   .hd-panel {

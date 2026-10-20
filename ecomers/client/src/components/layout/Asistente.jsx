@@ -52,9 +52,9 @@ function nuevoMensaje(rol, texto, extra = {}) {
   return { id: `m-${Date.now().toString(36)}-${contador}`, rol, texto, hora: Date.now(), ...extra };
 }
 
-function horaCorta(marca) {
+function horaCorta(marca, idioma) {
   try {
-    return new Date(marca).toLocaleTimeString("es-AR", {
+    return new Date(marca).toLocaleTimeString(idioma === "en" ? "en-US" : "es-AR", {
       hour: "2-digit",
       minute: "2-digit",
     });
@@ -74,11 +74,11 @@ function Asistente() {
   const sobreBarra = /\/producto\/|\/armar\/?$/.test(pathname);
 
   const ATAJOS = [
-    { etiqueta: t(idioma, "as.at1"), texto: "Quiero armar una PC gamer" },
-    { etiqueta: t(idioma, "as.at2"), texto: "Quiero saber si dos componentes son compatibles" },
-    { etiqueta: t(idioma, "as.at3"), texto: "Quiero saber el estado de mi pedido" },
-    { etiqueta: t(idioma, "as.at4"), texto: "¿Cómo funcionan los envíos?" },
-    { etiqueta: t(idioma, "as.at5"), texto: "¿Qué medios de pago aceptan?" },
+    { etiqueta: t(idioma, "as.at1"), texto: t(idioma, "as.msg1") },
+    { etiqueta: t(idioma, "as.at2"), texto: t(idioma, "as.msg2") },
+    { etiqueta: t(idioma, "as.at3"), texto: t(idioma, "as.msg3") },
+    { etiqueta: t(idioma, "as.at4"), texto: t(idioma, "as.msg4") },
+    { etiqueta: t(idioma, "as.at5"), texto: t(idioma, "as.msg5") },
   ];
   const AVISOS = {
     error: { titulo: t(idioma, "as.avErrorT"), detalle: t(idioma, "as.avErrorD") },
@@ -312,7 +312,7 @@ function Asistente() {
   };
 
   const avisoInfo = aviso ? AVISOS[aviso.tipo] ?? AVISOS.error : null;
-  const derivacionTexto = (motivo) => `Hola, vengo del asistente de la web. ${motivo || ""}`.trim();
+  const derivacionTexto = (motivo) => `${t(idioma, "wa.asistente")} ${motivo || ""}`.trim();
 
   return (
     <div className={`asistente${enCheckout ? " es-mini" : ""}${sobreBarra ? " es-sobre-barra" : ""}`}>
@@ -384,7 +384,7 @@ function Asistente() {
                     <span className="asistente-msg-texto">
                       {msg.rol === "ia" ? renderRico(msg.texto) : msg.texto}
                       {msg.hora && !msg.pendiente ? (
-                        <time dateTime={new Date(msg.hora).toISOString()}>{horaCorta(msg.hora)}</time>
+                        <time dateTime={new Date(msg.hora).toISOString()}>{horaCorta(msg.hora, idioma)}</time>
                       ) : null}
                     </span>
                   )}

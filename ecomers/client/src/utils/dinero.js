@@ -20,6 +20,13 @@ export function formatearPesos(valor) {
   return pegado(SIN_DECIMALES.format(Number(valor) || 0));
 }
 
+/** Precio con un porcentaje de descuento, redondeado al peso. */
+export function precioConDescuento(precio, porcentaje) {
+  const base = Number(precio) || 0;
+  const pct = Math.min(100, Math.max(0, Number(porcentaje) || 0));
+  return Math.round((base * (100 - pct)) / 100);
+}
+
 export function formatearCuota(total, cuotas) {
   const n = Number(cuotas) || 1;
   const centavos = Math.ceil((Math.round((Number(total) || 0) * 100)) / n);

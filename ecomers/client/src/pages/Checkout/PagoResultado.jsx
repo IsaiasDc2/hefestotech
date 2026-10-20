@@ -5,6 +5,7 @@ import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
 import { esUrlMP } from "../../utils/mercadoPago";
+import { traducirError } from "../../utils/errores";
 
 const CONFIG_KEYS = {
   exito: { icono: "exito", clase: "badge-ok", tituloKey: "pago.exito" },
@@ -66,7 +67,7 @@ export default function PagoResultado({ tipo }) {
       if (!esUrlMP(link_pago)) throw new Error(t(idioma, "pago.noReintentar"));
       window.location.href = link_pago;
     } catch (err) {
-      setErrorReintento(err?.message || t(idioma, "pago.noReintentar"));
+      setErrorReintento(traducirError(err?.message, idioma) || t(idioma, "pago.noReintentar"));
       setReintentando(false);
     }
   };

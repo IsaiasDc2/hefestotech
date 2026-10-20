@@ -22,7 +22,7 @@ export const FILA_CATEGORIAS = [
   { labelKey: "cat.outlet", to: linkOfertas, clave: "ofertas", tipo: "ofertas" },
   ...EN_NAV.map((slug) => {
     const c = CATEGORIAS.find((x) => x.slug === slug);
-    return { label: c.label, to: linkCategoria(slug), clave: slug, tipo: "categoria" };
+    return { label: c.label, labelKey: `catg.${slug}`, to: linkCategoria(slug), clave: slug, tipo: "categoria" };
   }),
 ];
 

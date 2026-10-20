@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { supabase } from "../components/lib/supabaseClient";
+import useIdiomaStore, { t } from "../store/idiomaStore";
 import { obtenerCatalogo } from "../services/productService";
 import { evaluarBuild, potenciaEstimada } from "./motor";
 import { PASOS, SLOT_MOTOR, TOTAL_PASOS } from "./pasos";
@@ -286,9 +287,19 @@ export function useArmador() {
   }, []);
 
   const saltear = useCallback((pasoDef) => {
+    // Idioma al momento de preguntar (el hook no se suscribe: no hace falta).
+    const idioma = useIdiomaStore.getState().idioma;
+    const claveTitulo = `arm.paso.${pasoDef.id}`;
+    const claveConsecuencia = `arm.cons.${pasoDef.id}`;
+    const tituloPaso = t(idioma, claveTitulo);
+    const consecuenciaPaso = t(idioma, claveConsecuencia);
+    const pregunta = t(idioma, "arm.salteamos").replace(
+      "{paso}",
+      tituloPaso === claveTitulo ? pasoDef.titulo : tituloPaso
+    );
     const texto = pasoDef.esencial
-      ? `¿Salteamos ${pasoDef.titulo}?\n\n${pasoDef.consecuencia}`
-      : `¿Salteamos ${pasoDef.titulo}? Podés volver a este paso cuando quieras.`;
+      ? `${pregunta}\n\n${consecuenciaPaso === claveConsecuencia ? pasoDef.consecuencia : consecuenciaPaso}`
+      : `${pregunta} ${t(idioma, "arm.salteaVolver")}`;
     if (!window.confirm(texto)) return false;
     quitar(pasoDef);
     setSalteados((prev) =>
@@ -311,7 +322,8 @@ export function useArmador() {
   }, []);
 
   const reiniciar = useCallback(() => {
-    if (!window.confirm("¿Arrancamos de cero? Se borra todo lo elegido.")) {
+    const idioma = useIdiomaStore.getState().idioma;
+    if (!window.confirm(t(idioma, "arm.arrancarConfirm"))) {
       return;
     }
     setSelecciones({});

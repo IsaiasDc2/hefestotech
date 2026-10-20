@@ -4,28 +4,27 @@ import { whatsappUrl } from "../../constants/whatsapp";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Contacto.css"
 
-const WHATSAPP_GENERAL = "Hola HefestoTech, ¿me ayudás con una consulta?";
-
 function Contactanos() {
   const idioma = useIdiomaStore((s) => s.idioma);
+  const WHATSAPP_GENERAL = t(idioma, "wa.general");
   const WHATSAPP_CANALES = [
     {
       id: "ventas",
       titulo: t(idioma, "cont.ventasT"),
       detalle: t(idioma, "cont.ventasD"),
-      mensaje: "Hola, quiero asesoramiento para una compra. ¿Me ayudás?",
+      mensaje: t(idioma, "wa.ventas"),
     },
     {
       id: "soporte",
       titulo: t(idioma, "cont.sopT"),
       detalle: t(idioma, "cont.sopD"),
-      mensaje: "Hola, necesito soporte con mi equipo. ¿Me ayudás?",
+      mensaje: t(idioma, "wa.soporte"),
     },
     {
       id: "pedido",
       titulo: t(idioma, "cont.pedT"),
       detalle: t(idioma, "cont.pedD"),
-      mensaje: "Hola, quiero consultar el estado de mi pedido.",
+      mensaje: t(idioma, "wa.pedido"),
     },
   ];
   const [enviando, setEnviando] = useState(false);
