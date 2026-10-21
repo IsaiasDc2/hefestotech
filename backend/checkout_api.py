@@ -65,7 +65,7 @@ def _es_url_mp(url: str) -> bool:
 
         u = urlparse(url)
         host = (u.hostname or "").lower()
-        return u.scheme == "https:" and any(
+        return u.scheme == "https" and any(
             host == h or host.endswith(f".{h}") for h in _MP_HOSTS
         )
     except Exception:

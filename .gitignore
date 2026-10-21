@@ -21,6 +21,7 @@ config.json
 *.sqlite
 *.sqlite3
 *.db
+informe.txt
 .env
 node_modules
 # estado local impeccable (no versionar)
