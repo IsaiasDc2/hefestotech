@@ -109,6 +109,12 @@ def test_owner_lista_productos(monkeypatch):
 
 def test_total_calculado_en_servidor(monkeypatch):
     """El cliente no puede imponer precios: total y envío salen de la DB."""
+    # Independiente del .env local: el endpoint exige estas variables.
+    monkeypatch.setenv("SUPABASE_URL", "https://test.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "test")
+    monkeypatch.setenv("MERCADOPAGO_ACCESS_TOKEN", "test")
+    monkeypatch.setenv("BACKEND_URL", "https://api.test")
+    monkeypatch.setenv("FRONTEND_URL", "https://front.test")
     capturado = {}
 
     def fake_get(tabla, params):
