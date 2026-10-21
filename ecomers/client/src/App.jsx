@@ -1,5 +1,5 @@
 import { lazy, useEffect, useState } from "react";
-import { Link, Route, Routes, useLocation } from "react-router";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/layout/Layout";
 import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
@@ -173,6 +173,9 @@ export default function App() {
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
         <Route path="armar" element={<Armador />} />
+        {/* Rutas viejas del armador v1 (ya reemplazado por /armar). */}
+        <Route path="armar-pc" element={<Navigate to="/armar" replace />} />
+        <Route path="arma-tu-pc" element={<Navigate to="/armar" replace />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
