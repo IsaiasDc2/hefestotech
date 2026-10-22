@@ -1,21 +1,19 @@
 import { useState } from "react";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { UMBRAL_ENVIO_GRATIS, costoEnvio } from "../../constants/politicas";
+import { esCpValido, guardarCp, leerCp } from "../../utils/codigoPostal";
 import "./CotizadorEnvio.css";
 
-// Valores REALES del proyecto: idénticos a Checkout.jsx.
-// Gratis desde $150.000 · Estándar $5.000 · Express $12.000.
-// Estimación en pantalla: el total que se cobra lo calcula el servidor.
-const UMBRAL_ENVIO_GRATIS = 150000;
-const COSTO_ENVIO_ESTANDAR = 5000;
-const COSTO_ENVIO_EXPRESS = 12000;
+// Estimación en pantalla: el total que se cobra lo calcula el servidor. Las
+// tarifas son únicas para todo el país (no dependen del código postal): el
+// código se pide para confirmar el destino y se recuerda para el checkout.
 
 const pesos = (v) => `$${Number(v ?? 0).toLocaleString("es-AR")}`;
-const esCpValido = (cp) => /^[0-9]{4}$/.test(cp.trim());
 
-function CotizadorEnvio({ subtotal = 0 }) {
+function CotizadorEnvio({ subtotal = 0, compacto = false }) {
   const idioma = useIdiomaStore((s) => s.idioma);
-  const [cp, setCp] = useState("");
-  const [consultado, setConsultado] = useState(false);
+  const [cp, setCp] = useState(leerCp);
+  const [consultado, setConsultado] = useState(() => leerCp() !== "");
   const [metodo, setMetodo] = useState("estandar");
   const [error, setError] = useState("");
 
@@ -31,6 +29,7 @@ function CotizadorEnvio({ subtotal = 0 }) {
       return;
     }
     setError("");
+    guardarCp(cp);
     setConsultado(true);
   };
 
@@ -47,21 +46,21 @@ function CotizadorEnvio({ subtotal = 0 }) {
     {
       id: "estandar",
       nombre: t(idioma, "cart.cotizEstandar"),
-      costo: COSTO_ENVIO_ESTANDAR,
+      costo: costoEnvio(base, "estandar"),
       disponible: true,
       motivo: "",
     },
     {
       id: "express",
       nombre: t(idioma, "cart.cotizExpress"),
-      costo: COSTO_ENVIO_EXPRESS,
+      costo: costoEnvio(base, "express"),
       disponible: true,
       motivo: "",
     },
   ];
 
   return (
-    <section className="cotiz-envio" aria-labelledby="cotiz-envio-titulo">
+    <section className={`cotiz-envio${compacto ? " cotiz-envio--ficha" : ""}`} aria-labelledby="cotiz-envio-titulo">
       <h2 id="cotiz-envio-titulo" className="cotiz-envio-titulo">
         {t(idioma, "cart.cotizTitulo")}
       </h2>
@@ -70,7 +69,10 @@ function CotizadorEnvio({ subtotal = 0 }) {
           <span>{t(idioma, "cart.cotizCp")}</span>
           <input
             value={cp}
-            onChange={(e) => setCp(e.target.value)}
+            onChange={(e) => {
+              setCp(e.target.value.replace(/\D/g, ""));
+              setConsultado(false);
+            }}
             placeholder={t(idioma, "cart.cotizPh")}
             inputMode="numeric"
             autoComplete="postal-code"
@@ -104,7 +106,7 @@ function CotizadorEnvio({ subtotal = 0 }) {
                   />
                   <span className="cotiz-envio-opcion-nombre">{op.nombre}</span>
                   <strong className="cotiz-envio-opcion-costo">
-                    {op.costo === 0 ? t(idioma, "chk.gratis") : pesos(op.costo)}
+                    {!op.disponible ? "—" : op.costo === 0 ? t(idioma, "chk.gratis") : pesos(op.costo)}
                   </strong>
                   {op.motivo && <span className="cotiz-envio-motivo">{op.motivo}</span>}
                   {op.disponible && (

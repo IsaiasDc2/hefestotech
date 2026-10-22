@@ -13,7 +13,7 @@ import {
   FaBolt,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca";
-import { FILA_CATEGORIAS, esClaveActiva } from "./navLinks";
+import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
 import MobileDrawer from "./MobileDrawer";
 import { supabase } from "../lib/supabaseClient";
 import { useCantidadFavoritos } from "../../services/favoritos";
@@ -28,6 +28,7 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [pop, setPop] = useState({ cantidad: cantidadCarrito, activo: false });
   const fijoRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
+  const setIdioma = useIdiomaStore((s) => s.setIdioma);
   const { tema, alternar } = useTema();
   const favoritos = useCantidadFavoritos();
   const navigate = useNavigate();
@@ -131,6 +132,21 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
           </form>
 
           <nav className="hd-acciones" aria-label={t(idioma, "nav.cuentaYCarrito")}>
+            <span className="hd-idiomas" role="group" aria-label={t(idioma, "topbar.idioma")}>
+              {IDIOMAS.map((op) => (
+                <button
+                  key={op.codigo}
+                  type="button"
+                  lang={op.codigo}
+                  aria-label={op.etiqueta}
+                  title={op.etiqueta}
+                  aria-pressed={idioma === op.codigo}
+                  onClick={() => setIdioma(op.codigo)}
+                >
+                  {op.codigo.toUpperCase()}
+                </button>
+              ))}
+            </span>
             <button
               type="button"
               className="hd-icono hd-solo-escritorio"

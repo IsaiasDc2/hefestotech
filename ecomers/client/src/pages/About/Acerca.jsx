@@ -26,7 +26,7 @@ function Acerca() {
           <span>{t(idioma, "acerca.fundacion")}</span>
         </div>
         <div className="stat card">
-          <strong>24-48hs</strong>
+          <strong>{t(idioma, "acerca.envioValor")}</strong>
           <span>{t(idioma, "acerca.envio")}</span>
         </div>
         <div className="stat card">

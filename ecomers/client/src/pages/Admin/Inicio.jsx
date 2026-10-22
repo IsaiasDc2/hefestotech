@@ -15,7 +15,7 @@ import {
   FaUsers,
 } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
-import { formatoMoneda } from "./compras";
+import { formatoMoneda } from "./comprasUtil";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
 import { useModulo } from "./hooks";
 import {

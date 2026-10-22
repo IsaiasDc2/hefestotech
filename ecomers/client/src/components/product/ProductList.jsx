@@ -5,22 +5,23 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useCatalogo from "../../hooks/useCatalogo";
 import { obtenerProductoPorId, precioFinal as calcularPrecioFinal } from "../../services/productService";
-import { CATEGORIAS } from "../../constants/categorias";
+import { CATEGORIAS, nombreCategoria } from "../../constants/categorias";
 import { whatsappUrl } from "../../constants/whatsapp";
 import { topeDeStock } from "../../store/cartStore";
 import { nombreSpec, valorSpec } from "../../utils/specs";
 import { JsonLd } from "../seo/JsonLd";
 import { construirJsonLdProducto } from "../seo/jsonLdProducto";
 import { NOMBRE_SITIO } from "../../seo/sitio";
-import CalculadoraCuotas from "./CalculadoraCuotas";
+import CotizadorEnvio from "../../pages/Carrito/CotizadorEnvio";
+import Beneficios from "./Beneficios";
+import Destacados from "./Destacados";
+import PanelPrecio from "./PanelPrecio";
 import ProductCard from "./ProductCard";
 import "./ProductCard.css";
 import "./ProductoDetalle.css";
 import "./CalculadoraCuotas.css";
 
 const ULTIMAS_UNIDADES = 3;
-
-const pesos = (n) => `$${Number(n ?? 0).toLocaleString("es-AR")}`;
 
 /* Producto por id con estado derivado del intento (sin setState sincrónico
    en el efecto). `null` = no existe o no está publicado → 404 amable. */
@@ -135,7 +136,10 @@ function ProductoDetalle({ agregarAlCarrito }) {
   const categoria = CATEGORIAS.find((c) => c.db === producto.categoria);
   const sinImagen = !producto.imagen || imgError.id === producto.id;
   const consulta = whatsappUrl(
-    `Hola! Quiero consultar por ${producto.nombre}${producto.codigo ? ` (${producto.codigo})` : ""}.`
+    t(idioma, "wa.consulta").replace(
+      "{producto}",
+      `${producto.nombre}${producto.codigo ? ` (${producto.codigo})` : ""}`
+    )
   );
 
   return (
@@ -148,7 +152,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
         {categoria && (
           <>
             <span className="migajas-sep" aria-hidden="true">/</span>
-            <Link to={`/productos?categoria=${categoria.slug}`}>{categoria.label}</Link>
+            <Link to={`/productos?categoria=${categoria.slug}`}>{nombreCategoria(categoria, idioma)}</Link>
           </>
         )}
         <span className="migajas-sep" aria-hidden="true">/</span>
@@ -168,7 +172,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
             ) : (
               <img
                 src={producto.imagen}
-                alt={producto.nombre || "Producto"}
+                alt={producto.nombre || t(idioma, "card.producto")}
                 width="600"
                 height="600"
                 fetchPriority="high"
@@ -183,7 +187,7 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
           <h1>{producto.nombre}</h1>
           <p className="detalle-categoria">
-            {categoria?.label ?? producto.categoria}
+            {nombreCategoria(categoria, idioma) || producto.categoria}
             {producto.codigo && (
               <>
                 {" · "}
@@ -196,38 +200,15 @@ function ProductoDetalle({ agregarAlCarrito }) {
 
           {producto.descripcion && <p className="detalle-descripcion">{producto.descripcion}</p>}
 
-          <div className="detalle-precio">
-            {!tienePrecio ? (
-              <strong className="precio-a-confirmar">{t(idioma, "catl.sinPrecio")}</strong>
-            ) : tieneOferta ? (
-              <>
-                <span className="precio-anterior">{pesos(precio)}</span>
-                <strong>{pesos(final)}</strong>
-              </>
-            ) : (
-              <strong>{pesos(precio)}</strong>
-            )}
-            {tienePrecio && <p className="detalle-iva">{t(idioma, "pd.ivaIncluido")}</p>}
-            {producto.envio_gratis && <p className="envio">{t(idioma, "pd.envio")}</p>}
-          </div>
-
-          {tienePrecio && <CalculadoraCuotas precio={final} />}
-
-          <div className="detalle-stock">
-            {hayStock ? (
-              <span className="disponible">
-                <span className="stock-dot" aria-hidden="true" />
-                {stock <= ULTIMAS_UNIDADES
-                  ? `${t(idioma, "pd.ultimas")} (${stock})`
-                  : t(idioma, "pd.disponible")}
-              </span>
-            ) : (
-              <span className="sin-stock">
-                <span className="stock-dot" aria-hidden="true" />
-                {t(idioma, "pd.sinStock")}
-              </span>
-            )}
-          </div>
+          <PanelPrecio
+            producto={producto}
+            precio={precio}
+            final={final}
+            tieneOferta={tieneOferta}
+            descuento={Math.round(Number(producto.descuento_porcentaje ?? 0))}
+            tienePrecio={tienePrecio}
+            hayStock={hayStock}
+          />
 
           {tienePrecio && hayStock ? (
             <div className="detalle-compra">
@@ -252,6 +233,10 @@ function ProductoDetalle({ agregarAlCarrito }) {
             </a>
           )}
 
+          <Destacados producto={producto} />
+          {tienePrecio && hayStock && <CotizadorEnvio compacto subtotal={final * cantidad} />}
+          <Beneficios stock={stock} ultimasUnidades={ULTIMAS_UNIDADES} envioGratis={Boolean(producto.envio_gratis)} />
+
           {Object.keys(especificaciones).length > 0 && (
             <div className="detalle-especificaciones">
               <h2>{t(idioma, "pd.caracteristicas")}</h2>
@@ -259,8 +244,8 @@ function ProductoDetalle({ agregarAlCarrito }) {
                 <tbody>
                   {Object.entries(especificaciones).map(([clave, valor]) => (
                     <tr key={clave}>
-                      <th scope="row" className="clave">{nombreSpec(clave)}</th>
-                      <td className="valor">{valorSpec(valor, { si: t(idioma, "pd.si"), no: t(idioma, "pd.no") })}</td>
+                      <th scope="row" className="clave">{nombreSpec(clave, idioma)}</th>
+                      <td className="valor">{valorSpec(valor, { si: t(idioma, "pd.si"), no: t(idioma, "pd.no"), idioma })}</td>
                     </tr>
                   ))}
                 </tbody>

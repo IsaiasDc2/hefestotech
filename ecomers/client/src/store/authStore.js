@@ -1,5 +1,12 @@
 import { create } from "zustand";
 import { loginUsuario, registrarUsuario, obtenerSesion, cerrarSesion, suscribirCambiosAuth } from "../services/authService";
+import useIdiomaStore, { t } from "./idiomaStore";
+import { traducirErrorAuth } from "../utils/errores";
+
+// Textos en el idioma activo al momento del error.
+const idiomaActual = () => useIdiomaStore.getState().idioma;
+const textoDe = (clave) => t(idiomaActual(), clave);
+const mensajeDe = (err, clave) => traducirErrorAuth(err?.message, idiomaActual()) || textoDe(clave);
 
 const useAuthStore = create((set) => ({
   usuario: null,
@@ -16,7 +23,7 @@ const useAuthStore = create((set) => ({
       set({ usuario: data.usuario, isAuthenticated: true, cargando: false });
     } catch (err) {
       set({
-        error: err.message || "Email o contraseña incorrectos",
+        error: mensajeDe(err, "auth.errLogin"),
         cargando: false,
       });
     }
@@ -34,7 +41,7 @@ const useAuthStore = create((set) => ({
       return data;
     } catch (err) {
       set({
-        error: err.message || "No se pudo crear la cuenta",
+        error: mensajeDe(err, "auth.errRegistro"),
         cargando: false,
       });
       throw err;

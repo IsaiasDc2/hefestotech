@@ -15,7 +15,7 @@ ruta,texto_aria,selector,destino_esperado,destino_real,resultado
 (global),Registrate (drawer),#menu-movil nav a.drawer-link,/cuenta en modo registro,/cuenta vista login (param modo sin efecto),revisar
 (global),Iniciar sesion (drawer),#menu-movil nav a.drawer-link,/cuenta,/cuenta,ok
 (global),Links de categoria (drawer x5),#menu-movil nav a.drawer-link,ver nav categorias,ver nav categorias,ok
-(global),WhatsApp (drawer),#menu-movil a[href*=wa.me],wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),WhatsApp (drawer),#menu-movil a[href*=wa.me],wa.me real de HefestoTech,https://wa.me/5493875029222,ok
 (global),Ayuda (drawer),#menu-movil nav a.drawer-link,/acerca,/acerca,ok
 (global),Posventa (drawer),#menu-movil nav a.drawer-link,/contactanos,/contactanos,ok
 (global),Idioma ES EN (drawer),#menu-movil button.drawer-idioma,cambia idioma local,cambia idioma local,ok
@@ -24,7 +24,7 @@ ruta,texto_aria,selector,destino_esperado,destino_real,resultado
 (global),Suscribirse newsletter,footer form.footer-news-form button,confirmacion de suscripcion,estado local sin backend ni persistencia,revisar
 (global),Facebook,footer.redes a[aria-label=Facebook],facebook real de HefestoTech,https://facebook.com/hefestotech (no verificado),a confirmar
 (global),Instagram,footer.redes a[aria-label=Instagram],instagram real de HefestoTech,https://instagram.com/hefestotech (no verificado),a confirmar
-(global),WhatsApp (footer),footer.redes a[aria-label=WhatsApp],wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),WhatsApp (footer),footer.redes a[aria-label=WhatsApp],wa.me real de HefestoTech,https://wa.me/5493875029222,ok
 (global),Inicio (footer),footer a,/ ,/,ok
 (global),Productos (footer),footer a,/productos,/productos,ok
 (global),Mi cuenta (footer),footer a,/cuenta,/cuenta,ok
@@ -42,7 +42,7 @@ ruta,texto_aria,selector,destino_esperado,destino_real,resultado
 (global),Atajos Armar PC error stock duda (x4),.asistente-chips button,respuesta POST /api/chat,respuesta POST /api/chat,ok
 (global),Enviar mensaje,.asistente-form button,respuesta POST /api/chat,respuesta POST /api/chat,ok
 (global),Reintentar aviso,.asistente-aviso button,reenvia ultimo mensaje,reenvia ultimo mensaje,ok
-(global),WhatsApp aviso asistente,.asistente-aviso a,wa.me real de HefestoTech,https://wa.me/5491112345678 (PLACEHOLDER),a confirmar
+(global),WhatsApp aviso asistente,.asistente-aviso a,wa.me real de HefestoTech,https://wa.me/5493875029222,ok
 (global),Cerrar carrito lateral,aside button[aria-label=Cerrar carrito],cierra lateral,cierra lateral,ok
 (global),Ver productos lateral vacio,button.cart-vacio-cta,/productos,solo cierra el lateral sin navegar,revisar
 (global),Quitar uno lateral,.cantidad button,disminuye cantidad,disminuye cantidad,ok

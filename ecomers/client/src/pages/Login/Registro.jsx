@@ -3,6 +3,7 @@ import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { FaCircleCheck } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { traducirErrorAuth } from "../../utils/errores";
 import Marca from "../../components/brand/Marca";
 
 function Registro() {
@@ -65,7 +66,7 @@ function Registro() {
       const data = await registro({ nombre: nombre.trim(), email: email.trim(), password });
       if (!data?.token) setPendienteEmail(true);
     } catch (err) {
-      setLocalError(err?.message ?? t(idioma, "reg.error"));
+      setLocalError(traducirErrorAuth(err?.message, idioma) ?? t(idioma, "reg.error"));
     }
   };
 

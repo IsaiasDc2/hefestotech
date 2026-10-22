@@ -4,7 +4,7 @@ Pendientes ordenados por impacto para el comercio. Lo ya resuelto está en `CHAN
 
 ## Antes de vender con esta versión (necesita al dueño)
 
-1. **Datos del comercio**: número real de WhatsApp (`src/constants/whatsapp.js` usa un placeholder), CUIT, dirección y email en `backend/.env` (`TIENDA_*`).
+1. **Datos del comercio**: CUIT, dirección y email en `backend/.env` (`TIENDA_*`).
 2. **Precios y stock** de los 15 productos de la migración 007 (hoy en $0: se muestran como "Precio a confirmar").
 3. **Specs del armador**: las de `product_specs` están cargadas como inferidas (`verified=false`) y el motor solo lee las verificadas. Hay que revisarlas y marcarlas `verified=true`.
 4. **Deploy**: activar *Pages → Source: GitHub Actions* y cargar las variables `VITE_*` del repo (ver README).

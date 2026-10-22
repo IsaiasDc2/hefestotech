@@ -6,6 +6,7 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
 import { esUrlMP } from "../../utils/mercadoPago";
 import ComprobantePago from "./ComprobantePago";
+import { traducirError } from "../../utils/errores";
 import "./Checkout.css";
 
 const CONFIG_KEYS = {
@@ -83,7 +84,7 @@ export default function PagoResultado({ tipo }) {
       if (!esUrlMP(link_pago)) throw new Error(t(idioma, "pago.noReintentar"));
       window.location.href = link_pago;
     } catch (err) {
-      setErrorReintento(err?.message || t(idioma, "pago.noReintentar"));
+      setErrorReintento(traducirError(err?.message, idioma) || t(idioma, "pago.noReintentar"));
       setReintentando(false);
     }
   };

@@ -3,6 +3,7 @@
 // Nunca se loguea ni se renderiza el token. Sin datos inventados: ante error,
 // el llamador muestra "Próximamente" (ver hooks.jsx `useModulo`).
 import { supabase } from "../../components/lib/supabaseClient";
+import { mensajeDeError } from "../../utils/errores";
 
 export const API_BASE = String(
   import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"
@@ -41,7 +42,7 @@ export async function api(path, { method = "GET", body } = {}) {
     datos = {};
   }
   if (!respuesta.ok) {
-    const e = new Error(datos?.detail || `Error ${respuesta.status}`);
+    const e = new Error(mensajeDeError(datos, respuesta.status));
     e.status = respuesta.status;
     e.datos = datos;
     throw e;
@@ -87,7 +88,7 @@ export const adminApi = {
       datos = {};
     }
     if (!respuesta.ok) {
-      throw new Error(datos?.detail || `Error ${respuesta.status}`);
+      throw new Error(mensajeDeError(datos, respuesta.status));
     }
     return datos;
   },
@@ -130,7 +131,7 @@ export const adminApi = {
       } catch {
         datos = {};
       }
-      const e = new Error(datos?.detail || `Error ${respuesta.status}`);
+      const e = new Error(mensajeDeError(datos, respuesta.status));
       e.status = respuesta.status;
       throw e;
     }

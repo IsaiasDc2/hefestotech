@@ -10,7 +10,9 @@ import {
 } from "react-icons/fa6";
 import "../components/product/ProductCard.css";
 import useIdiomaStore, { t } from "../store/idiomaStore";
+import { nombreCategoriaDb } from "../constants/categorias";
 import { precioFinal } from "./adaptar";
+import { traducirMensaje } from "./mensajesEn";
 
 const INSIGNIA = {
   compatible: { clase: "is-ok", Icono: FaCircleCheck, key: "arm.compatible" },
@@ -30,7 +32,7 @@ const INSIGNIA = {
 function ArmadorCard({
   producto,
   estado = "compatible",
-  motivo = "",
+  motivo: motivoMotor = "",
   elegido = false,
   atenuado = false,
   onElegir,
@@ -38,6 +40,7 @@ function ArmadorCard({
 }) {
   const [imgError, setImgError] = useState(false);
   const idioma = useIdiomaStore((s) => s.idioma);
+  const motivo = traducirMensaje(motivoMotor, idioma);
   const sello = INSIGNIA[estado] ?? INSIGNIA.compatible;
   const selloTexto = t(idioma, sello.key);
   const { Icono } = sello;
@@ -113,7 +116,7 @@ function ArmadorCard({
 
       {marca && (
         <p className="categoria">
-          {marca} · {producto.categoria}
+          {marca} · {nombreCategoriaDb(producto.categoria, idioma)}
         </p>
       )}
 
@@ -168,7 +171,7 @@ function ArmadorCard({
           onClick={onElegir}
           title={
             atenuado
-              ? motivo || "No compatible con tu armado"
+              ? motivo || t(idioma, "armcard.incompatible")
               : undefined
           }
           aria-label={

@@ -3,6 +3,7 @@
 Sin red: catálogo demo local, proveedor mock o proveedores falsos.
     python -m pytest tests -q
 """
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -17,7 +18,13 @@ import checkout_api  # noqa: E402
 import main  # noqa: E402
 from asistente import agente, datos, herramientas as h, router  # noqa: E402
 from asistente.mock import MockProvider  # noqa: E402
-from asistente.proveedores import GeminiProvider, LLMProvider, configuracion, crear_proveedor  # noqa: E402
+from asistente.proveedores import (  # noqa: E402
+    MODELO_GEMINI_POR_DEFECTO,
+    GeminiProvider,
+    LLMProvider,
+    configuracion,
+    crear_proveedor,
+)
 
 cliente = TestClient(main.app)
 
@@ -147,6 +154,29 @@ class ProveedorConClaveInvalida(ProveedorCaido):
         yield  # pragma: no cover
 
 
+class ProveedorColgado(LLMProvider):
+    nombre = "colgado"
+
+    def __init__(self):
+        self.intentos = 0
+
+    async def turno(self, sistema, mensajes, herramientas, max_tokens):
+        self.intentos += 1
+        await asyncio.sleep(5)
+        yield {"tipo": "texto", "delta": "nunca llega"}  # pragma: no cover
+
+
+def test_modelo_colgado_se_reintenta_una_sola_vez():
+    colgado = ProveedorColgado()
+
+    async def correr():
+        return [ev async for ev in agente._turno(colgado, "s", [], None, 100, 0.05, [False])]
+
+    with pytest.raises(agente.ProveedorCaido):
+        asyncio.run(correr())
+    assert colgado.intentos == 2, "un intento + un reintento, no REINTENTOS + 1 (se colgó dos veces)"
+
+
 def test_error_4xx_no_se_reintenta():
     invalido = ProveedorConClaveInvalida()
     router.usar_proveedor(invalido)
@@ -180,6 +210,17 @@ def test_configuracion_por_entorno(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "otro")
     with pytest.raises(Exception):
         crear_proveedor()
+
+
+def test_modelo_de_gemini_por_defecto_y_override(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "clave-de-prueba")
+    assert MODELO_GEMINI_POR_DEFECTO == "gemini-3.5-flash"
+    assert crear_proveedor().modelo == MODELO_GEMINI_POR_DEFECTO
+    monkeypatch.setenv("GEMINI_MODEL", "modelo-heredado")
+    assert crear_proveedor().modelo == "modelo-heredado"
+    monkeypatch.setenv("LLM_MODEL", "gemini-3.5-flash-lite")
+    assert crear_proveedor().modelo == "gemini-3.5-flash-lite"
+    assert configuracion()["timeout_seg"] == 20
 
 
 # ------------------------------------------ Gemini con cliente simulado ---

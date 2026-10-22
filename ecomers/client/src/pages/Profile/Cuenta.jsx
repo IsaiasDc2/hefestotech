@@ -102,7 +102,7 @@ function SeccionPedidos() {
                 </span>
               </div>
               <p className="texto-mutado">
-                {o.created_at ? new Date(o.created_at).toLocaleDateString("es-AR") : "—"}
+                {o.created_at ? new Date(o.created_at).toLocaleDateString(idioma === "en" ? "en-US" : "es-AR") : "—"}
                 {" · "}
                 {unidades} {unidades === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
                 {" · "}
@@ -185,7 +185,7 @@ function SeccionReclamos() {
                 <span className={`adm-estado es-${r.estado}`}>{r.estado}</span>
               </div>
               <p className="texto-mutado">
-                {r.created_at ? new Date(r.created_at).toLocaleString("es-AR") : "—"}
+                {r.created_at ? new Date(r.created_at).toLocaleString(idioma === "en" ? "en-US" : "es-AR") : "—"}
                 {r.orden_id ? ` · #${String(r.orden_id).slice(0, 8)}` : ""}
               </p>
               {r.detalle && <p>{r.detalle}</p>}
@@ -352,7 +352,8 @@ function Cuenta() {
 
   return (
     <div className="cuenta">
-      <p className="badge badge-info hero-kicker">{t(idioma, "cuenta.miCuenta")}</p>
+      <h1 className="sr-only">{t(idioma, "cuenta.miCuenta")}</h1>
+      <p className="badge badge-info hero-kicker" aria-hidden="true">{t(idioma, "cuenta.miCuenta")}</p>
       {isAuthenticated && usuario && (
         <div className="panel-cuenta card cuenta-sesion">
           <p className="texto-mutado">{t(idioma, "cuenta.sesionActiva")} <strong>{usuario.email}</strong></p>

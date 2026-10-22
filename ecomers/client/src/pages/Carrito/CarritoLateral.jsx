@@ -3,9 +3,8 @@ import { Link } from "react-router";
 import { FaCartShopping, FaXmark, FaTrashCan, FaMinus, FaPlus, FaTruckFast, FaCircleCheck, FaArrowRight } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { topeDeStock } from "../../store/cartStore";
+import { UMBRAL_ENVIO_GRATIS } from "../../constants/politicas";
 import "./CarritoLateral.css";
-
-const UMBRAL_ENVIO_GRATIS = 150000;
 
 function CarritoLateral({
   isOpen,

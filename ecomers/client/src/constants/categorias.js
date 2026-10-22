@@ -1,3 +1,5 @@
+import { t } from "../store/idiomaStore";
+
 export const CATEGORIAS = [
   { slug: "procesadores", label: "Procesadores", db: "Procesador" },
   { slug: "placas-de-video", label: "Placas de video", db: "Placa de video" },
@@ -16,6 +18,20 @@ export const CATEGORIAS = [
   { slug: "webcams", label: "Webcams", db: "Webcam" },
   { slug: "ups", label: "UPS", db: "UPS" },
 ];
+
+/** Nombre visible de una categoría en el idioma activo (cae a `label`). */
+export function nombreCategoria(cat, idioma) {
+  if (!cat) return "";
+  const clave = `catg.${cat.slug}`;
+  const texto = t(idioma, clave);
+  return texto === clave ? cat.label : texto;
+}
+
+/** Igual que nombreCategoria pero a partir del valor de la base (`db`). */
+export function nombreCategoriaDb(db, idioma) {
+  const cat = CATEGORIAS.find((c) => c.db === db);
+  return cat ? nombreCategoria(cat, idioma) : db;
+}
 
 export const linkCategoria = (slug) => `/productos?categoria=${slug}`;
 export const linkOfertas = `/productos?categoria=ofertas`;

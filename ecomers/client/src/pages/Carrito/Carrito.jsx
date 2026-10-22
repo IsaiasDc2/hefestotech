@@ -2,10 +2,9 @@ import { Link } from "react-router";
 import { FaCartShopping } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { UMBRAL_ENVIO_GRATIS } from "../../constants/politicas";
 import CotizadorEnvio from "./CotizadorEnvio";
 import "./CotizadorEnvio.css";
-
-const UMBRAL_ENVIO_GRATIS = 150000;
 
 function Carrito({
   carrito = [],

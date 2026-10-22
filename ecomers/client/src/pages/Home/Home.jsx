@@ -12,7 +12,7 @@ import {
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useCatalogo from "../../hooks/useCatalogo";
 import { precioFinal } from "../../services/productService";
-import { CATEGORIAS, linkCategoria, linkOfertas } from "../../constants/categorias";
+import { CATEGORIAS, linkCategoria, linkOfertas, nombreCategoria } from "../../constants/categorias";
 import { whatsappUrl } from "../../constants/whatsapp";
 import { formatearPesos } from "../../utils/dinero";
 import ProductCard from "../../components/product/ProductCard";
@@ -188,7 +188,7 @@ function Categorias({ productos, idioma }) {
           <li key={c.slug}>
             <Link to={linkCategoria(c.slug)} className="ini-categoria">
               <span className="ini-categoria-texto">
-                <strong>{c.label}</strong>
+                <strong>{nombreCategoria(c, idioma)}</strong>
                 <span>
                   {c.conteo} {c.conteo === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
                 </span>

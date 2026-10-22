@@ -28,11 +28,33 @@ export const TITULOS = {
 
 export const TITULO_NO_ENCONTRADO = "Nada por acá | HefestoTech";
 
-export function tituloPara(pathname) {
-  if (TITULOS[pathname]) return TITULOS[pathname];
-  if (pathname.startsWith("/producto/")) return TITULOS["/producto"];
-  if (pathname.startsWith("/pedido/")) return TITULOS["/pedido"];
-  return TITULO_NO_ENCONTRADO;
+// Mismos títulos en inglés. /admin no está: el panel es solo en español.
+export const TITULOS_EN = {
+  "/": "HefestoTech | Hardware, prebuilt PCs and components",
+  "/productos": "Products | HefestoTech",
+  "/producto": "Product | HefestoTech",
+  "/acerca": "About HefestoTech",
+  "/contactanos": "Contact us | HefestoTech",
+  "/armar": "Build your PC | HefestoTech",
+  "/carrito": "Cart | HefestoTech",
+  "/checkout": "Checkout | HefestoTech",
+  "/cuenta": "My account | HefestoTech",
+  "/reclamo": "File a claim | HefestoTech",
+  "/pago-exito": "Payment approved | HefestoTech",
+  "/pago-pendiente": "Payment pending | HefestoTech",
+  "/pago-fallido": "Payment declined | HefestoTech",
+  "/pedido": "Your order | HefestoTech",
+};
+
+export const TITULO_NO_ENCONTRADO_EN = "Nothing here | HefestoTech";
+
+export function tituloPara(pathname, idioma = "es") {
+  const en = idioma === "en";
+  const tabla = en ? { ...TITULOS, ...TITULOS_EN } : TITULOS;
+  if (tabla[pathname]) return tabla[pathname];
+  if (pathname.startsWith("/producto/")) return tabla["/producto"];
+  if (pathname.startsWith("/pedido/")) return tabla["/pedido"];
+  return en ? TITULO_NO_ENCONTRADO_EN : TITULO_NO_ENCONTRADO;
 }
 
 export function canonicalPara(pathname) {

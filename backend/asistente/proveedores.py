@@ -24,8 +24,10 @@ from __future__ import annotations
 import os
 from typing import Any, AsyncIterator, Optional
 
-# Modelo que ya tenía configurado el backend anterior (main.py).
-MODELO_GEMINI_POR_DEFECTO = "gemini-3.8-flash"
+# Con la clave del proyecto, gemini-3.8-flash no respondía en más de 60 s
+# (oct-2026) y gemini-2.5-flash ya no existe para claves nuevas; 3.5-flash
+# contesta en ~2 s y soporta herramientas. Se cambia con LLM_MODEL.
+MODELO_GEMINI_POR_DEFECTO = "gemini-3.5-flash"
 
 
 class ProveedorNoConfigurado(RuntimeError):
@@ -128,7 +130,7 @@ def configuracion() -> dict:
         "clave": clave,
         "modelo": modelo,
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS") or 800),
-        "timeout_seg": float(os.getenv("LLM_TIMEOUT_SEG") or 25),
+        "timeout_seg": float(os.getenv("LLM_TIMEOUT_SEG") or 20),
     }
 
 

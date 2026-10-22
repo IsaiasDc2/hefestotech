@@ -5,6 +5,7 @@ import { FaChevronDown, FaFileArrowDown, FaReceipt } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
 import { useModulo } from "./hooks";
+import { esDestructivo, siguientesEstados } from "./pedidosUtil";
 
 const ESTADOS = ["", "pendiente", "pagada", "preparacion", "enviada", "entregada", "cancelada", "reembolsada"];
 
@@ -26,8 +27,11 @@ export default function Pedidos({ avisar, pedirConfirm }) {
   const cambiar = async (p, a) => {
     const ok = await pedirConfirm({
       titulo: "Cambiar estado",
-      texto: `Pasar el pedido ${String(p.id).slice(0, 8)} a «${a}».`,
+      texto:
+        `Pasar el pedido ${String(p.id).slice(0, 8)} a «${a}».` +
+        (a === "cancelada" ? " El stock de sus productos vuelve al inventario." : ""),
       confirmar: "Cambiar",
+      peligro: esDestructivo(a),
     });
     if (!ok) return;
     setCambiando(p.id);
@@ -285,11 +289,11 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                 <div className="adm-pedido-acciones">
                   <span className="texto-mutado">Cambiar estado:</span>
                   <div className="adm-acciones">
-                    {ESTADOS.filter((s) => s && s !== p.estado).slice(0, 4).map((s) => (
+                    {siguientesEstados(p.estado).map((s) => (
                       <button
                         key={s}
                         type="button"
-                        className="btn-fantasma adm-mini"
+                        className={`btn-fantasma adm-mini${esDestructivo(s) ? " es-peligro" : ""}`}
                         disabled={cambiando === p.id}
                         onClick={() => cambiar(p, s)}
                       >
