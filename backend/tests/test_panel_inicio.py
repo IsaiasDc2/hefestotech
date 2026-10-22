@@ -223,6 +223,41 @@ def test_resumen_con_la_base_sin_migracion_015(monkeypatch, ruta):
     assert d["sucursal"] is None  # sin columna no hay filtro: se muestra todo
 
 
+def test_resumen_con_015_pero_sin_medio_pago_conserva_el_filtro_de_sucursal(monkeypatch):
+    """Base real de hoy: tiene la 015 (sucursal_id, mp_payment_*) pero NO
+    `ordenes.medio_pago` (la define otra rama de la 004). El filtro por
+    sucursal tiene que seguir funcionando."""
+    from fastapi import HTTPException
+
+    ahora = f"{datetime.now(timezone.utc).date().isoformat()}T12:00:00+00:00"
+    suc = "66666666-6666-6666-6666-666666666666"
+    consultas = []
+
+    def ordenes(params):
+        if "medio_pago" in str(params.get("select", "")):
+            raise HTTPException(status_code=502, detail="Operación no disponible.")
+        consultas.append(dict(params))
+        filas = [
+            {"id": "o1", "estado": "pagada", "total_centavos": 100000, "created_at": ahora,
+             "sucursal_id": suc, "mp_payment_type": "credit_card", "mp_payment_method": "visa"},
+            {"id": "o2", "estado": "pagada", "total_centavos": 50000, "created_at": ahora,
+             "sucursal_id": "otra", "mp_payment_type": "debit_card", "mp_payment_method": "master"},
+        ]
+        filtro = str(params.get("sucursal_id") or "")
+        if filtro.startswith("eq."):
+            filas = [f for f in filas if f["sucursal_id"] == filtro[3:]]
+        return filas
+
+    _como(monkeypatch, "owner", {"ordenes": ordenes})
+    r = cliente.get(f"/api/admin/resumen?sucursal={suc}", headers=AUTH)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["sucursal"] == suc
+    assert d["ventas"]["pedidos"] == 1
+    assert d["ventas"]["total_centavos"] == 100000
+    assert any(c.get("sucursal_id") == f"eq.{suc}" for c in consultas)
+
+
 def test_ficha_proveedor_historial_de_recepciones(monkeypatch):
     tablas = {
         "proveedores": [{"id": PROV, "nombre": "Proveedor SA", "estado": "activo",

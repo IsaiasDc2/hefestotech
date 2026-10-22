@@ -3,6 +3,7 @@
 // confirmada → recibida parcial/total, cancelada. La recepción suma stock en
 // el servidor (RPC con adjust_stock) y deja el movimiento de inventario.
 import { useState } from "react";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, fechaCorta } from "./adminApi";
 import {
   ACCIONES_OC,
@@ -235,10 +236,10 @@ function NuevaOrden({ avisar, onCreada, onCancelar }) {
           <textarea value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={2000} />
         </label>
         <div className="adm-form-acciones">
+          <button type="button" className="btn-fantasma adm-btn" onClick={onCancelar}>Cancelar</button>
           <button type="submit" className="btn-primary adm-btn" disabled={guardando || !proveedorId}>
             {guardando ? "Creando…" : "Crear borrador"}
           </button>
-          <button type="button" className="btn-fantasma adm-btn" onClick={onCancelar}>Cancelar</button>
         </div>
       </form>
     </section>
@@ -413,8 +414,8 @@ function DetalleOrden({ id, avisar, pedirConfirm, onCambio, onCerrar }) {
         )}
         {edicion && (
           <>
-            <button type="button" className="btn-primary adm-btn" onClick={guardarBorrador} disabled={ocupado}>Guardar borrador</button>
             <button type="button" className="btn-fantasma adm-btn" onClick={() => setEdicion(null)}>Descartar</button>
+            <button type="button" className="btn-primary adm-btn" onClick={guardarBorrador} disabled={ocupado}>Guardar borrador</button>
           </>
         )}
         {!edicion && (ACCIONES_OC[oc.estado] ?? []).map((accion) => (
@@ -467,9 +468,8 @@ function DetalleOrden({ id, avisar, pedirConfirm, onCambio, onCerrar }) {
   );
 }
 
-function Ordenes({ avisar, pedirConfirm, seleccionada, onSeleccionar }) {
+function Ordenes({ avisar, pedirConfirm, seleccionada, onSeleccionar, creando, onCrear }) {
   const [filtro, setFiltro] = useState("");
-  const [creando, setCreando] = useState(false);
   const { estado, datos, recargar } = useModulo(() => adminApi.ordenesCompra({ estado: filtro }), [filtro]);
   const lista = datos?.ordenes ?? [];
 
@@ -492,9 +492,9 @@ function Ordenes({ avisar, pedirConfirm, seleccionada, onSeleccionar }) {
       {creando && (
         <NuevaOrden
           avisar={avisar}
-          onCancelar={() => setCreando(false)}
+          onCancelar={() => onCrear(false)}
           onCreada={(id) => {
-            setCreando(false);
+            onCrear(false);
             recargar();
             if (id) onSeleccionar(id);
           }}
@@ -506,11 +506,9 @@ function Ordenes({ avisar, pedirConfirm, seleccionada, onSeleccionar }) {
             <option value="">Todos los estados</option>
             {Object.entries(ESTADOS_OC).map(([v, e]) => <option key={v} value={v}>{e}</option>)}
           </select>
-          {!creando && (
-            <button type="button" className="btn-primary adm-btn" onClick={() => setCreando(true)}>
-              Nueva orden
-            </button>
-          )}
+          <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+            Actualizar
+          </button>
         </div>
         <Tabla
           columnas={[
@@ -541,19 +539,46 @@ function Ordenes({ avisar, pedirConfirm, seleccionada, onSeleccionar }) {
 export default function Compras({ avisar, pedirConfirm }) {
   const [pestana, setPestana] = useState("reposicion");
   const [seleccionada, setSeleccionada] = useState(null);
+  const [creando, setCreando] = useState(false);
+  const creandoVisible = creando && pestana === "ordenes";
 
   const alTeclar = (e) => {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
     e.preventDefault();
     const i = PESTANAS.findIndex((p) => p.id === pestana);
     const sig = PESTANAS[(i + (e.key === "ArrowRight" ? 1 : PESTANAS.length - 1)) % PESTANAS.length];
+    if (sig.id === "reposicion") setCreando(false);
     setPestana(sig.id);
     document.getElementById(`compras-tab-${sig.id}`)?.focus();
   };
 
   return (
     <div>
-      <Cabecera kicker="Abastecimiento" titulo="Compras" />
+      <Cabecera
+        kicker="Abastecimiento"
+        titulo="Compras"
+        acciones={
+          <div className="adm-acciones-cab">
+            <button
+              type="button"
+              className={creandoVisible ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
+              onClick={() => {
+                if (creandoVisible) {
+                  setCreando(false);
+                  return;
+                }
+                setPestana("ordenes");
+                setSeleccionada(null);
+                setCreando(true);
+              }}
+              aria-expanded={creandoVisible}
+            >
+              {creandoVisible ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {creandoVisible ? "Cerrar" : "Nueva orden"}
+            </button>
+          </div>
+        }
+      />
       <div className="ht-tabs" role="tablist" aria-label="Secciones de compras" onKeyDown={alTeclar}>
         {PESTANAS.map((p) => (
           <button
@@ -565,7 +590,10 @@ export default function Compras({ avisar, pedirConfirm }) {
             aria-controls={`compras-panel-${p.id}`}
             tabIndex={pestana === p.id ? 0 : -1}
             className={`ht-tab${pestana === p.id ? " es-activo" : ""}`}
-            onClick={() => setPestana(p.id)}
+            onClick={() => {
+              if (p.id === "reposicion") setCreando(false);
+              setPestana(p.id);
+            }}
           >
             {p.etiqueta}
           </button>
@@ -581,7 +609,14 @@ export default function Compras({ avisar, pedirConfirm }) {
             }}
           />
         ) : (
-          <Ordenes avisar={avisar} pedirConfirm={pedirConfirm} seleccionada={seleccionada} onSeleccionar={setSeleccionada} />
+          <Ordenes
+            avisar={avisar}
+            pedirConfirm={pedirConfirm}
+            seleccionada={seleccionada}
+            onSeleccionar={setSeleccionada}
+            creando={creando}
+            onCrear={setCreando}
+          />
         )}
       </div>
     </div>

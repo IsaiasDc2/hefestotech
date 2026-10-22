@@ -896,22 +896,33 @@ def resumen(sucursal: str = "",
     bajo = sum(1 for p in productos
                if (p.get("stock") or 0) <= (p.get("stock_minimo") if p.get("stock_minimo") is not None else 5))
 
-    # Órdenes del tablero. Si la migración 015 todavía no se aplicó, se reintenta
-    # sin las columnas nuevas para no romper Inicio.
-    params_ordenes: dict[str, Any] = {
-        "select": ("id,estado,total_centavos,total,created_at,medio_pago,"
-                   "sucursal_id,mp_payment_type,mp_payment_method"),
-        "created_at": f"gte.{desde_iso}",
-        "order": "created_at.asc", "limit": 5000,
-    }
-    if sucursal:
-        params_ordenes["sucursal_id"] = f"eq.{sucursal}"
-    try:
-        ordenes = _sb_get("ordenes", params_ordenes) or []
-    except HTTPException:
-        params_ordenes["select"] = "id,estado,total_centavos,total,created_at"
-        params_ordenes.pop("sucursal_id", None)
-        ordenes = _sb_get("ordenes", params_ordenes) or []
+    # Columnas de `ordenes` segun la base: `medio_pago` viene de otra rama de la
+    # migracion 004 (puede no existir) y las otras tres de la 015. Se prueba de la
+    # mas completa a la minima para no romper Inicio ni perder el filtro de sucursal.
+    base_ordenes = "id,estado,total_centavos,total,created_at"
+    selects_ordenes = [
+        base_ordenes + ",medio_pago,sucursal_id,mp_payment_type,mp_payment_method",
+        base_ordenes + ",sucursal_id,mp_payment_type,mp_payment_method",
+    ]
+    ordenes: list[dict[str, Any]] | None = None
+    for sel in selects_ordenes:
+        params_ordenes: dict[str, Any] = {
+            "select": sel,
+            "created_at": f"gte.{desde_iso}",
+            "order": "created_at.asc", "limit": 5000,
+        }
+        if sucursal:
+            params_ordenes["sucursal_id"] = f"eq.{sucursal}"
+        try:
+            ordenes = _sb_get("ordenes", params_ordenes) or []
+            break
+        except HTTPException:
+            continue
+    if ordenes is None:
+        ordenes = _sb_get("ordenes", {
+            "select": base_ordenes, "created_at": f"gte.{desde_iso}",
+            "order": "created_at.asc", "limit": 5000,
+        }) or []
         sucursal = ""  # sin columna no hay filtro posible: se muestra todo
 
     params_pend: dict[str, Any] = {

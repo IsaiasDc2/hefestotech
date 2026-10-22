@@ -3,6 +3,7 @@
 // productos que abastece con costo y proveedor principal, y sus órdenes de
 // compra. Borrado lógico; el backend impide borrar con órdenes abiertas.
 import { useState } from "react";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, fechaCorta } from "./adminApi";
 import {
   CONDICIONES_IVA,
@@ -194,14 +195,14 @@ function FormProveedor({ editando, cbuMascara, form, setForm, guardando, onGuard
         </fieldset>
 
         <div className="adm-form-acciones">
-          <button type="submit" className="btn-primary adm-btn" disabled={guardando || cuitMal}>
-            {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear proveedor"}
-          </button>
           {editando && (
             <button type="button" className="btn-fantasma adm-btn" onClick={onCancelar}>
               Cancelar
             </button>
           )}
+          <button type="submit" className="btn-primary adm-btn" disabled={guardando || cuitMal}>
+            {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear proveedor"}
+          </button>
         </div>
       </form>
     </section>
@@ -348,14 +349,14 @@ function ProductosDelProveedor({ proveedor, vinculos, avisar, pedirConfirm, onCa
           Proveedor principal de este producto
         </label>
         <div className="adm-form-acciones">
-          <button type="submit" className="btn-primary adm-btn" disabled={guardando || !form.producto_id}>
-            {guardando ? "Guardando…" : editando ? "Guardar vínculo" : "Vincular"}
-          </button>
           {editando && (
             <button type="button" className="btn-fantasma adm-btn" onClick={() => { setEditando(false); setForm({ ...VINCULO_VACIO, moneda: proveedor.moneda ?? "ARS" }); }}>
               Cancelar
             </button>
           )}
+          <button type="submit" className="btn-primary adm-btn" disabled={guardando || !form.producto_id}>
+            {guardando ? "Guardando…" : editando ? "Guardar vínculo" : "Vincular"}
+          </button>
         </div>
       </form>
     </div>
@@ -416,6 +417,72 @@ function Resumen({ p }) {
   );
 }
 
+function HistorialProveedor({ historial, recepciones }) {
+  const totales = Object.entries(historial?.total_centavos ?? {});
+  return (
+    <div className="adm-panel-interno">
+      <div className="adm-mini-kpis">
+        <div><span>Órdenes</span><strong>{historial?.ordenes ?? 0}</strong></div>
+        <div><span>Abiertas</span><strong>{historial?.ordenes_abiertas ?? 0}</strong></div>
+        <div><span>Recepciones</span><strong>{historial?.recepciones ?? 0}</strong></div>
+        <div><span>Unidades pedidas</span><strong>{historial?.unidades_pedidas ?? 0}</strong></div>
+        <div><span>Unidades recibidas</span><strong>{historial?.unidades_recibidas ?? 0}</strong></div>
+        <div><span>Última recepción</span><strong>{historial?.ultima_recepcion ? fechaCorta(historial.ultima_recepcion) : "—"}</strong></div>
+        {totales.map(([moneda, total]) => (
+          <div key={moneda}>
+            <span>Recibido ({moneda})</span>
+            <strong>{formatoMoneda(total, moneda)}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="texto-mutado adm-pie-dato">
+        Cada recepción descuenta lo pedido en la orden de compra y suma stock real.
+        El costo unitario es el de la orden, no se estima.
+      </p>
+
+      {recepciones.length === 0 ? (
+        <Vacio
+          titulo="Sin recepciones"
+          texto="Cuando recibas mercadería de una orden de compra de este proveedor, el detalle aparece acá."
+        />
+      ) : (
+        <ul className="adm-historial">
+          {recepciones.map((r) => (
+            <li key={r.id}>
+              <details>
+                <summary>
+                  <span className="adm-historial-fecha">{fechaCorta(r.created_at)}</span>
+                  <span className="adm-historial-orden">
+                    {r.orden_codigo
+                      ? (/^oc/i.test(r.orden_codigo) ? r.orden_codigo : `OC ${r.orden_codigo}`)
+                      : `OC ${String(r.orden_id ?? "").slice(0, 8) || "—"}`}
+                  </span>
+                  <span className="adm-historial-unidades">{r.unidades} u.</span>
+                  <strong>{formatoMoneda(r.total_centavos, r.moneda)}</strong>
+                </summary>
+                <div className="adm-historial-detalle">
+                  {r.nota && <p className="texto-mutado">Nota: {r.nota}</p>}
+                  <Tabla
+                    columnas={[
+                      { clave: "nombre", titulo: "Producto" },
+                      { clave: "cantidad", titulo: "Cantidad", ver: (i) => `${i.cantidad} u.` },
+                      { clave: "costo", titulo: "Costo unitario", ver: (i) => formatoMoneda(i.costo_unitario_centavos, r.moneda) },
+                      { clave: "subtotal", titulo: "Subtotal", ver: (i) => formatoMoneda(i.cantidad * i.costo_unitario_centavos, r.moneda) },
+                    ]}
+                    filas={r.items}
+                    filaKey={(i) => i.producto_id}
+                    vacio="La recepción no tiene detalle de ítems."
+                  />
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Ficha({ id, avisar, pedirConfirm, onEditar, onCerrar, onIr }) {
   const [pestana, setPestana] = useState("resumen");
   const { estado, datos, recargar } = useModulo(() => adminApi.proveedor(id), [id]);
@@ -427,6 +494,7 @@ function Ficha({ id, avisar, pedirConfirm, onEditar, onCerrar, onIr }) {
   const pestanas = [
     { id: "resumen", etiqueta: "Resumen" },
     { id: "productos", etiqueta: `Productos (${datos.productos.length})` },
+    ...(datos.historial ? [{ id: "historial", etiqueta: `Historial (${datos.historial.recepciones})` }] : []),
     ...(datos.ordenes ? [{ id: "ordenes", etiqueta: `Órdenes de compra (${datos.ordenes.length})` }] : []),
   ];
 
@@ -476,6 +544,9 @@ function Ficha({ id, avisar, pedirConfirm, onEditar, onCerrar, onIr }) {
         {pestana === "productos" && (
           <ProductosDelProveedor proveedor={p} vinculos={datos.productos} avisar={avisar} pedirConfirm={pedirConfirm} onCambio={recargar} />
         )}
+        {pestana === "historial" && (
+          <HistorialProveedor historial={datos.historial} recepciones={datos.recepciones ?? []} />
+        )}
         {pestana === "ordenes" && (
           <div className="adm-panel-interno">
             <Tabla
@@ -500,7 +571,7 @@ function Ficha({ id, avisar, pedirConfirm, onEditar, onCerrar, onIr }) {
   );
 }
 
-export default function Proveedores({ avisar, pedirConfirm, onIr }) {
+export default function Proveedores({ avisar, pedirConfirm, onIr, accionInicial }) {
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
@@ -510,6 +581,7 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
   const [guardando, setGuardando] = useState(false);
   const [seleccionado, setSeleccionado] = useState(null);
   const [versionFicha, setVersionFicha] = useState(0);
+  const [altaAbierta, setAltaAbierta] = useState(accionInicial === "nuevo");
 
   const { estado, datos, recargar } = useModulo(
     () => adminApi.proveedores({ busqueda, estado: filtroEstado, papelera }),
@@ -563,6 +635,7 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
       }
       setForm(VACIO_FORM);
       setEditando(null);
+      setAltaAbierta(false);
       recargar();
     } catch (err) {
       avisar(err?.message ?? "No se pudo guardar.", { tono: "error" });
@@ -574,6 +647,7 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
   const alEditar = (p) => {
     setEditando({ id: p.id, cbuMascara: p.cbu_mascara ?? "" });
     setForm(formDesde(p));
+    setAltaAbierta(true);
     const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: sinMovimiento ? "auto" : "smooth" });
   };
@@ -610,15 +684,37 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
   if (estado === "sin-permiso") return <SinPermiso modulo="Proveedores" />;
   if (estado === "no-disponible") return <Proximamente modulo="Proveedores" />;
 
+  const mostrarForm = altaAbierta || Boolean(editando);
+  const alternarAlta = () => {
+    if (mostrarForm) {
+      setAltaAbierta(false);
+      setEditando(null);
+      setForm(VACIO_FORM);
+    } else {
+      setAltaAbierta(true);
+    }
+  };
+
   return (
     <div>
       <Cabecera
         kicker="Abastecimiento"
         titulo={`Proveedores (${lista.length})`}
         acciones={
-          <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-            Actualizar
-          </button>
+          <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+            <button
+              type="button"
+              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
+              onClick={alternarAlta}
+              aria-expanded={mostrarForm}
+            >
+              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {mostrarForm ? "Cerrar" : "Agregar proveedor"}
+            </button>
+          </div>
         }
       />
 
@@ -634,7 +730,8 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
         />
       )}
 
-      <div className="adm-grid-2 adm-grid-productos">
+      <div className={mostrarForm ? "adm-grid-2 adm-grid-productos" : ""}>
+        {mostrarForm && (
         <FormProveedor
           editando={Boolean(editando)}
           cbuMascara={editando?.cbuMascara ?? ""}
@@ -642,8 +739,9 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
           setForm={setForm}
           guardando={guardando}
           onGuardar={alGuardar}
-          onCancelar={() => { setEditando(null); setForm(VACIO_FORM); }}
+          onCancelar={() => { setAltaAbierta(false); setEditando(null); setForm(VACIO_FORM); }}
         />
+        )}
 
         <section className="card adm-panel" aria-label="Listado">
           <h2 className="sr-only">Listado de proveedores</h2>
@@ -700,7 +798,7 @@ export default function Proveedores({ avisar, pedirConfirm, onIr }) {
                     <button type="button" className="btn-fantasma adm-mini" onClick={() => alRestaurar(p)}>Restaurar</button>
                   ) : (
                     <span className="adm-acciones">
-                      <button type="button" className="btn-fantasma adm-mini" onClick={() => setSeleccionado(p.id)} aria-pressed={seleccionado === p.id}>Ficha</button>
+                      <button type="button" className="btn-fantasma adm-mini" onClick={() => { setSeleccionado(p.id); setAltaAbierta(false); }} aria-pressed={seleccionado === p.id}>Ficha</button>
                       <button type="button" className="btn-fantasma adm-mini" onClick={() => alEditar(p)}>Editar</button>
                       <button type="button" className="btn-fantasma adm-mini es-peligro" onClick={() => alBorrar(p)}>Papelera</button>
                     </span>

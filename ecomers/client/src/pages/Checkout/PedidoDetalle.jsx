@@ -4,6 +4,7 @@ import { FaFileArrowDown, FaPrint, FaReceipt } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerComprobante, obtenerEstadoPedido, urlComprobantePdf } from "../../services/orderService";
+import ComprobantePago from "./ComprobantePago";
 import "./Checkout.css";
 import "./PedidoDetalle.css";
 
@@ -24,13 +25,17 @@ export default function PedidoDetalle() {
     let vivo = true;
     (async () => {
       try {
+        // El comprobante de compra solo existe cuando el pago se acreditó.
+        // El estado se consulta siempre para permitir subir el comprobante
+        // de pago de una orden pendiente.
         const [c, o] = await Promise.all([
-          obtenerComprobante(id, token),
+          obtenerComprobante(id, token).catch(() => null),
           obtenerEstadoPedido(id, token).catch(() => null),
         ]);
         if (!vivo) return;
         setComp(c);
         setEstado(o);
+        if (!c && !o) setError(t(idioma, "ped.noDisponible"));
       } catch {
         if (vivo) setError(t(idioma, "ped.noDisponible"));
       } finally {
@@ -60,12 +65,55 @@ export default function PedidoDetalle() {
     );
   }
 
-  if (error || !comp) {
+  if (error || (!comp && !estado)) {
     return (
       <div className="checkout centrado">
         <div className="card anim-entrada checkout-exito">
           <p className="badge badge-peligro" role="alert">{error || t(idioma, "ped.noEncontrado")}</p>
           <Link to="/productos" className="btn-primary">{t(idioma, "ped.volver")}</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!comp) {
+    return (
+      <div className="checkout">
+        <header className="seccion-head editorial">
+          <div className="seccion-titular">
+            <p className="kicker kicker-marca">
+              <Marca variante="simbolo" ancho={20} alto={20} decorativa />
+              <span>{t(idioma, "ped.tuCompra")}</span>
+            </p>
+            <h1>{t(idioma, "pago.pendiente")}</h1>
+          </div>
+          <span className="badge badge-info">#{String(id).slice(0, 8)}</span>
+        </header>
+        <div className="comprobante-grid">
+          <section className="card checkout-panel">
+            <p className="texto-mutado">
+              {t(idioma, "pago.pedido")} <strong>#{String(id).slice(0, 8)}</strong>
+              {" "}{t(idioma, "pago.por")}{" "}
+              <strong>${Number(estado.total ?? 0).toLocaleString("es-AR")}</strong>.
+            </p>
+            <p className="badge badge-info">
+              {t(idioma, "pago.estado")}: {estado.estado}
+            </p>
+            <p className="texto-mutado">{t(idioma, "pago.compPendienteAyuda")}</p>
+          </section>
+          <aside className="card checkout-resumen" aria-label={t(idioma, "ped.acciones")}>
+            <h2>{t(idioma, "ped.acciones")}</h2>
+            <ComprobantePago
+              ordenId={id}
+              token={token}
+              estado={estado?.estado ?? ""}
+              comprobanteInicial={estado?.comprobante_pago}
+              montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
+            />
+            <div className="checkout-acciones checkout-acciones-secundarias">
+              <Link to="/cuenta" className="btn-fantasma">{t(idioma, "pago.verPedidos")}</Link>
+            </div>
+          </aside>
         </div>
       </div>
     );
@@ -130,10 +178,20 @@ export default function PedidoDetalle() {
           <a className="btn-primary" href={urlComprobantePdf(id, token)} download>
             <FaFileArrowDown aria-hidden="true" /> {t(idioma, "ped.descargar")}
           </a>
-          <button type="button" className="btn-fantasma" onClick={() => window.print()}>
-            <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}
-          </button>
-          <Link to="/productos" className="btn-fantasma">{t(idioma, "ped.seguir")}</Link>
+          <div className="checkout-acciones checkout-acciones-secundarias">
+            <button type="button" className="btn-fantasma" onClick={() => window.print()}>
+              <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}
+            </button>
+            <Link to="/productos" className="btn-fantasma">{t(idioma, "ped.seguir")}</Link>
+          </div>
+          <ComprobantePago
+            ordenId={id}
+            token={token}
+            estado={estado?.estado ?? ""}
+            comprobanteInicial={estado?.comprobante_pago}
+            montoCentavos={Math.round(Number(tot.total ?? 0) * 100)}
+            botonSecundario
+          />
         </aside>
       </div>
     </div>
