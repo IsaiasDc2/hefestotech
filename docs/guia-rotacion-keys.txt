@@ -1,0 +1,108 @@
+GUÍA DE ROTACIÓN DE KEYS + CRON_SECRET — hefestotech
+====================================================
+
+Por qué hay que hacerlo
+-----------------------
+Las keys GROQ, OPENROUTER y el sb_secret de Supabase aparecieron en texto
+claro en una sesión de trabajo -> hay que tratarlas como comprometidas y
+reemplazarlas. La publishable key del frontend (VITE_SUPABASE_PUBLISHABLE_KEY)
+NO se rota: es pública por diseño, viaja en el bundle del navegador.
+
+REGLA DE ORO: las keys nuevas van directo a backend/.env y a Render.
+NUNCA las pegues en un chat, mail, ticket ni screenshot.
+
+
+1) Groq API Key
+---------------
+1. Entrá a https://console.groq.com -> menú "API Keys"
+   (directo: https://console.groq.com/keys)
+2. "Create API Key" -> nombre (ej: hefestotech-prod) -> COPIÁLA
+   (se muestra UNA sola vez; si la perdés, generás otra)
+3. Borrá la key vieja (ícono de tacho al lado en la lista)
+4. En backend/.env reemplazá la línea:
+       GROQ_API_KEY=gsk_<la_nueva>
+
+
+2) OpenRouter API Key
+---------------------
+1. Entrá a https://openrouter.ai -> Settings -> Keys
+   (directo: https://openrouter.ai/settings/keys)
+2. "Create Key" -> copiala (empieza con sk-or-...)
+3. Borrá la vieja de la lista
+4. En backend/.env:
+       OPENROUTER_API_KEY=sk-or-<la_nueva>
+
+
+3) Supabase secret key (sb_secret)
+----------------------------------
+1. Entrá a https://supabase.com -> tu proyecto
+   (ewqwmzwtrsjl...) -> ruedita "Project Settings" -> "API Keys"
+2. Sección "Secret keys" -> sobre tu sb_secret_... -> botón "Rotate"
+   (si no aparece Rotate: "Generate new secret key" y después borrá la vieja)
+3. Copiá la nueva (sb_secret_...)
+4. En backend/.env:
+       SUPABASE_SERVICE_ROLE_KEY=sb_secret_<la_nueva>
+
+   OJO: el nombre de la variable NO cambia aunque la key sea sb_secret_
+   (reemplaza al viejo JWT service_role).
+
+
+4) CRON_SECRET (nuevo, para liberar-expiradas)
+---------------------------------------------
+El endpoint POST /api/checkout/liberar-expiradas ahora es fail-closed:
+sin CRON_SECRET configurado devuelve 401 y no hace nada. Si querés que
+las órdenes pendientes expiradas se cancelen solas, hay que activarlo.
+
+1. Generá el secret en la terminal:
+       openssl rand -hex 32
+2. Copiá el resultado -> va como env var en Render (paso 5)
+3. Quien llame al endpoint tiene que mandar el header:
+       X-Cron-Secret: <ese_valor>
+
+   Opciones para el scheduler (Render free NO trae cron nativo):
+   - cron-job.org (gratis): crear cuenta -> New cronjob ->
+     URL: https://<tu-backend>.onrender.com/api/checkout/liberar-expiradas
+     Método POST, header X-Cron-Secret con el secret, cada X minutos.
+   - Render Cron Job (plan pago): agregar "type: cron" al render.yaml.
+
+   Si nadie lo llama: simplemente no se limpian las órdenes expiradas
+   (el stock queda reservado). No rompe nada, pero conviene activarlo.
+
+
+5) Subir todo a Render
+----------------------
+1. https://dashboard.render.com -> servicio "hefestotech-api"
+   -> Environment -> Environment Variables
+2. Editá SUPABASE_SERVICE_ROLE_KEY con la nueva sb_secret
+3. Agregá con "Add Environment Variable" (NO están en render.yaml):
+       GROQ_API_KEY       = gsk_...
+       OPENROUTER_API_KEY = sk-or-...
+       CRON_SECRET        = <el hex de openssl>
+   (sin GROQ/OPENROUTER en Render, el failover de prod solo usa Gemini)
+4. "Save Changes" -> Render redespliega automáticamente.
+   Esperá a que el deploy quede "Live".
+
+
+6) Verificación rápida post-deploy
+----------------------------------
+   curl https://<tu-backend>.onrender.com/
+   -> env.GROQ_API_KEY / OPENROUTER_API_KEY / CRON_SECRET deben dar true
+
+   curl https://<tu-backend>.onrender.com/docs
+   -> debe dar 404 (docs ocultos en producción)
+
+   curl -X POST https://<tu-backend>.onrender.com/api/checkout/liberar-expiradas \
+        -H "X-Cron-Secret: <tu_cron_secret>"
+   -> debe responder {"revisadas":...,"liberadas":...} (no 401)
+
+   Probá el chat del sitio -> si responde Hefesto, las keys de IA funcionan.
+
+
+Checklist final
+---------------
+[ ] Groq: nueva creada, vieja borrada, en .env y Render
+[ ] OpenRouter: nueva creada, vieja borrada, en .env y Render
+[ ] Supabase: sb_secret rotada, en .env y Render (SUPABASE_SERVICE_ROLE_KEY)
+[ ] CRON_SECRET generado y en Render (+ scheduler apuntando con el header)
+[ ] Deploy en Render quedó "Live" y /docs da 404
+[ ] Chat del sitio responde
