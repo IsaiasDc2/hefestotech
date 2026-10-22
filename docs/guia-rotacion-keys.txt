@@ -77,8 +77,10 @@ las órdenes pendientes expiradas se cancelen solas, hay que activarlo.
 3. Agregá con "Add Environment Variable" (NO están en render.yaml):
        GROQ_API_KEY       = gsk_...
        OPENROUTER_API_KEY = sk-or-...
+       LLM_PROVIDER       = auto       <- activa el failover groq->openrouter
        CRON_SECRET        = <el hex de openssl>
-   (sin GROQ/OPENROUTER en Render, el failover de prod solo usa Gemini)
+   (sin LLM_PROVIDER=auto el asistente usa un solo proveedor; sin
+   GROQ/OPENROUTER cae a Gemini o a respuestas de demo)
 4. "Save Changes" -> Render redespliega automáticamente.
    Esperá a que el deploy quede "Live".
 
