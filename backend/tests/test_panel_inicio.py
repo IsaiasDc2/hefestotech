@@ -12,6 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from fastapi import HTTPException  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 import admin_api  # noqa: E402
@@ -142,7 +143,7 @@ def test_resumen_series_totales_y_top_productos(monkeypatch):
 def test_clientes_incluye_fotos_de_los_productos(monkeypatch):
     orden = {
         "id": ORDEN, "user_id": "uid-cliente", "estado": "pagada",
-        "total_centavos": 100000, "comprobante_numero": "HT-0001",
+        "total_centavos": 100000,
         "created_at": "2026-10-21T12:00:00+00:00",
         "orden_items": [
             {"cantidad": 2, "productos": {
@@ -159,7 +160,13 @@ def test_clientes_incluye_fotos_de_los_productos(monkeypatch):
 
     def fake_get(tabla, params):
         if tabla == "ordenes":
+            # Base real: `ordenes.comprobante_numero` no existe (es de otra rama
+            # de la migracion 004); pedirla da 400 y rompia Clientes.
+            if "comprobante_numero" in str(params.get("select", "")):
+                raise HTTPException(status_code=502, detail="Operación no disponible.")
             return [orden]
+        if tabla == "comprobantes":
+            return [{"orden_id": ORDEN, "numero": "HT-0001"}]
         if tabla == "comprobantes_pago":
             return [recibo]
         return []
@@ -177,6 +184,27 @@ def test_clientes_incluye_fotos_de_los_productos(monkeypatch):
         {"nombre": "Producto", "cantidad": 1, "imagen": ""},
     ]
     assert r["pedidos_detalle"][0]["comprobante_pago"] == recibo
+
+
+def test_clientes_responde_aunque_no_haya_tabla_de_comprobantes(monkeypatch):
+    """Clientes no debe caerse si faltan las tablas de comprobantes: los pedidos
+    se muestran igual, sin codigo ni comprobante de pago."""
+    orden = {"id": ORDEN, "user_id": "uid-cliente", "estado": "pagada",
+             "total_centavos": 100000, "created_at": "2026-10-21T12:00:00+00:00",
+             "orden_items": []}
+
+    def fake_get(tabla, params):
+        if tabla == "ordenes":
+            return [orden]
+        if tabla in ("comprobantes", "comprobantes_pago"):
+            raise HTTPException(status_code=502, detail="Operación no disponible.")
+        return []
+
+    monkeypatch.setattr(admin_api, "_sb_get", fake_get)
+    r = admin_api._resumen_pedidos(["uid-cliente"])["uid-cliente"]
+    assert r["pedidos"] == 1
+    assert r["pedidos_detalle"][0]["codigo"] == ""
+    assert r["pedidos_detalle"][0]["comprobante_pago"] is None
 
 
 def test_resumen_sin_datos_no_inventa(monkeypatch):
@@ -204,8 +232,6 @@ COLUMNAS_015 = ("sucursal_id", "medio_pago", "mp_payment_type", "mp_payment_meth
 def test_resumen_con_la_base_sin_migracion_015(monkeypatch, ruta):
     """Base de produccion antes de aplicar la 015: `ordenes` no tiene ninguna de
     las columnas nuevas (un select que las pida da 400). Inicio no puede romperse."""
-    from fastapi import HTTPException
-
     ahora = f"{datetime.now(timezone.utc).date().isoformat()}T12:00:00+00:00"
 
     def ordenes(params):
@@ -227,8 +253,6 @@ def test_resumen_con_015_pero_sin_medio_pago_conserva_el_filtro_de_sucursal(monk
     """Base real de hoy: tiene la 015 (sucursal_id, mp_payment_*) pero NO
     `ordenes.medio_pago` (la define otra rama de la 004). El filtro por
     sucursal tiene que seguir funcionando."""
-    from fastapi import HTTPException
-
     ahora = f"{datetime.now(timezone.utc).date().isoformat()}T12:00:00+00:00"
     suc = "66666666-6666-6666-6666-666666666666"
     consultas = []

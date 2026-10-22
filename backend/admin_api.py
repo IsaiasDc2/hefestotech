@@ -1440,13 +1440,26 @@ def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
     if not ids:
         return resumen
     filas = _sb_get("ordenes", {
-        "select": ("id,user_id,estado,total_centavos,comprobante_numero,created_at,"
+        # `ordenes.comprobante_numero` es de otra rama de la migracion 004 y puede
+        # no existir: el numero se toma de la tabla `comprobantes` (migracion 012).
+        "select": ("id,user_id,estado,total_centavos,created_at,"
                    "orden_items(cantidad,productos(nombre,imagen))"),
         "user_id": f"in.({','.join(ids)})",
         "order": "created_at.desc",
         "limit": 2000,
     }) or []
     ids_orden = [str(o.get("id")) for o in filas if o.get("id")]
+    numeros: dict[str, str] = {}
+    if ids_orden:
+        try:
+            for c in _sb_get("comprobantes", {
+                "select": "orden_id,numero",
+                "orden_id": f"in.({','.join(ids_orden)})",
+                "limit": 2000,
+            }) or []:
+                numeros[str(c.get("orden_id"))] = str(c.get("numero") or "")
+        except HTTPException:
+            numeros = {}
     comprobantes: dict[str, dict[str, Any]] = {}
     if ids_orden:
         try:
@@ -1485,7 +1498,7 @@ def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
             })
         r["pedidos_detalle"].append({
             "id": str(o.get("id") or ""),
-            "codigo": str(o.get("comprobante_numero") or ""),
+            "codigo": numeros.get(str(o.get("id")), ""),
             "estado": str(o.get("estado") or ""),
             "total_centavos": int(o.get("total_centavos") or 0),
             "created_at": o.get("created_at"),
