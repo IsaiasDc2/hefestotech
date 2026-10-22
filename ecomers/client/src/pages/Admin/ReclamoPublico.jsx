@@ -61,8 +61,8 @@ export default function ReclamoPublico() {
         <div className="card adm-panel" role="status">
           <p><strong>{mensaje}</strong></p>
           <div className="adm-form-acciones">
-            <Link className="btn-primary adm-btn" to="/cuenta?tab=reclamos">{t(idioma, "cuenta.reclamos")}</Link>
             <Link className="btn-fantasma adm-btn" to="/">{t(idioma, "ped.volver")}</Link>
+            <Link className="btn-primary adm-btn" to="/cuenta?tab=reclamos">{t(idioma, "cuenta.reclamos")}</Link>
           </div>
         </div>
       ) : (
@@ -84,12 +84,12 @@ export default function ReclamoPublico() {
           </label>
           {mensaje && <p role="alert" className="texto-mutado">{mensaje}</p>}
           <div className="adm-form-acciones">
-            <button type="submit" className="btn-primary adm-btn" disabled={estado === "enviando"}>
-              {estado === "enviando" ? t(idioma, "recl.enviando") : t(idioma, "recl.enviar")}
-            </button>
             <a className="btn-fantasma adm-btn" href={whatsappUrl(textoWhatsApp())} target="_blank" rel="noreferrer">
               {t(idioma, "recl.wa")}
             </a>
+            <button type="submit" className="btn-primary adm-btn" disabled={estado === "enviando"}>
+              {estado === "enviando" ? t(idioma, "recl.enviando") : t(idioma, "recl.enviar")}
+            </button>
           </div>
         </form>
       )}

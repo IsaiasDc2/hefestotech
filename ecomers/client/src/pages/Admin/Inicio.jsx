@@ -178,11 +178,11 @@ function TarjetaSucursal({ sucursales, sucursal, onCambiar, puedeGestionar, onCr
           </div>
           {error && <p role="alert" className="adm-error">{error}</p>}
           <div className="adm-form-acciones">
-            <button type="submit" className="btn-primary adm-btn" disabled={creando}>
-              {creando ? "Creando…" : "Crear sucursal"}
-            </button>
             <button type="button" className="btn-fantasma adm-btn" onClick={() => setAbierto(false)}>
               Cancelar
+            </button>
+            <button type="submit" className="btn-primary adm-btn" disabled={creando}>
+              {creando ? "Creando…" : "Crear sucursal"}
             </button>
           </div>
         </form>

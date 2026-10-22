@@ -3,7 +3,7 @@
 // productos que abastece con costo y proveedor principal, y sus órdenes de
 // compra. Borrado lógico; el backend impide borrar con órdenes abiertas.
 import { useState } from "react";
-import { FaPlus } from "react-icons/fa6";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, fechaCorta } from "./adminApi";
 import {
   CONDICIONES_IVA,
@@ -195,14 +195,14 @@ function FormProveedor({ editando, cbuMascara, form, setForm, guardando, onGuard
         </fieldset>
 
         <div className="adm-form-acciones">
-          <button type="submit" className="btn-primary adm-btn" disabled={guardando || cuitMal}>
-            {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear proveedor"}
-          </button>
           {editando && (
             <button type="button" className="btn-fantasma adm-btn" onClick={onCancelar}>
               Cancelar
             </button>
           )}
+          <button type="submit" className="btn-primary adm-btn" disabled={guardando || cuitMal}>
+            {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear proveedor"}
+          </button>
         </div>
       </form>
     </section>
@@ -349,14 +349,14 @@ function ProductosDelProveedor({ proveedor, vinculos, avisar, pedirConfirm, onCa
           Proveedor principal de este producto
         </label>
         <div className="adm-form-acciones">
-          <button type="submit" className="btn-primary adm-btn" disabled={guardando || !form.producto_id}>
-            {guardando ? "Guardando…" : editando ? "Guardar vínculo" : "Vincular"}
-          </button>
           {editando && (
             <button type="button" className="btn-fantasma adm-btn" onClick={() => { setEditando(false); setForm({ ...VINCULO_VACIO, moneda: proveedor.moneda ?? "ARS" }); }}>
               Cancelar
             </button>
           )}
+          <button type="submit" className="btn-primary adm-btn" disabled={guardando || !form.producto_id}>
+            {guardando ? "Guardando…" : editando ? "Guardar vínculo" : "Vincular"}
+          </button>
         </div>
       </form>
     </div>
@@ -702,16 +702,17 @@ export default function Proveedores({ avisar, pedirConfirm, onIr, accionInicial 
         titulo={`Proveedores (${lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
             <button
               type="button"
-              className="btn-primary adm-btn"
+              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
               onClick={alternarAlta}
               aria-expanded={mostrarForm}
             >
-              <FaPlus aria-hidden="true" /> {mostrarForm ? "Cerrar" : "Agregar proveedor"}
-            </button>
-            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-              Actualizar
+              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {mostrarForm ? "Cerrar" : "Agregar proveedor"}
             </button>
           </div>
         }

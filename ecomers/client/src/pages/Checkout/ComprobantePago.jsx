@@ -13,13 +13,18 @@ const pesos = (centavos, idioma) =>
     currency: "ARS",
   });
 
-/** Subida del comprobante de pago (transferencia, depósito, etc.). */
+/**
+ * Subida del comprobante de pago (transferencia, depósito, etc.).
+ * `botonSecundario` muestra el envío como acción secundaria cuando el panel que
+ * lo contiene ya tiene otra acción principal (p. ej. descargar el comprobante).
+ */
 export default function ComprobantePago({
   ordenId,
   token = "",
   estado = "",
   comprobanteInicial = null,
   montoCentavos = 0,
+  botonSecundario = false,
   onSubido,
 }) {
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -168,7 +173,7 @@ export default function ComprobantePago({
               />
             </label>
           </div>
-          <button type="submit" className="btn-primary" disabled={subiendo}>
+          <button type="submit" className={botonSecundario ? "btn-fantasma" : "btn-primary"} disabled={subiendo}>
             {subiendo ? t(idioma, "pago.compSubiendo") : t(idioma, "pago.compSubir")}
           </button>
         </form>

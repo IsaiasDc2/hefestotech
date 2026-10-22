@@ -110,7 +110,9 @@ export default function PedidoDetalle() {
               comprobanteInicial={estado?.comprobante_pago}
               montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
             />
-            <Link to="/cuenta" className="btn-fantasma">{t(idioma, "pago.verPedidos")}</Link>
+            <div className="checkout-acciones checkout-acciones-secundarias">
+              <Link to="/cuenta" className="btn-fantasma">{t(idioma, "pago.verPedidos")}</Link>
+            </div>
           </aside>
         </div>
       </div>
@@ -176,16 +178,19 @@ export default function PedidoDetalle() {
           <a className="btn-primary" href={urlComprobantePdf(id, token)} download>
             <FaFileArrowDown aria-hidden="true" /> {t(idioma, "ped.descargar")}
           </a>
-          <button type="button" className="btn-fantasma" onClick={() => window.print()}>
-            <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}
-          </button>
-          <Link to="/productos" className="btn-fantasma">{t(idioma, "ped.seguir")}</Link>
+          <div className="checkout-acciones checkout-acciones-secundarias">
+            <button type="button" className="btn-fantasma" onClick={() => window.print()}>
+              <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}
+            </button>
+            <Link to="/productos" className="btn-fantasma">{t(idioma, "ped.seguir")}</Link>
+          </div>
           <ComprobantePago
             ordenId={id}
             token={token}
             estado={estado?.estado ?? ""}
             comprobanteInicial={estado?.comprobante_pago}
             montoCentavos={Math.round(Number(tot.total ?? 0) * 100)}
+            botonSecundario
           />
         </aside>
       </div>

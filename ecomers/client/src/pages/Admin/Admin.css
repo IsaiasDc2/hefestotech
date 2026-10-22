@@ -545,7 +545,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 0.9rem;
 }
 
@@ -562,6 +562,19 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.6rem;
+}
+
+.adm-pedido-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-top: 1px dashed var(--border-suave);
+  padding-top: 0.55rem;
+}
+
+.adm-pedido-acciones > .texto-mutado {
+  font-size: 0.78rem;
 }
 
 .adm-cliente-pedidos {
@@ -2120,10 +2133,16 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .adm-acciones-cab .adm-btn {
   white-space: nowrap;
+}
+
+.adm-acciones-cab .adm-filtro {
+  margin: 0;
 }
 
 .adm-acciones-grid {
@@ -2345,6 +2364,15 @@
     grid-template-columns: 1fr;
   }
 
+  .adm-cab {
+    align-items: flex-start;
+  }
+
+  .adm-cab-lado {
+    width: 100%;
+  }
+
+  .adm-cab-lado > .adm-acciones-cab,
   .adm-acciones-cab {
     width: 100%;
   }
@@ -2352,5 +2380,13 @@
   .adm-acciones-cab .adm-btn {
     flex: 1;
     justify-content: center;
+  }
+
+  .adm-acciones-cab .adm-filtro {
+    flex: 1 1 100%;
+  }
+
+  .adm-acciones-cab .adm-filtro select {
+    width: 100%;
   }
 }

@@ -2,7 +2,7 @@
 // + punto de reposición: al bajar del mínimo se registra la solicitud al
 // proveedor principal y queda una notificación con producto y cantidad.
 import { useMemo, useState } from "react";
-import { FaPlus, FaTruckFast } from "react-icons/fa6";
+import { FaPlus, FaTruckFast, FaXmark } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
 import { useModulo } from "./hooks";
@@ -201,7 +201,7 @@ export default function Stock({ avisar, accionInicial, onIr }) {
         kicker="Inventario"
         titulo="Stock"
         acciones={
-          <div className="adm-acciones">
+          <div className="adm-acciones-cab">
             <button
               type="button"
               className="btn-fantasma adm-btn"
@@ -212,11 +212,12 @@ export default function Stock({ avisar, accionInicial, onIr }) {
             </button>
             <button
               type="button"
-              className="btn-primary adm-btn"
+              className={panelAbierto ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
               onClick={() => setPanelAbierto((v) => !v)}
               aria-expanded={panelAbierto}
             >
-              <FaPlus aria-hidden="true" /> {panelAbierto ? "Cerrar" : "Agregar stock"}
+              {panelAbierto ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {panelAbierto ? "Cerrar" : "Agregar stock"}
             </button>
           </div>
         }
@@ -388,9 +389,11 @@ export default function Stock({ avisar, accionInicial, onIr }) {
                 Con objetivo 0 se pide el doble del mínimo. La solicitud respeta la
                 cantidad mínima de compra del proveedor.
               </p>
-              <button type="submit" className="btn-primary adm-btn" disabled={guardandoRepo}>
-                {guardandoRepo ? "Guardando…" : "Guardar punto"}
-              </button>
+              <div className="adm-form-acciones">
+                <button type="submit" className="btn-primary adm-btn" disabled={guardandoRepo}>
+                  {guardandoRepo ? "Guardando…" : "Guardar punto"}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -475,9 +478,11 @@ export default function Stock({ avisar, accionInicial, onIr }) {
             <label>Nota (opcional)
               <input value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: compra a proveedor…" />
             </label>
-            <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
-              {guardando ? "Guardando…" : "Aplicar ajuste"}
-            </button>
+            <div className="adm-form-acciones">
+              <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
+                {guardando ? "Guardando…" : "Aplicar ajuste"}
+              </button>
+            </div>
           </form>
         </section>
         )}

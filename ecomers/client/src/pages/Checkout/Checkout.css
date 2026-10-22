@@ -308,6 +308,15 @@
   flex-wrap: wrap;
 }
 
+/* Una sola acción principal, primero; las secundarias se agrupan al final. */
+.checkout-acciones-principales,
+.checkout-acciones-secundarias {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
 .comprobante-pago {
   width: 100%;
   margin-top: 1.1rem;
@@ -382,6 +391,14 @@
   .checkout-resumen {
     padding: 1rem;
     min-width: 0;
+  }
+  .checkout-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .checkout-acciones > .btn-primary,
+  .checkout-acciones > .btn-fantasma {
+    width: 100%;
   }
 }
 

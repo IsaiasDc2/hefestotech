@@ -145,7 +145,7 @@ function PedidosCliente({ pedidos }) {
 export default function Clientes() {
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
-  const { estado, datos } = useModulo(
+  const { estado, datos, recargar } = useModulo(
     () => adminApi.clientes({ busqueda }),
     [busqueda]
   );
@@ -157,7 +157,17 @@ export default function Clientes() {
 
   return (
     <div>
-      <Cabecera kicker="Personas" titulo={`Clientes (${lista.length})`} />
+      <Cabecera
+        kicker="Personas"
+        titulo={`Clientes (${lista.length})`}
+        acciones={
+          <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+          </div>
+        }
+      />
       <section className="card adm-panel" aria-label="Listado de clientes">
         <form
           className="adm-buscador-linea"

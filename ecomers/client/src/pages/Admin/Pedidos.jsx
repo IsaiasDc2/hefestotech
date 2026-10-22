@@ -89,13 +89,18 @@ export default function Pedidos({ avisar, pedirConfirm }) {
         kicker="Ventas"
         titulo={`Pedidos (${lista.length})`}
         acciones={
-          <label className="adm-filtro">Estado
-            <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-              {ESTADOS.map((s) => (
-                <option key={s} value={s}>{s === "" ? "Todos" : s}</option>
-              ))}
-            </select>
-          </label>
+          <div className="adm-acciones-cab">
+            <label className="adm-filtro">Estado
+              <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+                {ESTADOS.map((s) => (
+                  <option key={s} value={s}>{s === "" ? "Todos" : s}</option>
+                ))}
+              </select>
+            </label>
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+          </div>
         }
       />
       {lista.length === 0 ? (
@@ -277,18 +282,21 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   </div>
                 )}
 
-                <div className="adm-acciones">
-                  {ESTADOS.filter((s) => s && s !== p.estado).slice(0, 4).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      className="btn-fantasma adm-mini"
-                      disabled={cambiando === p.id}
-                      onClick={() => cambiar(p, s)}
-                    >
-                      → {s}
-                    </button>
-                  ))}
+                <div className="adm-pedido-acciones">
+                  <span className="texto-mutado">Cambiar estado:</span>
+                  <div className="adm-acciones">
+                    {ESTADOS.filter((s) => s && s !== p.estado).slice(0, 4).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="btn-fantasma adm-mini"
+                        disabled={cambiando === p.id}
+                        onClick={() => cambiar(p, s)}
+                      >
+                        → {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </li>
             );

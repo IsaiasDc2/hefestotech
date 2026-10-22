@@ -14,7 +14,7 @@ const Inicio = lazy(() => import("./Inicio"));
 const Productos = lazy(() => import("./Productos"));
 const Stock = lazy(() => import("./Stock"));
 const Proveedores = lazy(() => import("./Proveedores"));
-const Compras = lazy(() => import("./Compras"));
+const Compras = lazy(() => import("./Compras.jsx"));
 const Pedidos = lazy(() => import("./Pedidos"));
 const Reclamos = lazy(() => import("./Reclamos"));
 const WhatsApp = lazy(() => import("./WhatsApp"));

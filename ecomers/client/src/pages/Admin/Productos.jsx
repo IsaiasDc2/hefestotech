@@ -1,7 +1,7 @@
 // HefestoTech · Admin · Productos: alta, edición, borrado lógico (papelera)
 // con Deshacer (10s) y lotes. Sin datos inventados: vacío real si no hay.
 import { useState } from "react";
-import { FaPlus } from "react-icons/fa6";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo } from "./hooks";
@@ -142,16 +142,17 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
         titulo={`Productos (${lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
             <button
               type="button"
-              className="btn-primary adm-btn"
+              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
               onClick={alternarAlta}
               aria-expanded={mostrarForm}
             >
-              <FaPlus aria-hidden="true" /> {mostrarForm ? "Cerrar" : "Nuevo producto"}
-            </button>
-            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-              Actualizar
+              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {mostrarForm ? "Cerrar" : "Nuevo producto"}
             </button>
           </div>
         }
@@ -232,14 +233,14 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
             ) : null}
           </div>
           <div className="adm-form-acciones">
-            <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
-              {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear producto"}
-            </button>
             {editando && (
               <button type="button" className="btn-fantasma adm-btn" onClick={() => { setEditando(null); setForm(VACIO_FORM); }}>
                 Cancelar
               </button>
             )}
+            <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
+              {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear producto"}
+            </button>
           </div>
         </form>
       </section>

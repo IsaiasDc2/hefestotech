@@ -60,6 +60,21 @@ export default function PagoResultado({ tipo }) {
   // Sin id de orden no hay nada que consultar: se deriva, no se guarda.
   const error = !ordenId ? t(idioma, "pago.faltaId") : errorReintento || errorCarga;
   const enCurso = Boolean(ordenId) && cargando;
+  const estadoActual = estado?.estado ?? "";
+  // Una única acción principal, arriba del comprobante: reintentar el pago si
+  // falló o ir a los pedidos. Con el pago pendiente manda subir el comprobante
+  // (vive en <ComprobantePago />), así que la navegación queda como secundaria.
+  const puedeReintentar =
+    !enCurso &&
+    (estadoActual === "rechazado" ||
+      estadoActual === "expirado" ||
+      estadoActual === "cancelada" ||
+      tipo === "fallido");
+  const accionPrincipal = puedeReintentar
+    ? "reintentar"
+    : estadoActual === "pendiente"
+      ? null
+      : "pedidos";
 
   const reintentar = async () => {
     setReintentando(true);
@@ -90,14 +105,16 @@ export default function PagoResultado({ tipo }) {
             {t(idioma, "pago.estado")}: <strong>{estado.estado}</strong>.
           </p>
         )}
-        {estado && (
-          <ComprobantePago
-            ordenId={estado.id}
-            token={tokenInvitado}
-            estado={estado.estado}
-            comprobanteInicial={estado.comprobante_pago}
-            montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
-          />
+        {accionPrincipal && (
+          <div className="checkout-acciones checkout-acciones-principales">
+            {accionPrincipal === "reintentar" ? (
+              <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
+                {reintentando ? t(idioma, "pago.generando") : t(idioma, "pago.reintentar")}
+              </button>
+            ) : (
+              <Link to="/cuenta" className="btn-primary">{t(idioma, "pago.verPedidos")}</Link>
+            )}
+          </div>
         )}
         {estado?.estado === "pagado" && (
           <p className="texto-mutado">
@@ -107,14 +124,21 @@ export default function PagoResultado({ tipo }) {
             </Link>
           </p>
         )}
-        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || estado?.estado === "cancelada" || tipo === "fallido") && !enCurso && (
-          <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
-            {reintentando ? t(idioma, "pago.generando") : t(idioma, "pago.reintentar")}
-          </button>
+        {estado && (
+          <ComprobantePago
+            ordenId={estado.id}
+            token={tokenInvitado}
+            estado={estado.estado}
+            comprobanteInicial={estado.comprobante_pago}
+            montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
+            botonSecundario={accionPrincipal !== null}
+          />
         )}
-        <div className="checkout-acciones">
+        <div className="checkout-acciones checkout-acciones-secundarias">
+          {accionPrincipal !== "pedidos" && (
+            <Link to="/cuenta" className="btn-fantasma">{t(idioma, "pago.verPedidos")}</Link>
+          )}
           <Link to="/productos" className="btn-fantasma">{t(idioma, "pago.seguir")}</Link>
-          <Link to="/cuenta" className="btn-primary">{t(idioma, "pago.verPedidos")}</Link>
         </div>
       </div>
     </div>
