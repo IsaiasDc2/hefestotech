@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time      # <-- Agregado para el caché del dólar
+import requests  # <-- Agregado para consultar DolarAPI
 from pathlib import Path
 from typing import AsyncIterator
 
@@ -24,6 +26,25 @@ BACKOFF_SEG = (0.6, 1.8)
 MAX_TARJETAS = 4
 MAX_RESULTADO_CHARS = 8000
 
+# --- MEMORIA CACHÉ PARA EL DÓLAR AUTOMÁTICO ---
+_cache_dolar = {"valor": 1200, "ultima_actualizacion": 0.0}
+
+def obtener_dolar_actualizado() -> int:
+    ahora = time.time()
+    # Actualiza solo si pasó más de 1 hora (3600 segundos) para no saturar la API
+    if ahora - _cache_dolar["ultima_actualizacion"] > 3600:
+        try:
+            respuesta_dolar = requests.get("https://dolarapi.com/v1/dolares/blue", timeout=5)
+            if respuesta_dolar.status_code == 200:
+                datos_dolar = respuesta_dolar.json()
+                _cache_dolar["valor"] = int(datos_dolar["venta"])
+                _cache_dolar["ultima_actualizacion"] = ahora
+                print(f"Dólar actualizado automáticamente a: ${_cache_dolar['valor']}")
+        except Exception:
+            print("No se pudo actualizar el dólar de internet, usando el último valor conocido.")
+    
+    return _cache_dolar["valor"]
+# ----------------------------------------------
 
 class ProveedorCaido(RuntimeError):
     def __init__(self, interrumpido: bool = False):
@@ -74,7 +95,14 @@ async def _turno(proveedor: LLMProvider, sistema: str, mensajes: list[dict], her
 async def responder(proveedor: LLMProvider, historial: list[dict], ctx: Contexto, *,
                     max_tokens: int = 800, timeout_seg: float = 25) -> AsyncIterator[tuple[str, dict]]:
     """Emite (evento, datos): texto, herramienta, productos, armado, derivacion."""
-    sistema = system_prompt()
+    
+    # 1. Cargamos el texto de personalidad desde el archivo Markdown
+    sistema_base = system_prompt()
+    
+    # 2. Obtenemos el dólar actualizado y lo inyectamos silenciosamente al final de las reglas
+    dolar_actual = obtener_dolar_actualizado()
+    sistema = f"{sistema_base}\n\n[REGLA DE SISTEMA OBLIGATORIA: Hoy el dólar cotiza a ${dolar_actual} ARS. Usa este valor exacto para calcular presupuestos si el usuario lo requiere.]"
+    
     mensajes = list(historial)
     texto_final = ""
     emitido = [False]
