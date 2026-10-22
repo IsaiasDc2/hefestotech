@@ -31,6 +31,7 @@ import {
   FaFileInvoiceDollar,
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
+import SelectorSucursal from "./SelectorSucursal";
 
 const NAV = [
   { id: "inicio", etiqueta: "Inicio", Icono: FaHouse },
@@ -216,6 +217,11 @@ export default function AdminLayout({
   rol,
   noLeidas,
   onSalir,
+  sucursales = [],
+  sucursal = "",
+  onSucursal,
+  onCrearSucursal,
+  avisar,
   children,
 }) {
   const [colapsada, setColapsada] = useState(false);
@@ -406,6 +412,16 @@ export default function AdminLayout({
             <kbd>⌘K</kbd>
           </button>
           <div className="adm-topbar-lado">
+            {onSucursal && (
+              <SelectorSucursal
+                sucursales={sucursales}
+                sucursal={sucursal}
+                onCambiar={onSucursal}
+                puedeGestionar={rol === "owner" || rol === "admin"}
+                onCrear={onCrearSucursal}
+                avisar={avisar}
+              />
+            )}
             <BotonTema />
             <button
               type="button"
@@ -419,10 +435,15 @@ export default function AdminLayout({
             </button>
             <span
               className="adm-usuario"
-              title={nombreUsuario || "Usuario"}
+              title={`${nombreUsuario || "Usuario"}${rol ? ` · ${rol}` : ""}`}
             >
-              <FaCircleUser aria-hidden="true" />
-              <span className="adm-usuario-nombre">{nombreUsuario || "—"}</span>
+              <span className="adm-avatar adm-avatar-chico" aria-hidden="true">
+                {(nombreUsuario || "?").slice(0, 1).toUpperCase()}
+              </span>
+              <span className="adm-usuario-datos">
+                <span className="adm-usuario-nombre">{nombreUsuario || "-"}</span>
+                {rol && <span className="adm-usuario-rol">{rol}</span>}
+              </span>
             </span>
             {onSalir && (
               <button

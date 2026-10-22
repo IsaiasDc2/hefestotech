@@ -1,6 +1,6 @@
 // HefestoTech · Admin · Inicio: tablero operativo (GET /api/admin/resumen).
-// Sesión, accesos rápidos, sucursal activa, KPIs y gráficos de movimientos.
-import { useState } from "react";
+// KPIs y gráficos de ventas, pagos, stock y compras. La sucursal activa y la
+// sesión viven en la barra superior (AdminLayout); acá solo se recibe el filtro.
 import {
   FaArrowRight,
   FaBox,
@@ -8,8 +8,6 @@ import {
   FaCartShopping,
   FaCoins,
   FaMessage,
-  FaPlus,
-  FaRightFromBracket,
   FaStore,
   FaTruck,
   FaUsers,
@@ -53,147 +51,18 @@ const NOMBRE_PAGO = {
   sin_dato: "Sin dato",
 };
 
-const ACCIONES = [
-  { id: "productos", accion: "nuevo", etiqueta: "Nuevo producto", Icono: FaBox },
-  { id: "stock", accion: "agregar", etiqueta: "Agregar stock", Icono: FaBoxesStacked },
-  { id: "proveedores", accion: "nuevo", etiqueta: "Agregar proveedor", Icono: FaTruck },
-  { id: "pedidos", accion: "", etiqueta: "Ver pedidos", Icono: FaCartShopping },
-];
+// Monto sin decimales para las tarjetas chicas: "$ 645.000" entra donde
+// "$ 645.000,00" se cortaba.
+const pesosCortos = (centavos) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(Number(centavos ?? 0) / 100);
 
-function TarjetaSesion({ usuario, rol, onSalir }) {
-  const nombre = usuario?.nombre?.trim() || usuario?.email || "Sin sesión";
-  const inicial = nombre.slice(0, 1).toUpperCase();
+function Panel({ titulo, ancho = 12, insignia = null, accion = null, children, etiqueta }) {
   return (
-    <section className="card adm-sesion" aria-label="Sesión actual">
-      <span className="adm-avatar" aria-hidden="true">{inicial}</span>
-      <div className="adm-sesion-datos">
-        <p className="texto-mutado">Sesión iniciada como</p>
-        <h2>{nombre}</h2>
-        <p className="texto-mutado">{usuario?.email ?? "—"} · Rol: {rol ?? "—"}</p>
-      </div>
-      {onSalir && (
-        <button type="button" className="btn-fantasma adm-btn" onClick={onSalir}>
-          <FaRightFromBracket aria-hidden="true" /> Cerrar sesión
-        </button>
-      )}
-    </section>
-  );
-}
-
-function TarjetaSucursal({ sucursales, sucursal, onCambiar, puedeGestionar, onCrear, avisar }) {
-  const [abierto, setAbierto] = useState(false);
-  const [form, setForm] = useState({ nombre: "", direccion: "", telefono: "" });
-  const [creando, setCreando] = useState(false);
-  const [error, setError] = useState("");
-
-  const crear = async (e) => {
-    e.preventDefault();
-    const nombre = form.nombre.trim();
-    if (!nombre) {
-      setError("Poné un nombre para la sucursal.");
-      return;
-    }
-    setCreando(true);
-    setError("");
-    try {
-      const r = await onCrear({
-        nombre,
-        direccion: form.direccion.trim(),
-        telefono: form.telefono.trim(),
-      });
-      setForm({ nombre: "", direccion: "", telefono: "" });
-      setAbierto(false);
-      avisar?.(r?.sucursal?.nombre ? `Sucursal «${r.sucursal.nombre}» creada.` : "Sucursal creada.");
-    } catch (err) {
-      setError(err?.message ?? "No se pudo crear la sucursal.");
-    } finally {
-      setCreando(false);
-    }
-  };
-
-  return (
-    <section className="card adm-panel adm-sucursal" aria-label="Alternar entre sucursales">
-      <div className="adm-panel-cab">
-        <h2>Alternar entre sucursales</h2>
-        {puedeGestionar && (
-          <button
-            type="button"
-            className="btn-fantasma adm-mini"
-            onClick={() => setAbierto((v) => !v)}
-            aria-expanded={abierto}
-          >
-            <FaPlus aria-hidden="true" /> Agregar
-          </button>
-        )}
-      </div>
-
-      <label className="adm-sucursal-select">
-        <span className="texto-mutado">Sucursal activa</span>
-        <select value={sucursal} onChange={(e) => onCambiar(e.target.value)}>
-          <option value="">Todas las sucursales</option>
-          {sucursales.filter((s) => s.activa).map((s) => (
-            <option key={s.id} value={s.id}>{s.nombre}</option>
-          ))}
-        </select>
-      </label>
-
-      {sucursal ? (
-        <p className="texto-mutado">
-          Ventas, pedidos y top de productos de la sucursal elegida. El stock y las compras
-          son globales.
-        </p>
-      ) : (
-        <p className="texto-mutado">
-          {sucursales.length
-            ? "Mostrando todas las sucursales juntas."
-            : "Todavía no hay sucursales cargadas. Podés crear la primera acá."}
-        </p>
-      )}
-
-      {abierto && (
-        <form className="adm-form adm-sucursal-form" onSubmit={crear}>
-          <label>Nombre *
-            <input
-              value={form.nombre}
-              onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-              maxLength={120}
-              required
-            />
-          </label>
-          <div className="adm-fila-2">
-            <label>Dirección
-              <input
-                value={form.direccion}
-                onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-                maxLength={200}
-              />
-            </label>
-            <label>Teléfono
-              <input
-                value={form.telefono}
-                onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                maxLength={40}
-              />
-            </label>
-          </div>
-          {error && <p role="alert" className="adm-error">{error}</p>}
-          <div className="adm-form-acciones">
-            <button type="button" className="btn-fantasma adm-btn" onClick={() => setAbierto(false)}>
-              Cancelar
-            </button>
-            <button type="submit" className="btn-primary adm-btn" disabled={creando}>
-              {creando ? "Creando…" : "Crear sucursal"}
-            </button>
-          </div>
-        </form>
-      )}
-    </section>
-  );
-}
-
-function Panel({ titulo, insignia = null, accion = null, children, etiqueta }) {
-  return (
-    <section className="card adm-panel" aria-label={etiqueta ?? titulo}>
+    <section className={`card adm-panel adm-col-${ancho}`} aria-label={etiqueta ?? titulo}>
       <div className="adm-panel-cab">
         <h2>{titulo}</h2>
         {insignia}
@@ -204,11 +73,10 @@ function Panel({ titulo, insignia = null, accion = null, children, etiqueta }) {
   );
 }
 
-export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
-  const [sucursal, setSucursal] = useState("");
+export default function Inicio({ onIr, sucursal = "", sucursalNombre = "", refresco = 0 }) {
   const { estado, datos, detalle, recargar } = useModulo(
     () => adminApi.resumen({ sucursal }),
-    [sucursal]
+    [sucursal, refresco]
   );
 
   if (estado === "cargando") return <Skeleton lineas={6} etiqueta="Cargando resumen…" />;
@@ -222,7 +90,6 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
   const usuarios = datos?.usuarios ?? {};
   const pagos = datos?.pagos ?? [];
   const sucursales = datos?.sucursales ?? [];
-  const puedeGestionar = rol === "owner" || rol === "admin";
   const monedasCompra = Object.entries(compras.total_centavos ?? {});
   const topePagos = Math.max(1, ...pagos.map((p) => Number(p.total_centavos) || 0));
 
@@ -240,11 +107,11 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
   }));
 
   const tarjetas = [
-    { id: "productos", etiqueta: "Productos activos", valor: datos?.productos_activos ?? 0, Icono: FaBox, tono: "" },
-    { id: "stock", etiqueta: "Con bajo stock", valor: datos?.bajo_stock ?? 0, Icono: FaBoxesStacked, tono: (datos?.bajo_stock ?? 0) > 0 ? "es-alerta" : "" },
+    { id: "reportes", etiqueta: "Ventas 30 días", valor: pesosCortos(ventas.total_centavos), Icono: FaCoins, tono: "" },
     { id: "pedidos", etiqueta: "Pedidos pendientes", valor: datos?.pedidos_pendientes ?? datos?.pedidos_pendientes_pagina ?? 0, Icono: FaCartShopping, tono: (datos?.pedidos_pendientes ?? 0) > 0 ? "es-aviso" : "" },
+    { id: "stock", etiqueta: "Con bajo stock", valor: datos?.bajo_stock ?? 0, Icono: FaBoxesStacked, tono: (datos?.bajo_stock ?? 0) > 0 ? "es-alerta" : "" },
     { id: "reclamos", etiqueta: "Reclamos abiertos", valor: datos?.reclamos_abiertos ?? 0, Icono: FaMessage, tono: (datos?.reclamos_abiertos ?? 0) > 0 ? "es-aviso" : "" },
-    { id: "reportes", etiqueta: "Ventas 30 días", valor: formatoARS(ventas.total_centavos ?? 0), Icono: FaCoins, tono: "" },
+    { id: "productos", etiqueta: "Productos activos", valor: datos?.productos_activos ?? 0, Icono: FaBox, tono: "" },
     { id: "compras", etiqueta: "Compras abiertas", valor: compras.abiertas ?? 0, Icono: FaTruck, tono: (compras.abiertas ?? 0) > 0 ? "es-aviso" : "" },
     { id: "clientes", etiqueta: "Usuarios registrados", valor: usuarios.total ?? 0, Icono: FaUsers, tono: "" },
     { id: "config", etiqueta: "Sucursales activas", valor: sucursales.filter((s) => s.activa).length, Icono: FaStore, tono: "" },
@@ -255,6 +122,11 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
       <Cabecera
         kicker="Panel"
         titulo="Inicio"
+        insignia={
+          sucursal ? (
+            <span className="adm-insignia">Sucursal: {sucursalNombre || "elegida"}</span>
+          ) : null
+        }
         acciones={
           <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
             Actualizar
@@ -262,43 +134,14 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
         }
       />
 
-      <section className="card adm-panel adm-acciones-rapidas" aria-label="Accesos rápidos">
-        <div className="adm-panel-cab">
-          <h2>Accesos rápidos</h2>
-          <span className="texto-mutado">Altas y tareas frecuentes, a un clic</span>
-        </div>
-        <div className="adm-acciones-grid">
-          {ACCIONES.map((a) => (
-            <button
-              key={a.etiqueta}
-              type="button"
-              className="btn-fantasma adm-accion"
-              onClick={() => onIr?.(a.id, a.accion ? { accion: a.accion } : {})}
-            >
-              <span className="adm-accion-icono" aria-hidden="true"><a.Icono /></span>
-              {a.etiqueta}
-            </button>
-          ))}
-        </div>
-      </section>
+      {sucursal && (
+        <p className="texto-mutado adm-nota-sucursal" role="note">
+          Ventas, pedidos y top de productos de la sucursal elegida. El stock y las
+          compras son globales.
+        </p>
+      )}
 
-      <div className="adm-grid-2 adm-grid-contexto">
-        <TarjetaSesion usuario={usuario} rol={rol} onSalir={onSalir} />
-        <TarjetaSucursal
-          sucursales={sucursales}
-          sucursal={sucursal}
-          onCambiar={setSucursal}
-          puedeGestionar={puedeGestionar}
-          onCrear={async (d) => {
-            const r = await adminApi.crearSucursal(d);
-            recargar();
-            return r;
-          }}
-          avisar={avisar}
-        />
-      </div>
-
-      <div className="adm-kpis">
+      <div className="adm-kpis adm-kpis-dash">
         {tarjetas.map((t) => (
           <button key={t.id} type="button" className={`card adm-kpi ${t.tono}`} onClick={() => onIr?.(t.id)}>
             <span className="adm-kpi-icono" aria-hidden="true"><t.Icono /></span>
@@ -309,8 +152,9 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
         ))}
       </div>
 
-      <div className="adm-grid-2">
+      <div className="adm-dash-grid">
         <Panel
+          ancho={8}
           titulo="Ventas · últimos 30 días"
           insignia={<span className="adm-insignia es-ok">{formatoARS(ventas.total_centavos ?? 0)}</span>}
         >
@@ -325,11 +169,11 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
           </p>
         </Panel>
 
-        <Panel titulo="Pedidos por estado · 30 días">
+        <Panel ancho={4} titulo="Pedidos por estado · 30 días">
           <Donut datos={porEstado} etiqueta="Pedidos por estado" />
         </Panel>
 
-        <Panel titulo="Métodos de pago · 30 días">
+        <Panel ancho={4} titulo="Métodos de pago · 30 días">
           {pagos.length === 0 ? (
             <p className="adm-grafico-vacio">Sin pedidos cobrados en el período.</p>
           ) : (
@@ -354,12 +198,12 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
             </ul>
           )}
           <p className="texto-mutado adm-pie-dato">
-            El detalle sale del pago real de Mercado Pago. Los pedidos anteriores a la
-            migración 015 quedan como «Mercado Pago (sin detalle)».
+            El detalle sale del pago real de Mercado Pago; los pedidos que no lo
+            tienen figuran como «Sin dato».
           </p>
         </Panel>
 
-        <Panel titulo="Movimientos de stock · 7 días">
+        <Panel ancho={4} titulo="Movimientos de stock · 7 días">
           <BarrasApiladas
             datos={stock.por_dia ?? []}
             etiqueta="Movimientos de stock por día"
@@ -375,6 +219,7 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
         </Panel>
 
         <Panel
+          ancho={4}
           titulo="Top productos · 30 días"
           accion={
             <button type="button" className="btn-fantasma adm-mini" onClick={() => onIr?.("productos")}>
@@ -390,7 +235,7 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
           />
         </Panel>
 
-        <Panel titulo="Usuarios registrados">
+        <Panel ancho={6} titulo="Usuarios registrados">
           <div className="adm-mini-kpis">
             <div><span>Total</span><strong>{usuarios.total ?? 0}</strong></div>
             <div><span>Clientes</span><strong>{usuarios.clientes ?? 0}</strong></div>
@@ -400,54 +245,55 @@ export default function Inicio({ onIr, usuario, rol, onSalir, avisar }) {
             Perfiles reales de Supabase. El total incluye también al staff.
           </p>
         </Panel>
+
+        <Panel ancho={6} titulo="Compras · últimos 30 días">
+          <div className="adm-mini-kpis">
+            <div><span>Órdenes</span><strong>{compras.ordenes ?? 0}</strong></div>
+            <div><span>Abiertas</span><strong>{compras.abiertas ?? 0}</strong></div>
+            <div><span>Recibidas</span><strong>{compras.recibidas ?? 0}</strong></div>
+            {monedasCompra.map(([moneda, total]) => (
+              <div key={moneda}>
+                <span>Comprado ({moneda})</span>
+                <strong>{formatoMoneda(total, moneda)}</strong>
+              </div>
+            ))}
+          </div>
+          <p className="texto-mutado adm-pie-dato">
+            Proveedores activos: {proveedores.activos ?? 0} de {proveedores.total ?? 0}.
+          </p>
+        </Panel>
+
+        <Panel
+          ancho={12}
+          titulo="Últimos movimientos de stock"
+          accion={
+            <button type="button" className="btn-fantasma adm-mini" onClick={() => onIr?.("stock")}>
+              Ir a Stock
+            </button>
+          }
+        >
+          <Tabla
+            columnas={[
+              { clave: "created_at", titulo: "Cuándo", ver: (m) => fechaCorta(m.created_at) },
+              { clave: "producto", titulo: "Producto", ver: (m) => m.producto },
+              {
+                clave: "tipo",
+                titulo: "Tipo",
+                ver: (m) => (
+                  <span className={`adm-insignia ${m.tipo === "entrada" ? "es-ok" : m.tipo === "salida" ? "es-peligro" : ""}`}>
+                    {NOMBRE_MOVIMIENTO[m.tipo] ?? m.tipo}
+                  </span>
+                ),
+              },
+              { clave: "cantidad", titulo: "Cantidad", ver: (m) => m.cantidad },
+              { clave: "motivo", titulo: "Motivo", ver: (m) => m.motivo || "—" },
+            ]}
+            filas={movimientos}
+            filaKey={(m) => m._clave}
+            vacio="Sin movimientos en los últimos 7 días."
+          />
+        </Panel>
       </div>
-
-      <Panel
-        titulo="Últimos movimientos de stock"
-        accion={
-          <button type="button" className="btn-fantasma adm-mini" onClick={() => onIr?.("stock")}>
-            Ir a Stock
-          </button>
-        }
-      >
-        <Tabla
-          columnas={[
-            { clave: "created_at", titulo: "Cuándo", ver: (m) => fechaCorta(m.created_at) },
-            { clave: "producto", titulo: "Producto", ver: (m) => m.producto },
-            {
-              clave: "tipo",
-              titulo: "Tipo",
-              ver: (m) => (
-                <span className={`adm-insignia ${m.tipo === "entrada" ? "es-ok" : m.tipo === "salida" ? "es-peligro" : ""}`}>
-                  {NOMBRE_MOVIMIENTO[m.tipo] ?? m.tipo}
-                </span>
-              ),
-            },
-            { clave: "cantidad", titulo: "Cantidad", ver: (m) => m.cantidad },
-            { clave: "motivo", titulo: "Motivo", ver: (m) => m.motivo || "—" },
-          ]}
-          filas={movimientos}
-          filaKey={(m) => m._clave}
-          vacio="Sin movimientos en los últimos 7 días."
-        />
-      </Panel>
-
-      <Panel titulo="Compras · últimos 30 días">
-        <div className="adm-mini-kpis">
-          <div><span>Órdenes</span><strong>{compras.ordenes ?? 0}</strong></div>
-          <div><span>Abiertas</span><strong>{compras.abiertas ?? 0}</strong></div>
-          <div><span>Recibidas</span><strong>{compras.recibidas ?? 0}</strong></div>
-          {monedasCompra.map(([moneda, total]) => (
-            <div key={moneda}>
-              <span>Comprado ({moneda})</span>
-              <strong>{formatoMoneda(total, moneda)}</strong>
-            </div>
-          ))}
-        </div>
-        <p className="texto-mutado adm-pie-dato">
-          Proveedores activos: {proveedores.activos ?? 0} de {proveedores.total ?? 0}.
-        </p>
-      </Panel>
     </div>
   );
 }

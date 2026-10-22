@@ -43,6 +43,9 @@ function Admin() {
   const [usuario, setUsuario] = useState(null);
   const [rol, setRol] = useState(null);
   const [noLeidas, setNoLeidas] = useState(0);
+  const [sucursal, setSucursal] = useState("");
+  const [sucursales, setSucursales] = useState([]);
+  const [refrescoInicio, setRefrescoInicio] = useState(0);
   const { lista, avisar, cerrar } = useToasts();
   const { pedir, dialogo } = useConfirm();
 
@@ -118,6 +121,35 @@ function Admin() {
     };
   }, [vista]);
 
+  // Sucursales para el selector de la barra superior. Si el rol no tiene
+  // permiso o la migración 015 falta, la lista queda vacía y el panel sigue.
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const r = await adminApi.sucursales();
+        if (vivo) setSucursales(r?.sucursales ?? []);
+      } catch {
+        if (vivo) setSucursales([]);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const crearSucursal = async (datos) => {
+    const r = await adminApi.crearSucursal(datos);
+    try {
+      const lista = await adminApi.sucursales();
+      setSucursales(lista?.sucursales ?? []);
+    } catch {
+      /* el alta ya se hizo: la lista se actualiza en la próxima carga */
+    }
+    setRefrescoInicio((n) => n + 1);
+    return r;
+  };
+
   const ir = (id, extra = {}) => {
     if (extra.q !== undefined) setPresetQ(extra.q);
     else if (id !== "productos") setPresetQ("");
@@ -148,9 +180,28 @@ function Admin() {
   const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: () => setNoLeidas(0) };
 
   return (
-    <AdminLayout vista={vista} onIr={ir} usuario={usuario} rol={rol} noLeidas={noLeidas} onSalir={salir}>
+    <AdminLayout
+      vista={vista}
+      onIr={ir}
+      usuario={usuario}
+      rol={rol}
+      noLeidas={noLeidas}
+      onSalir={salir}
+      sucursales={sucursales}
+      sucursal={sucursal}
+      onSucursal={setSucursal}
+      onCrearSucursal={crearSucursal}
+      avisar={avisar}
+    >
       <Suspense fallback={<Skeleton lineas={6} etiqueta={`Cargando ${TITULOS[vista] ?? ""}…`} />}>
-        {vista === "inicio" && <Inicio onIr={ir} usuario={usuario} rol={rol} onSalir={salir} avisar={avisar} />}
+        {vista === "inicio" && (
+          <Inicio
+            onIr={ir}
+            sucursal={sucursal}
+            sucursalNombre={sucursales.find((s) => s.id === sucursal)?.nombre ?? ""}
+            refresco={refrescoInicio}
+          />
+        )}
         {vista === "productos" && <Productos key={`productos-${accionSeq}`} {...props} accionInicial={accion} />}
         {vista === "stock" && <Stock key={`stock-${accionSeq}`} {...props} accionInicial={accion} />}
         {vista === "proveedores" && <Proveedores key={`proveedores-${accionSeq}`} {...props} accionInicial={accion} />}

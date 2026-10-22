@@ -1836,15 +1836,6 @@
   border-color: var(--warning);
 }
 
-/* --- Inicio: tarjeta de sesión, tablero y gráficos --- */
-.adm-sesion {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.2rem;
-  flex-wrap: wrap;
-}
-
 .adm-avatar {
   display: inline-flex;
   align-items: center;
@@ -1858,27 +1849,6 @@
   color: var(--primary);
   background: var(--primary-suave);
   border: 1px solid var(--primary-borde);
-}
-
-.adm-sesion-datos {
-  flex: 1;
-  min-width: 12rem;
-}
-
-.adm-sesion-datos h2 {
-  margin: 0.1rem 0;
-  font-size: 1.15rem;
-  overflow-wrap: anywhere;
-}
-
-.adm-sesion-datos p {
-  margin: 0;
-  font-size: 0.82rem;
-}
-
-.adm-sesion .adm-btn {
-  margin-left: auto;
-  white-space: nowrap;
 }
 
 .adm-kpis.adm-kpis-6 {
@@ -2109,10 +2079,6 @@
 }
 
 @media (max-width: 900px) {
-  .adm-sesion .adm-btn {
-    margin-left: 0;
-  }
-
   .adm-kpis.adm-kpis-6 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2143,59 +2109,6 @@
 
 .adm-acciones-cab .adm-filtro {
   margin: 0;
-}
-
-.adm-acciones-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
-}
-
-.adm-accion {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.6rem;
-  min-height: 52px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.88rem;
-  text-align: left;
-}
-
-.adm-accion-icono {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 8px;
-  flex-shrink: 0;
-  color: var(--primary);
-  background: var(--primary-suave);
-}
-
-.adm-grid-contexto {
-  align-items: stretch;
-}
-
-.adm-sucursal {
-  gap: 0.55rem;
-}
-
-.adm-sucursal-select {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.78rem;
-}
-
-.adm-sucursal-select select {
-  min-height: 44px;
-}
-
-.adm-sucursal-form {
-  border-top: 1px solid var(--border-suave);
-  padding-top: 0.7rem;
 }
 
 .adm-error {
@@ -2353,17 +2266,7 @@
   padding-inline: 0;
 }
 
-@media (max-width: 900px) {
-  .adm-acciones-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 560px) {
-  .adm-acciones-grid {
-    grid-template-columns: 1fr;
-  }
-
   .adm-cab {
     align-items: flex-start;
   }
@@ -2388,5 +2291,229 @@
 
   .adm-acciones-cab .adm-filtro select {
     width: 100%;
+  }
+}
+
+/* ===== Barra superior: sucursal y sesion ===== */
+.adm-suc {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.adm-suc-select {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0 0.3rem 0 0.75rem;
+  border: 1px solid var(--border-suave);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--muted);
+}
+
+.adm-suc-select:focus-within {
+  border-color: var(--primary-borde);
+}
+
+.adm-suc-select select {
+  min-height: 42px;
+  max-width: 12rem;
+  padding: 0 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.adm-suc-pop {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 40;
+  width: min(22rem, 90vw);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--primitive-night) 45%, transparent);
+}
+
+.adm-suc-pop h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.adm-usuario {
+  gap: 0.55rem;
+  max-width: 15rem;
+}
+
+.adm-avatar-chico {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.adm-usuario-datos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.adm-usuario-datos .adm-usuario-nombre {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.adm-usuario-rol {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+/* ===== Inicio: KPIs y grilla de paneles ===== */
+.adm-nota-sucursal {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.adm-kpis.adm-kpis-dash {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.adm-kpis-dash .adm-kpi {
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icono ir"
+    "valor valor"
+    "etiqueta etiqueta";
+  row-gap: 0.4rem;
+  align-items: start;
+}
+
+.adm-kpis-dash .adm-kpi-ir {
+  justify-self: end;
+  align-self: center;
+}
+
+.adm-kpis-dash .adm-kpi-valor {
+  min-width: 0;
+  font-size: clamp(1.3rem, 1rem + 0.9vw, 1.7rem);
+  overflow-wrap: anywhere;
+}
+
+.adm-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.adm-dash-grid > .adm-panel {
+  min-width: 0;
+}
+
+.adm-dash-grid .adm-panel-cab {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.adm-dash-grid .adm-panel-cab h2 {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.adm-dash-grid .adm-panel-cab .adm-mini {
+  flex-shrink: 0;
+}
+
+.adm-col-4 { grid-column: span 4; }
+.adm-col-6 { grid-column: span 6; }
+.adm-col-8 { grid-column: span 8; }
+.adm-col-12 { grid-column: span 12; }
+
+.adm-dash-grid .adm-pie-dato {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 1180px) {
+  .adm-usuario-datos {
+    display: none;
+  }
+
+  .adm-suc-select select {
+    max-width: 9rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .adm-kpis.adm-kpis-dash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adm-col-8 { grid-column: span 12; }
+  .adm-col-4 { grid-column: span 6; }
+}
+
+@media (max-width: 760px) {
+  .adm-col-4,
+  .adm-col-6,
+  .adm-col-8 { grid-column: span 12; }
+}
+
+/* Celular: menu, busqueda, tema, notificaciones y salir en la primera fila;
+   la sucursal pasa a una segunda fila a todo el ancho. */
+@media (max-width: 640px) {
+  .adm-topbar {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .adm-topbar-lado {
+    display: contents;
+  }
+
+  .adm-topbar-lado > .adm-suc {
+    order: 10;
+    flex: 1 1 100%;
+  }
+
+  .adm-topbar-lado > .adm-suc + * {
+    margin-left: auto;
+  }
+
+  .adm-topbar-lado .adm-suc-select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .adm-topbar-lado .adm-suc-select select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .adm-topbar-lado > .adm-usuario {
+    display: none;
+  }
+
+  .adm-suc-pop {
+    right: auto;
+    left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .adm-kpis.adm-kpis-dash {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
