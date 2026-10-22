@@ -1,11 +1,13 @@
 import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Asistente from "./Asistente";
 import Marca from "../brand/Marca";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
 import { usePausaPestana } from "../../hooks/useMotion";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
+import { MODO_DEMO } from "../lib/supabaseClient";
 import "../brand/Marca.css";
 import "./Layout.css";
 
@@ -21,14 +23,11 @@ function Layout({
 }) {
   // Pausa global de loops CSS cuando la pestana se oculta.
   usePausaPestana();
+  const idioma = useIdiomaStore((s) => s.idioma);
   return (
     <div className="layout">
-      <div className="ht-circuito" aria-hidden="true">
-        <span className="ht-pulso ht-pulso--a" />
-        <span className="ht-pulso ht-pulso--b" />
-      </div>
       <a className="skip-link" href="#contenido">
-        Saltar al contenido
+        {t(idioma, "lay.saltar")}
       </a>
       <Navbar
         cantidadCarrito={cantidadCarrito}
@@ -47,7 +46,7 @@ function Layout({
       <main className="layout-main" id="contenido" tabIndex={-1}>
         <Suspense
           fallback={
-            <div className="cargando-pagina cargando-marca" role="status" aria-label="Cargando página">
+            <div className="cargando-pagina cargando-marca" role="status" aria-label={t(idioma, "lay.cargando")}>
               <Marca variante="simbolo" ancho={48} alto={48} decorativa />
               <span className="cargando-marca-fila" aria-hidden="true">
                 <span className="cargando-punto" />
@@ -63,6 +62,11 @@ function Layout({
 
       <Footer />
       <Asistente />
+      {MODO_DEMO && (
+        <p className="aviso-demo" role="note" title={t(idioma, "demo.detalle")}>
+          {t(idioma, "demo.etiqueta")}
+        </p>
+      )}
     </div>
   );
 }

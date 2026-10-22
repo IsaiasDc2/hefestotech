@@ -1,0 +1,60 @@
+{
+  "aviso": "DATOS DEMO. Solo los usa FuenteDemo (sin Supabase) para probar get_order_status sin internet. Emails en el dominio reservado .test; no son clientes reales.",
+  "pedidos": [
+    {
+      "id": "de300001-0000-4000-8000-000000000001",
+      "demo": true,
+      "email": "cliente.demo@ejemplo.test",
+      "estado": "enviada",
+      "created_at": "2026-10-10T14:20:00Z",
+      "envio": "estandar",
+      "total_centavos": 82000000,
+      "orden_items": [
+        {"producto_id": "8380b174-70cb-5fe6-ab47-d040fcaa83ce", "cantidad": 1, "precio": 340000},
+        {"producto_id": "d00cb611-1df1-5284-a016-bc583be2ebc0", "cantidad": 1, "precio": 300000},
+        {"producto_id": "caf253c2-efc7-5f09-a2b0-a76ecd478d5b", "cantidad": 1, "precio": 180000}
+      ],
+      "envios": [{"operador": "Operador demo", "tracking": "DEMO-0001", "estado": "en_camino"}]
+    },
+    {
+      "id": "de300002-0000-4000-8000-000000000002",
+      "demo": true,
+      "email": "cliente.demo@ejemplo.test",
+      "estado": "pendiente",
+      "created_at": "2026-10-16T09:05:00Z",
+      "envio": "express",
+      "total_centavos": 62200000,
+      "orden_items": [
+        {"producto_id": "d0bba92a-8add-5058-a654-145b5b2e585b", "cantidad": 1, "precio": 610000}
+      ],
+      "envios": []
+    },
+    {
+      "id": "de300003-0000-4000-8000-000000000003",
+      "demo": true,
+      "email": "otra.demo@ejemplo.test",
+      "estado": "entregada",
+      "created_at": "2026-09-28T18:40:00Z",
+      "envio": "estandar",
+      "total_centavos": 39000000,
+      "orden_items": [
+        {"producto_id": "02a70e86-b51c-5b15-a33a-53f7407ee413", "cantidad": 1, "precio": 250000},
+        {"producto_id": "2f45314e-94bc-599b-af66-c8b4a5258375", "cantidad": 1, "precio": 140000}
+      ],
+      "envios": [{"operador": "Operador demo", "tracking": "DEMO-0003", "estado": "entregado"}]
+    },
+    {
+      "id": "de300004-0000-4000-8000-000000000004",
+      "demo": true,
+      "email": "otra.demo@ejemplo.test",
+      "estado": "cancelada",
+      "created_at": "2026-10-01T11:00:00Z",
+      "envio": "estandar",
+      "total_centavos": 18000000,
+      "orden_items": [
+        {"producto_id": "caf253c2-efc7-5f09-a2b0-a76ecd478d5b", "cantidad": 1, "precio": 180000}
+      ],
+      "envios": []
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import {
   FaCheck,
   FaGlobe,
@@ -15,9 +15,8 @@ import {
 import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useTema from "../../hooks/useTema";
+import { WHATSAPP_URL } from "../../constants/whatsapp";
 import "./MobileDrawer.css";
-
-const WHATSAPP_URL = "https://wa.me/5491112345678";
 
 function MobileDrawer({ abierto, alCerrar }) {
   const panelRef = useRef(null);
@@ -25,7 +24,6 @@ function MobileDrawer({ abierto, alCerrar }) {
   const setIdioma = useIdiomaStore((s) => s.setIdioma);
   const { tema, fijarTema } = useTema();
   const location = useLocation();
-  const esEn = idioma === "en";
 
   useEffect(() => {
     if (!abierto) return undefined;
@@ -62,8 +60,8 @@ function MobileDrawer({ abierto, alCerrar }) {
 
   if (!abierto) return null;
 
-  const etiquetaMenu = esEn ? "Menu" : "Menú";
-  const etiquetaCerrar = esEn ? "Close menu" : "Cerrar menú";
+  const etiquetaMenu = t(idioma, "drawer.menu");
+  const etiquetaCerrar = t(idioma, "drawer.cerrar");
 
   return (
     <div className="drawer-raiz">
@@ -107,8 +105,8 @@ function MobileDrawer({ abierto, alCerrar }) {
           <div className="drawer-grupo" aria-labelledby="drawer-titulo-comercial">
             {FILA_CATEGORIAS.map((c) => {
               const activa = esClaveActiva(location.pathname, location.search, c.clave);
-              const esArma = c.clave === "combo";
-              const esOutlet = c.clave === "outlet";
+              const esArma = c.tipo === "armar";
+              const esOutlet = c.tipo === "ofertas";
               const clase = [
                 "drawer-link",
                 esArma ? "drawer-link--arma" : "",
@@ -127,7 +125,7 @@ function MobileDrawer({ abierto, alCerrar }) {
                 >
                   {esArma && <FaScrewdriverWrench aria-hidden="true" />}
                   {esOutlet && <FaTag aria-hidden="true" />}
-                  <span>{t(idioma, c.labelKey)}</span>
+                  <span>{c.labelKey ? t(idioma, c.labelKey) : c.label}</span>
                 </Link>
               );
             })}
@@ -140,7 +138,7 @@ function MobileDrawer({ abierto, alCerrar }) {
             <a
               href={WHATSAPP_URL}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="drawer-link"
             >
               <FaWhatsapp aria-hidden="true" />

@@ -4,7 +4,7 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     plan: free
     envVars:
       - key: SUPABASE_URL
@@ -15,9 +15,21 @@ services:
         sync: false
       - key: MP_WEBHOOK_SECRET
         sync: false
-      - key: GEMINI_API_KEY
+      - key: CRON_SECRET
         sync: false
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      - key: LLM_PROVIDER
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        sync: false
+      - key: ASSISTANT_RATE_LIMIT_PER_MIN
+        value: "20"
       - key: FRONTEND_URL
         value: https://isaiasdc2.github.io/hefestotech
       - key: BACKEND_URL
+        sync: false
+      - key: CORS_EXTRA_ORIGINS
         sync: false

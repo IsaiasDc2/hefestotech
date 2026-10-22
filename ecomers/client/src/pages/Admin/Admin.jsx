@@ -3,14 +3,18 @@
 // un chunk separado además del chunk "admin". noindex: el panel no se indexa.
 import { Suspense, lazy, useEffect, useState } from "react";
 import { supabase } from "../../components/lib/supabaseClient";
+import useAuthStore from "../../store/authStore";
 import AdminLayout from "./AdminLayout";
 import { adminApi } from "./adminApi";
-import { Skeleton, ZonaToasts, useConfirm, useToasts } from "./ui";
+import { Skeleton, ZonaToasts } from "./ui";
+import { useConfirm, useToasts } from "./hooks";
 import "./Admin.css";
 
 const Inicio = lazy(() => import("./Inicio"));
 const Productos = lazy(() => import("./Productos"));
 const Stock = lazy(() => import("./Stock"));
+const Proveedores = lazy(() => import("./Proveedores"));
+const Compras = lazy(() => import("./Compras.jsx"));
 const Pedidos = lazy(() => import("./Pedidos"));
 const Reclamos = lazy(() => import("./Reclamos"));
 const WhatsApp = lazy(() => import("./WhatsApp"));
@@ -24,7 +28,8 @@ const Papelera = lazy(() => import("./Papelera"));
 const Notificaciones = lazy(() => import("./Notificaciones"));
 
 const TITULOS = {
-  inicio: "Inicio", productos: "Productos", stock: "Stock", pedidos: "Pedidos",
+  inicio: "Inicio", productos: "Productos", stock: "Stock", proveedores: "Proveedores",
+  compras: "Compras", pedidos: "Pedidos",
   reclamos: "Reclamos", whatsapp: "WhatsApp", banners: "Banners", cupones: "Cupones",
   reportes: "Reportes", clientes: "Clientes", config: "Configuración",
   auditoria: "Auditoría", papelera: "Papelera", notificaciones: "Notificaciones",
@@ -33,9 +38,14 @@ const TITULOS = {
 function Admin() {
   const [vista, setVista] = useState("inicio");
   const [presetQ, setPresetQ] = useState("");
+  const [accion, setAccion] = useState("");
+  const [accionSeq, setAccionSeq] = useState(0);
   const [usuario, setUsuario] = useState(null);
   const [rol, setRol] = useState(null);
   const [noLeidas, setNoLeidas] = useState(0);
+  const [sucursal, setSucursal] = useState("");
+  const [sucursales, setSucursales] = useState([]);
+  const [refrescoInicio, setRefrescoInicio] = useState(0);
   const { lista, avisar, cerrar } = useToasts();
   const { pedir, dialogo } = useConfirm();
 
@@ -64,14 +74,26 @@ function Admin() {
         const { data } = await supabase.auth.getSession();
         const u = data?.session?.user ?? null;
         if (!vivo) return;
-        setUsuario(u?.email ?? null);
+        if (!u) {
+          setUsuario(null);
+          return;
+        }
+        setUsuario({
+          email: u.email ?? "",
+          nombre: u.user_metadata?.nombre ?? u.user_metadata?.full_name ?? "",
+        });
         if (u) {
           const { data: perfil } = await supabase
             .from("perfiles")
-            .select("rol")
+            .select("nombre,rol")
             .eq("id", u.id)
             .maybeSingle();
-          if (vivo) setRol(perfil?.rol ?? null);
+          if (vivo) {
+            setRol(perfil?.rol ?? null);
+            if (perfil?.nombre) {
+              setUsuario((previo) => ({ ...(previo ?? {}), nombre: perfil.nombre }));
+            }
+          }
         }
       } catch {
         /* display solamente */
@@ -89,7 +111,7 @@ function Admin() {
       try {
         const r = await adminApi.notificaciones({ limit: 20 });
         const n = r?.notificaciones ?? [];
-        if (vivo) setNoLeidas(n.filter((x) => !x.leida_at && !x.leida).length);
+        if (vivo) setNoLeidas(n.filter((x) => !x.leida).length);
       } catch {
         /* campana en 0 */
       }
@@ -99,27 +121,97 @@ function Admin() {
     };
   }, [vista]);
 
+  // Sucursales para el selector de la barra superior. Si el rol no tiene
+  // permiso o la migración 015 falta, la lista queda vacía y el panel sigue.
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const r = await adminApi.sucursales();
+        if (vivo) setSucursales(r?.sucursales ?? []);
+      } catch {
+        if (vivo) setSucursales([]);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  const crearSucursal = async (datos) => {
+    const r = await adminApi.crearSucursal(datos);
+    try {
+      const lista = await adminApi.sucursales();
+      setSucursales(lista?.sucursales ?? []);
+    } catch {
+      /* el alta ya se hizo: la lista se actualiza en la próxima carga */
+    }
+    setRefrescoInicio((n) => n + 1);
+    return r;
+  };
+
   const ir = (id, extra = {}) => {
     if (extra.q !== undefined) setPresetQ(extra.q);
     else if (id !== "productos") setPresetQ("");
+    if (extra.accion) {
+      setAccion(extra.accion);
+      setAccionSeq((n) => n + 1);
+    } else {
+      setAccion("");
+    }
     setVista(TITULOS[id] ? id : "inicio");
-    document.getElementById("admin-contenido")?.scrollIntoView({ block: "start" });
+    // El módulo es lazy: scrollear de entrada y reintentar cuando termine
+    // de montar, si no el título queda cortado bajo el topbar.
+    const alContenido = () => {
+      document.getElementById("admin-contenido")?.scrollIntoView({ block: "start" });
+    };
+    alContenido();
+    requestAnimationFrame(() => requestAnimationFrame(alContenido));
+    setTimeout(alContenido, 600);
+  };
+
+  const salir = async () => {
+    await useAuthStore.getState().logout();
+    // Recarga en la base del sitio (respeta Vite `base`): la guardia vuelve a
+    // evaluar la sesión y el panel deja de mostrarse.
+    window.location.assign(import.meta.env.BASE_URL || "/");
   };
 
   const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: () => setNoLeidas(0) };
 
   return (
-    <AdminLayout vista={vista} onIr={ir} usuario={usuario} rol={rol} noLeidas={noLeidas}>
+    <AdminLayout
+      vista={vista}
+      onIr={ir}
+      usuario={usuario}
+      rol={rol}
+      noLeidas={noLeidas}
+      onSalir={salir}
+      sucursales={sucursales}
+      sucursal={sucursal}
+      onSucursal={setSucursal}
+      onCrearSucursal={crearSucursal}
+      avisar={avisar}
+    >
       <Suspense fallback={<Skeleton lineas={6} etiqueta={`Cargando ${TITULOS[vista] ?? ""}…`} />}>
-        {vista === "inicio" && <Inicio onIr={ir} />}
-        {vista === "productos" && <Productos {...props} />}
-        {vista === "stock" && <Stock {...props} />}
+        {vista === "inicio" && (
+          <Inicio
+            onIr={ir}
+            sucursal={sucursal}
+            sucursalNombre={sucursales.find((s) => s.id === sucursal)?.nombre ?? ""}
+            refresco={refrescoInicio}
+          />
+        )}
+        {vista === "productos" && <Productos key={`productos-${accionSeq}`} {...props} accionInicial={accion} />}
+        {vista === "stock" && <Stock key={`stock-${accionSeq}`} {...props} accionInicial={accion} />}
+        {vista === "proveedores" && <Proveedores key={`proveedores-${accionSeq}`} {...props} accionInicial={accion} />}
+        {vista === "compras" && <Compras {...props} />}
         {vista === "pedidos" && <Pedidos {...props} />}
         {vista === "reclamos" && <Reclamos {...props} />}
-        {vista === "whatsapp" && <WhatsApp />}
+        {vista === "whatsapp" && <WhatsApp {...props} />}
         {vista === "banners" && <Banners {...props} />}
         {vista === "cupones" && <Cupones {...props} />}
-        {vista === "reportes" && <Reportes />}
+        {vista === "reportes" && <Reportes {...props} />}
         {vista === "clientes" && <Clientes />}
         {vista === "config" && <Config />}
         {vista === "auditoria" && <Auditoria />}

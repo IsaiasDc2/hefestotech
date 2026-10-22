@@ -1,5 +1,5 @@
 .checkout {
-  max-width: min(1280px, 100%);
+  max-width: min(var(--contenedor), 100%);
   margin: 0 auto;
   padding: 2.5rem 1.5rem 3.5rem;
   overflow-x: hidden;
@@ -37,6 +37,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+  font-size: var(--text-h3);
 }
 
 .checkout-campos {
@@ -135,6 +136,52 @@
 
 .checkout-nota {
   font-size: 0.82rem;
+}
+
+.checkout-cuotas {
+  border-top: 1px solid var(--border-suave);
+  padding-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkout-cuotas-titulo {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.checkout-cuotas ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.checkout-cuotas li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.checkout-cuotas li em {
+  font-style: normal;
+  color: var(--muted);
+}
+
+.checkout-cuotas li em.destacado {
+  color: var(--oro);
+  font-weight: 600;
+}
+
+.checkout-cuotas-nota {
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .checkout-resumen {
@@ -261,6 +308,68 @@
   flex-wrap: wrap;
 }
 
+/* Una sola acción principal, primero; las secundarias se agrupan al final. */
+.checkout-acciones-principales,
+.checkout-acciones-secundarias {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.comprobante-pago {
+  width: 100%;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-suave);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.comprobante-pago h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.comprobante-pago-cargado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ok-borde);
+  border-radius: 12px;
+  background: var(--ok-suave);
+}
+
+.comprobante-pago-cargado p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.comprobante-pago-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.comprobante-pago-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 0.7rem;
+}
+
+.comprobante-pago-form input[type="file"] {
+  width: 100%;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  .comprobante-pago-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .checkout-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -282,6 +391,14 @@
   .checkout-resumen {
     padding: 1rem;
     min-width: 0;
+  }
+  .checkout-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .checkout-acciones > .btn-primary,
+  .checkout-acciones > .btn-fantasma {
+    width: 100%;
   }
 }
 

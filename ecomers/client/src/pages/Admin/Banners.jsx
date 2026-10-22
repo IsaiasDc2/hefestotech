@@ -1,13 +1,15 @@
 // HefestoTech · Admin · Banners: CRUD completo (GET/POST/PUT/DELETE).
 import { useState } from "react";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const VACIO = { titulo: "", imagen: "", link: "", orden: "0", activo: true };
 
 export default function Banners({ avisar, pedirConfirm }) {
   const [form, setForm] = useState(VACIO);
+  const [altaAbierta, setAltaAbierta] = useState(false);
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const { estado, datos, recargar } = useModulo(() => adminApi.banners(), []);
@@ -27,6 +29,7 @@ export default function Banners({ avisar, pedirConfirm }) {
       }
       setForm(VACIO);
       setEditando(null);
+      setAltaAbierta(false);
       recargar();
     } catch (err) {
       avisar(err?.message ?? "No se pudo guardar.", { tono: "error" });
@@ -56,11 +59,60 @@ export default function Banners({ avisar, pedirConfirm }) {
   if (estado === "sin-permiso") return <SinPermiso modulo="Banners" />;
   if (estado === "no-disponible") return <Proximamente modulo="Banners" />;
 
+  const mostrarForm = altaAbierta || Boolean(editando);
+  const alEditar = (b) => {
+    setEditando(b.id);
+    setForm({
+      titulo: b.titulo ?? "",
+      imagen: b.imagen ?? "",
+      link: b.link ?? "",
+      orden: String(b.orden ?? 0),
+      activo: !!b.activo,
+    });
+    setAltaAbierta(true);
+    const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: sinMovimiento ? "auto" : "smooth" });
+  };
+  const alternarAlta = () => {
+    if (mostrarForm) {
+      setAltaAbierta(false);
+      setEditando(null);
+      setForm(VACIO);
+    } else {
+      setAltaAbierta(true);
+    }
+  };
+
   return (
     <div>
-      <Cabecera kicker="Vidriera" titulo={`Banners (${lista.length})`} />
+      <Cabecera
+        kicker="Vidriera"
+        titulo={`Banners (${lista.length})`}
+        acciones={
+          <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+            <button
+              type="button"
+              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
+              onClick={alternarAlta}
+              aria-expanded={mostrarForm}
+            >
+              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {mostrarForm ? "Cerrar" : "Nuevo banner"}
+            </button>
+          </div>
+        }
+      />
+      {mostrarForm && (
       <section className="card adm-panel" aria-label={editando ? "Editar banner" : "Nuevo banner"}>
-        <h2>{editando ? "Editar banner" : "Nuevo banner"}</h2>
+        <div className="adm-panel-cab">
+          <h2>{editando ? "Editar banner" : "Nuevo banner"}</h2>
+          <button type="button" className="btn-fantasma adm-mini" onClick={alternarAlta}>
+            Cerrar
+          </button>
+        </div>
         <form onSubmit={alGuardar} className="adm-form">
           <label>Título
             <input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} maxLength={200} />
@@ -80,17 +132,24 @@ export default function Banners({ avisar, pedirConfirm }) {
             </label>
           </div>
           <div className="adm-form-acciones">
+            <button
+              type="button"
+              className="btn-fantasma adm-btn"
+              onClick={() => {
+                setEditando(null);
+                setForm(VACIO);
+                setAltaAbierta(false);
+              }}
+            >
+              Cancelar
+            </button>
             <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
               {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear banner"}
             </button>
-            {editando && (
-              <button type="button" className="btn-fantasma adm-btn" onClick={() => { setEditando(null); setForm(VACIO); }}>
-                Cancelar
-              </button>
-            )}
           </div>
         </form>
       </section>
+      )}
       <section className="card adm-panel" aria-label="Listado">
         {lista.length === 0 ? (
           <Vacio titulo="Sin banners" texto="Todavía no hay banners cargados." />
@@ -101,7 +160,7 @@ export default function Banners({ avisar, pedirConfirm }) {
                 <strong>{b.titulo || "Sin título"}</strong>
                 <span className="texto-mutado">Orden {b.orden ?? 0} · {b.activo ? "Activo" : "Inactivo"}{b.link ? ` · ${b.link}` : ""}</span>
                 <div className="adm-acciones">
-                  <button type="button" className="btn-fantasma adm-mini" onClick={() => { setEditando(b.id); setForm({ titulo: b.titulo ?? "", imagen: b.imagen ?? "", link: b.link ?? "", orden: String(b.orden ?? 0), activo: !!b.activo }); }}>
+                  <button type="button" className="btn-fantasma adm-mini" onClick={() => alEditar(b)}>
                     Editar
                   </button>
                   <button type="button" className="btn-fantasma adm-mini es-peligro" onClick={() => alBorrar(b)}>

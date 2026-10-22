@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import os
+import urllib.request
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-import httpx
 
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 LEYENDA = "Comprobante de compra – no válido como factura"
@@ -15,16 +15,21 @@ def _env(name: str, default: str = "") -> str:
     return os.getenv(name, default)
 
 
-def _sb(tabla: str, query: str = "") -> list:
-    url = _env("SUPABASE_URL").rstrip("/")
+def _sb(path: str, query: str = ""):
+    """Lectura REST mínima a Supabase con service_role (solo backend)."""
+    base = _env("SUPABASE_URL").rstrip("/")
     key = _env("SUPABASE_SERVICE_ROLE_KEY")
-    r = httpx.get(
-        f"{url}/rest/v1/{tabla}{query}",
-        headers={"apikey": key, "Authorization": f"Bearer {key}"},
-        timeout=20,
-    )
-    r.raise_for_status()
-    return r.json()
+    if not base or not key:
+        return []
+    url = f"{base}/rest/v1/{path}{query}"
+    req = urllib.request.Request(url, headers={
+        "apikey": key, "Authorization": f"Bearer {key}",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read().decode() or "[]")
+    except Exception:
+        return []
 
 
 def tienda() -> dict:
@@ -39,7 +44,7 @@ def tienda() -> dict:
 
 def obtener_comprobante(orden_id: str) -> dict | None:
     filas = _sb("comprobantes",
-                query=f"?orden_id=eq.{orden_id}&select=*,ordenes(nombre,email,direccion,ciudad,codigo_postal,envio,subtotal,costo_envio,total,created_at,acceso_token,orden_items(cantidad,precio,productos(nombre)))")
+                query=f"?orden_id=eq.{orden_id}&select=*,ordenes(nombre,email,direccion,ciudad,codigo_postal,envio,subtotal,costo_envio,total,created_at)")
     return filas[0] if filas else None
 
 
@@ -72,36 +77,44 @@ def _pdf_minimo(lineas: list[str]) -> bytes:
 def comprobante_pdf(c: dict) -> bytes:
     t = tienda()
     o = c.get("ordenes", {}) if isinstance(c.get("ordenes"), dict) else {}
-    fecha = c.get("emitida_at") or c.get("emitido_en") or c.get("created_at") or ""
+    tot = c.get("totales_snapshot", {}) if isinstance(c.get("totales_snapshot"), dict) else {}
+    fecha = c.get("emitido_en") or c.get("created_at") or ""
     try:
         fecha = datetime.fromisoformat(fecha).astimezone(TZ).strftime("%d/%m/%Y %H:%M")
     except Exception:
         pass
-    numero = c.get("numero") or c.get("mp_payment_id") or str(c.get("id", ""))[:8]
+
+    def pesos(valor) -> int:
+        try:
+            return int(round(float(valor or 0)))
+        except (TypeError, ValueError):
+            return 0
+
+    subtotal = tot.get("subtotal", o.get("subtotal", 0))
+    descuento = tot.get("descuento", 0)
+    costo_envio = tot.get("costo_envio", o.get("costo_envio", 0))
+    total = tot.get("total", o.get("total", 0))
     lineas = [
         f"{t['nombre'] or 'HefestoTech'}",
         f"CUIT: {t['cuit'] or '-'}  |  {t['direccion'] or ''}",
         f"{t['email'] or ''}  {t['telefono'] or ''}",
         "=" * 58,
-        f"COMPROBANTE {numero}",
+        f"COMPROBANTE {c.get('numero', '')}",
         f"Fecha (Bs.As.): {fecha}",
-        f"Cliente: {o.get('nombre', '')}",
+        f"Cliente: {o.get('nombre', '')}  {o.get('email', '')}",
         f"{o.get('direccion', '')}, {o.get('ciudad', '')} CP {o.get('codigo_postal', '')}",
         "-" * 58,
     ]
-    for it in (o.get("orden_items") or c.get("items_snapshot") or []):
-        prod = it.get("productos") if isinstance(it.get("productos"), dict) else {}
-        nombre = it.get("nombre") or prod.get("nombre") or ""
-        precio = it.get("precio", it.get("precio_unitario", 0))
-        lineas.append(f"{it.get('cantidad',1)}x {str(nombre)[:36]:36} ${int(precio or 0):>9,}".replace(",", "."))
-    total = o.get("total") or int(c.get("total_centavos") or 0) / 100
+    for it in c.get("items_snapshot", []) or []:
+        lineas.append(f"{it.get('cantidad',1)}x {str(it.get('nombre',''))[:36]:36} ${pesos(it.get('precio_unitario')):>9,}".replace(",", "."))
     lineas += [
         "-" * 58,
-        f"Subtotal: ${int(o.get('subtotal', 0)):>,}".replace(",", "."),
-        f"Envio ({o.get('envio','')}): ${int(o.get('costo_envio', 0)):>,}".replace(",", "."),
-        f"TOTAL: ${int(total):>,}".replace(",", "."),
+        f"Subtotal: ${pesos(subtotal):>,}".replace(",", "."),
+        f"Descuento: -${pesos(descuento):>,}".replace(",", "."),
+        f"Envio ({o.get('envio','')}): ${pesos(costo_envio):>,}".replace(",", "."),
+        f"TOTAL: ${pesos(total):>,}".replace(",", "."),
         "=" * 58,
         LEYENDA,
-        f"Verificacion: {_env('FRONTEND_URL', '')}/pedido/{c.get('orden_id','')}?token={o.get('acceso_token','')}",
+        f"Verificacion: {_env('FRONTEND_URL', '')}/pedido/{c.get('orden_id','')}?token={c.get('token_verificacion','')}",
     ]
     return _pdf_minimo(lineas)

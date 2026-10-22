@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);

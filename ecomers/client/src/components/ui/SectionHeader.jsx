@@ -1,58 +1,27 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
+import { FaArrowRight } from "react-icons/fa6";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./SectionHeader.css";
 
-
-function SectionHeader({ num = null, kicker = null, titulo, id, verTodo = null, accionExtra = null }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      (entradas) => {
-        if (entradas.some((e) => e.isIntersecting)) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.3 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  const muestraKicker = num != null || kicker != null;
+function SectionHeader({ kicker = null, titulo, id, verTodo = null, accionExtra = null }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   return (
-    <div ref={ref} className={`ht-sh${visible ? " is-visible" : ""}`}>
-      <div className="ht-sh__titular">
-        {num != null && (
-          <span className="ht-sh__insignia" aria-hidden="true">
-            {num}
-          </span>
-        )}
-        <div className="ht-sh__textos">
-          {muestraKicker && kicker != null && <p className="ht-sh__kicker">{kicker}</p>}
-          <h2 id={id} className="ht-sh__titulo">
-            {titulo}
-          </h2>
-        </div>
+    <div className="ht-sh">
+      <div className="ht-sh__textos">
+        {kicker && <p className="ht-sh__kicker">{kicker}</p>}
+        <h2 id={id} className="ht-sh__titulo">
+          {titulo}
+        </h2>
       </div>
-      <span className="ht-sh__linea" aria-hidden="true" />
       {(verTodo || accionExtra) && (
         <div className="ht-sh__acciones">
-          {accionExtra}
           {verTodo && (
             <Link to={verTodo} className="ht-sh__vertodo">
-              Ver todo <span aria-hidden="true">→</span>
+              {t(idioma, "sec.verTodo")} <FaArrowRight aria-hidden="true" />
             </Link>
           )}
+          {accionExtra}
         </div>
       )}
     </div>

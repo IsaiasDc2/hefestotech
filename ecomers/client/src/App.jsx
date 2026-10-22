@@ -1,9 +1,12 @@
 import { lazy, useEffect, useState } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/layout/Layout";
 import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
+import useIdiomaStore, { t } from "./store/idiomaStore";
+import useDocumentTitle from "./hooks/useDocumentTitle";
+import useCanonical from "./hooks/useCanonical";
 
 const Home = lazy(() => import("./pages/Home/Home"));
 const Productos = lazy(() => import("./components/product/Producto"));
@@ -32,6 +35,7 @@ const ROLES_ADMIN = ["owner", "admin"];
 
 function GuardiaRol({ soloAdmin = false, children }) {
   const [estado, setEstado] = useState("cargando");
+  const idioma = useIdiomaStore((s) => s.idioma);
 
   useEffect(() => {
     let viva = true;
@@ -73,21 +77,20 @@ function GuardiaRol({ soloAdmin = false, children }) {
   if (estado === "cargando") {
     return (
       <p className="detalle-estado" role="status">
-        Verificando acceso…
+        {t(idioma, "app.verificando")}
       </p>
     );
   }
   if (estado === "invitado" || estado === "ok") return children;
   return (
     <div className="detalle-estado" role="alert">
-      <p className="vacio-titulo">Acceso restringido</p>
+      <p className="vacio-titulo">{t(idioma, "app.restringido")}</p>
       <p className="vacio-texto">
-        Esta sección requiere un rol autorizado. Si creés que es un error,
-        escribinos desde la página de contacto.
+        {t(idioma, "app.restringidoT")}
       </p>
       <div className="detalle-acciones-error">
-        <Link to="/">← Volver al inicio</Link>
-        <Link to="/cuenta">Ir a mi cuenta</Link>
+        <Link to="/">← {t(idioma, "app.volver")}</Link>
+        <Link to="/cuenta">{t(idioma, "app.miCuenta")}</Link>
       </div>
     </div>
   );
@@ -115,6 +118,9 @@ export default function App() {
   const cantidadCarrito = carrito.reduce((acc, item) => acc + item.cantidad, 0);
 
   return (
+    <>
+    <SeoRuta />
+    <DesplazarArriba />
     <Routes>
       <Route
         path="/"
@@ -167,8 +173,28 @@ export default function App() {
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
         <Route path="armar" element={<Armador />} />
+        {/* Rutas viejas del armador v1 (ya reemplazado por /armar). */}
+        <Route path="armar-pc" element={<Navigate to="/armar" replace />} />
+        <Route path="arma-tu-pc" element={<Navigate to="/armar" replace />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>
+    </>
   );
+}
+
+function SeoRuta() {
+  // Se monta antes que las páginas: su efecto corre primero y la página
+  // de detalle puede sobreescribir el título con el nombre real.
+  useDocumentTitle();
+  useCanonical();
+  return null;
+}
+
+function DesplazarArriba() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
 }

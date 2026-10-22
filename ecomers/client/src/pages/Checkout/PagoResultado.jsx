@@ -1,23 +1,32 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { FaCircleCheck, FaClock, FaCircleXmark } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
+import { esUrlMP } from "../../utils/mercadoPago";
+import ComprobantePago from "./ComprobantePago";
+import { traducirError } from "../../utils/errores";
+import "./Checkout.css";
 
-const CONFIG = {
-  exito: { icono: <FaCircleCheck aria-hidden="true" />, clase: "badge-ok", titulo: "¡Pago aprobado!" },
-  pendiente: { icono: <FaClock aria-hidden="true" />, clase: "badge-info", titulo: "Pago pendiente" },
-  fallido: { icono: <FaCircleXmark aria-hidden="true" />, clase: "badge-peligro", titulo: "Pago rechazado" },
+const CONFIG_KEYS = {
+  exito: { icono: "exito", clase: "badge-ok", tituloKey: "pago.exito" },
+  pendiente: { icono: "pendiente", clase: "badge-info", tituloKey: "pago.pendiente" },
+  fallido: { icono: "fallido", clase: "badge-peligro", tituloKey: "pago.fallido" },
 };
 
 /** Pantalla genérica de retorno de MP. Lee el estado DESDE la DB, nunca de la URL. */
 export default function PagoResultado({ tipo }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [params] = useSearchParams();
   const [estado, setEstado] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
+  const [errorCarga, setErrorCarga] = useState("");
+  const [errorReintento, setErrorReintento] = useState("");
   const [reintentando, setReintentando] = useState(false);
-  const cfg = CONFIG[tipo] ?? CONFIG.pendiente;
+  const cfgKey = CONFIG_KEYS[tipo] ?? CONFIG_KEYS.pendiente;
+  const cfgIcono = tipo === "exito" ? <FaCircleCheck aria-hidden="true" /> : tipo === "fallido" ? <FaCircleXmark aria-hidden="true" /> : <FaClock aria-hidden="true" />;
+  const cfgTitulo = t(idioma, cfgKey.tituloKey);
 
   // MP devuelve external_reference como query param en el retorno.
   const ordenId = params.get("external_reference") ?? params.get("orden_id") ?? "";
@@ -27,6 +36,7 @@ export default function PagoResultado({ tipo }) {
 
   useEffect(() => {
     let vivo = true;
+    let temporizador = 0;
     const cargar = async (intentos = 0) => {
       try {
         const o = await obtenerEstadoPedido(ordenId, tokenInvitado);
@@ -34,31 +44,47 @@ export default function PagoResultado({ tipo }) {
         setEstado(o);
         // El webhook puede tardar: reintenta hasta 5 veces si sigue pendiente.
         if (o.estado === "pendiente" && intentos < 5) {
-          setTimeout(() => vivo && cargar(intentos + 1), 2500);
+          temporizador = setTimeout(() => vivo && cargar(intentos + 1), 2500);
         } else {
           setCargando(false);
         }
       } catch {
         if (!vivo) return;
-        setError("No pudimos encontrar tu pedido. Revisá el enlace o escribinos.");
+        setErrorCarga(t(idioma, "pago.noPedido"));
         setCargando(false);
       }
     };
     if (ordenId) cargar();
-    else {
-      setError("Falta el identificador del pedido.");
-      setCargando(false);
-    }
-    return () => { vivo = false; };
-  }, [ordenId]);
+    return () => { vivo = false; clearTimeout(temporizador); };
+  }, [ordenId, tokenInvitado, idioma]);
+
+  // Sin id de orden no hay nada que consultar: se deriva, no se guarda.
+  const error = !ordenId ? t(idioma, "pago.faltaId") : errorReintento || errorCarga;
+  const enCurso = Boolean(ordenId) && cargando;
+  const estadoActual = estado?.estado ?? "";
+  // Una única acción principal, arriba del comprobante: reintentar el pago si
+  // falló o ir a los pedidos. Con el pago pendiente manda subir el comprobante
+  // (vive en <ComprobantePago />), así que la navegación queda como secundaria.
+  const puedeReintentar =
+    !enCurso &&
+    (estadoActual === "rechazado" ||
+      estadoActual === "expirado" ||
+      estadoActual === "cancelada" ||
+      tipo === "fallido");
+  const accionPrincipal = puedeReintentar
+    ? "reintentar"
+    : estadoActual === "pendiente"
+      ? null
+      : "pedidos";
 
   const reintentar = async () => {
     setReintentando(true);
     try {
       const { link_pago } = await reintentarPago(ordenId, tokenInvitado);
+      if (!esUrlMP(link_pago)) throw new Error(t(idioma, "pago.noReintentar"));
       window.location.href = link_pago;
     } catch (err) {
-      setError(err?.message || "No se pudo reintentar.");
+      setErrorReintento(traducirError(err?.message, idioma) || t(idioma, "pago.noReintentar"));
       setReintentando(false);
     }
   };
@@ -69,33 +95,51 @@ export default function PagoResultado({ tipo }) {
         <span className="marca-centrada" aria-hidden="true">
           <Marca variante="simbolo" ancho={44} alto={44} decorativa />
         </span>
-        <p className={`badge ${cfg.clase} hero-kicker`}>{cfg.icono} {cfg.titulo}</p>
-        <h1>{cfg.titulo}</h1>
-        {cargando && <p className="badge badge-info" role="status">Confirmando tu pago…</p>}
+        <p className={`badge ${cfgKey.clase} hero-kicker`}>{cfgIcono} {cfgTitulo}</p>
+        <h1>{cfgTitulo}</h1>
+        {enCurso && <p className="badge badge-info" role="status">{t(idioma, "pago.confirmando")}</p>}
         {error && <p className="badge badge-peligro" role="alert">{error}</p>}
         {estado && (
           <p className="texto-mutado">
-            Pedido <strong>{String(estado.id).slice(0, 8)}</strong> por{" "}
+            {t(idioma, "pago.pedido")} <strong>{String(estado.id).slice(0, 8)}</strong> {t(idioma, "pago.por")}{" "}
             <strong>${Number(estado.total ?? 0).toLocaleString("es-AR")}</strong>.{" "}
-            Estado actual: <strong>{estado.estado}</strong>.
+            {t(idioma, "pago.estado")}: <strong>{estado.estado}</strong>.
           </p>
+        )}
+        {accionPrincipal && (
+          <div className="checkout-acciones checkout-acciones-principales">
+            {accionPrincipal === "reintentar" ? (
+              <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
+                {reintentando ? t(idioma, "pago.generando") : t(idioma, "pago.reintentar")}
+              </button>
+            ) : (
+              <Link to="/cuenta" className="btn-primary">{t(idioma, "pago.verPedidos")}</Link>
+            )}
+          </div>
         )}
         {estado?.estado === "pagado" && (
           <p className="texto-mutado">
-            Comprobante emitido.{" "}
-            <Link to={`/pedido/${estado.id}?token=${tokenInvitado}`}>
-              Ver comprobante
+            {t(idioma, "pago.comprobante")}{" "}
+            <Link to={`/pedido/${estado.id}`}>
+              {t(idioma, "pago.verComprobante")}
             </Link>
           </p>
         )}
-        {(estado?.estado === "rechazado" || estado?.estado === "expirado" || estado?.estado === "cancelada" || tipo === "fallido") && !cargando && (
-          <button type="button" className="btn-primary" onClick={reintentar} disabled={reintentando}>
-            {reintentando ? "Generando link…" : "Reintentar pago"}
-          </button>
+        {estado && (
+          <ComprobantePago
+            ordenId={estado.id}
+            token={tokenInvitado}
+            estado={estado.estado}
+            comprobanteInicial={estado.comprobante_pago}
+            montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
+            botonSecundario={accionPrincipal !== null}
+          />
         )}
-        <div className="checkout-acciones">
-          <Link to="/productos" className="btn-fantasma">Seguir comprando</Link>
-          <Link to="/cuenta" className="btn-primary">Ver mis pedidos</Link>
+        <div className="checkout-acciones checkout-acciones-secundarias">
+          {accionPrincipal !== "pedidos" && (
+            <Link to="/cuenta" className="btn-fantasma">{t(idioma, "pago.verPedidos")}</Link>
+          )}
+          <Link to="/productos" className="btn-fantasma">{t(idioma, "pago.seguir")}</Link>
         </div>
       </div>
     </div>

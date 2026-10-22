@@ -1,7 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import Marca from "../components/brand/Marca";
+import useIdiomaStore, { t } from "../store/idiomaStore";
 
 function NotFound() {
+  const idioma = useIdiomaStore((s) => s.idioma);
   return (
     <div className="vacio pagina-404 anim-entrada">
       <span className="marca-centrada" aria-hidden="true">
@@ -12,12 +14,12 @@ function NotFound() {
           decorativa
         />
       </span>
-      <p className="vacio-titulo">Nada por acá</p>
+      <h1 className="vacio-titulo">{t(idioma, "nf.titulo")}</h1>
       <p className="vacio-texto">
-        La página que buscás no existe o se movió.
+        {t(idioma, "nf.texto")}
       </p>
       <Link to="/" className="btn-primary">
-        Volver al inicio
+        {t(idioma, "nf.volver")}
       </Link>
     </div>
   );

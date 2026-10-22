@@ -49,7 +49,7 @@ def _sb(tabla: str, method: str = "GET", params: str = "", body: Any = None) -> 
 
 
 def _uid_desde_bearer(authorization: Optional[str]) -> Optional[str]:
-    if not authorization or not authorization.startswith("Bearer "):
+    if not authorization or not authorization.lower().startswith("bearer "):
         return None
     base = os.getenv("SUPABASE_URL", "").rstrip("/")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")

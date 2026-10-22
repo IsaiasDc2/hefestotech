@@ -1,10 +1,10 @@
 // HefestoTech · Admin · Reclamos: bandeja con filtro y cambio de estado.
 // El formulario público vive en /reclamo (ReclamoPublico.jsx).
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 const ESTADOS = ["", "abierto", "en_revision", "resuelto", "rechazado"];
 
@@ -40,7 +40,7 @@ export default function Reclamos({ avisar }) {
         kicker="Soporte"
         titulo={`Reclamos (${lista.length})`}
         acciones={
-          <>
+          <div className="adm-acciones-cab">
             <label className="adm-filtro">Estado
               <select value={estado} onChange={(e) => setEstado(e.target.value)}>
                 {ESTADOS.map((s) => (
@@ -49,7 +49,10 @@ export default function Reclamos({ avisar }) {
               </select>
             </label>
             <Link className="btn-fantasma adm-btn" to="/reclamo">Ver formulario público</Link>
-          </>
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+          </div>
         }
       />
       {lista.length === 0 ? (

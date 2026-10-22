@@ -1,11 +1,29 @@
-import { linkOfertas } from "../../constants/categorias";
+import { CATEGORIAS, linkCategoria, linkOfertas } from "../../constants/categorias";
+
+// Fila de navegación: solo destinos que existen en el catálogo (antes
+// "Notebooks" y "PCs armadas" eran búsquedas que no devolvían nada).
+const EN_NAV = [
+  "procesadores",
+  "placas-de-video",
+  "motherboards",
+  "memorias",
+  "almacenamiento",
+  "fuentes",
+  "gabinetes",
+  "monitores",
+  "perifericos",
+  "auriculares",
+  "coolers",
+  "sillas-gamer",
+];
 
 export const FILA_CATEGORIAS = [
-  { labelKey: "cat.productos", to: "/productos", clave: "productos" },
-  { labelKey: "cat.notebooks", to: "/productos?q=notebook", clave: "notebook" },
-  { labelKey: "cat.pcs", to: "/productos?q=pc%20armada", clave: "pc armada" },
-  { labelKey: "cat.arma", to: "/armar", clave: "combo" },
-  { labelKey: "cat.outlet", to: linkOfertas, clave: "outlet" },
+  { labelKey: "cat.arma", to: "/armar", clave: "armar", tipo: "armar" },
+  { labelKey: "cat.outlet", to: linkOfertas, clave: "ofertas", tipo: "ofertas" },
+  ...EN_NAV.map((slug) => {
+    const c = CATEGORIAS.find((x) => x.slug === slug);
+    return { label: c.label, labelKey: `catg.${slug}`, to: linkCategoria(slug), clave: slug, tipo: "categoria" };
+  }),
 ];
 
 export const IDIOMAS = [
@@ -14,15 +32,9 @@ export const IDIOMAS = [
 ];
 
 export function esClaveActiva(pathname, search, clave) {
-  const params = new URLSearchParams(search);
-  const categoriaActual = (params.get("categoria") || "").toLowerCase();
-  const busquedaActual = (params.get("q") || "").toLowerCase();
-  const enProductos = pathname === "/productos";
-  if (clave === "combo" && pathname === "/armar") return true;
-  if (!enProductos) return false;
-  if (clave === "productos") return !categoriaActual && !busquedaActual;
-  if (clave === "outlet") {
-    return categoriaActual === "oferta" || categoriaActual === "ofertas";
-  }
-  return busquedaActual === clave;
+  if (clave === "armar") return pathname === "/armar";
+  if (pathname !== "/productos") return false;
+  const categoria = (new URLSearchParams(search).get("categoria") || "").toLowerCase();
+  if (clave === "ofertas") return categoria === "oferta" || categoria === "ofertas";
+  return categoria === clave;
 }

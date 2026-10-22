@@ -5,13 +5,14 @@
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-3) var(--ease), visibility 0s linear var(--dur-3);
   z-index: 998;
 }
 
 .overlay.show {
   opacity: 1;
   visibility: visible;
+  transition: opacity var(--dur-3) var(--ease), visibility 0s;
 }
 
 .cart {
@@ -26,7 +27,8 @@
   display: flex;
   flex-direction: column;
   transform: translateX(102%);
-  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.35, 1);
+  visibility: hidden;
+  transition: transform var(--dur-3) var(--ease), visibility 0s linear var(--dur-3);
   z-index: 999;
   border-left: 1px solid var(--border);
   border-radius: 16px 0 0 16px;
@@ -35,6 +37,8 @@
 
 .cart.open {
   transform: translateX(0);
+  visibility: visible;
+  transition: transform var(--dur-3) var(--ease), visibility 0s;
 }
 
 .cart-header {
@@ -360,8 +364,8 @@
 }
 
 .cantidad button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
@@ -374,7 +378,12 @@
   transition: border-color var(--dur-2) var(--ease), color var(--dur-2) var(--ease);
 }
 
-.cantidad button:hover {
+.cantidad button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cantidad button:hover:not(:disabled) {
   border-color: var(--primary);
   color: var(--primary);
 }
@@ -397,7 +406,9 @@
   border: none;
   color: var(--muted);
   font-size: 0.8rem;
+  min-height: 32px;
   padding: 0.2rem 0;
+  cursor: pointer;
   transition: color var(--dur-2) var(--ease);
 }
 

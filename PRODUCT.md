@@ -20,18 +20,18 @@ Catálogo gaming amplio a buen precio. Diferencia confirmada por usuario: precio
 
 ## Operating Context
 
-Flujos actuales en `ecomers/client/src/App.jsx`: `/`, `/productos`, `/producto/:id`, `/carrito`, `/cuenta`, `/acerca`, `/contactanos`. Backend en `ecomers/server/app/routers/`: `auth.py`, `products.py`, `categories.py`, `orders.py`. Modelos: `user.py`, `product.py`, `category.py`, `order.py`. Idioma UI: español. Despliegue actual: GitHub Pages con `base: "/hefestotech/"` en `ecomers/client/vite.config.js`.
+Rutas del cliente en `ecomers/client/src/App.jsx`: `/`, `/productos`, `/producto/:id`, `/carrito`, `/checkout`, `/cuenta`, `/pedido/:id`, `/pago-*`, `/armar`, `/reclamo`, `/admin`, `/acerca`, `/contactanos`. Backend en `backend/` (FastAPI: `checkout_api.py`, `admin_api.py`, `contacto_api.py`, `comprobantes.py`) sobre Supabase (Postgres + RLS). Idioma UI: español, con inglés. Frontend actual en GitHub Pages con `base: "/hefestotech/"`; backend en Render.
 
 ## Capabilities and Constraints
 
 Confirmado:
 - Frontend: React 18 + Vite 5 + Zustand + React Router 6 + Supabase JS en `ecomers/client/`.
-- Backend: FastAPI + SQLAlchemy en `ecomers/server/app/`, PostgreSQL según README.
-- Rutas y carrito en estado local React (`App.jsx`: agregar/eliminar/aumentar/disminuir).
-- Español como idioma principal.
+- Backend: FastAPI en `backend/`, datos y auth en Supabase.
+- Pagos con Mercado Pago (webhook con firma HMAC e idempotencia).
 
 Decisiones abiertas:
-- Usuario indicó "Hay cambios previstos" en restricciones (nombre, dominio, idioma, stack o backend) pero sin detallar. No asumir cambios; confirmar antes de renombrar, migrar deploy o cambiar stack.
+- Hosting definitivo del frontend (GitHub Pages o Vercel) y dominio propio.
+- Número real de WhatsApp (`ecomers/client/src/constants/whatsapp.js`).
 
 ## Brand Commitments
 

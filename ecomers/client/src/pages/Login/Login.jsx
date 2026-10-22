@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaGoogle, FaGithub, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
+import { Link } from "react-router";
+import { FaGoogle, FaLock, FaUser, FaEnvelope } from "react-icons/fa";
 import useAuthStore from "../../store/authStore";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../../components/brand/Marca";
 import "./Login.css";
 
 function Login({ onIrRegistro }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -24,8 +26,8 @@ function Login({ onIrRegistro }) {
     return (
       <div className="login-pagina">
         <div className="login card anim-entrada">
-          <h2>Sesión iniciada</h2>
-          <p className="texto-mutado">Estás ingresado como {usuario.email}.</p>
+          <h2>{t(idioma, "login.sesionIniciada")}</h2>
+          <p className="texto-mutado">{t(idioma, "login.sesionComo")} {usuario.email}.</p>
         </div>
       </div>
     );
@@ -38,14 +40,18 @@ function Login({ onIrRegistro }) {
           <Marca variante="simbolo" ancho={22} alto={22} decorativa />
           HefestoTech
         </p>
-        <h2>Iniciar sesión</h2>
+        <h2>{t(idioma, "login.titulo")}</h2>
 
         <div className="input-con-icono">
+          <label htmlFor="login-email" className="sr-only">
+            {t(idioma, "login.emailPh")}
+          </label>
           <FaEnvelope className="input-icono" aria-hidden="true" />
           <input
+            id="login-email"
             type="email"
-            placeholder="Correo electrónico"
-            aria-label="Correo electrónico"
+            autoComplete="email"
+            placeholder={t(idioma, "login.emailPh")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -53,11 +59,15 @@ function Login({ onIrRegistro }) {
         </div>
 
         <div className="input-con-icono">
+          <label htmlFor="login-pass" className="sr-only">
+            {t(idioma, "login.passPh")}
+          </label>
           <FaLock className="input-icono" aria-hidden="true" />
           <input
+            id="login-pass"
             type="password"
-            placeholder="Contraseña"
-            aria-label="Contraseña"
+            autoComplete="current-password"
+            placeholder={t(idioma, "login.passPh")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -71,44 +81,35 @@ function Login({ onIrRegistro }) {
         )}
 
         <div className="opciones-login">
-          <label>
-            <input type="checkbox" />
-            Recordarme
-          </label>
 
           <Link to="/contactanos">
             <FaLock className="icono-link" aria-hidden="true" />
-            ¿Olvidaste tu contraseña?
+            {t(idioma, "login.olvidaste")}
           </Link>
         </div>
 
         <button type="submit" className="btn-primary" disabled={cargando}>
-          {cargando ? "Ingresando..." : "Ingresar"}
+          {cargando ? t(idioma, "login.ingresando") : t(idioma, "login.ingresar")}
         </button>
 
         <div className="separador" aria-hidden="true">
-          <span>o</span>
+          <span>{t(idioma, "login.o")}</span>
         </div>
 
-          <button type="button" className="btn-fantasma" title="Solo email por ahora" disabled aria-disabled="true">
+          <button type="button" className="btn-fantasma" title={t(idioma, "login.google")} disabled aria-disabled="true">
           <FaGoogle aria-hidden="true" />
-          Continuar con Google (solo email por ahora)
-        </button>
-
-        <button type="button" className="btn-fantasma" title="Disponible próximamente" disabled aria-disabled="true">
-          <FaGithub aria-hidden="true" />
-          Continuar con GitHub
+          {t(idioma, "login.google")}
         </button>
 
         <p className="registro">
           <FaUser className="icono-link" aria-hidden="true" />
-          ¿No tenés una cuenta?{" "}
+          {t(idioma, "login.sinCuenta")}{" "}
           {onIrRegistro ? (
             <button type="button" className="registro-link" onClick={onIrRegistro}>
-              <strong>Crear cuenta</strong>
+              <strong>{t(idioma, "login.crear")}</strong>
             </button>
           ) : (
-            <Link to="/cuenta"><strong>Crear cuenta</strong></Link>
+            <Link to="/cuenta"><strong>{t(idioma, "login.crear")}</strong></Link>
           )}
         </p>
       </form>

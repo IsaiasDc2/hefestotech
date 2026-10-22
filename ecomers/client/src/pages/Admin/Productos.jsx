@@ -1,28 +1,34 @@
 // HefestoTech · Admin · Productos: alta, edición, borrado lógico (papelera)
 // con Deshacer (10s) y lotes. Sin datos inventados: vacío real si no hay.
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
-const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "" };
+const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
 
-export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
+export default function Productos({ avisar, pedirConfirm, presetQ = "", accionInicial }) {
   const [q, setQ] = useState(presetQ);
   const [busqueda, setBusqueda] = useState(presetQ);
   const [form, setForm] = useState(VACIO_FORM);
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [altaAbierta, setAltaAbierta] = useState(accionInicial === "nuevo");
 
-  const { estado, datos, recargar, setDatos } = useModulo(
-    () => adminApi.productos({ q: busqueda, limit: 50 }),
+  const [presetPrevio, setPresetPrevio] = useState(presetQ);
+
+  const { estado, datos, recargar } = useModulo(
+    () => adminApi.productos({ busqueda, limit: 50 }),
     [busqueda]
   );
 
-  useEffect(() => {
+  // Si llega otro presetQ (p. ej. desde la paleta ⌘K), se ajusta durante el render.
+  if (presetQ !== presetPrevio) {
+    setPresetPrevio(presetQ);
     setQ(presetQ);
     setBusqueda(presetQ);
-  }, [presetQ]);
+  }
 
   const lista = datos?.productos ?? [];
 
@@ -37,6 +43,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
         if (form.precio !== "") cambios.precio = Number(form.precio);
         if (form.descripcion !== undefined) cambios.descripcion = form.descripcion;
         if (form.categoria !== undefined) cambios.categoria = form.categoria;
+        if (form.imagen !== undefined) cambios.imagen = form.imagen.trim();
         await adminApi.editarProducto(editando, cambios);
         avisar("Producto actualizado.");
       } else {
@@ -48,11 +55,13 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           descripcion: form.descripcion,
           categoria: form.categoria || "General",
           codigo: form.codigo.trim(),
+          imagen: form.imagen.trim(),
         });
         avisar("Producto creado.");
       }
       setForm(VACIO_FORM);
       setEditando(null);
+      setAltaAbierta(false);
       recargar();
     } catch (err) {
       avisar(err?.message ?? "No se pudo guardar.", { tono: "error" });
@@ -96,6 +105,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
 
   const alEditar = (p) => {
     setEditando(p.id);
+    setAltaAbierta(true);
     setForm({
       nombre: p.nombre ?? "",
       marca: p.marca ?? "",
@@ -104,6 +114,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
       descripcion: p.descripcion ?? "",
       categoria: p.categoria ?? "General",
       codigo: p.codigo ?? "",
+      imagen: p.imagen ?? "",
     });
     const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: sinMovimiento ? "auto" : "smooth" });
@@ -113,20 +124,49 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
   if (estado === "sin-permiso") return <SinPermiso modulo="Productos" />;
   if (estado === "no-disponible") return <Proximamente modulo="Productos" />;
 
+  const mostrarForm = altaAbierta || Boolean(editando);
+  const alternarAlta = () => {
+    if (mostrarForm) {
+      setAltaAbierta(false);
+      setEditando(null);
+      setForm(VACIO_FORM);
+    } else {
+      setAltaAbierta(true);
+    }
+  };
+
   return (
     <div>
       <Cabecera
         kicker="Catálogo"
         titulo={`Productos (${lista.length})`}
         acciones={
-          <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-            Actualizar
-          </button>
+          <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+            <button
+              type="button"
+              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
+              onClick={alternarAlta}
+              aria-expanded={mostrarForm}
+            >
+              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
+              {mostrarForm ? "Cerrar" : "Nuevo producto"}
+            </button>
+          </div>
         }
       />
 
+      <div className={mostrarForm ? "adm-grid-2 adm-grid-productos" : ""}>
+      {mostrarForm && (
       <section className="card adm-panel" aria-label={editando ? "Editar producto" : "Nuevo producto"}>
-        <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
+        <div className="adm-panel-cab">
+          <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
+          <button type="button" className="btn-fantasma adm-mini" onClick={alternarAlta} aria-label="Cerrar alta">
+            Cerrar
+          </button>
+        </div>
         <form onSubmit={alGuardar} className="adm-form">
           <label>Nombre *
             <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required maxLength={200} />
@@ -157,20 +197,57 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           <label>Descripción
             <input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
           </label>
+          <label>Imagen (URL)
+            <input
+              value={form.imagen}
+              onChange={(e) => setForm({ ...form, imagen: e.target.value })}
+              placeholder="https://…"
+              inputMode="url"
+            />
+          </label>
+          <div className="adm-fila-2">
+            <label>Subir foto
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={async (e) => {
+                  const archivo = e.target.files?.[0];
+                  if (!archivo) return;
+                  try {
+                    avisar("Subiendo imagen…");
+                    const r = await adminApi.subirImagenProducto(archivo);
+                    setForm((f) => ({ ...f, imagen: r.url }));
+                    avisar("Imagen subida.");
+                  } catch (err) {
+                    avisar(err?.message ?? "No se pudo subir.", { tono: "error" });
+                  } finally {
+                    e.target.value = "";
+                  }
+                }}
+              />
+            </label>
+            {form.imagen ? (
+              <span className="adm-miniatura">
+                <img src={form.imagen} alt="Vista previa" width={64} height={64} loading="lazy" />
+              </span>
+            ) : null}
+          </div>
           <div className="adm-form-acciones">
-            <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
-              {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear producto"}
-            </button>
             {editando && (
               <button type="button" className="btn-fantasma adm-btn" onClick={() => { setEditando(null); setForm(VACIO_FORM); }}>
                 Cancelar
               </button>
             )}
+            <button type="submit" className="btn-primary adm-btn" disabled={guardando}>
+              {guardando ? "Guardando…" : editando ? "Guardar cambios" : "Crear producto"}
+            </button>
           </div>
         </form>
       </section>
+      )}
 
       <section className="card adm-panel" aria-label="Listado">
+        <h2 className="sr-only">Listado de productos</h2>
         <form
           className="adm-buscador-linea"
           onSubmit={(e) => {
@@ -202,8 +279,9 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           <Tabla
             columnas={[
               { clave: "nombre", titulo: "Producto", ver: (p) => <><strong>{p.nombre}</strong><br /><span className="texto-mutado">{p.codigo ?? ""} · {p.marca ?? ""}</span></> },
+              { clave: "imagen", titulo: "Foto", ver: (p) => (p.imagen ? <img src={p.imagen} alt="" width={44} height={44} loading="lazy" className="adm-miniatura-tabla" /> : <span className="texto-mutado">—</span>) },
               { clave: "precio", titulo: "Precio", ver: (p) => formatoARS(p.precio_centavos ?? 0) },
-              { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} / mín ${p.stock_minimo ?? 5}` },
+              { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} en stock · mín ${p.stock_minimo ?? 5}` },
               {
                 clave: "acciones", titulo: "Acciones",
                 ver: (p) => (
@@ -220,6 +298,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           />
         )}
       </section>
+      </div>
     </div>
   );
 }

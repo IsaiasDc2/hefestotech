@@ -1,9 +1,9 @@
 // HefestoTech · Canal de WhatsApp centralizado.
-// El numero 5491112345678 es PLACEHOLDER ("a confirmar" por el dueno).
-// No inventar otro destino: todo enlace de WhatsApp debe salir de aca y,
-// hasta confirmar el numero real, tratarse como pendiente en qa/interactivos.csv.
-export const WHATSAPP_NUMERO = "5491112345678";
-export const WHATSAPP_NUMERO_A_CONFIRMAR = true;
+// Número confirmado por el dueño: +54 9 387 502-9222 (Salta).
+// Sin +, espacios ni guiones: wa.me solo acepta dígitos.
+// No inventar otro destino: todo enlace de WhatsApp debe salir de acá.
+export const WHATSAPP_NUMERO = "5493875029222";
+export const WHATSAPP_NUMERO_A_CONFIRMAR = false;
 export const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMERO}`;
 
 export function whatsappUrl(texto) {

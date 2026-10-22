@@ -4,8 +4,9 @@
 // Nada se envía solo: responder por WhatsApp siempre abre wa.me para revisar.
 import { useEffect, useState } from "react";
 import { WHATSAPP_NUMERO_A_CONFIRMAR, WHATSAPP_URL, whatsappUrl } from "../../constants/whatsapp";
-import { api } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio, useModulo } from "./ui";
+import { adminApi } from "./adminApi";
+import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo } from "./hooks";
 
 const PLANTILLAS = [
   { id: "estado", titulo: "Estado de pedido", texto: "Hola, soy de HefestoTech. Te escribo por tu pedido #___ que está en estado ___. Cualquier duda respondeme por acá." },
@@ -55,7 +56,7 @@ function textoWhatsAppRespuesta(conversacion, borrador) {
 }
 
 function Bandeja({ avisar }) {
-  const { estado, datos, recargar } = useModulo(() => api("/api/admin/bandeja"), []);
+  const { estado, datos, recargar } = useModulo(() => adminApi.bandeja(), []);
   const [elegido, setElegido] = useState(null);
   const [hilo, setHilo] = useState({ estado: "vacio", mensajes: [] });
   const [borrador, setBorrador] = useState("");
@@ -77,24 +78,29 @@ function Bandeja({ avisar }) {
       )
     : conversaciones;
 
-  useEffect(() => {
+  // Ajustes durante el render (sin efecto): se compara con el valor previo.
+  const [datosPrevios, setDatosPrevios] = useState(datos);
+  const [elegidoPrevio, setElegidoPrevio] = useState(elegido);
+
+  if (datos !== datosPrevios) {
+    setDatosPrevios(datos);
     // Si la lista cambia (recarga/filtro), soltar la selección fantasma.
     if (elegido && !conversaciones.some((c) => c.id === elegido)) {
       setElegido(null);
       setHilo({ estado: "vacio", mensajes: [] });
     }
-  }, [datos]);
+  }
+
+  if (elegido !== elegidoPrevio) {
+    setElegidoPrevio(elegido);
+    setHilo(elegido ? { estado: "cargando", mensajes: [] } : { estado: "vacio", mensajes: [] });
+    setBorrador("");
+  }
 
   useEffect(() => {
-    if (!elegido) {
-      setHilo({ estado: "vacio", mensajes: [] });
-      setBorrador("");
-      return;
-    }
+    if (!elegido) return;
     let vivo = true;
-    setHilo({ estado: "cargando", mensajes: [] });
-    setBorrador("");
-    api(`/api/admin/reclamos/${encodeURIComponent(elegido)}/mensajes`)
+    adminApi.mensajesReclamo(elegido)
       .then((r) => {
         if (vivo) setHilo({ estado: "ok", mensajes: r?.mensajes ?? [] });
       })
@@ -111,13 +117,10 @@ function Bandeja({ avisar }) {
     if (!actual || !texto || guardando) return;
     setGuardando(true);
     try {
-      await api(`/api/admin/reclamos/${encodeURIComponent(actual.id)}/mensajes`, {
-        method: "POST",
-        body: { texto, autor: "staff" },
-      });
+      await adminApi.crearMensajeReclamo(actual.id, { texto, autor: "staff" });
       avisar("Nota interna guardada.");
       setBorrador("");
-      const r = await api(`/api/admin/reclamos/${encodeURIComponent(actual.id)}/mensajes`);
+      const r = await adminApi.mensajesReclamo(actual.id);
       setHilo({ estado: "ok", mensajes: r?.mensajes ?? [] });
       recargar();
     } catch (err) {
@@ -284,14 +287,14 @@ function Bandeja({ avisar }) {
                   <div className="adm-form-acciones">
                     <button
                       type="button"
-                      className="btn-primary adm-btn"
+                      className="btn-fantasma adm-btn"
                       onClick={guardarNota}
                       disabled={!borrador.trim() || guardando}
                     >
                       {guardando ? "Guardando…" : "Guardar nota interna"}
                     </button>
                     <a
-                      className="btn-fantasma adm-btn"
+                      className="btn-primary adm-btn"
                       href={whatsappUrl(textoWhatsAppRespuesta(actual, borrador))}
                       target="_blank"
                       rel="noreferrer"
@@ -332,7 +335,7 @@ function Manual() {
           <input
             value={destino}
             onChange={(e) => setDestino(e.target.value)}
-            placeholder="Número del cliente (ej: 54911…)"
+            placeholder="Número del cliente (ej: 549387…)"
             aria-label="Número del cliente"
             inputMode="tel"
           />
@@ -408,7 +411,22 @@ export default function WhatsApp({ avisar = () => {} }) {
 
   return (
     <div>
-      <Cabecera kicker="Canales" titulo="WhatsApp" />
+      <Cabecera
+        kicker="Canales"
+        titulo="WhatsApp"
+        acciones={
+          <div className="adm-acciones-cab">
+            <a
+              className="btn-fantasma adm-btn"
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Abrir WhatsApp
+            </a>
+          </div>
+        }
+      />
       <div className="ht-tabs" role="tablist" aria-label="Secciones de WhatsApp" onKeyDown={alTeclarPestanas}>
         {PESTANAS.map((p) => (
           <button

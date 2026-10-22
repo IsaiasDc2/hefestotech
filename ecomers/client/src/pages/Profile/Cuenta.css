@@ -171,3 +171,31 @@
     transform: none;
   }
 }
+
+/* Favoritos: misma tarjeta del catálogo en grilla propia. */
+.cuenta-favoritos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.cuenta-favoritos > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cuenta-favoritos > div > .card-producto {
+  flex: 1;
+}
+
+.cuenta-pedidos .btn-fantasma {
+  justify-self: start;
+  margin-top: var(--space-2);
+}
+
+/* Listados (favoritos, pedidos) necesitan más ancho que el formulario. */
+.contenido:has(.cuenta-favoritos, .cuenta-pedidos) {
+  max-width: 1080px;
+}

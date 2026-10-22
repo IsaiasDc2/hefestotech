@@ -1,7 +1,7 @@
 // HefestoTech · Admin · layout propio: sidebar colapsable, topbar con ⌘K,
 // campana de notificaciones, tema y usuario. Responsive: drawer en móvil.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FaBars,
   FaBell,
@@ -19,18 +19,26 @@ import {
   FaMessage,
   FaMoneyBillWave,
   FaRectangleAd,
+  FaRightFromBracket,
   FaScaleBalanced,
   FaMoon,
+  FaPlus,
   FaSun,
   FaTrashCan,
   FaTriangleExclamation,
+  FaTruck,
+  FaTruckFast,
+  FaFileInvoiceDollar,
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
+import SelectorSucursal from "./SelectorSucursal";
 
-export const NAV = [
+const NAV = [
   { id: "inicio", etiqueta: "Inicio", Icono: FaHouse },
   { id: "productos", etiqueta: "Productos", Icono: FaBox },
   { id: "stock", etiqueta: "Stock", Icono: FaBoxesStacked },
+  { id: "proveedores", etiqueta: "Proveedores", Icono: FaTruck },
+  { id: "compras", etiqueta: "Compras", Icono: FaFileInvoiceDollar },
   { id: "pedidos", etiqueta: "Pedidos", Icono: FaCartShopping },
   { id: "reclamos", etiqueta: "Reclamos", Icono: FaMessage },
   { id: "whatsapp", etiqueta: "WhatsApp", Icono: FaClipboardList },
@@ -84,16 +92,22 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
   const [texto, setTexto] = useState("");
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
+  const [abiertaPrevia, setAbiertaPrevia] = useState(abierta);
   const entrada = useRef(null);
 
+  // Al abrir o cerrar se limpia durante el render (al abrir, también el texto).
+  if (abierta !== abiertaPrevia) {
+    setAbiertaPrevia(abierta);
+    if (abierta) setTexto("");
+    setResultados([]);
+    setBuscando(false);
+  }
+
   useEffect(() => {
-    if (abierta) {
-      setTexto("");
-      setResultados([]);
-      const t = setTimeout(() => entrada.current?.focus(), 30);
-      return () => clearTimeout(t);
-    }
-  }, [abierta ]);
+    if (!abierta) return;
+    const t = setTimeout(() => entrada.current?.focus(), 30);
+    return () => clearTimeout(t);
+  }, [abierta]);
 
   useEffect(() => {
     if (!abierta) return;
@@ -104,14 +118,21 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
     return () => window.removeEventListener("keydown", alTeclar);
   }, [abierta, onCerrar]);
 
-  useEffect(() => {
-    const t = texto.trim();
-    if (!abierta || t.length < 2) {
+  // El estado "buscando"/limpieza se fija al tipear (alCambiarTexto); el efecto
+  // solo agenda la consulta con debounce.
+  const alCambiarTexto = (valor) => {
+    setTexto(valor);
+    if (valor.trim().length < 2) {
       setResultados([]);
       setBuscando(false);
-      return;
+    } else {
+      setBuscando(true);
     }
-    setBuscando(true);
+  };
+
+  useEffect(() => {
+    const t = texto.trim();
+    if (!abierta || t.length < 2) return;
     const id = setTimeout(async () => {
       try {
         const r = await adminApi.buscar(t, 8);
@@ -140,7 +161,7 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
           <input
             ref={entrada}
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e) => alCambiarTexto(e.target.value)}
             placeholder="Buscar módulo o producto… (Esc para cerrar)"
             aria-label="Buscar en el panel"
           />
@@ -195,6 +216,12 @@ export default function AdminLayout({
   usuario,
   rol,
   noLeidas,
+  onSalir,
+  sucursales = [],
+  sucursal = "",
+  onSucursal,
+  onCrearSucursal,
+  avisar,
   children,
 }) {
   const [colapsada, setColapsada] = useState(false);
@@ -203,6 +230,10 @@ export default function AdminLayout({
   const drawerRef = useRef(null);
   const hamburguesaRef = useRef(null);
   const focoPrevio = useRef(null);
+  const nombreUsuario =
+    typeof usuario === "string"
+      ? usuario
+      : usuario?.nombre?.trim() || usuario?.email || "";
 
   useEffect(() => {
     const atajo = (e) => {
@@ -218,6 +249,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (!drawer) return undefined;
     focoPrevio.current = document.activeElement;
+    const hamburguesa = hamburguesaRef.current;
     drawerRef.current?.querySelector("button")?.focus();
     const alTeclado = (e) => {
       if (e.key === "Escape") {
@@ -243,7 +275,7 @@ export default function AdminLayout({
     return () => {
       document.removeEventListener("keydown", alTeclado);
       if (focoPrevio.current instanceof HTMLElement) focoPrevio.current.focus();
-      else hamburguesaRef.current?.focus();
+      else hamburguesa?.focus();
     };
   }, [drawer]);
 
@@ -293,6 +325,45 @@ export default function AdminLayout({
           </button>
         </div>
         {barra(false)}
+        <div className="adm-altas">
+          {!colapsada && <p className="adm-altas-titulo">Altas rápidas</p>}
+          <button
+            type="button"
+            className="adm-altas-btn"
+            onClick={() => ir("productos", { accion: "nuevo" })}
+            title="Nuevo producto"
+          >
+            <FaPlus aria-hidden="true" />
+            {!colapsada && <span>Nuevo producto</span>}
+          </button>
+          <button
+            type="button"
+            className="adm-altas-btn"
+            onClick={() => ir("stock", { accion: "agregar" })}
+            title="Agregar stock"
+          >
+            <FaBoxesStacked aria-hidden="true" />
+            {!colapsada && <span>Agregar stock</span>}
+          </button>
+          <button
+            type="button"
+            className="adm-altas-btn"
+            onClick={() => ir("stock", { accion: "reposicion" })}
+            title="Reposición de stock"
+          >
+            <FaTruckFast aria-hidden="true" />
+            {!colapsada && <span>Reponer stock</span>}
+          </button>
+          <button
+            type="button"
+            className="adm-altas-btn"
+            onClick={() => ir("proveedores", { accion: "nuevo" })}
+            title="Agregar proveedor"
+          >
+            <FaTruck aria-hidden="true" />
+            {!colapsada && <span>Agregar proveedor</span>}
+          </button>
+        </div>
         <p className="adm-rol texto-mutado">
           {colapsada ? (rol?.slice(0, 1).toUpperCase() ?? "·") : `Rol: ${rol ?? "—"}`}
         </p>
@@ -341,6 +412,16 @@ export default function AdminLayout({
             <kbd>⌘K</kbd>
           </button>
           <div className="adm-topbar-lado">
+            {onSucursal && (
+              <SelectorSucursal
+                sucursales={sucursales}
+                sucursal={sucursal}
+                onCambiar={onSucursal}
+                puedeGestionar={rol === "owner" || rol === "admin"}
+                onCrear={onCrearSucursal}
+                avisar={avisar}
+              />
+            )}
             <BotonTema />
             <button
               type="button"
@@ -352,10 +433,29 @@ export default function AdminLayout({
               <FaBell aria-hidden="true" />
               {noLeidas > 0 && <span className="adm-punto" aria-hidden="true" />}
             </button>
-            <span className="adm-usuario" title={usuario ?? "Usuario"}>
-              <FaCircleUser aria-hidden="true" />
-              <span className="adm-usuario-nombre">{usuario ?? "—"}</span>
+            <span
+              className="adm-usuario"
+              title={`${nombreUsuario || "Usuario"}${rol ? ` · ${rol}` : ""}`}
+            >
+              <span className="adm-avatar adm-avatar-chico" aria-hidden="true">
+                {(nombreUsuario || "?").slice(0, 1).toUpperCase()}
+              </span>
+              <span className="adm-usuario-datos">
+                <span className="adm-usuario-nombre">{nombreUsuario || "-"}</span>
+                {rol && <span className="adm-usuario-rol">{rol}</span>}
+              </span>
             </span>
+            {onSalir && (
+              <button
+                type="button"
+                className="adm-icon-btn"
+                onClick={onSalir}
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+              >
+                <FaRightFromBracket aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
         {(vista === "reclamos" || vista === "pedidos") && (

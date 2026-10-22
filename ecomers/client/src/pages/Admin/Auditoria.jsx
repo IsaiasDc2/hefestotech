@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
-import { useModulo } from "./ui";
+import { useModulo } from "./hooks";
 
 export default function Auditoria() {
   const [modulo, setModulo] = useState("");
@@ -38,7 +38,7 @@ export default function Auditoria() {
           }}
         >
           <label>Módulo <input value={modulo} onChange={(e) => setModulo(e.target.value)} placeholder="Ej: productos" /></label>
-          <label>Entidad <input value={entidad} onChange={(e) => setEntidad(e.target.value)} placeholder="Ej: id" /></label>
+          <label>Entidad <input value={entidad} onChange={(e) => setEntidad(e.target.value)} placeholder="Ej: productos" /></label>
           <button type="submit" className="btn-fantasma adm-btn">Filtrar</button>
         </form>
       </section>

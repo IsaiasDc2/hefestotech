@@ -1,405 +1,362 @@
-import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { Link } from "react-router";
 import {
-  FaMicrochip,
-  FaMemory,
-  FaHardDrive,
-  FaKeyboard,
-  FaDesktop,
-  FaFire,
-  FaTruckFast,
-  FaShieldHalved,
+  FaArrowRight,
   FaCreditCard,
+  FaMoneyBillTransfer,
+  FaScrewdriverWrench,
+  FaStore,
+  FaTruckFast,
+  FaWhatsapp,
 } from "react-icons/fa6";
-import { supabase } from "../../components/lib/supabaseClient";
+import useIdiomaStore, { t } from "../../store/idiomaStore";
+import useCatalogo from "../../hooks/useCatalogo";
+import { precioFinal } from "../../services/productService";
+import { CATEGORIAS, linkCategoria, linkOfertas, nombreCategoria } from "../../constants/categorias";
+import { whatsappUrl } from "../../constants/whatsapp";
+import { formatearPesos } from "../../utils/dinero";
 import ProductCard from "../../components/product/ProductCard";
-import "../../components/product/ProductCard.css";
 import ProductCarousel from "../../components/product/ProductCarousel";
 import SectionHeader from "../../components/ui/SectionHeader";
-import FilterPanel from "../../components/filters/FilterPanel";
-import {
-  contarCategorias,
-  contarMarcas,
-  filtrar,
-} from "../../components/filters/filtros";
-import PromoBar from "../../components/layout/PromoBar";
-import Banner from "../../components/layout/Banner";
-import TiraBanner from "../../components/layout/TiraBanner";
 import "./Home.css";
 
-const MARCAS = [
-  "Logitech",
-  "Redragon",
-  "AMD",
-  "Intel",
-  "NVIDIA",
-  "Corsair",
-  "Kingston",
-  "Razer",
+const CATEGORIAS_HOME = [
+  "procesadores",
+  "placas-de-video",
+  "motherboards",
+  "memorias",
+  "almacenamiento",
+  "monitores",
+  "perifericos",
+  "sillas-gamer",
 ];
 
-const CATEGORIAS = [
-  { nombre: "Procesadores", slug: "procesadores", db: "Procesador", icono: <FaMicrochip />, imagen: "procesador" },
-  { nombre: "Placas de video", slug: "placas-de-video", db: "Placa de video", icono: <FaDesktop />, imagen: "placa" },
-  { nombre: "Memorias", slug: "memorias", db: "Memoria RAM", icono: <FaMemory />, imagen: "ram" },
-  { nombre: "Almacenamiento", slug: "almacenamiento", db: "Almacenamiento", icono: <FaHardDrive />, imagen: "almacenamiento" },
-  { nombre: "Periféricos", slug: "perifericos", db: "Periferico", icono: <FaKeyboard />, imagen: "periferico" },
-  { nombre: "Ofertas", slug: "ofertas", db: null, icono: <FaFire />, imagen: "oferta" },
-];
+const vendible = (p) => precioFinal(p) > 0 && p.stock > 0;
+const conFoto = (p) => Boolean(p.imagen);
 
-const BASE = import.meta.env.BASE_URL || "/";
+function FotoPozo({ producto, tamanos, prioridad = false }) {
+  return (
+    <span className="ini-pozo">
+      {producto?.imagen && (
+        <img
+          src={producto.imagen}
+          alt=""
+          width="600"
+          height="600"
+          sizes={tamanos}
+          loading={prioridad ? "eager" : "lazy"}
+          fetchPriority={prioridad ? "high" : "auto"}
+          decoding="async"
+        />
+      )}
+    </span>
+  );
+}
 
-function usarVisibleUnaVez() {
-  const obsRef = useRef(null);
-  const [visible, setVisible] = useState(false);
+function Hero({ productos, cargando, idioma }) {
+  const vitrina = useMemo(() => {
+    const candidatos = productos.filter((p) => vendible(p) && conFoto(p));
+    const principal =
+      candidatos.find((p) => p.destacado) ??
+      [...candidatos].sort((a, b) => precioFinal(b) - precioFinal(a))[0];
+    const resto = candidatos.filter((p) => p !== principal && p.categoria !== principal?.categoria);
+    const oferta = resto.find((p) => p.descuento_porcentaje > 0);
+    const otro = resto.find((p) => p !== oferta && p.categoria !== oferta?.categoria);
+    return { principal, secundarios: [oferta, otro].filter(Boolean) };
+  }, [productos]);
 
-  useEffect(() => () => obsRef.current?.disconnect(), []);
+  const marcas = useMemo(() => new Set(productos.map((p) => p.marca).filter(Boolean)).size, [productos]);
+  const { principal, secundarios } = vitrina;
 
-  const ref = useCallback(
-    (el) => {
-      obsRef.current?.disconnect();
-      obsRef.current = null;
-      if (!el || visible) return;
-      if (
-        typeof IntersectionObserver === "undefined" ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        setVisible(true);
-        return;
-      }
-      const obs = new IntersectionObserver(
-        (entradas) => {
-          if (entradas.some((e) => e.isIntersecting)) {
-            setVisible(true);
-            obs.disconnect();
-          }
-        },
-        { threshold: 0.1, rootMargin: "0px 0px -8% 0px" }
-      );
-      obs.observe(el);
-      obsRef.current = obs;
-    },
-    [visible]
+  return (
+    <section className="ini-hero" aria-labelledby="ini-hero-titulo">
+      <div className="ini-hero-fondo" aria-hidden="true" />
+      <div className="contenedor ini-hero-grid">
+        <div className="ini-hero-texto">
+          <p className="ini-eyebrow">{t(idioma, "ini.eyebrow")}</p>
+          <h1 id="ini-hero-titulo">{t(idioma, "ini.titulo")}</h1>
+          <p className="ini-bajada">{t(idioma, "ini.bajada")}</p>
+          <div className="ini-ctas">
+            <Link to="/productos" className="btn-primary ini-cta">
+              {t(idioma, "ini.verCatalogo")} <FaArrowRight aria-hidden="true" />
+            </Link>
+            <Link to="/armar" className="btn-fantasma ini-cta">
+              <FaScrewdriverWrench aria-hidden="true" /> {t(idioma, "cat.arma")}
+            </Link>
+          </div>
+          {!cargando && productos.length > 0 && (
+            <dl className="ini-cifras">
+              <div>
+                <dt>{t(idioma, "ini.productos")}</dt>
+                <dd>{productos.length}</dd>
+              </div>
+              <div>
+                <dt>{t(idioma, "ini.marcas")}</dt>
+                <dd>{marcas}</dd>
+              </div>
+              <div>
+                <dt>{t(idioma, "ini.envios")}</dt>
+                <dd>{t(idioma, "ini.todoElPais")}</dd>
+              </div>
+            </dl>
+          )}
+        </div>
+
+        <div className="ini-vitrina" aria-hidden={!principal}>
+          {principal ? (
+            <>
+              <Link to={`/producto/${principal.id}`} className="ini-vitrina-principal">
+                <FotoPozo producto={principal} tamanos="(min-width: 1024px) 420px, 80vw" prioridad />
+                <span className="ini-vitrina-info">
+                  <span className="ini-vitrina-marca">{principal.marca}</span>
+                  <span className="ini-vitrina-nombre">{principal.nombre}</span>
+                  <span className="ini-vitrina-precio">{formatearPesos(precioFinal(principal))}</span>
+                </span>
+              </Link>
+              {secundarios.map((p) => (
+                <Link key={p.id} to={`/producto/${p.id}`} className="ini-vitrina-mini">
+                  <FotoPozo producto={p} tamanos="160px" />
+                  <span className="ini-vitrina-info">
+                    <span className="ini-vitrina-nombre">{p.nombre}</span>
+                    <span className="ini-vitrina-precio">{formatearPesos(precioFinal(p))}</span>
+                  </span>
+                </Link>
+              ))}
+            </>
+          ) : (
+            <span className="ini-vitrina-esqueleto" />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Beneficios({ idioma }) {
+  const items = [
+    { icono: FaCreditCard, titulo: "promo.cuotasT", texto: "promo.cuotasS" },
+    { icono: FaMoneyBillTransfer, titulo: "promo.offT", texto: "promo.offS" },
+    { icono: FaTruckFast, titulo: "promo.envioT", texto: "promo.envioS" },
+    { icono: FaStore, titulo: "promo.retiroT", texto: "promo.retiroS" },
+  ];
+  return (
+    <section className="contenedor" aria-label={t(idioma, "promo.aria")}>
+      <ul className="ini-beneficios">
+        {items.map(({ icono: Icono, titulo, texto }) => (
+          <li key={titulo}>
+            <span className="ini-beneficio-icono" aria-hidden="true">
+              <Icono />
+            </span>
+            <span>
+              <strong>{t(idioma, titulo)}</strong>
+              <span>{t(idioma, texto)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Categorias({ productos, idioma }) {
+  const tarjetas = useMemo(
+    () =>
+      CATEGORIAS_HOME.map((slug) => {
+        const cat = CATEGORIAS.find((c) => c.slug === slug);
+        const deLaCategoria = productos.filter((p) => p.categoria === cat.db);
+        return {
+          ...cat,
+          conteo: deLaCategoria.length,
+          foto: deLaCategoria.find((p) => conFoto(p) && vendible(p)) ?? deLaCategoria.find(conFoto),
+        };
+      }).filter((c) => c.conteo > 0),
+    [productos]
   );
 
-  return [ref, visible];
+  if (tarjetas.length === 0) return null;
+
+  return (
+    <section className="contenedor ini-seccion" aria-labelledby="ini-categorias">
+      <SectionHeader
+        kicker={t(idioma, "ini.categoriasKicker")}
+        titulo={t(idioma, "ini.categoriasTitulo")}
+        id="ini-categorias"
+        verTodo="/productos"
+      />
+      <ul className="ini-categorias">
+        {tarjetas.map((c) => (
+          <li key={c.slug}>
+            <Link to={linkCategoria(c.slug)} className="ini-categoria">
+              <span className="ini-categoria-texto">
+                <strong>{nombreCategoria(c, idioma)}</strong>
+                <span>
+                  {c.conteo} {c.conteo === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
+                </span>
+              </span>
+              <FotoPozo producto={c.foto} tamanos="96px" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Promos({ productos, idioma }) {
+  const piezas = useMemo(() => {
+    const una = (db) => productos.find((p) => p.categoria === db && conFoto(p));
+    return [una("Procesador"), una("Placa de video"), una("Memoria RAM")].filter(Boolean);
+  }, [productos]);
+
+  return (
+    <section className="contenedor ini-seccion" aria-label={t(idioma, "ini.promosAria")}>
+      <div className="ini-promos">
+        <Link to="/armar" className="ini-promo ini-promo--armar">
+          <span className="ini-promo-texto">
+            <span className="ini-eyebrow">{t(idioma, "ini.armarKicker")}</span>
+            <strong>{t(idioma, "ini.armarTitulo")}</strong>
+            <span>{t(idioma, "ini.armarTexto")}</span>
+            <span className="ini-promo-cta">
+              {t(idioma, "ini.armarCta")} <FaArrowRight aria-hidden="true" />
+            </span>
+          </span>
+          {piezas.length > 0 && (
+            <span className="ini-promo-piezas" aria-hidden="true">
+              {piezas.map((p) => (
+                <FotoPozo key={p.id} producto={p} tamanos="120px" />
+              ))}
+            </span>
+          )}
+        </Link>
+        <a
+          href={whatsappUrl(t(idioma, "ini.asesorMensaje"))}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ini-promo ini-promo--asesor"
+        >
+          <span className="ini-promo-texto">
+            <span className="ini-eyebrow">{t(idioma, "ini.asesorKicker")}</span>
+            <strong>{t(idioma, "ini.asesorTitulo")}</strong>
+            <span>{t(idioma, "ini.asesorTexto")}</span>
+            <span className="ini-promo-cta">
+              <FaWhatsapp aria-hidden="true" /> {t(idioma, "ini.asesorCta")}
+            </span>
+          </span>
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function Marcas({ productos, idioma }) {
+  const marcas = useMemo(() => {
+    const conteo = new Map();
+    for (const p of productos) {
+      const m = (p.marca ?? "").trim();
+      if (m && !m.includes("(")) conteo.set(m, (conteo.get(m) ?? 0) + 1);
+    }
+    return [...conteo.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"))
+      .slice(0, 12)
+      .map(([nombre]) => nombre);
+  }, [productos]);
+
+  if (marcas.length === 0) return null;
+
+  return (
+    <section className="contenedor ini-seccion" aria-labelledby="ini-marcas">
+      <SectionHeader kicker={t(idioma, "ini.marcasKicker")} titulo={t(idioma, "ini.marcasTitulo")} id="ini-marcas" />
+      <ul className="ini-marcas">
+        {marcas.map((m) => (
+          <li key={m}>
+            <Link to={`/productos?marca=${encodeURIComponent(m)}`}>{m}</Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function Home({ agregarAlCarrito }) {
-  const [productos, setProductos] = useState([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(false);
-  const [reintento, setReintento] = useState(0);
-  const [filtroTexto, setFiltroTexto] = useState("");
-  const filtroTextoDif = useDeferredValue(filtroTexto);
-  const [filtroCategoria, setFiltroCategoria] = useState("Todas");
-  const [marcasElegidas, setMarcasElegidas] = useState([]);
-  const [refCategorias, categoriasVisibles] = usarVisibleUnaVez();
-  const [refDestacados, destacadosVisibles] = usarVisibleUnaVez();
-  const [refMarcas, marcasVisibles] = usarVisibleUnaVez();
-  const [refBeneficios, beneficiosVisibles] = usarVisibleUnaVez();
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const { productos, cargando, error, reintentar } = useCatalogo();
 
-  const categoriasPanel = CATEGORIAS.filter((c) => c.db).map((c) => ({
-    label: c.nombre,
-    value: c.db,
-  }));
-
-  const normalizar = (data) =>
-    (data || []).map((p) => ({
-      ...p,
-      precio: Number(p.precio ?? 0),
-      stock: Number(p.stock ?? 0),
-      descuento_porcentaje: Number(p.descuento_porcentaje ?? 0),
-      imagen: p.imagen || "",
-      categoria: p.categoria || "General",
-    }));
-
-  useEffect(() => {
-    async function cargar() {
-      try {
-        setError(false);
-        const { data, error } = await supabase
-          .from("productos")
-          .select("*")
-          .limit(100);
-        if (error) throw error;
-        setProductos(normalizar(data));
-      } catch {
-        setProductos([]);
-        setError(true);
-      } finally {
-        setCargando(false);
-      }
-    }
-    cargar();
-  }, [reintento]);
-
-  const destacados = productos.slice(0, 8);
-  const ofertas = productos
-    .filter((p) => p.descuento_porcentaje > 0)
-    .slice(0, 10);
-
-  const conteosCategoria = contarCategorias(productos, {
-    texto: filtroTextoDif,
-    marcas: marcasElegidas,
-  });
-  /* Conteo real por tarjeta de categoría (respeta texto+marcas del panel).
-     Ofertas no es una categoría DB: se cuenta sobre el mismo base filtrada. */
-  const baseConteo = filtrar(productos, {
-    textoDif: filtroTextoDif,
-    categoria: "Todas",
-    marcas: marcasElegidas,
-  });
-  const conteoPorSlug = Object.fromEntries(
-    CATEGORIAS.filter((c) => c.db).map((c) => [
-      c.slug,
-      conteosCategoria[c.db] ?? 0,
-    ])
+  const ofertas = useMemo(
+    () => productos.filter((p) => p.descuento_porcentaje > 0 && vendible(p)).slice(0, 10),
+    [productos]
   );
-  conteoPorSlug.ofertas = baseConteo.filter(
-    (p) => Number(p.descuento_porcentaje ?? 0) > 0
-  ).length;
-  const marcasDisponibles = Object.entries(
-    contarMarcas(productos, {
-      texto: filtroTextoDif,
-      categoria: filtroCategoria,
-    })
-  ).map(([nombre, conteo]) => ({ nombre, conteo }));
-  const filtrados = filtrar(productos, {
-    textoDif: filtroTextoDif,
-    categoria: filtroCategoria,
-    marcas: marcasElegidas,
-  });
-  const limpiarFiltros = () => {
-    setFiltroTexto("");
-    setFiltroCategoria("Todas");
-    setMarcasElegidas([]);
-  };
+  // Destacados marcados por el comercio primero; se completa con lo que
+  // tiene precio y stock para no dejar la grilla corta.
+  const destacados = useMemo(() => {
+    const vendibles = productos.filter(vendible);
+    const marcados = vendibles.filter((p) => p.destacado);
+    const resto = vendibles.filter((p) => !p.destacado && !ofertas.includes(p));
+    return [...marcados, ...resto].slice(0, 8);
+  }, [productos, ofertas]);
 
   return (
-    <div className="home">
-      <Banner />
-      <PromoBar />
+    <div className="ini">
+      <Hero productos={productos} cargando={cargando} idioma={idioma} />
+      <Beneficios idioma={idioma} />
 
-      <section className="seccion" aria-labelledby="home-categorias">
-        <SectionHeader
-          kicker="Explorar"
-          titulo="Explorá por categoría"
-          id="home-categorias"
-          verTodo="/productos"
-        />
-        <div ref={refCategorias} className={`grid-categorias${categoriasVisibles ? " is-visible" : ""}`}>
-          {CATEGORIAS.map((c) => {
-            const conteo = conteoPorSlug[c.slug] ?? 0;
-            return (
-              <Link
-                key={c.nombre}
-                to={`/productos?categoria=${c.slug}`}
-                className="card-categoria"
-                aria-label={
-                  conteo > 0
-                    ? `${c.nombre}, ${conteo} ${conteo === 1 ? "producto" : "productos"}`
-                    : c.nombre
-                }
-              >
-                <span className="cat-icono" aria-hidden="true">
-                  {c.icono}
-                  <img
-                    src={`${BASE}banners/${c.imagen}.webp`}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    width="128"
-                    height="128"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </span>
-                <span className="cat-nombre">{c.nombre}</span>
-                {conteo > 0 && (
-                  <span className="cat-conteo">
-                    {conteo} {conteo === 1 ? "producto" : "productos"}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+      {error && !cargando ? (
+        <div className="contenedor ini-seccion">
+          <div className="vacio" role="alert">
+            <p className="vacio-titulo">{t(idioma, "home.errorTitulo")}</p>
+            <p className="vacio-texto">{t(idioma, "home.errorTexto")}</p>
+            <button type="button" className="btn-primary" onClick={reintentar}>
+              {t(idioma, "home.reintentar")}
+            </button>
+          </div>
         </div>
-      </section>
-
-      {cargando ? (
-        <section className="seccion" aria-label="Cargando catálogo">
-          <p className="estado-carga" role="status">Cargando productos…</p>
-          <div className="grid-destacados" aria-hidden="true">
-            {Array.from({ length: 8 }).map((_, i) => (
+      ) : cargando && productos.length === 0 ? (
+        <div className="contenedor ini-seccion" aria-busy="true">
+          <p className="sr-only" role="status">
+            {t(idioma, "home.cargandoProd")}
+          </p>
+          <div className="ini-grilla" aria-hidden="true">
+            {Array.from({ length: 4 }, (_, i) => (
               <div key={i} className="card-skeleton" />
             ))}
           </div>
-        </section>
-      ) : error ? (
-        <div className="vacio" role="alert">
-          <p className="vacio-titulo">No pudimos cargar los productos</p>
-          <p className="vacio-texto">Revisá tu conexión a internet e intentá de nuevo.</p>
-          <button
-            type="button"
-            className="btn-limpiar"
-            onClick={() => {
-              setCargando(true);
-              setReintento((n) => n + 1);
-            }}
-          >
-            ↻ Reintentar
-          </button>
         </div>
       ) : (
         <>
-          <ProductCarousel
-            titulo="En oferta"
-            kicker="Precios rebajados"
-            verTodo="/productos?categoria=ofertas"
-            productos={ofertas}
-            agregarAlCarrito={agregarAlCarrito}
-          />
+          <Categorias productos={productos} idioma={idioma} />
 
-          <TiraBanner
-            src={`${BASE}banners/tira-escritorio.webp`}
-            alt="Setup gamer con monitor sobre escritorio"
-          />
-
-          <section className="seccion filtro-home" aria-labelledby="home-catalogo">
-            <SectionHeader
-              kicker="Destacados"
-              titulo="Explorá el catálogo"
-              id="home-catalogo"
-              verTodo="/productos"
+          <div className="contenedor ini-seccion">
+            <ProductCarousel
+              titulo={t(idioma, "ini.ofertasTitulo")}
+              kicker={t(idioma, "ini.ofertasKicker")}
+              verTodo={linkOfertas}
+              productos={ofertas}
+              agregarAlCarrito={agregarAlCarrito}
             />
-            <FilterPanel
-              texto={filtroTexto}
-              onTexto={setFiltroTexto}
-              categoria={filtroCategoria}
-              onCategoria={setFiltroCategoria}
-              marcas={marcasElegidas}
-              onMarcas={setMarcasElegidas}
-              categorias={categoriasPanel}
-              marcasDisponibles={marcasDisponibles}
-              conteosCategoria={conteosCategoria}
-              total={filtrados.length}
-              totalCatalogo={productos.length}
-              onLimpiar={limpiarFiltros}
-            />
-            <div ref={refDestacados} className={`grid-destacados${destacadosVisibles ? " is-visible" : ""}`}>
-              {filtrados.slice(0, 8).map((p) => (
-                <ProductCard
-                  key={p.id}
-                  producto={p}
-                  agregarAlCarrito={agregarAlCarrito}
-                />
-              ))}
-            </div>
-          </section>
+          </div>
 
-          <TiraBanner
-            src={`${BASE}banners/tira-silla.webp`}
-            alt="Silla gamer"
-            to="/productos?categoria=sillas-gamer"
-            etiqueta="Ver sillas gamer"
-          />
-          <ProductCarousel
-            titulo="Destacados"
-            kicker="Selección"
-            verTodo="/productos"
-            productos={destacados}
-            agregarAlCarrito={agregarAlCarrito}
-          />
-          <TiraBanner
-            src={`${BASE}banners/tira-placa.webp`}
-            alt="Placas de video RTX"
-            to="/productos?categoria=placas-de-video"
-            etiqueta="Ver placas de video"
-          />
-          {destacados.length === 0 && ofertas.length === 0 && (
-            <div className="vacio">
-              <p>El catálogo está vacío por ahora.</p>
-              <span>Volvé pronto o explorá el catálogo completo.</span>
-            </div>
+          <Promos productos={productos} idioma={idioma} />
+
+          {destacados.length > 0 && (
+            <section className="contenedor ini-seccion" aria-labelledby="ini-destacados">
+              <SectionHeader
+                kicker={t(idioma, "ini.destacadosKicker")}
+                titulo={t(idioma, "ini.destacadosTitulo")}
+                id="ini-destacados"
+                verTodo="/productos"
+              />
+              <ul className="ini-grilla">
+                {destacados.map((p) => (
+                  <li key={p.id}>
+                    <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
+
+          <Marcas productos={productos} idioma={idioma} />
         </>
       )}
-
-      <section className="seccion marcas" aria-labelledby="home-marcas">
-        <SectionHeader
-          kicker="Marcas"
-          titulo="Marcas"
-          id="home-marcas"
-          verTodo="/productos"
-        />
-        <div ref={refMarcas} className={`marcas-fila${marcasVisibles ? " is-visible" : ""}`}>
-          {MARCAS.map((m) => (
-            <Link
-              key={m}
-              to={`/productos?q=${encodeURIComponent(m)}`}
-              className="marca-chip"
-            >
-              {m}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section ref={refBeneficios} className={`beneficios${beneficiosVisibles ? " is-visible" : ""}`} aria-label="Beneficios de compra">
-        <div className="beneficio">
-          <FaCreditCard aria-hidden="true" />
-          <div>
-            <strong>6 cuotas sin interés</strong>
-            <span>Con todas las tarjetas</span>
-          </div>
-        </div>
-        <div className="beneficio beneficio-envio">
-          <FaTruckFast aria-hidden="true" />
-          <div>
-            <strong>Envío a todo el país</strong>
-            <span>Gratis desde $99.999</span>
-          </div>
-          <span className="envio-anim" aria-hidden="true">
-            <svg viewBox="0 0 200 32" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line className="env-track" x1="8" y1="24" x2="190" y2="24" />
-              <line className="env-trail" x1="8" y1="24" x2="190" y2="24" />
-              <g transform="translate(8,2)">
-                <g className="env-cart">
-                  <g transform="skewX(-8)">
-                    <path d="M1 3 L-4 -3" />
-                    <path d="M1 3 H17 L14.5 13 H3.5 Z" />
-                    <path d="M7 3 L8 13" />
-                    <circle className="env-wheel" cx="6" cy="16.5" r="2" />
-                    <circle className="env-wheel" cx="12.5" cy="16.5" r="2" />
-                  </g>
-                  <g className="env-speed">
-                    <path d="M-10 5 H-18" />
-                    <path d="M-11 9 H-21" />
-                    <path d="M-10 13 H-17" />
-                  </g>
-                </g>
-              </g>
-              <g transform="translate(8,15)">
-                <g className="env-check">
-                  <g className="env-check-pop">
-                    <circle r="9" />
-                    <path d="M-4 0 L-1 3.5 L4.5 -3" />
-                  </g>
-                </g>
-              </g>
-            </svg>
-          </span>
-        </div>
-        <div className="beneficio">
-          <FaShieldHalved aria-hidden="true" />
-          <div>
-            <strong>Garantía oficial</strong>
-            <span>12 meses en todos los productos</span>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

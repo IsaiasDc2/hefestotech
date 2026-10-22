@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   FaCheck,
   FaTriangleExclamation,
@@ -9,15 +9,18 @@ import {
   FaMinus,
 } from "react-icons/fa6";
 import "../components/product/ProductCard.css";
+import useIdiomaStore, { t } from "../store/idiomaStore";
+import { nombreCategoriaDb } from "../constants/categorias";
 import { precioFinal } from "./adaptar";
+import { traducirMensaje } from "./mensajesEn";
 
 const INSIGNIA = {
-  compatible: { clase: "is-ok", Icono: FaCircleCheck, texto: "Compatible" },
-  revisar: { clase: "is-warn", Icono: FaTriangleExclamation, texto: "Revisar" },
+  compatible: { clase: "is-ok", Icono: FaCircleCheck, key: "arm.compatible" },
+  revisar: { clase: "is-warn", Icono: FaTriangleExclamation, key: "arm.aRevisar" },
   incompatible: {
     clase: "is-error",
     Icono: FaCircleXmark,
-    texto: "Incompatible",
+    key: "arm.conErrores",
   },
 };
 
@@ -29,14 +32,17 @@ const INSIGNIA = {
 function ArmadorCard({
   producto,
   estado = "compatible",
-  motivo = "",
+  motivo: motivoMotor = "",
   elegido = false,
   atenuado = false,
   onElegir,
   onQuitar,
 }) {
   const [imgError, setImgError] = useState(false);
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const motivo = traducirMensaje(motivoMotor, idioma);
   const sello = INSIGNIA[estado] ?? INSIGNIA.compatible;
+  const selloTexto = t(idioma, sello.key);
   const { Icono } = sello;
 
   const tieneOferta = Number(producto.descuento_porcentaje ?? 0) > 0;
@@ -45,7 +51,7 @@ function ArmadorCard({
   const final = precioFinal(producto);
   const hayStock = Number(producto.stock ?? 0) > 0;
   const imagen = producto.imagen || "";
-  const nombre = producto.nombre || "Producto";
+  const nombre = producto.nombre || t(idioma, "card.producto");
   const marca = (producto.marca || "").trim();
 
   return (
@@ -63,17 +69,17 @@ function ArmadorCard({
       <span
         className={`compat-sello ${sello.clase}`}
         title={motivo}
-        aria-label={`Compatibilidad: ${sello.texto}. ${motivo}`}
+        aria-label={`${t(idioma, "armres.compatibilidad")}: ${selloTexto}. ${motivo}`}
       >
         <Icono aria-hidden="true" />
-        {sello.texto}
+        {selloTexto}
       </span>
 
       <div className="card-media is-compacta">
         <Link
           to={`/producto/${producto.id}`}
           className="card-media-link"
-          aria-label={`Ver ${nombre}`}
+          aria-label={`${t(idioma, "card.ver")} ${nombre}`}
           tabIndex={atenuado ? -1 : undefined}
         >
           {imagen && !imgError ? (
@@ -90,7 +96,7 @@ function ArmadorCard({
             <span
               className="producto-sin-imagen"
               role="img"
-              aria-label={`Sin imagen disponible de ${nombre}`}
+              aria-label={`${t(idioma, "card.sinImagen")} ${nombre}`}
             >
               <span className="sin-imagen-texto" aria-hidden="true">
                 HefestoTech
@@ -110,18 +116,18 @@ function ArmadorCard({
 
       {marca && (
         <p className="categoria">
-          {marca} · {producto.categoria}
+          {marca} · {nombreCategoriaDb(producto.categoria, idioma)}
         </p>
       )}
 
       <div className="stock">
         {hayStock ? (
           <span className="stock-linea disponible">
-            <span className="stock-dot" aria-hidden="true" /> Disponible
+            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.disponible")}
           </span>
         ) : (
           <span className="stock-linea agotado">
-            <span className="stock-dot" aria-hidden="true" /> Sin stock
+            <span className="stock-dot" aria-hidden="true" /> {t(idioma, "card.sinStock")}
           </span>
         )}
       </div>
@@ -153,9 +159,9 @@ function ArmadorCard({
           type="button"
           className="btn-carrito is-added is-quitar"
           onClick={onQuitar}
-          aria-label={`Quitar ${nombre} de tu armado`}
+          aria-label={`${t(idioma, "armcard.quitar")} ${nombre}`}
         >
-          <FaMinus aria-hidden="true" /> Quitar
+          <FaMinus aria-hidden="true" /> {t(idioma, "armcard.quitar")}
         </button>
       ) : (
         <button
@@ -165,26 +171,26 @@ function ArmadorCard({
           onClick={onElegir}
           title={
             atenuado
-              ? motivo || "No compatible con tu armado"
+              ? motivo || t(idioma, "armcard.incompatible")
               : undefined
           }
           aria-label={
             atenuado
-              ? `${nombre}: no se puede elegir. ${motivo}`
+              ? `${nombre}: ${motivo}`
               : hayStock
-                ? `Elegir ${nombre} para tu armado`
-                : `${nombre} sin stock`
+                ? `${t(idioma, "armcard.elegir")} ${nombre}`
+                : `${nombre} ${t(idioma, "card.sinStock")}`
           }
         >
           {!hayStock ? (
-            "Sin stock"
+            t(idioma, "card.sinStock")
           ) : atenuado ? (
             <>
-              <FaCircleXmark aria-hidden="true" /> No compatible
+              <FaCircleXmark aria-hidden="true" /> {selloTexto}
             </>
           ) : (
             <>
-              <FaPlus aria-hidden="true" /> Elegir
+              <FaPlus aria-hidden="true" /> {t(idioma, "armcard.elegir")}
             </>
           )}
         </button>
