@@ -3,7 +3,6 @@
 // un chunk separado además del chunk "admin". noindex: el panel no se indexa.
 import { Suspense, lazy, useEffect, useState } from "react";
 import { supabase } from "../../components/lib/supabaseClient";
-import useAuthStore from "../../store/authStore";
 import AdminLayout from "./AdminLayout";
 import { adminApi } from "./adminApi";
 import { Skeleton, ZonaToasts } from "./ui";
@@ -14,7 +13,7 @@ const Inicio = lazy(() => import("./Inicio"));
 const Productos = lazy(() => import("./Productos"));
 const Stock = lazy(() => import("./Stock"));
 const Proveedores = lazy(() => import("./Proveedores"));
-const Compras = lazy(() => import("./Compras.jsx"));
+const Compras = lazy(() => import("./Compras"));
 const Pedidos = lazy(() => import("./Pedidos"));
 const Reclamos = lazy(() => import("./Reclamos"));
 const WhatsApp = lazy(() => import("./WhatsApp"));
@@ -38,8 +37,6 @@ const TITULOS = {
 function Admin() {
   const [vista, setVista] = useState("inicio");
   const [presetQ, setPresetQ] = useState("");
-  const [accion, setAccion] = useState("");
-  const [accionSeq, setAccionSeq] = useState(0);
   const [usuario, setUsuario] = useState(null);
   const [rol, setRol] = useState(null);
   const [noLeidas, setNoLeidas] = useState(0);
@@ -71,26 +68,14 @@ function Admin() {
         const { data } = await supabase.auth.getSession();
         const u = data?.session?.user ?? null;
         if (!vivo) return;
-        if (!u) {
-          setUsuario(null);
-          return;
-        }
-        setUsuario({
-          email: u.email ?? "",
-          nombre: u.user_metadata?.nombre ?? u.user_metadata?.full_name ?? "",
-        });
+        setUsuario(u?.email ?? null);
         if (u) {
           const { data: perfil } = await supabase
             .from("perfiles")
-            .select("nombre,rol")
+            .select("rol")
             .eq("id", u.id)
             .maybeSingle();
-          if (vivo) {
-            setRol(perfil?.rol ?? null);
-            if (perfil?.nombre) {
-              setUsuario((previo) => ({ ...(previo ?? {}), nombre: perfil.nombre }));
-            }
-          }
+          if (vivo) setRol(perfil?.rol ?? null);
         }
       } catch {
         /* display solamente */
@@ -121,12 +106,6 @@ function Admin() {
   const ir = (id, extra = {}) => {
     if (extra.q !== undefined) setPresetQ(extra.q);
     else if (id !== "productos") setPresetQ("");
-    if (extra.accion) {
-      setAccion(extra.accion);
-      setAccionSeq((n) => n + 1);
-    } else {
-      setAccion("");
-    }
     setVista(TITULOS[id] ? id : "inicio");
     // El módulo es lazy: scrollear de entrada y reintentar cuando termine
     // de montar, si no el título queda cortado bajo el topbar.
@@ -138,22 +117,15 @@ function Admin() {
     setTimeout(alContenido, 600);
   };
 
-  const salir = async () => {
-    await useAuthStore.getState().logout();
-    // Recarga en la base del sitio (respeta Vite `base`): la guardia vuelve a
-    // evaluar la sesión y el panel deja de mostrarse.
-    window.location.assign(import.meta.env.BASE_URL || "/");
-  };
-
   const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: () => setNoLeidas(0) };
 
   return (
-    <AdminLayout vista={vista} onIr={ir} usuario={usuario} rol={rol} noLeidas={noLeidas} onSalir={salir}>
+    <AdminLayout vista={vista} onIr={ir} usuario={usuario} rol={rol} noLeidas={noLeidas}>
       <Suspense fallback={<Skeleton lineas={6} etiqueta={`Cargando ${TITULOS[vista] ?? ""}…`} />}>
-        {vista === "inicio" && <Inicio onIr={ir} usuario={usuario} rol={rol} onSalir={salir} avisar={avisar} />}
-        {vista === "productos" && <Productos key={`productos-${accionSeq}`} {...props} accionInicial={accion} />}
-        {vista === "stock" && <Stock key={`stock-${accionSeq}`} {...props} accionInicial={accion} />}
-        {vista === "proveedores" && <Proveedores key={`proveedores-${accionSeq}`} {...props} accionInicial={accion} />}
+        {vista === "inicio" && <Inicio onIr={ir} rol={rol} avisar={avisar} />}
+        {vista === "productos" && <Productos {...props} />}
+        {vista === "stock" && <Stock {...props} />}
+        {vista === "proveedores" && <Proveedores {...props} />}
         {vista === "compras" && <Compras {...props} />}
         {vista === "pedidos" && <Pedidos {...props} />}
         {vista === "reclamos" && <Reclamos {...props} />}

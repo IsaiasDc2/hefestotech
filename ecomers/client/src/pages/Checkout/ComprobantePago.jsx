@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FaReceipt } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerComprobantePago, subirComprobantePago } from "../../services/orderService";
+import "./ComprobantePago.css";
 
 const ADMITEN = new Set(["pendiente", "pagado", "pagada", "preparacion", "enviada", "entregada"]);
 const MAX_BYTES = 8 * 1024 * 1024;

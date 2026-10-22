@@ -93,18 +93,13 @@ export default function Pedidos({ avisar, pedirConfirm }) {
         kicker="Ventas"
         titulo={`Pedidos (${lista.length})`}
         acciones={
-          <div className="adm-acciones-cab">
-            <label className="adm-filtro">Estado
-              <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-                {ESTADOS.map((s) => (
-                  <option key={s} value={s}>{s === "" ? "Todos" : s}</option>
-                ))}
-              </select>
-            </label>
-            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-              Actualizar
-            </button>
-          </div>
+          <label className="adm-filtro">Estado
+            <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+              {ESTADOS.map((s) => (
+                <option key={s} value={s}>{s === "" ? "Todos" : s}</option>
+              ))}
+            </select>
+          </label>
         }
       />
       {lista.length === 0 ? (
@@ -141,7 +136,6 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   <span className="adm-pedido-meta texto-mutado">
                     {fechaCorta(p.created_at)}{p.nombre ? ` · ${p.nombre}` : ""}
                     {p.comprobante ? " · comprobante emitido" : ""}
-                    {p.comprobante_pago ? " · comprobante de pago cargado" : ""}
                     <FaChevronDown className="adm-caret" aria-hidden="true" />
                   </span>
                 </button>
@@ -221,35 +215,29 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                       </div>
                     )}
 
-                    <div className="adm-detalle-comprobante">
-                      <p className="adm-detalle-subtitulo">Comprobante de pago del cliente</p>
-                      {p.comprobante_pago ? (
-                        <>
-                          <p>
-                            <FaReceipt aria-hidden="true" /> {p.comprobante_pago.archivo_nombre || "Comprobante"}
-                            {" · "}{fechaCorta(p.comprobante_pago.created_at)}
-                            {" · "}{formatoARS(p.comprobante_pago.monto_centavos ?? 0)}
-                          </p>
-                          {p.comprobante_pago.nota ? (
-                            <p className="texto-mutado">Nota: {p.comprobante_pago.nota}</p>
-                          ) : null}
-                          <div className="adm-acciones">
-                            <button
-                              type="button"
-                              className="btn-primary adm-btn adm-mini"
-                              disabled={viendoPago === p.id}
-                              onClick={() => verComprobantePago(p)}
-                            >
-                              {viendoPago === p.id ? "Abriendo…" : "Ver comprobante de pago"}
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="texto-mutado">
-                          El cliente todavía no cargó un comprobante de pago.
+                    {p.comprobante_pago && (
+                      <div className="adm-detalle-comprobante">
+                        <p className="adm-detalle-subtitulo">Comprobante de pago del cliente</p>
+                        <p>
+                          <FaReceipt aria-hidden="true" /> {p.comprobante_pago.archivo_nombre || "Comprobante"}
+                          {" · "}{fechaCorta(p.comprobante_pago.created_at)}
+                          {" · "}{formatoARS(p.comprobante_pago.monto_centavos ?? 0)}
                         </p>
-                      )}
-                    </div>
+                        {p.comprobante_pago.nota ? (
+                          <p className="texto-mutado">Nota: {p.comprobante_pago.nota}</p>
+                        ) : null}
+                        <div className="adm-acciones">
+                          <button
+                            type="button"
+                            className="btn-primary adm-btn adm-mini"
+                            disabled={viendoPago === p.id}
+                            onClick={() => verComprobantePago(p)}
+                          >
+                            {viendoPago === p.id ? "Abriendo…" : "Ver comprobante de pago"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="adm-detalle-comprobante">
                       {p.comprobante ? (
@@ -286,21 +274,18 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   </div>
                 )}
 
-                <div className="adm-pedido-acciones">
-                  <span className="texto-mutado">Cambiar estado:</span>
-                  <div className="adm-acciones">
-                    {siguientesEstados(p.estado).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className={`btn-fantasma adm-mini${esDestructivo(s) ? " es-peligro" : ""}`}
-                        disabled={cambiando === p.id}
-                        onClick={() => cambiar(p, s)}
-                      >
-                        → {s}
-                      </button>
-                    ))}
-                  </div>
+                <div className="adm-acciones">
+                  {siguientesEstados(p.estado).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`btn-fantasma adm-mini${esDestructivo(s) ? " es-peligro" : ""}`}
+                      disabled={cambiando === p.id}
+                      onClick={() => cambiar(p, s)}
+                    >
+                      → {s}
+                    </button>
+                  ))}
                 </div>
               </li>
             );

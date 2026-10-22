@@ -545,7 +545,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 0.9rem;
 }
 
@@ -562,131 +562,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.6rem;
-}
-
-.adm-pedido-acciones {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  border-top: 1px dashed var(--border-suave);
-  padding-top: 0.55rem;
-}
-
-.adm-pedido-acciones > .texto-mutado {
-  font-size: 0.78rem;
-}
-
-.adm-cliente-pedidos {
-  margin-top: 0.2rem;
-  border-top: 1px solid var(--border-suave);
-  padding-top: 0.55rem;
-}
-
-.adm-cliente-pedidos summary {
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.adm-cliente-pedido-lista {
-  list-style: none;
-  margin: 0.55rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.adm-cliente-pedido {
-  border: 1px solid var(--border-suave);
-  border-radius: 10px;
-  background: var(--background);
-  padding: 0.55rem 0.65rem;
-}
-
-.adm-cliente-pedido-cab {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem 0.7rem;
-  font-size: 0.82rem;
-}
-
-.adm-cliente-pedido-total {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-.adm-cliente-items {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.adm-cliente-item {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 150px;
-  max-width: 240px;
-  font-size: 0.8rem;
-}
-
-.adm-cliente-item img,
-.adm-cliente-sin-foto {
-  width: 48px;
-  height: 48px;
-  flex: 0 0 auto;
-  border: 1px solid var(--border-suave);
-  border-radius: 8px;
-  background: var(--surface-elevated);
-}
-
-.adm-cliente-item img {
-  object-fit: cover;
-}
-
-.adm-cliente-sin-foto {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-}
-
-.adm-cliente-item-nombre {
-  overflow-wrap: anywhere;
-}
-
-.adm-cliente-pago {
-  margin-top: 0.55rem;
-  border-top: 1px dashed var(--border-suave);
-  padding-top: 0.5rem;
-}
-
-.adm-cliente-pago .adm-detalle-subtitulo {
-  margin: 0 0 0.35rem;
-}
-
-.adm-cliente-comprobante {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.adm-cliente-comprobante-foto img {
-  display: block;
-  width: 96px;
-  height: 96px;
-  object-fit: cover;
-  border: 1px solid var(--border-suave);
-  border-radius: 8px;
-  background: var(--surface-elevated);
 }
 
 .adm-pedido-toggle {
@@ -844,75 +719,6 @@
 .adm-lista-chica {
   font-size: 0.83rem;
   color: var(--muted);
-}
-
-.adm-lista-texto {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.12rem;
-}
-
-.adm-lista .adm-lista-texto strong {
-  margin-left: 0;
-  overflow-wrap: anywhere;
-}
-
-.adm-lista-texto > span {
-  overflow-wrap: anywhere;
-}
-
-.adm-lista li.adm-item-repo-abierto {
-  flex-wrap: wrap;
-}
-
-.adm-asignar-proveedor {
-  flex-basis: 100%;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  padding-top: 0.55rem;
-  border-top: 1px dashed var(--border-suave);
-}
-
-.adm-asignar-proveedor select {
-  flex: 1 1 220px;
-  max-width: 100%;
-  min-height: 44px;
-  border: 1px solid var(--border-suave);
-  border-radius: 10px;
-  background: var(--background);
-  color: var(--text);
-  padding: 0.5rem 0.7rem;
-  font-size: 0.9rem;
-  font-family: inherit;
-}
-
-.adm-muted {
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-.adm-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--border-suave);
-  border-radius: 999px;
-  background: var(--surface-elevated);
-  color: var(--muted);
-  font-size: 0.76rem;
-  white-space: nowrap;
-}
-
-.adm-chip-alerta {
-  border-color: var(--ok-borde);
-  background: var(--ok-suave);
-  color: var(--ok);
 }
 
 .adm-acciones {
@@ -1836,350 +1642,78 @@
   border-color: var(--warning);
 }
 
-/* --- Inicio: tarjeta de sesión, tablero y gráficos --- */
-.adm-sesion {
+/* Reposicion automatica (seccion plegable de Stock). Solo reglas nuevas. */
+.adm-repo-cab {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.2rem;
   flex-wrap: wrap;
 }
 
-.adm-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-suave);
-  border: 1px solid var(--primary-borde);
+.adm-repo-cab p {
+  margin: 0.25rem 0 0;
+  max-width: 60ch;
 }
 
-.adm-sesion-datos {
-  flex: 1;
-  min-width: 12rem;
-}
-
-.adm-sesion-datos h2 {
-  margin: 0.1rem 0;
-  font-size: 1.15rem;
-  overflow-wrap: anywhere;
-}
-
-.adm-sesion-datos p {
-  margin: 0;
-  font-size: 0.82rem;
-}
-
-.adm-sesion .adm-btn {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.adm-kpis.adm-kpis-6 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.adm-kpis-6 .adm-kpi-valor {
-  font-size: 1.25rem;
-}
-
-.adm-panel-cab {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.6rem;
-}
-
-.adm-panel-cab h2 {
-  margin: 0;
-}
-
-.adm-pie-dato {
-  margin: 0.5rem 0 0;
-  font-size: 0.78rem;
-}
-
-.adm-insignia.es-peligro {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-
-/* Gráficos SVG (sin dependencias) */
-.adm-grafico {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.adm-grafico svg {
-  display: block;
-  width: 100%;
-  height: 190px;
-}
-
-.adm-grafico-linea {
-  stroke: var(--border-suave);
-  stroke-width: 1;
-}
-
-.adm-grafico-barra {
-  fill: var(--primary);
-  transition: fill 150ms ease-out;
-}
-
-.adm-grafico-barra:hover {
-  fill: var(--primary-oscuro, var(--primary));
-}
-
-.adm-grafico-ejes {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.adm-grafico-vacio {
-  margin: 0;
-  padding: 2rem 1rem;
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.85rem;
-  border: 1px dashed var(--border-suave);
-  border-radius: 10px;
-}
-
-.adm-grafico-leyenda {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.9rem;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.adm-grafico-punto {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  margin-right: 0.35rem;
-}
-
-.adm-grafico-donut {
-  align-items: center;
-}
-
-.adm-grafico-donut svg {
-  width: 180px;
-  height: 180px;
-  flex-shrink: 0;
-}
-
-.adm-grafico-donut-fondo {
-  fill: none;
-  stroke: var(--border-suave);
-  stroke-width: 16;
-}
-
-.adm-grafico-donut-total {
-  fill: var(--text);
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.adm-grafico-donut-sub {
-  fill: var(--muted);
-  font-size: 9px;
-}
-
-.adm-grafico-donut .adm-grafico-leyenda {
-  justify-content: center;
-}
-
-/* Ranking de productos */
-.adm-ranking {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.adm-ranking-fila {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: 0.85rem;
-}
-
-.adm-ranking-puesto {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-suave);
-}
-
-.adm-ranking-nombre {
-  flex: 1;
+.adm-repo-col {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.adm-ranking-valor {
-  font-variant-numeric: tabular-nums;
-}
-
-.adm-ranking-barra {
-  display: block;
-  height: 5px;
-  margin: 0.35rem 0 0 1.95rem;
-  border-radius: 999px;
-  background: var(--border-suave);
-  overflow: hidden;
-}
-
-.adm-ranking-barra > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--primary);
-}
-
-/* Mini KPIs y accesos del tablero */
-.adm-mini-kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 0.7rem;
-}
-
-.adm-mini-kpis > div {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.7rem 0.8rem;
-  border: 1px solid var(--border-suave);
-  border-radius: 10px;
-  background: var(--card-2, var(--surface-elevated));
+  gap: 0.6rem;
 }
 
-.adm-mini-kpis span {
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
-.adm-mini-kpis strong {
-  font-size: 1.05rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.adm-accesos {
-  list-style: none;
+.adm-repo h3 {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
-.adm-accesos .adm-btn {
-  width: 100%;
-  justify-content: flex-start;
-}
-
-@media (max-width: 900px) {
-  .adm-sesion .adm-btn {
-    margin-left: 0;
-  }
-
-  .adm-kpis.adm-kpis-6 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .adm-kpis.adm-kpis-6 {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* --- Inicio: accesos rápidos, sucursal, pagos e historial --- */
-.adm-dashboard > * + * {
-  margin-top: 0.9rem;
-}
-
-.adm-acciones-cab {
-  display: flex;
-  gap: 0.5rem;
+.adm-repo-item {
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
 }
 
-.adm-acciones-cab .adm-btn {
+.adm-repo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+
+.adm-repo-nombre {
+  font-weight: 600;
+}
+
+.adm-repo-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
   white-space: nowrap;
 }
 
-.adm-acciones-cab .adm-filtro {
-  margin: 0;
-}
-
-.adm-acciones-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.6rem;
-}
-
-.adm-accion {
+.adm-repo-asignar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.6rem;
-  min-height: 52px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.88rem;
-  text-align: left;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
 }
 
-.adm-accion-icono {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 8px;
-  flex-shrink: 0;
-  color: var(--primary);
-  background: var(--primary-suave);
-}
-
-.adm-grid-contexto {
-  align-items: stretch;
-}
-
+/* Sucursal activa (tarjeta nueva en Inicio). Solo reglas nuevas. */
 .adm-sucursal {
   gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.adm-sucursal-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .adm-sucursal-select {
@@ -2198,195 +1732,8 @@
   padding-top: 0.7rem;
 }
 
-.adm-error {
+.adm-sucursal-error {
   margin: 0;
   color: var(--danger);
   font-size: 0.8rem;
-}
-
-/* Métodos de pago */
-.adm-pagos {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.adm-pagos-fila {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem;
-  font-size: 0.86rem;
-}
-
-.adm-pagos-nombre {
-  min-width: 0;
-}
-
-.adm-pagos-fila strong {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.adm-pagos-barra {
-  display: block;
-  height: 6px;
-  margin: 0.3rem 0 0.2rem;
-  border-radius: 999px;
-  background: var(--border-suave);
-  overflow: hidden;
-}
-
-.adm-pagos-barra > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--primary);
-}
-
-.adm-pagos-detalle {
-  font-size: 0.74rem;
-}
-
-/* Historial de entregas del proveedor */
-.adm-historial {
-  list-style: none;
-  margin: 0.7rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.adm-historial details {
-  border: 1px solid var(--border-suave);
-  border-radius: 10px;
-  padding: 0.55rem 0.75rem;
-  background: var(--card-2, var(--surface-elevated));
-}
-
-.adm-historial summary {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem 0.9rem;
-  flex-wrap: wrap;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.adm-historial summary strong {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-}
-
-.adm-historial-fecha {
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.adm-historial-orden {
-  font-weight: 600;
-}
-
-.adm-historial-unidades {
-  color: var(--muted);
-}
-
-.adm-historial-detalle {
-  margin-top: 0.6rem;
-  border-top: 1px solid var(--border-suave);
-  padding-top: 0.6rem;
-}
-
-/* Altas rápidas del sidebar (siempre visibles) */
-.adm-altas {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  margin: 0.3rem 0;
-  padding: 0.55rem 0;
-  border-top: 1px solid var(--border-suave);
-  border-bottom: 1px solid var(--border-suave);
-}
-
-.adm-altas-titulo {
-  margin: 0 0 0.15rem;
-  padding: 0 0.7rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.adm-altas-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  width: 100%;
-  min-height: 36px;
-  padding: 0.4rem 0.7rem;
-  border: 1px dashed transparent;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.84rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.adm-altas-btn:hover {
-  background: var(--primary-suave);
-  border-color: var(--primary-borde);
-}
-
-.adm-altas-btn svg {
-  flex-shrink: 0;
-  color: var(--primary);
-}
-
-.adm.es-colapsado .adm-altas-btn {
-  justify-content: center;
-  padding-inline: 0;
-}
-
-@media (max-width: 900px) {
-  .adm-acciones-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .adm-acciones-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .adm-cab {
-    align-items: flex-start;
-  }
-
-  .adm-cab-lado {
-    width: 100%;
-  }
-
-  .adm-cab-lado > .adm-acciones-cab,
-  .adm-acciones-cab {
-    width: 100%;
-  }
-
-  .adm-acciones-cab .adm-btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .adm-acciones-cab .adm-filtro {
-    flex: 1 1 100%;
-  }
-
-  .adm-acciones-cab .adm-filtro select {
-    width: 100%;
-  }
 }

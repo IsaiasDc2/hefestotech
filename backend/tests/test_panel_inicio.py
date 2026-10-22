@@ -194,6 +194,35 @@ def test_resumen_sin_datos_no_inventa(monkeypatch):
     assert d["compras"]["total_centavos"] == {}
 
 
+COLUMNAS_015 = ("sucursal_id", "medio_pago", "mp_payment_type", "mp_payment_method")
+
+
+@pytest.mark.parametrize("ruta", [
+    "/api/admin/resumen",
+    "/api/admin/resumen?sucursal=66666666-6666-6666-6666-666666666666",
+])
+def test_resumen_con_la_base_sin_migracion_015(monkeypatch, ruta):
+    """Base de produccion antes de aplicar la 015: `ordenes` no tiene ninguna de
+    las columnas nuevas (un select que las pida da 400). Inicio no puede romperse."""
+    from fastapi import HTTPException
+
+    ahora = f"{datetime.now(timezone.utc).date().isoformat()}T12:00:00+00:00"
+
+    def ordenes(params):
+        pedidas = str(params.get("select", "")) + " " + " ".join(params)
+        if any(c in pedidas for c in COLUMNAS_015):
+            raise HTTPException(status_code=502, detail="Operación no disponible.")
+        return [{"id": ORDEN, "estado": "pagada", "total_centavos": 100000, "created_at": ahora}]
+
+    _como(monkeypatch, "owner", {"ordenes": ordenes})
+    r = cliente.get(ruta, headers=AUTH)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["ventas"]["pedidos"] == 1
+    assert d["ventas"]["total_centavos"] == 100000
+    assert d["sucursal"] is None  # sin columna no hay filtro: se muestra todo
+
+
 def test_ficha_proveedor_historial_de_recepciones(monkeypatch):
     tablas = {
         "proveedores": [{"id": PROV, "nombre": "Proveedor SA", "estado": "activo",

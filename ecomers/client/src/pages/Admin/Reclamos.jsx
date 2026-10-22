@@ -40,7 +40,7 @@ export default function Reclamos({ avisar }) {
         kicker="Soporte"
         titulo={`Reclamos (${lista.length})`}
         acciones={
-          <div className="adm-acciones-cab">
+          <>
             <label className="adm-filtro">Estado
               <select value={estado} onChange={(e) => setEstado(e.target.value)}>
                 {ESTADOS.map((s) => (
@@ -49,10 +49,7 @@ export default function Reclamos({ avisar }) {
               </select>
             </label>
             <Link className="btn-fantasma adm-btn" to="/reclamo">Ver formulario público</Link>
-            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-              Actualizar
-            </button>
-          </div>
+          </>
         }
       />
       {lista.length === 0 ? (

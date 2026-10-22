@@ -19,15 +19,12 @@ import {
   FaMessage,
   FaMoneyBillWave,
   FaRectangleAd,
-  FaRightFromBracket,
   FaScaleBalanced,
   FaMoon,
-  FaPlus,
   FaSun,
   FaTrashCan,
   FaTriangleExclamation,
   FaTruck,
-  FaTruckFast,
   FaFileInvoiceDollar,
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
@@ -215,7 +212,6 @@ export default function AdminLayout({
   usuario,
   rol,
   noLeidas,
-  onSalir,
   children,
 }) {
   const [colapsada, setColapsada] = useState(false);
@@ -224,10 +220,6 @@ export default function AdminLayout({
   const drawerRef = useRef(null);
   const hamburguesaRef = useRef(null);
   const focoPrevio = useRef(null);
-  const nombreUsuario =
-    typeof usuario === "string"
-      ? usuario
-      : usuario?.nombre?.trim() || usuario?.email || "";
 
   useEffect(() => {
     const atajo = (e) => {
@@ -319,45 +311,6 @@ export default function AdminLayout({
           </button>
         </div>
         {barra(false)}
-        <div className="adm-altas">
-          {!colapsada && <p className="adm-altas-titulo">Altas rápidas</p>}
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("productos", { accion: "nuevo" })}
-            title="Nuevo producto"
-          >
-            <FaPlus aria-hidden="true" />
-            {!colapsada && <span>Nuevo producto</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("stock", { accion: "agregar" })}
-            title="Agregar stock"
-          >
-            <FaBoxesStacked aria-hidden="true" />
-            {!colapsada && <span>Agregar stock</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("stock", { accion: "reposicion" })}
-            title="Reposición de stock"
-          >
-            <FaTruckFast aria-hidden="true" />
-            {!colapsada && <span>Reponer stock</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("proveedores", { accion: "nuevo" })}
-            title="Agregar proveedor"
-          >
-            <FaTruck aria-hidden="true" />
-            {!colapsada && <span>Agregar proveedor</span>}
-          </button>
-        </div>
         <p className="adm-rol texto-mutado">
           {colapsada ? (rol?.slice(0, 1).toUpperCase() ?? "·") : `Rol: ${rol ?? "—"}`}
         </p>
@@ -417,24 +370,10 @@ export default function AdminLayout({
               <FaBell aria-hidden="true" />
               {noLeidas > 0 && <span className="adm-punto" aria-hidden="true" />}
             </button>
-            <span
-              className="adm-usuario"
-              title={nombreUsuario || "Usuario"}
-            >
+            <span className="adm-usuario" title={usuario ?? "Usuario"}>
               <FaCircleUser aria-hidden="true" />
-              <span className="adm-usuario-nombre">{nombreUsuario || "—"}</span>
+              <span className="adm-usuario-nombre">{usuario ?? "—"}</span>
             </span>
-            {onSalir && (
-              <button
-                type="button"
-                className="adm-icon-btn"
-                onClick={onSalir}
-                aria-label="Cerrar sesión"
-                title="Cerrar sesión"
-              >
-                <FaRightFromBracket aria-hidden="true" />
-              </button>
-            )}
           </div>
         </div>
         {(vista === "reclamos" || vista === "pedidos") && (

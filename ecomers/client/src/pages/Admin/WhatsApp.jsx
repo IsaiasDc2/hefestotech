@@ -287,14 +287,14 @@ function Bandeja({ avisar }) {
                   <div className="adm-form-acciones">
                     <button
                       type="button"
-                      className="btn-fantasma adm-btn"
+                      className="btn-primary adm-btn"
                       onClick={guardarNota}
                       disabled={!borrador.trim() || guardando}
                     >
                       {guardando ? "Guardando…" : "Guardar nota interna"}
                     </button>
                     <a
-                      className="btn-primary adm-btn"
+                      className="btn-fantasma adm-btn"
                       href={whatsappUrl(textoWhatsAppRespuesta(actual, borrador))}
                       target="_blank"
                       rel="noreferrer"
@@ -411,22 +411,7 @@ export default function WhatsApp({ avisar = () => {} }) {
 
   return (
     <div>
-      <Cabecera
-        kicker="Canales"
-        titulo="WhatsApp"
-        acciones={
-          <div className="adm-acciones-cab">
-            <a
-              className="btn-fantasma adm-btn"
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Abrir WhatsApp
-            </a>
-          </div>
-        }
-      />
+      <Cabecera kicker="Canales" titulo="WhatsApp" />
       <div className="ht-tabs" role="tablist" aria-label="Secciones de WhatsApp" onKeyDown={alTeclarPestanas}>
         {PESTANAS.map((p) => (
           <button

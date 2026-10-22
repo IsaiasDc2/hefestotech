@@ -909,7 +909,7 @@ def resumen(sucursal: str = "",
     try:
         ordenes = _sb_get("ordenes", params_ordenes) or []
     except HTTPException:
-        params_ordenes["select"] = "id,estado,total_centavos,total,created_at,medio_pago"
+        params_ordenes["select"] = "id,estado,total_centavos,total,created_at"
         params_ordenes.pop("sucursal_id", None)
         ordenes = _sb_get("ordenes", params_ordenes) or []
         sucursal = ""  # sin columna no hay filtro posible: se muestra todo
