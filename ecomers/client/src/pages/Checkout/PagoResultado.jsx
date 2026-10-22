@@ -5,6 +5,8 @@ import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
 import { esUrlMP } from "../../utils/mercadoPago";
+import ComprobantePago from "./ComprobantePago";
+import "./Checkout.css";
 
 const CONFIG_KEYS = {
   exito: { icono: "exito", clase: "badge-ok", tituloKey: "pago.exito" },
@@ -87,6 +89,15 @@ export default function PagoResultado({ tipo }) {
             <strong>${Number(estado.total ?? 0).toLocaleString("es-AR")}</strong>.{" "}
             {t(idioma, "pago.estado")}: <strong>{estado.estado}</strong>.
           </p>
+        )}
+        {estado && (
+          <ComprobantePago
+            ordenId={estado.id}
+            token={tokenInvitado}
+            estado={estado.estado}
+            comprobanteInicial={estado.comprobante_pago}
+            montoCentavos={Math.round(Number(estado.total ?? 0) * 100)}
+          />
         )}
         {estado?.estado === "pagado" && (
           <p className="texto-mutado">

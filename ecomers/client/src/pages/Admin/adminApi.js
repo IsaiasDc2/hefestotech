@@ -52,7 +52,10 @@ export async function api(path, { method = "GET", body } = {}) {
 const q = (v) => encodeURIComponent(String(v ?? ""));
 
 export const adminApi = {
-  resumen: () => api("/api/admin/resumen"),
+  resumen: ({ sucursal = "" } = {}) =>
+    api(`/api/admin/resumen${sucursal ? `?sucursal=${q(sucursal)}` : ""}`),
+  sucursales: () => api("/api/admin/sucursales"),
+  crearSucursal: (d) => api("/api/admin/sucursales", { method: "POST", body: d }),
   productos: ({ papelera = false, busqueda = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/productos?papelera=${papelera ? "true" : "false"}` +
@@ -93,6 +96,14 @@ export const adminApi = {
   lotes: (id) => api(`/api/admin/productos/${q(id)}/lotes`),
   crearLote: (id, d) => api(`/api/admin/productos/${q(id)}/lotes`, { method: "POST", body: d }),
   ajustarStock: (d) => api("/api/admin/stock/ajustar", { method: "POST", body: d }),
+  reposicion: () => api("/api/admin/stock/reposicion"),
+  configurarReposicion: (id, d) =>
+    api(`/api/admin/stock/productos/${q(id)}/reposicion`, { method: "PUT", body: d }),
+  pedirReposicion: (productoId) =>
+    api("/api/admin/stock/reposicion", {
+      method: "POST",
+      body: productoId ? { producto_id: productoId } : {},
+    }),
   pedidos: ({ estado = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/pedidos?limit=${limit}&offset=${offset}` +
@@ -125,6 +136,8 @@ export const adminApi = {
     }
     return respuesta.blob();
   },
+  comprobantePagoPedido: (id) =>
+    api(`/api/admin/pedidos/${q(id)}/comprobante-pago`),
   reclamos: ({ estado = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/reclamos?limit=${limit}&offset=${offset}` +

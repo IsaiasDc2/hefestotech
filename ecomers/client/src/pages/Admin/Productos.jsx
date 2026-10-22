@@ -1,18 +1,20 @@
 // HefestoTech · Admin · Productos: alta, edición, borrado lógico (papelera)
 // con Deshacer (10s) y lotes. Sin datos inventados: vacío real si no hay.
 import { useState } from "react";
+import { FaPlus } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo } from "./hooks";
 
 const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
 
-export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
+export default function Productos({ avisar, pedirConfirm, presetQ = "", accionInicial }) {
   const [q, setQ] = useState(presetQ);
   const [busqueda, setBusqueda] = useState(presetQ);
   const [form, setForm] = useState(VACIO_FORM);
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [altaAbierta, setAltaAbierta] = useState(accionInicial === "nuevo");
 
   const [presetPrevio, setPresetPrevio] = useState(presetQ);
 
@@ -59,6 +61,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
       }
       setForm(VACIO_FORM);
       setEditando(null);
+      setAltaAbierta(false);
       recargar();
     } catch (err) {
       avisar(err?.message ?? "No se pudo guardar.", { tono: "error" });
@@ -102,6 +105,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
 
   const alEditar = (p) => {
     setEditando(p.id);
+    setAltaAbierta(true);
     setForm({
       nombre: p.nombre ?? "",
       marca: p.marca ?? "",
@@ -120,21 +124,48 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
   if (estado === "sin-permiso") return <SinPermiso modulo="Productos" />;
   if (estado === "no-disponible") return <Proximamente modulo="Productos" />;
 
+  const mostrarForm = altaAbierta || Boolean(editando);
+  const alternarAlta = () => {
+    if (mostrarForm) {
+      setAltaAbierta(false);
+      setEditando(null);
+      setForm(VACIO_FORM);
+    } else {
+      setAltaAbierta(true);
+    }
+  };
+
   return (
     <div>
       <Cabecera
         kicker="Catálogo"
         titulo={`Productos (${lista.length})`}
         acciones={
-          <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-            Actualizar
-          </button>
+          <div className="adm-acciones-cab">
+            <button
+              type="button"
+              className="btn-primary adm-btn"
+              onClick={alternarAlta}
+              aria-expanded={mostrarForm}
+            >
+              <FaPlus aria-hidden="true" /> {mostrarForm ? "Cerrar" : "Nuevo producto"}
+            </button>
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+          </div>
         }
       />
 
-      <div className="adm-grid-2 adm-grid-productos">
+      <div className={mostrarForm ? "adm-grid-2 adm-grid-productos" : ""}>
+      {mostrarForm && (
       <section className="card adm-panel" aria-label={editando ? "Editar producto" : "Nuevo producto"}>
-        <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
+        <div className="adm-panel-cab">
+          <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
+          <button type="button" className="btn-fantasma adm-mini" onClick={alternarAlta} aria-label="Cerrar alta">
+            Cerrar
+          </button>
+        </div>
         <form onSubmit={alGuardar} className="adm-form">
           <label>Nombre *
             <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required maxLength={200} />
@@ -212,6 +243,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "" }) {
           </div>
         </form>
       </section>
+      )}
 
       <section className="card adm-panel" aria-label="Listado">
         <h2 className="sr-only">Listado de productos</h2>

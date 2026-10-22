@@ -40,6 +40,8 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel, field_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
+from reposicion import evaluar_varios
+from storage import StorageError, borrar as borrar_archivo, firmar as firmar_archivo, subir as subir_archivo
 
 router = APIRouter()
 
@@ -774,6 +776,52 @@ def crear_checkout(d: CheckoutCrear, request: Request) -> dict[str, Any]:
     }
 
 
+# ------------------------------------------- comprobantes de pago (016) ---
+MAX_COMPROBANTE_BYTES = 8 * 1024 * 1024
+
+
+def _ars_texto(centavos: int) -> str:
+    entero, resto = divmod(max(0, int(centavos)), 100)
+    return f"${entero:,}".replace(",", ".") + (f",{resto:02d}" if resto else "")
+
+
+def _comprobante_pago_salida(fila: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not fila or not fila.get("archivo_path"):
+        return None
+    return {
+        "id": fila.get("id"),
+        "archivo_nombre": fila.get("archivo_nombre") or "comprobante",
+        "mime": fila.get("mime") or "",
+        "monto_centavos": int(fila.get("monto_centavos") or 0),
+        "nota": fila.get("nota") or "",
+        "created_at": fila.get("created_at"),
+    }
+
+
+def _ultimo_comprobante_pago(orden_id: str) -> dict[str, Any] | None:
+    try:
+        filas = _sb_get("comprobantes_pago", {
+            "select": "id,archivo_path,archivo_nombre,mime,monto_centavos,nota,created_at",
+            "orden_id": f"eq.{orden_id}", "order": "created_at.desc", "limit": 1,
+        }) or []
+    except HTTPException:
+        return None
+    return _comprobante_pago_salida(filas[0] if filas else None)
+
+
+def _tipo_comprobante(contenido: bytes) -> tuple[str, str] | None:
+    """Detecta el tipo real por firma. Devuelve (extensión, MIME) o None."""
+    if contenido.startswith(b"%PDF-"):
+        return "pdf", "application/pdf"
+    if contenido.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png", "image/png"
+    if contenido.startswith(b"\xff\xd8\xff"):
+        return "jpg", "image/jpeg"
+    if len(contenido) > 12 and contenido[:4] == b"RIFF" and contenido[8:12] == b"WEBP":
+        return "webp", "image/webp"
+    return None
+
+
 # ---------------------------------------------------------- estado real ---
 @router.get("/api/checkout/estado/{orden_id}")
 def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
@@ -782,7 +830,7 @@ def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[st
     filas = _sb_get("ordenes", {
         "select": ("id,user_id,estado,acceso_token,subtotal_centavos,descuento_centavos,"
                    "costo_envio_centavos,total_centavos,expira_at,mp_payment_id,"
-                   "created_at,orden_items(producto_id,cantidad,precio)"),
+                   "nombre,email,created_at,orden_items(producto_id,cantidad,precio)"),
         "id": f"eq.{orden_id.strip()}", "limit": 1,
     }) or []
     if not filas:
@@ -808,7 +856,115 @@ def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[st
         "expira_at": o.get("expira_at"),
         "mp_payment_id": o.get("mp_payment_id") or "",
         "items": o.get("orden_items") or [],
+        "comprobante_pago": _ultimo_comprobante_pago(orden_id),
     }
+
+
+def _estado_admite_comprobante(estado: str) -> bool:
+    return str(estado or "") in {"pendiente", "pagada", "preparacion", "enviada", "entregada"}
+
+
+@router.post("/api/checkout/estado/{orden_id}/comprobante-pago")
+async def subir_comprobante_pago(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
+    """El cliente sube su comprobante (transferencia, depósito, etc.).
+
+    Archivo privado, validado por firma real, tope 8 MB. El staff recibe una
+    notificación y ve el archivo desde Pedidos con una URL firmada.
+    """
+    _limitar(request.client.host if request.client else "?", "checkout-comprobante", 10)
+    o = _orden_visible(orden_id, request, token)
+    if not _estado_admite_comprobante(str(o.get("estado") or "")):
+        raise HTTPException(status_code=409, detail="La orden ya no admite comprobantes.")
+    form = await request.form()
+    archivo = form.get("archivo")
+    if archivo is None or not hasattr(archivo, "read"):
+        raise HTTPException(status_code=400, detail="Adjuntá el comprobante (PDF o imagen).")
+    contenido = await archivo.read(MAX_COMPROBANTE_BYTES + 1)
+    if not contenido:
+        raise HTTPException(status_code=400, detail="El archivo está vacío.")
+    if len(contenido) > MAX_COMPROBANTE_BYTES:
+        raise HTTPException(status_code=413, detail="El comprobante supera los 8 MB.")
+    tipo = _tipo_comprobante(contenido)
+    if tipo is None:
+        raise HTTPException(status_code=415, detail="Formato no admitido: PDF, JPG, PNG o WebP.")
+    ext, mime = tipo
+
+    try:
+        monto = int(str(form.get("monto_centavos") or o.get("total_centavos") or 0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Monto inválido.")
+    if monto < 0 or monto > 1_000_000_000_000:
+        raise HTTPException(status_code=400, detail="Monto inválido.")
+    nota = str(form.get("nota") or "").strip()[:500]
+    nombre_original = str(getattr(archivo, "filename", "") or f"comprobante.{ext}")[:200]
+
+    path = (f"ordenes/{o['id']}/{datetime.now(timezone.utc):%Y%m%d%H%M%S}-"
+            f"{secrets.token_hex(8)}.{ext}")
+    try:
+        subir_archivo("comprobantes-pago", path, contenido, mime)
+    except StorageError:
+        print("ERROR checkout_api: no se pudo subir el comprobante de pago.")
+        raise HTTPException(status_code=503, detail="No se pudo guardar el comprobante. Intentá de nuevo.")
+
+    fila = {
+        "orden_id": o["id"], "user_id": o.get("user_id"),
+        "archivo_path": path, "archivo_nombre": nombre_original, "mime": mime,
+        "monto_centavos": monto, "nota": nota, "subido_por": "cliente",
+    }
+    try:
+        creados = _sb_post("comprobantes_pago", fila) or []
+    except HTTPException:
+        borrar_archivo("comprobantes-pago", path)
+        raise HTTPException(
+            status_code=503,
+            detail="Falta aplicar la migración 016 en la base. Avisá al staff.",
+        )
+    if not creados:
+        borrar_archivo("comprobantes-pago", path)
+        raise HTTPException(status_code=503, detail="No se pudo registrar el comprobante.")
+
+    comp = _comprobante_pago_salida(creados[0]) or {
+        "id": "", "archivo_nombre": nombre_original, "mime": mime,
+        "monto_centavos": monto, "nota": nota, "created_at": None,
+    }
+    nombre = str(o.get("nombre") or o.get("email") or "Un cliente").strip()[:120]
+    try:
+        _rpc("notificar", {
+            "p_user": None,
+            "p_titulo": "Comprobante de pago cargado",
+            "p_mensaje": (f"{nombre} cargó un comprobante de pago para la orden "
+                          f"#{str(o['id'])[:8]} por {_ars_texto(monto)}."),
+            "p_dedupe": f"comprobante-pago:{comp.get('id') or path}",
+        })
+    except HTTPException:
+        print("ERROR checkout_api: no se pudo notificar el comprobante.")
+    try:
+        url = firmar_archivo("comprobantes-pago", path)
+    except StorageError:
+        url = ""
+    return {"comprobante": comp, "archivo_url": url}
+
+
+@router.get("/api/checkout/estado/{orden_id}/comprobante-pago")
+def ver_comprobante_pago(orden_id: str, request: Request, token: str = "") -> dict[str, Any]:
+    """URL firmada del comprobante para el dueño del pedido."""
+    _limitar(request.client.host if request.client else "?", "checkout-comprobante-ver", 20)
+    o = _orden_visible(orden_id, request, token)
+    try:
+        filas = _sb_get("comprobantes_pago", {
+            "select": "id,archivo_path,archivo_nombre,mime,monto_centavos,nota,created_at",
+            "orden_id": f"eq.{o['id']}", "order": "created_at.desc", "limit": 1,
+        }) or []
+    except HTTPException:
+        raise HTTPException(status_code=404, detail="Sin comprobante de pago.")
+    if not filas:
+        raise HTTPException(status_code=404, detail="Sin comprobante de pago.")
+    fila = filas[0]
+    try:
+        url = firmar_archivo("comprobantes-pago", str(fila.get("archivo_path") or ""))
+    except StorageError:
+        raise HTTPException(status_code=503, detail="No se pudo abrir el comprobante.")
+    return {"comprobante": _comprobante_pago_salida(fila), "archivo_url": url}
 
 
 # ---------------------------------------------------------------- webhook ---
@@ -890,6 +1046,28 @@ def _emitir_comprobante(o: dict[str, Any], pago_id: str) -> None:
         })
 
 
+def _notificar_pago_staff(o: dict[str, Any], pago_id: str) -> None:
+    """Aviso al staff: «el usuario X realizó el pago». Una fila global.
+
+    `notificaciones.user_id = null` la ve todo el staff con permiso de lectura;
+    el dedupe evita duplicados si MP reintenta el webhook o el pago se marca a
+    mano. No se inventan datos: si la orden no tiene nombre, se usa el email.
+    """
+    nombre = str(o.get("nombre") or o.get("email") or "Un cliente").strip()[:120]
+    codigo = f"#{str(o.get('id') or '')[:8]}"
+    total = int(o.get("total_centavos") or 0)
+    try:
+        _rpc("notificar", {
+            "p_user": None,
+            "p_titulo": "Pago recibido",
+            "p_mensaje": (f"{nombre} realizó el pago de la orden {codigo} por "
+                          f"{_ars_texto(total)}. Pago MP: {pago_id}."),
+            "p_dedupe": f"pago-staff:{o.get('id')}",
+        })
+    except HTTPException:
+        print("ERROR checkout_api: no se pudo notificar el pago al staff.")
+
+
 def _alertar_pago_tardio(orden_id: str, pago_id: str, estado_anterior: str) -> None:
     """Pago aprobado fuera de tiempo: avisa al staff sin tocar stock ni orden."""
     print(f"ERROR checkout_api: pago aprobado para orden {orden_id} "
@@ -957,6 +1135,8 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
         "orden_id": orden_ref or None,
         "estado": estado_mp or "recibido",
         "payload": {"query": query, "status": estado_mp,
+                    "payment_type": str(pago.get("payment_type_id") or ""),
+                    "payment_method": str(pago.get("payment_method_id") or ""),
                     "external_reference": orden_ref},
     })
     if not creado:
@@ -967,7 +1147,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
     filas = _sb_get("ordenes", {
         "select": ("id,user_id,estado,subtotal_centavos,descuento_centavos,"
                    "costo_envio_centavos,total_centavos,cupon_codigo,mp_payment_id,"
-                   "acceso_token,"
+                   "acceso_token,nombre,email,"
                    "orden_items(producto_id,cantidad,precio,productos(nombre))"),
         "id": f"eq.{orden_ref}", "limit": 1,
     }) or []
@@ -999,14 +1179,25 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
             # reintenta emisión idempotente antes de declarar duplicado.
             if actual == "pagada":
                 _emitir_comprobante(o, data_id)
+                _notificar_pago_staff(o, data_id)
                 return {"recibido": True, "duplicado": True, "estado": actual}
             # Pago aprobado cuando la orden ya no estaba pendiente (expiró,
             # se canceló o se reembolsó): no se toca stock ni estado; se
             # alerta al staff para que lo resuelva a mano.
             _alertar_pago_tardio(orden_id, data_id, str(actual or ""))
             return {"recibido": True, "duplicado": True, "estado": actual}
-        _sb_patch("ordenes", {"id": f"eq.{orden_id}"},
-                  {"mp_payment_id": data_id})
+        # Detalle real del medio de pago (tarjeta, transferencia, efectivo…).
+        # Si la migración 015 no está aplicada, se guarda solo el id.
+        detalle_pago = {
+            "mp_payment_id": data_id,
+            "mp_payment_type": str(pago.get("payment_type_id") or ""),
+            "mp_payment_method": str(pago.get("payment_method_id") or ""),
+        }
+        try:
+            _sb_patch("ordenes", {"id": f"eq.{orden_id}"}, detalle_pago)
+        except HTTPException:
+            print("AVISO checkout_api: migración 015 pendiente; pago sin detalle de método.")
+            _sb_patch("ordenes", {"id": f"eq.{orden_id}"}, {"mp_payment_id": data_id})
         # Reserva → venta: reclasifica movimientos (idempotente por filtro).
         _sb_patch("movimientos_stock",
                   {"nota": f"eq.{orden_id}", "motivo": "eq.reserva"},
@@ -1028,6 +1219,13 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
                     "detalle": _mensaje_seguro(e.detail)}
         # Comprobante idempotente (UNIQUE orden_id: 409 = ya emitido).
         _emitir_comprobante(o, data_id)
+        # El staff ve el pago en Notificaciones con nombre, orden y monto.
+        _notificar_pago_staff(o, data_id)
+        # Venta confirmada: recién acá se evalúa reposición (la reserva puede
+        # liberarse si el pago no se completa; no se pide stock de más).
+        evaluar_varios([str(i.get("producto_id")) for i in (o.get("orden_items") or [])
+                        if i.get("producto_id")],
+                       sb_get=_sb_get, sb_post=_sb_post, sb_patch=_sb_patch)
         if o.get("user_id"):
             try:
                 _rpc("notificar", {
@@ -1114,7 +1312,7 @@ def _orden_visible(orden_id: str, request: Request, token: str = "") -> dict[str
     """Orden si el llamante tiene el token de acceso o es el dueño (Bearer)."""
     token = _token_acceso(request, token)
     filas = _sb_get("ordenes", {
-        "select": "id,user_id,estado,total_centavos,acceso_token",
+        "select": "id,user_id,estado,total_centavos,acceso_token,nombre,email",
         "id": f"eq.{orden_id.strip()}", "limit": 1,
     }) or []
     if not filas:

@@ -78,7 +78,53 @@ export const obtenerEstadoPedido = (ordenId, token = "") =>
     total: (o.total_centavos ?? 0) / 100,
     estado: o.estado === "pagada" ? "pagado" : o.estado,
     comprobante_numero: null,
+    comprobante_pago: o.comprobante_pago ?? null,
   }));
+
+// Sube el comprobante de pago (transferencia, depósito, etc.). El backend
+// valida la firma real del archivo y lo guarda en un bucket privado.
+export const subirComprobantePago = async (
+  ordenId,
+  token,
+  archivo,
+  { montoCentavos, nota } = {}
+) => {
+  const t = await sesionToken();
+  const forma = new FormData();
+  forma.append("archivo", archivo);
+  if (montoCentavos != null) forma.append("monto_centavos", String(Math.round(montoCentavos)));
+  if (nota) forma.append("nota", nota);
+  const base = apiBase();
+  let respuesta;
+  try {
+    respuesta = await fetch(
+      `${base}/api/checkout/estado/${encodeURIComponent(ordenId)}/comprobante-pago`,
+      {
+        method: "POST",
+        headers: {
+          ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          ...(token ? { "X-Orden-Token": token } : {}),
+        },
+        body: forma,
+      }
+    );
+  } catch {
+    throw new Error("Sin conexión con el backend.");
+  }
+  let datos;
+  try {
+    datos = await respuesta.json();
+  } catch {
+    datos = {};
+  }
+  if (!respuesta.ok) throw new Error(datos?.detail || `Error ${respuesta.status}`);
+  return datos;
+};
+
+export const obtenerComprobantePago = (ordenId, token = "") =>
+  backend(`/api/checkout/estado/${encodeURIComponent(ordenId)}/comprobante-pago`, {
+    tokenOrden: token,
+  });
 
 // Regenera el link de pago en el servidor (solo pendiente/cancelada).
 export const reintentarPago = (ordenId, token = "") =>

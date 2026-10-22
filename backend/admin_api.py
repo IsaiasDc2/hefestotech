@@ -20,7 +20,7 @@ import re
 import secrets
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Optional
 
 import httpx
@@ -28,6 +28,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, R
 from pydantic import BaseModel, field_validator, model_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
+from reposicion import evaluar_producto, evaluar_varios
+from storage import StorageError, firmar as firmar_archivo
 
 router = APIRouter()
 
@@ -50,6 +52,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"), ("proveedores", "borrar"),
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
+        ("sucursales", "leer"), ("sucursales", "gestionar"),
     },
     "admin": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"), ("productos", "borrar"),
@@ -64,6 +67,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"), ("proveedores", "borrar"),
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
+        ("sucursales", "leer"), ("sucursales", "gestionar"),
     },
     "operador": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"),
@@ -75,6 +79,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("proveedores", "leer"), ("proveedores", "crear"), ("proveedores", "editar"),
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
+        ("sucursales", "leer"),
     },
     "soporte": {
         ("productos", "leer"), ("pedidos", "leer"),
@@ -88,6 +93,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("notificaciones", "leer"), ("auditoria", "leer"),
         ("reportes", "leer"), ("buscar", "leer"),
         ("proveedores", "leer"), ("compras", "leer"),
+        ("sucursales", "leer"),
     },
     # Clientes: solo pueden radicar reclamos propios (el formulario /reclamo
     # es su única vía al backend). Sin esto, el reclamo público exige rol
@@ -377,6 +383,7 @@ class ProductoEditar(BaseModel):
     descripcion: Optional[str] = None
     categoria: Optional[str] = None
     stock_minimo: Optional[int] = None
+    stock_objetivo: Optional[int] = None
     destacado: Optional[bool] = None
     activo: Optional[bool] = None
     imagen: Optional[str] = None
@@ -400,13 +407,13 @@ class ProductoEditar(BaseModel):
             raise ValueError("Precio inválido.")
         return float(v)
 
-    @field_validator("stock_minimo")
+    @field_validator("stock_minimo", "stock_objetivo")
     @classmethod
     def _stock_min(cls, v: Optional[int]) -> Optional[int]:
         if v is None:
             return None
         if int(v) < 0 or int(v) > 1_000_000:
-            raise ValueError("Stock mínimo inválido.")
+            raise ValueError("Stock mínimo u objetivo inválido.")
         return int(v)
 
     @field_validator("imagen")
@@ -470,6 +477,22 @@ class StockAjustar(BaseModel):
         if len(v) > 2000:
             raise ValueError("Nota demasiado larga (máximo 2000 caracteres).")
         return v
+
+
+class ReposicionConfig(BaseModel):
+    stock_minimo: int
+    stock_objetivo: int = 0
+
+    @field_validator("stock_minimo", "stock_objetivo")
+    @classmethod
+    def _rango(cls, v: int) -> int:
+        if v is None or int(v) < 0 or int(v) > 1_000_000:
+            raise ValueError("Cantidad inválida (entre 0 y 1000000).")
+        return int(v)
+
+
+class ReposicionPedir(BaseModel):
+    producto_id: Optional[str] = None
 
 
 class PedidoEstado(BaseModel):
@@ -752,27 +775,284 @@ def _filtro_texto(valor: str) -> str:
 
 
 # ------------------------------------------------------------------ rutas ---
+ESTADOS_VENTA = {"pagada", "preparacion", "enviada", "entregada"}
+DIAS_TABLERO = 30
+DIAS_STOCK = 7
+
+
+def _serie_dias(desde, dias: int) -> list[str]:
+    """Días ISO consecutivos (incluye el inicial) para rellenar series en cero."""
+    return [(desde + timedelta(days=i)).isoformat() for i in range(dias)]
+
+
+def _tablero_ventas(ordenes: list[dict[str, Any]], desde, dias: int) -> dict[str, Any]:
+    """Ventas cobradas por día + pedidos por estado en la ventana.
+
+    Solo suman `ESTADOS_VENTA`; los cancelados/reembolsados quedan fuera del
+    total pero sí aparecen en `por_estado` para ver el embudo real.
+    """
+    serie = {d: {"dia": d, "pedidos": 0, "total_centavos": 0}
+             for d in _serie_dias(desde, dias)}
+    total = 0
+    pedidos = 0
+    por_estado: dict[str, int] = defaultdict(int)
+    for o in ordenes:
+        estado = str(o.get("estado") or "")
+        por_estado[estado] += 1
+        if estado not in ESTADOS_VENTA:
+            continue
+        monto = int(o.get("total_centavos") or _a_centavos(o.get("total")))
+        dia = str(o.get("created_at") or "")[:10]
+        if dia in serie:
+            serie[dia]["pedidos"] += 1
+            serie[dia]["total_centavos"] += monto
+        total += monto
+        pedidos += 1
+    return {
+        "pedidos": pedidos,
+        "total_centavos": total,
+        "ticket_promedio_centavos": (total // pedidos) if pedidos else 0,
+        "por_dia": list(serie.values()),
+        "por_estado": dict(por_estado),
+    }
+
+
+def _tablero_stock(movimientos: list[dict[str, Any]], productos: dict[str, dict[str, Any]],
+                   desde, dias: int) -> dict[str, Any]:
+    """Entradas, salidas y ajustes por día + últimos movimientos con nombre."""
+    serie = {d: {"dia": d, "entradas": 0, "salidas": 0, "ajustes": 0}
+             for d in _serie_dias(desde, dias)}
+    totales = {"entradas": 0, "salidas": 0, "ajustes": 0}
+    # movimientos_stock.tipo viene en singular: entrada | salida | ajuste.
+    clave_tipo = {"entrada": "entradas", "salida": "salidas", "ajuste": "ajustes"}
+    ultimos: list[dict[str, Any]] = []
+    for m in movimientos:
+        tipo = str(m.get("tipo") or "")
+        clave = clave_tipo.get(tipo)
+        if not clave:
+            continue
+        cant = int(m.get("cantidad") or 0)
+        totales[clave] += cant
+        dia = str(m.get("created_at") or "")[:10]
+        if dia in serie:
+            serie[dia][clave] += cant
+        if len(ultimos) < 15:
+            p = productos.get(str(m.get("producto_id"))) or {}
+            ultimos.append({
+                "producto": p.get("nombre") or "Producto eliminado",
+                "tipo": tipo,
+                "cantidad": cant,
+                "motivo": m.get("motivo") or "",
+                "nota": m.get("nota") or "",
+                "created_at": m.get("created_at"),
+            })
+    return {**totales, "por_dia": list(serie.values()), "ultimos": ultimos}
+
+
+def _tablero_top_productos(items: list[dict[str, Any]], ids_venta: set[str],
+                           productos: dict[str, dict[str, Any]], limite: int = 5) -> list[dict[str, Any]]:
+    """Top por unidades de pedidos cobrados (los ítems ya vienen de la ventana)."""
+    acumulado: dict[str, dict[str, Any]] = {}
+    for it in items:
+        if str(it.get("orden_id")) not in ids_venta:
+            continue
+        pid = str(it.get("producto_id") or "")
+        if not pid:
+            continue
+        cant = int(it.get("cantidad") or 0)
+        monto = _a_centavos(it.get("precio")) * cant
+        fila = acumulado.setdefault(pid, {
+            "producto_id": pid,
+            "nombre": (productos.get(pid) or {}).get("nombre") or "Producto eliminado",
+            "unidades": 0,
+            "total_centavos": 0,
+        })
+        fila["unidades"] += cant
+        fila["total_centavos"] += monto
+    return sorted(acumulado.values(), key=lambda f: (-f["unidades"], -f["total_centavos"]))[:limite]
+
+
 @router.get("/api/admin/resumen")
-def resumen(admin: AdminActual = Depends(requiere("reportes", "leer"))) -> dict[str, Any]:
+def resumen(sucursal: str = "",
+            admin: AdminActual = Depends(requiere("reportes", "leer"))) -> dict[str, Any]:
+    hoy = datetime.now(timezone.utc).date()
+    desde = hoy - timedelta(days=DIAS_TABLERO - 1)
+    desde_iso = desde.isoformat()
+    desde_stock = (hoy - timedelta(days=DIAS_STOCK - 1)).isoformat()
+
     productos = _sb_get("productos", {
-        "select": "id,stock,stock_minimo",
+        "select": "id,nombre,stock,stock_minimo",
         "deleted_at": "is.null", "activo": "eq.true", "limit": 5000,
     }) or []
+    por_id = {str(p.get("id")): p for p in productos}
     bajo = sum(1 for p in productos
                if (p.get("stock") or 0) <= (p.get("stock_minimo") if p.get("stock_minimo") is not None else 5))
-    pendientes = _sb_get("ordenes", {
-        "select": "id", "estado": "eq.pendiente", "limit": 1,
-    }) or []
+
+    # Órdenes del tablero. Si la migración 015 todavía no se aplicó, se reintenta
+    # sin las columnas nuevas para no romper Inicio.
+    params_ordenes: dict[str, Any] = {
+        "select": ("id,estado,total_centavos,total,created_at,medio_pago,"
+                   "sucursal_id,mp_payment_type,mp_payment_method"),
+        "created_at": f"gte.{desde_iso}",
+        "order": "created_at.asc", "limit": 5000,
+    }
+    if sucursal:
+        params_ordenes["sucursal_id"] = f"eq.{sucursal}"
+    try:
+        ordenes = _sb_get("ordenes", params_ordenes) or []
+    except HTTPException:
+        params_ordenes["select"] = "id,estado,total_centavos,total,created_at,medio_pago"
+        params_ordenes.pop("sucursal_id", None)
+        ordenes = _sb_get("ordenes", params_ordenes) or []
+        sucursal = ""  # sin columna no hay filtro posible: se muestra todo
+
+    params_pend: dict[str, Any] = {
+        "select": "id", "estado": "eq.pendiente", "limit": 5000,
+    }
+    if sucursal:
+        params_pend["sucursal_id"] = f"eq.{sucursal}"
+    pendientes = _sb_get("ordenes", params_pend) or []
     reclamos = _sb_get("reclamos", {
         "select": "id", "estado": "eq.abierto", "limit": 5000,
     }) or []
+    movimientos = _sb_get("movimientos_stock", {
+        "select": "producto_id,tipo,cantidad,motivo,nota,created_at",
+        "created_at": f"gte.{desde_stock}",
+        "order": "created_at.desc", "limit": 2000,
+    }) or []
+    ids_venta = {str(o.get("id")) for o in ordenes
+                 if str(o.get("estado") or "") in ESTADOS_VENTA}
+    items = _sb_get("orden_items", {
+        "select": "orden_id,producto_id,cantidad,precio",
+        "created_at": f"gte.{desde_iso}",
+        "limit": 10000,
+    }) or []
+    compras = _sb_get("ordenes_compra", {
+        "select": "id,estado,moneda,created_at,ordenes_compra_items(cantidad,costo_unitario_centavos)",
+        "created_at": f"gte.{desde_iso}",
+        "limit": 1000,
+    }) or []
+    proveedores = _sb_get("proveedores", {
+        "select": "id,estado", "deleted_at": "is.null", "limit": 1000,
+    }) or []
+    perfiles = _sb_get("perfiles", {
+        "select": "id,rol,created_at", "limit": 10000,
+    }) or []
+
+    sucursales: list[dict[str, Any]] = []
+    if ("sucursales", "leer") in PERMISOS.get(admin.rol, set()):
+        try:
+            sucursales = _sb_get("sucursales", {
+                "select": "id,nombre,direccion,telefono,activa",
+                "deleted_at": "is.null", "order": "nombre.asc", "limit": 200,
+            }) or []
+        except HTTPException:
+            sucursales = []  # migración 015 pendiente
+
+    compras_total = defaultdict(int)
+    compras_abiertas = 0
+    compras_recibidas = 0
+    for c in compras:
+        estado = str(c.get("estado") or "")
+        if estado in ("borrador", "enviada", "confirmada", "recibida_parcial"):
+            compras_abiertas += 1
+        if estado in ("recibida", "recibida_parcial"):
+            compras_recibidas += 1
+        moneda = str(c.get("moneda") or "ARS")
+        compras_total[moneda] += sum(
+            int(i.get("cantidad") or 0) * int(i.get("costo_unitario_centavos") or 0)
+            for i in (c.get("ordenes_compra_items") or [])
+        )
+
+    # Métodos de pago reales de los pedidos cobrados. `mp_payment_type` lo
+    # escribe el webhook; los pedidos viejos caen en `medio_pago` (sin detalle).
+    pagos: dict[str, dict[str, Any]] = {}
+    for o in ordenes:
+        if str(o.get("estado") or "") not in ESTADOS_VENTA:
+            continue
+        tipo = str(o.get("mp_payment_type") or "").strip()
+        metodo = str(o.get("mp_payment_method") or "").strip()
+        clave = tipo or str(o.get("medio_pago") or "").strip() or "sin_dato"
+        fila = pagos.setdefault(clave, {
+            "tipo": clave, "pedidos": 0, "total_centavos": 0, "metodos": {},
+        })
+        fila["pedidos"] += 1
+        fila["total_centavos"] += int(
+            o.get("total_centavos") or _a_centavos(o.get("total")))
+        if metodo:
+            fila["metodos"][metodo] = fila["metodos"].get(metodo, 0) + 1
+
     return {
         "productos_activos": len(productos),
         "bajo_stock": bajo,
+        "pedidos_pendientes": len(pendientes),
+        # Compatibilidad con el panel anterior (mostraba 0/1 por el limit=1).
         "pedidos_pendientes_pagina": len(pendientes),
         "reclamos_abiertos": len(reclamos),
+        "ventas": _tablero_ventas(ordenes, desde, DIAS_TABLERO),
+        "stock": _tablero_stock(movimientos, por_id, hoy - timedelta(days=DIAS_STOCK - 1), DIAS_STOCK),
+        "top_productos": _tablero_top_productos(items, ids_venta, por_id),
+        "pagos": sorted(pagos.values(), key=lambda p: -p["total_centavos"]),
+        "usuarios": {
+            "total": len(perfiles),
+            "clientes": sum(1 for p in perfiles
+                            if str(p.get("rol") or "cliente") == "cliente"),
+            "nuevos_30d": sum(1 for p in perfiles
+                              if str(p.get("created_at") or "") >= desde_iso),
+        },
+        "compras": {
+            "ordenes": len(compras),
+            "abiertas": compras_abiertas,
+            "recibidas": compras_recibidas,
+            "total_centavos": dict(compras_total),
+        },
+        "proveedores": {
+            "activos": sum(1 for p in proveedores if p.get("estado") == "activo"),
+            "total": len(proveedores),
+        },
+        "sucursales": [
+            {"id": str(s.get("id")), "nombre": s.get("nombre") or "Sucursal",
+             "direccion": s.get("direccion") or "", "telefono": s.get("telefono") or "",
+             "activa": bool(s.get("activa", True))}
+            for s in sucursales
+        ],
+        "sucursal": sucursal or None,
         "rol": admin.rol,
     }
+
+
+
+class SucursalCrear(BaseModel):
+    nombre: str
+    direccion: str = ""
+    telefono: str = ""
+
+
+@router.get("/api/admin/sucursales")
+def listar_sucursales(admin: AdminActual = Depends(requiere("sucursales", "leer"))) -> dict[str, Any]:
+    try:
+        filas = _sb_get("sucursales", {
+            "select": "id,nombre,direccion,telefono,activa,created_at",
+            "deleted_at": "is.null", "order": "nombre.asc", "limit": 200,
+        }) or []
+    except HTTPException:
+        filas = []  # migración 015 pendiente: el panel sigue abriendo
+    return {"sucursales": filas}
+
+
+@router.post("/api/admin/sucursales", status_code=201)
+def crear_sucursal(d: SucursalCrear, request: Request,
+                   admin: AdminActual = Depends(requiere("sucursales", "gestionar"))) -> dict[str, Any]:
+    nombre = d.nombre.strip()
+    if not nombre:
+        raise HTTPException(status_code=400, detail="El nombre es obligatorio.")
+    fila = {
+        "nombre": nombre[:120],
+        "direccion": d.direccion.strip()[:200],
+        "telefono": d.telefono.strip()[:40],
+    }
+    creadas = _sb_post("sucursales", fila) or []
+    return {"sucursal": creadas[0] if creadas else fila}
 
 
 @router.get("/api/admin/productos")
@@ -834,6 +1114,9 @@ def editar_producto(pid: str, d: ProductoEditar, request: Request,
     filas = _sb_patch("productos", {"id": f"eq.{pid}", "deleted_at": "is.null"}, cambios) or []
     if not filas:
         raise HTTPException(status_code=404, detail="Producto inexistente o en papelera.")
+    if "stock_minimo" in cambios or "stock_objetivo" in cambios:
+        evaluar_producto(pid, sb_get=_sb_get, sb_post=_sb_post, sb_patch=_sb_patch,
+                         actor=admin.user_id)
     return {"producto": filas[0]}
 
 
@@ -925,7 +1208,60 @@ def ajustar_stock(d: StockAjustar, request: Request,
         "p_motivo": d.motivo.strip() or "ajuste", "p_nota": d.nota.strip(),
         "p_actor": admin.user_id,
     })
-    return {"producto_id": d.producto_id, "stock": nuevo}
+    reposicion = None
+    if d.delta < 0:
+        reposicion = evaluar_producto(d.producto_id, sb_get=_sb_get, sb_post=_sb_post,
+                                      sb_patch=_sb_patch, actor=admin.user_id)
+    return {"producto_id": d.producto_id, "stock": nuevo, "reposicion": reposicion}
+
+
+@router.put("/api/admin/stock/productos/{pid}/reposicion")
+def configurar_reposicion(pid: str, d: ReposicionConfig, request: Request,
+                          admin: AdminActual = Depends(requiere("stock", "ajustar"))) -> dict[str, Any]:
+    """Fija el punto de reposición (mínimo) y el objetivo de compra."""
+    _limitar(request.client.host if request.client else "?", "stock-reposicion", 30)
+    pid = _uuid(pid, "Producto")
+    cambios: dict[str, Any] = {"stock_minimo": d.stock_minimo,
+                               "stock_objetivo": d.stock_objetivo}
+    aviso = ""
+    try:
+        filas = _sb_patch("productos", {"id": f"eq.{pid}", "deleted_at": "is.null"},
+                          cambios) or []
+    except HTTPException:
+        # Base sin 016: se guarda el mínimo y se avisa que falta el objetivo.
+        cambios.pop("stock_objetivo", None)
+        filas = _sb_patch("productos", {"id": f"eq.{pid}", "deleted_at": "is.null"},
+                          cambios) or []
+        aviso = "Falta aplicar la migración 016: no se guardó el stock objetivo."
+    if not filas:
+        raise HTTPException(status_code=404, detail="Producto inexistente o en papelera.")
+    reposicion = evaluar_producto(pid, sb_get=_sb_get, sb_post=_sb_post,
+                                  sb_patch=_sb_patch, actor=admin.user_id)
+    return {"producto": filas[0], "reposicion": reposicion, "aviso": aviso}
+
+
+@router.post("/api/admin/stock/reposicion")
+def pedir_reposicion(d: ReposicionPedir, request: Request,
+                     admin: AdminActual = Depends(requiere("stock", "ajustar"))) -> dict[str, Any]:
+    """Revisa uno o todos los productos y registra las solicitudes pendientes."""
+    _limitar(request.client.host if request.client else "?", "stock-pedir", 20)
+    if d.producto_id:
+        resultados = [evaluar_producto(_uuid(d.producto_id, "Producto"),
+                                       sb_get=_sb_get, sb_post=_sb_post,
+                                       sb_patch=_sb_patch, actor=admin.user_id)]
+    else:
+        productos = _sb_get("productos", {
+            "select": "id,nombre,stock,stock_minimo",
+            "deleted_at": "is.null", "activo": "eq.true",
+            "order": "nombre.asc", "limit": 5000,
+        }) or []
+        # PostgREST no compara columnas entre sí: stock < mínimo se filtra acá.
+        bajos = [str(p.get("id")) for p in productos
+                 if int(p.get("stock") or 0) < int(p.get("stock_minimo") or 0)
+                 and int(p.get("stock_minimo") or 0) > 0]
+        resultados = evaluar_varios(bajos, sb_get=_sb_get, sb_post=_sb_post,
+                                    sb_patch=_sb_patch, actor=admin.user_id)
+    return {"resultados": resultados}
 
 
 @router.get("/api/admin/pedidos")
@@ -956,6 +1292,20 @@ def listar_pedidos(estado: str = "",
             por_orden = {str(c.get("orden_id")): c for c in comps}
         except HTTPException:
             por_orden = {}
+    # Comprobante de pago subido por el cliente (016). Si la migración aún no
+    # está aplicada, el listado sigue respondiendo sin ese dato.
+    pagos: dict[str, dict[str, Any]] = {}
+    if ids:
+        try:
+            filas_pago = _sb_get("comprobantes_pago", {
+                "select": "id,orden_id,archivo_nombre,monto_centavos,nota,created_at",
+                "orden_id": f"in.({','.join(ids)})",
+                "order": "created_at.desc", "limit": 500,
+            }) or []
+            for c in filas_pago:
+                pagos.setdefault(str(c.get("orden_id")), c)
+        except HTTPException:
+            pagos = {}
     for p in pedidos:  # totales en centavos calculados en servidor
         sub = int(p.get("subtotal_centavos") or _a_centavos(p.get("subtotal")))
         cupon = None
@@ -969,6 +1319,7 @@ def listar_pedidos(estado: str = "",
         except ValueError:
             p["totales"] = {"subtotal_centavos": sub, "descuento_centavos": 0, "total_centavos": sub}
         p["comprobante"] = por_orden.get(str(p.get("id")))
+        p["comprobante_pago"] = pagos.get(str(p.get("id")))
     return {"pedidos": pedidos}
 
 
@@ -981,6 +1332,14 @@ def cambiar_estado(pid: str, d: PedidoEstado, request: Request,
         "p_nota": d.nota.strip(), "p_version": d.version,
         "p_actor": admin.user_id,
     })
+    if d.a == "pagada":
+        # Pago confirmado a mano (transferencia, etc.): mismo motor que MP.
+        lineas = _sb_get("orden_items", {
+            "select": "producto_id", "orden_id": f"eq.{pid}", "limit": 500,
+        }) or []
+        evaluar_varios([str(i.get("producto_id")) for i in lineas if i.get("producto_id")],
+                       sb_get=_sb_get, sb_post=_sb_post, sb_patch=_sb_patch,
+                       actor=admin.user_id)
     return {"id": pid, "estado": d.a, "version": nueva_version}
 
 
@@ -994,6 +1353,26 @@ def comprobante_pedido_pdf(pid: str,
         content=comprobante_pdf(c), media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=comprobante-{c.get('numero') or pid}.pdf"},
     )
+
+
+@router.get("/api/admin/pedidos/{pid}/comprobante-pago")
+def comprobante_pago_pedido(pid: str,
+                            admin: AdminActual = Depends(requiere("pedidos", "leer"))) -> dict[str, Any]:
+    """URL firmada (1 h) del comprobante de pago que subió el cliente."""
+    pid = _uuid(pid, "Pedido")
+    filas = _sb_get("comprobantes_pago", {
+        "select": "*", "orden_id": f"eq.{pid}",
+        "order": "created_at.desc", "limit": 1,
+    }) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Este pedido no tiene comprobante de pago.")
+    c = dict(filas[0])
+    try:
+        c["archivo_url"] = firmar_archivo("comprobantes-pago", str(c.get("archivo_path") or ""))
+    except StorageError:
+        raise HTTPException(status_code=503, detail="No se pudo abrir el comprobante.")
+    c.pop("archivo_path", None)
+    return {"comprobante": c}
 
 
 # --------------------------------------------------------------- clientes ---
@@ -1021,28 +1400,63 @@ def _emails_auth() -> dict[str, str]:
 
 
 def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
-    """Conteo, total comprado y último pedido por user_id (sin inventar)."""
+    """Conteo, total comprado y pedidos con foto por user_id (sin inventar)."""
     resumen: dict[str, dict[str, Any]] = {}
     if not ids:
         return resumen
     filas = _sb_get("ordenes", {
-        "select": "user_id,estado,total_centavos,created_at",
+        "select": ("id,user_id,estado,total_centavos,comprobante_numero,created_at,"
+                   "orden_items(cantidad,productos(nombre,imagen))"),
         "user_id": f"in.({','.join(ids)})",
         "order": "created_at.desc",
         "limit": 2000,
     }) or []
+    ids_orden = [str(o.get("id")) for o in filas if o.get("id")]
+    comprobantes: dict[str, dict[str, Any]] = {}
+    if ids_orden:
+        try:
+            pagos = _sb_get("comprobantes_pago", {
+                "select": "id,orden_id,archivo_nombre,mime,monto_centavos,nota,created_at",
+                "orden_id": f"in.({','.join(ids_orden)})",
+                "order": "created_at.desc",
+                "limit": 2000,
+            }) or []
+            for c in pagos:
+                comprobantes.setdefault(str(c.get("orden_id")), c)
+        except HTTPException:
+            # Base sin la migración 016: los pedidos se muestran sin comprobante.
+            comprobantes = {}
     for o in filas:
         uid = str(o.get("user_id") or "")
         if not uid:
             continue
-        r = resumen.setdefault(uid, {"pedidos": 0, "comprado_centavos": 0,
-                                     "ultimo_pedido": None, "ultimo_estado": ""})
+        r = resumen.setdefault(uid, {
+            "pedidos": 0, "comprado_centavos": 0,
+            "ultimo_pedido": None, "ultimo_estado": "", "pedidos_detalle": [],
+        })
         r["pedidos"] += 1
         if str(o.get("estado")) in _ESTADOS_COMPRA:
             r["comprado_centavos"] += int(o.get("total_centavos") or 0)
         if r["ultimo_pedido"] is None:  # filas ya vienen desc por fecha
             r["ultimo_pedido"] = o.get("created_at")
             r["ultimo_estado"] = str(o.get("estado") or "")
+        items = []
+        for it in (o.get("orden_items") or []):
+            prod = it.get("productos") or {}
+            items.append({
+                "nombre": str(prod.get("nombre") or "Producto"),
+                "cantidad": int(it.get("cantidad") or 1),
+                "imagen": str(prod.get("imagen") or ""),
+            })
+        r["pedidos_detalle"].append({
+            "id": str(o.get("id") or ""),
+            "codigo": str(o.get("comprobante_numero") or ""),
+            "estado": str(o.get("estado") or ""),
+            "total_centavos": int(o.get("total_centavos") or 0),
+            "created_at": o.get("created_at"),
+            "items": items,
+            "comprobante_pago": comprobantes.get(str(o.get("id"))),
+        })
     return resumen
 
 
@@ -1067,7 +1481,8 @@ def listar_clientes(q: str = "",
         uid = str(p.get("id"))
         p["email"] = correos.get(uid, "")
         p["resumen"] = resumen.get(uid, {"pedidos": 0, "comprado_centavos": 0,
-                                         "ultimo_pedido": None, "ultimo_estado": ""})
+                                         "ultimo_pedido": None, "ultimo_estado": "",
+                                         "pedidos_detalle": []})
     return {"clientes": perfiles}
 
 
@@ -1516,10 +1931,11 @@ def _sugerencias_reposicion(productos: list[dict[str, Any]],
                             en_ordenes: dict[str, int]) -> list[dict[str, Any]]:
     """Productos con stock < stock_mínimo agrupados por proveedor principal.
 
-    Objetivo: 2 × mínimo. Sugerida = objetivo − stock − lo ya pedido en OC
-    abiertas (incluye borradores, para no duplicar pedidos), llevada como
-    mínimo a la cantidad mínima del proveedor. Si lo pedido ya cubre, no se
-    sugiere. Sin proveedor principal → grupo con proveedor None.
+    Objetivo: `stock_objetivo`; si es 0 o no supera el stock, 2 × mínimo.
+    Sugerida = objetivo - stock - lo ya pedido en OC abiertas (incluye
+    borradores, para no duplicar pedidos), llevada como mínimo a la cantidad
+    mínima del proveedor. Si lo pedido ya cubre, no se sugiere. Sin proveedor
+    principal → grupo con proveedor None.
     """
     rel_por_producto = {str(r.get("producto_id")): r for r in relaciones}
     prov_por_id = {str(p.get("id")): p for p in proveedores}
@@ -1531,7 +1947,10 @@ def _sugerencias_reposicion(productos: list[dict[str, Any]],
             continue
         pid = str(p.get("id"))
         pedidas = int(en_ordenes.get(pid, 0))
-        faltan = 2 * minimo - stock - pedidas
+        objetivo = int(p.get("stock_objetivo") or 0)
+        if objetivo <= stock:
+            objetivo = 2 * minimo
+        faltan = objetivo - stock - pedidas
         if faltan <= 0:
             continue
         rel = rel_por_producto.get(pid)
@@ -1547,7 +1966,9 @@ def _sugerencias_reposicion(productos: list[dict[str, Any]],
         })
         grupo["items"].append({
             "producto_id": pid, "nombre": p.get("nombre") or "", "codigo": p.get("codigo") or "",
-            "stock": stock, "stock_minimo": minimo, "en_ordenes": pedidas, "sugerida": sugerida,
+            "stock": stock, "stock_minimo": minimo,
+            "stock_objetivo": int(p.get("stock_objetivo") or 0),
+            "en_ordenes": pedidas, "sugerida": sugerida,
             "costo_unitario_centavos": costo,
             "codigo_proveedor": (rel.get("codigo_proveedor") or "") if rel else "",
         })
@@ -2040,6 +2461,90 @@ def listar_proveedores(q: str = "", estado: str = "", provincia: str = "", moned
     return {"proveedores": [_proveedor_salida(p) for p in filas], "papelera": papelera}
 
 
+def _historial_proveedor(ordenes_raw: list[dict[str, Any]],
+                         ordenes: list[dict[str, Any]]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Recepciones de mercadería del proveedor + agregados para la ficha.
+
+    Cada `recepciones_compra.items` es un snapshot `[{producto_id, cantidad,
+    stock}]`; el costo unitario se toma de la línea de la OC (no se inventa).
+    Montos en centavos de la moneda de cada orden.
+    """
+    ids = [str(o.get("id")) for o in ordenes_raw if o.get("id")]
+    if not ids:
+        return ({"ordenes": len(ordenes),
+                 "ordenes_abiertas": sum(1 for o in ordenes if o.get("estado") in OC_ABIERTAS),
+                 "recepciones": 0, "unidades_pedidas": 0, "unidades_recibidas": 0,
+                 "ultima_recepcion": None, "total_centavos": {}}, [])
+
+    info: dict[str, dict[str, Any]] = {}
+    for o in ordenes_raw:
+        costo = {}
+        for it in (o.get("ordenes_compra_items") or []):
+            costo[str(it.get("producto_id"))] = int(it.get("costo_unitario_centavos") or 0)
+        info[str(o.get("id"))] = {
+            "codigo": _codigo_oc(o.get("numero")),
+            "moneda": str(o.get("moneda") or "ARS"),
+            "costo": costo,
+        }
+
+    recs = _sb_get("recepciones_compra", {
+        "select": "id,orden_id,items,nota,created_at",
+        "orden_id": f"in.({','.join(ids)})",
+        "order": "created_at.desc", "limit": 500,
+    }) or []
+
+    pids = sorted({str(it.get("producto_id")) for r in recs
+                   for it in (r.get("items") or []) if it.get("producto_id")})
+    nombres: dict[str, str] = {}
+    if pids:
+        filas = _sb_get("productos", {
+            "select": "id,nombre", "id": f"in.({','.join(pids)})", "limit": 500,
+        }) or []
+        nombres = {str(p.get("id")): str(p.get("nombre") or "") for p in filas}
+
+    salida: list[dict[str, Any]] = []
+    for r in recs:
+        meta = info.get(str(r.get("orden_id"))) or {}
+        items = []
+        total = 0
+        for it in (r.get("items") or []):
+            pid = str(it.get("producto_id") or "")
+            cant = int(it.get("cantidad") or 0)
+            costo = int((meta.get("costo") or {}).get(pid, 0))
+            total += cant * costo
+            items.append({
+                "producto_id": pid,
+                "nombre": nombres.get(pid) or "Producto eliminado",
+                "cantidad": cant,
+                "costo_unitario_centavos": costo,
+            })
+        salida.append({
+            "id": r.get("id"),
+            "orden_id": r.get("orden_id"),
+            "orden_codigo": meta.get("codigo") or "",
+            "moneda": meta.get("moneda") or "ARS",
+            "created_at": r.get("created_at"),
+            "nota": r.get("nota") or "",
+            "unidades": sum(i["cantidad"] for i in items),
+            "total_centavos": total,
+            "items": items,
+        })
+
+    totales: dict[str, int] = defaultdict(int)
+    for r in salida:
+        totales[r["moneda"]] += r["total_centavos"]
+    historial = {
+        "ordenes": len(ordenes),
+        "ordenes_abiertas": sum(1 for o in ordenes if o.get("estado") in OC_ABIERTAS),
+        "recepciones": len(salida),
+        "unidades_pedidas": sum(int(o.get("unidades_pedidas") or 0) for o in ordenes),
+        "unidades_recibidas": sum(r["unidades"] for r in salida),
+        "ultima_recepcion": salida[0]["created_at"] if salida else None,
+        "total_centavos": dict(totales),
+    }
+    return historial, salida
+
+
 @router.get("/api/admin/proveedores/{pid}")
 def ficha_proveedor(pid: str,
                     admin: AdminActual = Depends(requiere("proveedores", "leer"))) -> dict[str, Any]:
@@ -2055,15 +2560,21 @@ def ficha_proveedor(pid: str,
         r.pop("costo", None)  # numeric heredado de 003: hacia el panel, solo centavos
     # Órdenes solo si el rol puede ver compras (la ficha es de proveedores).
     ordenes: Optional[list[dict[str, Any]]] = None
+    historial: Optional[dict[str, Any]] = None
+    recepciones: Optional[list[dict[str, Any]]] = None
     if ("compras", "leer") in PERMISOS.get(admin.rol, set()):
-        ordenes = [_resumen_oc(o) for o in (_sb_get("ordenes_compra", {
+        ordenes_raw = _sb_get("ordenes_compra", {
             "select": "id,numero,estado,moneda,fecha_esperada,created_at,"
-                      "ordenes_compra_items(cantidad,cantidad_recibida,costo_unitario_centavos)",
+                      "ordenes_compra_items(producto_id,cantidad,cantidad_recibida,"
+                      "costo_unitario_centavos)",
             "proveedor_id": f"eq.{pid}", "order": "created_at.desc", "limit": 100,
-        }) or [])]
+        }) or []
+        ordenes = [_resumen_oc(dict(o)) for o in ordenes_raw]
         for o in ordenes:
             o.pop("ordenes_compra_items", None)
-    return {"proveedor": _proveedor_salida(filas[0]), "productos": productos, "ordenes": ordenes}
+        historial, recepciones = _historial_proveedor(ordenes_raw, ordenes)
+    return {"proveedor": _proveedor_salida(filas[0]), "productos": productos,
+            "ordenes": ordenes, "historial": historial, "recepciones": recepciones}
 
 
 @router.post("/api/admin/proveedores", status_code=201)
@@ -2148,6 +2659,9 @@ def vincular_producto_proveedor(pid: str, producto_id: str, d: ProductoProveedor
                      prefer="resolution=merge-duplicates,return=representation") or []
     vinculo = filas[0] if filas else fila
     vinculo.pop("costo", None)
+    if d.es_principal:
+        evaluar_producto(producto_id, sb_get=_sb_get, sb_post=_sb_post,
+                         sb_patch=_sb_patch, actor=admin.user_id)
     return {"vinculo": vinculo}
 
 
@@ -2166,10 +2680,17 @@ def desvincular_producto_proveedor(pid: str, producto_id: str,
 
 @router.get("/api/admin/compras/sugerencias")
 def sugerencias_reposicion(admin: AdminActual = Depends(requiere("compras", "leer"))) -> dict[str, Any]:
-    productos = _sb_get("productos", {
-        "select": "id,nombre,codigo,stock,stock_minimo",
-        "deleted_at": "is.null", "activo": "eq.true", "order": "nombre.asc", "limit": 5000,
-    }) or []
+    try:
+        productos = _sb_get("productos", {
+            "select": "id,nombre,codigo,stock,stock_minimo,stock_objetivo",
+            "deleted_at": "is.null", "activo": "eq.true", "order": "nombre.asc", "limit": 5000,
+        }) or []
+    except HTTPException:
+        # Base sin 016: el panel sigue funcionando con el objetivo por defecto.
+        productos = _sb_get("productos", {
+            "select": "id,nombre,codigo,stock,stock_minimo",
+            "deleted_at": "is.null", "activo": "eq.true", "order": "nombre.asc", "limit": 5000,
+        }) or []
     # PostgREST no compara columnas entre sí: el filtro stock < mínimo va acá.
     bajo = [p for p in productos
             if int(p.get("stock") or 0) < int(p.get("stock_minimo") if p.get("stock_minimo") is not None else 5)]
@@ -2199,6 +2720,36 @@ def sugerencias_reposicion(admin: AdminActual = Depends(requiere("compras", "lee
             en_ordenes[str(it.get("producto_id"))] += (int(it.get("cantidad") or 0)
                                                        - int(it.get("cantidad_recibida") or 0))
     return {"grupos": _sugerencias_reposicion(bajo, relaciones, proveedores, en_ordenes)}
+
+
+@router.get("/api/admin/stock/reposicion")
+def estado_reposicion(admin: AdminActual = Depends(requiere("stock", "leer"))) -> dict[str, Any]:
+    """Panel de reposición: productos bajo el mínimo + solicitudes recientes.
+
+    Reutiliza el cálculo de `compras/sugerencias` (misma fuente de verdad) y
+    suma las OC automáticas para que Stock muestre qué se pidió y a quién.
+    """
+    grupos = sugerencias_reposicion(admin).get("grupos", [])
+    bajos: list[dict[str, Any]] = []
+    for grupo in grupos:
+        proveedor = grupo.get("proveedor")
+        for item in grupo.get("productos") or []:
+            bajos.append({**item, "proveedor": proveedor})
+    params: dict[str, Any] = {
+        "select": ("*,proveedores(id,nombre),"
+                   "ordenes_compra_items(cantidad,cantidad_recibida,"
+                   "costo_unitario_centavos,productos(id,nombre,codigo))"),
+        "order": "created_at.desc", "limit": 30,
+    }
+    try:
+        ocs = _sb_get("ordenes_compra", {**params, "origen": "eq.reposicion"}) or []
+    except HTTPException:
+        # Base sin la migración 016: se reconoce la marca que deja el motor.
+        recientes = _sb_get("ordenes_compra", params) or []
+        ocs = [o for o in recientes
+               if str(o.get("notas") or "").startswith("[Reposición]")]
+    return {"grupos": grupos, "bajos": bajos,
+            "solicitudes": [_resumen_oc(o) for o in ocs]}
 
 
 @router.get("/api/admin/compras/ordenes")

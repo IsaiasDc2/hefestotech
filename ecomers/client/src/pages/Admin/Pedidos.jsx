@@ -16,6 +16,7 @@ export default function Pedidos({ avisar, pedirConfirm }) {
   const [cambiando, setCambiando] = useState("");
   const [abierto, setAbierto] = useState("");
   const [bajando, setBajando] = useState("");
+  const [viendoPago, setViendoPago] = useState("");
   const { estado: est, datos, recargar } = useModulo(
     () => adminApi.pedidos({ estado }),
     [estado]
@@ -61,6 +62,20 @@ export default function Pedidos({ avisar, pedirConfirm }) {
       avisar(err?.message ?? "No se pudo obtener el comprobante.", { tono: "error" });
     } finally {
       setBajando("");
+    }
+  };
+
+  const verComprobantePago = async (p) => {
+    setViendoPago(p.id);
+    try {
+      const r = await adminApi.comprobantePagoPedido(p.id);
+      const url = r?.comprobante?.archivo_url;
+      if (!url) throw new Error("No se pudo abrir el comprobante.");
+      window.open(url, "_blank", "noopener");
+    } catch (err) {
+      avisar(err?.message ?? "No se pudo abrir el comprobante de pago.", { tono: "error" });
+    } finally {
+      setViendoPago("");
     }
   };
 
@@ -117,6 +132,7 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   <span className="adm-pedido-meta texto-mutado">
                     {fechaCorta(p.created_at)}{p.nombre ? ` · ${p.nombre}` : ""}
                     {p.comprobante ? " · comprobante emitido" : ""}
+                    {p.comprobante_pago ? " · comprobante de pago cargado" : ""}
                     <FaChevronDown className="adm-caret" aria-hidden="true" />
                   </span>
                 </button>
@@ -195,6 +211,36 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                         </div>
                       </div>
                     )}
+
+                    <div className="adm-detalle-comprobante">
+                      <p className="adm-detalle-subtitulo">Comprobante de pago del cliente</p>
+                      {p.comprobante_pago ? (
+                        <>
+                          <p>
+                            <FaReceipt aria-hidden="true" /> {p.comprobante_pago.archivo_nombre || "Comprobante"}
+                            {" · "}{fechaCorta(p.comprobante_pago.created_at)}
+                            {" · "}{formatoARS(p.comprobante_pago.monto_centavos ?? 0)}
+                          </p>
+                          {p.comprobante_pago.nota ? (
+                            <p className="texto-mutado">Nota: {p.comprobante_pago.nota}</p>
+                          ) : null}
+                          <div className="adm-acciones">
+                            <button
+                              type="button"
+                              className="btn-primary adm-btn adm-mini"
+                              disabled={viendoPago === p.id}
+                              onClick={() => verComprobantePago(p)}
+                            >
+                              {viendoPago === p.id ? "Abriendo…" : "Ver comprobante de pago"}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="texto-mutado">
+                          El cliente todavía no cargó un comprobante de pago.
+                        </p>
+                      )}
+                    </div>
 
                     <div className="adm-detalle-comprobante">
                       {p.comprobante ? (
