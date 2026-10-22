@@ -140,10 +140,14 @@ function Asistente() {
     setEstado("escribiendo");
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+      const historial = chat
+        .filter((m) => m.texto !== SALUDO_INICIAL)
+        .slice(-10)
+        .map((m) => ({ rol: m.rol, texto: m.texto.slice(0, 500) }));
       const respuesta = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: recortado }),
+        body: JSON.stringify({ texto: recortado, historial }),
       });
 
       // TU LÓGICA: Validamos si la IA devuelve exactamente el error 503

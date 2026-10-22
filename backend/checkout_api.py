@@ -743,10 +743,14 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
 @router.post("/api/checkout/liberar-expiradas")
 def liberar_expiradas(request: Request) -> dict[str, Any]:
     esperado = os.getenv("CRON_SECRET", "")
-    if esperado:
-        recibido = request.headers.get("x-cron-secret", "")
-        if not hmac.compare_digest(recibido, esperado):
-            raise HTTPException(status_code=403, detail="Acceso denegado.")
+    if not esperado:
+        raise HTTPException(
+            status_code=401,
+            detail="Endpoint deshabilitado: CRON_SECRET no configurado.",
+        )
+    recibido = request.headers.get("x-cron-secret", "")
+    if not hmac.compare_digest(recibido, esperado):
+        raise HTTPException(status_code=403, detail="Acceso denegado.")
     _limitar(request.client.host if request.client else "?", "checkout-liberar", 10)
     ahora = datetime.now(timezone.utc).isoformat()
     vencidas = _sb_get("ordenes", {
