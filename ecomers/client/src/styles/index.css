@@ -312,7 +312,7 @@ textarea {
   background-color: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 0.7rem 0.9rem;
+  padding: 0.65rem 0.9rem;
   color: var(--text);
   outline: none;
   transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
