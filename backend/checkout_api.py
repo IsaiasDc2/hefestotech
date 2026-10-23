@@ -40,6 +40,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response
 from pydantic import BaseModel, field_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
+from mailer import notificar_estado
 from reposicion import evaluar_varios
 from storage import StorageError, borrar as borrar_archivo, firmar as firmar_archivo, subir as subir_archivo
 
@@ -847,8 +848,27 @@ def estado_checkout(orden_id: str, request: Request, token: str = "") -> dict[st
         esperado = o.get("acceso_token") or ""
         if not esperado or not token or not hmac.compare_digest(str(token), str(esperado)):
             raise HTTPException(status_code=403, detail="Sin permiso sobre esa orden.")
+    # Seguimiento del envío (migración 017): sin ella, la orden sigue respondiendo.
+    seguimiento = None
+    try:
+        extra = _sb_get("ordenes", {
+            "select": "transportista,tracking_codigo,tracking_url",
+            "id": f"eq.{o['id']}", "limit": 1,
+        }) or []
+        s = extra[0] if extra else {}
+        url = str(s.get("tracking_url") or "")
+        seguimiento = {
+            "transportista": str(s.get("transportista") or ""),
+            "codigo": str(s.get("tracking_codigo") or ""),
+            "url": url if url.startswith(("http://", "https://")) else "",
+        }
+        if not any(seguimiento.values()):
+            seguimiento = None
+    except HTTPException:
+        seguimiento = None
     return {
         "orden_id": o["id"],
+        "seguimiento": seguimiento,
         "estado": o.get("estado"),
         "subtotal_centavos": int(o.get("subtotal_centavos") or 0),
         "descuento_centavos": int(o.get("descuento_centavos") or 0),
@@ -1222,6 +1242,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
         _emitir_comprobante(o, data_id)
         # El staff ve el pago en Notificaciones con nombre, orden y monto.
         _notificar_pago_staff(o, data_id)
+        notificar_estado(o, "pagada")  # email al cliente (opcional, nunca falla)
         # Venta confirmada: recién acá se evalúa reposición (la reserva puede
         # liberarse si el pago no se completa; no se pide stock de más).
         evaluar_varios([str(i.get("producto_id")) for i in (o.get("orden_items") or [])
@@ -1255,13 +1276,16 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
 
     # 4c. Reembolso/contra-cargo de orden pagada → reembolsada.
     if estado_mp in ("refunded", "charged_back"):
-        if actual == "pagada":
+        # También un pedido ya entregado: la devolución puede hacerse desde el
+        # panel de Mercado Pago y el estado tiene que seguirla.
+        if actual in ("pagada", "entregada"):
             try:
                 _rpc("cambiar_estado_pedido", {
                     "p_id": orden_id, "p_a": "reembolsada",
                     "p_nota": f"mp:{data_id} {estado_mp}", "p_version": None,
                     "p_actor": None,
                 })
+                notificar_estado(o, "reembolsada")
             except HTTPException:
                 pass
             return {"recibido": True, "estado": "reembolsada"}

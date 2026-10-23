@@ -1,4 +1,5 @@
-import { SITE_URL } from "../../seo/sitio";
+// Con extensión: el script de build (Node) también importa este módulo.
+import { SITE_URL } from "../../seo/sitio.js";
 
 // Construye el JSON-LD de un producto para <JsonLd />.
 // Vive fuera de JsonLd.jsx para que ese archivo solo exporte componentes (Fast Refresh).

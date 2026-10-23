@@ -57,7 +57,11 @@ export const obtenerCatalogo = ({ forzar = false } = {}) => {
   return promesa;
 };
 
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const obtenerProductoPorId = async (id) => {
+  // Un id que no es UUID no puede existir: "no encontrado", no "error de red".
+  if (!ES_UUID.test(String(id ?? ""))) return null;
   const { data, error } = await consultaVisibles().eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   return data ? normalizarProducto(data) : null;

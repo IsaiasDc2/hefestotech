@@ -80,6 +80,7 @@ export const obtenerEstadoPedido = (ordenId, token = "") =>
     estado: o.estado === "pagada" ? "pagado" : o.estado,
     comprobante_numero: null,
     comprobante_pago: o.comprobante_pago ?? null,
+    seguimiento: o.seguimiento ?? null,
   }));
 
 // Sube el comprobante de pago (transferencia, depósito, etc.). El backend

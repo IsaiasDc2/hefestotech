@@ -4,6 +4,19 @@ import { useState } from "react";
 import { adminApi, formatoARS } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
 import { useModulo } from "./hooks";
+import { reporteACsv } from "./reportesUtil";
+
+function descargarCsv(datos, rango) {
+  const blob = new Blob([reporteACsv(datos, rango)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `ventas-${rango.desde || "inicio"}_a_${rango.hasta || "hoy"}.csv`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
 
 function hoyISO() {
   // Fecha local del navegador (no UTC): en Argentina, toISOString() ya es
@@ -36,9 +49,14 @@ export default function Reportes() {
         kicker="Números"
         titulo="Reporte de ventas"
         acciones={
-          <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
-            Actualizar
-          </button>
+          <div className="adm-acciones-cab">
+            <button type="button" className="btn-fantasma adm-btn" onClick={() => descargarCsv(datos, rango)}>
+              Exportar CSV
+            </button>
+            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+              Actualizar
+            </button>
+          </div>
         }
       />
       <section className="card adm-panel" aria-label="Rango">
@@ -62,6 +80,10 @@ export default function Reportes() {
         <div className="card adm-kpi">
           <span className="adm-kpi-valor">{formatoARS(datos?.total_centavos ?? 0)}</span>
           <span className="adm-kpi-etiqueta">Total (ARS)</span>
+        </div>
+        <div className="card adm-kpi">
+          <span className="adm-kpi-valor">{formatoARS(datos?.ticket_promedio_centavos ?? 0)}</span>
+          <span className="adm-kpi-etiqueta">Ticket promedio</span>
         </div>
       </div>
       <div className="adm-grid-2">
@@ -91,6 +113,19 @@ export default function Reportes() {
           />
         </section>
       </div>
+      <section className="card adm-panel" aria-label="Productos más vendidos">
+        <h2>Productos más vendidos</h2>
+        <Tabla
+          columnas={[
+            { clave: "nombre", titulo: "Producto" },
+            { clave: "unidades", titulo: "Unidades" },
+            { clave: "total", titulo: "Importe bruto", ver: (r) => formatoARS(r.total_centavos ?? 0) },
+          ]}
+          filas={datos?.top_productos ?? []}
+          filaKey={(r) => r.producto_id}
+          vacio="Sin ventas en el rango."
+        />
+      </section>
       <p className="texto-mutado">
         Venta = pedido no cancelado ni reembolsado, total en centavos calculado en el servidor (ver docs/ADMIN.md).
       </p>

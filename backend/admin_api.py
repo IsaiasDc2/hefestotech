@@ -29,6 +29,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, R
 from pydantic import BaseModel, field_validator, model_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
+from mailer import notificar_estado, numero_pedido
 from reposicion import evaluar_producto, evaluar_varios
 from storage import StorageError, firmar as firmar_archivo
 
@@ -823,6 +824,23 @@ class LoteCrear(BaseModel):
         return v or None
 
 
+TZ_AR = ZoneInfo("America/Argentina/Buenos_Aires")
+
+
+def _hoy_ar() -> date:
+    """Hoy en hora argentina. El día UTC se adelanta a partir de las 21:00."""
+    return datetime.now(TZ_AR).date()
+
+
+def _dia_ar(valor: Any) -> str:
+    """Día calendario (hora argentina) de un timestamp ISO guardado en UTC."""
+    texto = str(valor or "")
+    try:
+        return datetime.fromisoformat(texto.replace("Z", "+00:00")).astimezone(TZ_AR).date().isoformat()
+    except ValueError:
+        return texto[:10]
+
+
 def _pag(limit: int = Query(default=50, ge=1, le=200),
           offset: int = Query(default=0, ge=0)) -> dict[str, int]:
     return {"limit": limit, "offset": offset}
@@ -863,7 +881,7 @@ def _tablero_ventas(ordenes: list[dict[str, Any]], desde, dias: int) -> dict[str
         if estado not in ESTADOS_VENTA:
             continue
         monto = int(o.get("total_centavos") or _a_centavos(o.get("total")))
-        dia = str(o.get("created_at") or "")[:10]
+        dia = _dia_ar(o.get("created_at"))
         if dia in serie:
             serie[dia]["pedidos"] += 1
             serie[dia]["total_centavos"] += monto
@@ -894,7 +912,7 @@ def _tablero_stock(movimientos: list[dict[str, Any]], productos: dict[str, dict[
             continue
         cant = int(m.get("cantidad") or 0)
         totales[clave] += cant
-        dia = str(m.get("created_at") or "")[:10]
+        dia = _dia_ar(m.get("created_at"))
         if dia in serie:
             serie[dia][clave] += cant
         if len(ultimos) < 15:
@@ -936,10 +954,11 @@ def _tablero_top_productos(items: list[dict[str, Any]], ids_venta: set[str],
 @router.get("/api/admin/resumen")
 def resumen(sucursal: str = "",
             admin: AdminActual = Depends(requiere("reportes", "leer"))) -> dict[str, Any]:
-    hoy = datetime.now(timezone.utc).date()
+    hoy = _hoy_ar()
     desde = hoy - timedelta(days=DIAS_TABLERO - 1)
-    desde_iso = desde.isoformat()
-    desde_stock = (hoy - timedelta(days=DIAS_STOCK - 1)).isoformat()
+    # Medianoche argentina: con fecha sola, Postgres usa 00:00 UTC (21:00 del día previo).
+    desde_iso = f"{desde.isoformat()}T00:00:00-03:00"
+    desde_stock = f"{(hoy - timedelta(days=DIAS_STOCK - 1)).isoformat()}T00:00:00-03:00"
 
     productos = _sb_get("productos", {
         "select": "id,nombre,stock,stock_minimo",
@@ -1070,7 +1089,7 @@ def resumen(sucursal: str = "",
             "clientes": sum(1 for p in perfiles
                             if str(p.get("rol") or "cliente") == "cliente"),
             "nuevos_30d": sum(1 for p in perfiles
-                              if str(p.get("created_at") or "") >= desde_iso),
+                              if _dia_ar(p.get("created_at")) >= desde.isoformat()),
         },
         "compras": {
             "ordenes": len(compras),
@@ -1337,12 +1356,12 @@ def pedir_reposicion(d: ReposicionPedir, request: Request,
 
 
 @router.get("/api/admin/pedidos")
-def listar_pedidos(estado: str = "",
+def listar_pedidos(estado: str = "", q: str = "", desde: str = "", hasta: str = "",
                    pag: dict[str, int] = Depends(_pag),
                    admin: AdminActual = Depends(requiere("pedidos", "leer"))) -> dict[str, Any]:
     params: dict[str, Any] = {
         "select": "*,orden_items(*,productos(nombre))",
-        "order": "created_at.desc",
+        "order": "created_at.desc,id.desc",
         "limit": pag["limit"],
         "offset": pag["offset"],
     }
@@ -1350,7 +1369,38 @@ def listar_pedidos(estado: str = "",
         if estado not in ESTADOS_PEDIDO:
             raise HTTPException(status_code=400, detail="Estado inválido.")
         params["estado"] = f"eq.{estado}"
+
+    # Búsqueda: número de pedido (HT-A1B2C3D4 o sus primeros caracteres),
+    # email o nombre del cliente.
+    limpio = _filtro_texto(q).lstrip("#")
+    if limpio:
+        condiciones = [f"email.ilike.*{limpio}*", f"nombre.ilike.*{limpio}*"]
+        codigo = re.sub(r"^ht-", "", limpio, flags=re.IGNORECASE)
+        if re.fullmatch(r"[0-9a-fA-F]{4,8}", codigo):
+            piso = codigo.lower().ljust(8, "0") + "-0000-0000-0000-000000000000"
+            techo = codigo.lower().ljust(8, "f") + "-ffff-ffff-ffff-ffffffffffff"
+            condiciones.append(f"and(id.gte.{piso},id.lte.{techo})")
+        params["or"] = f"({','.join(condiciones)})"
+
+    # Rango de fechas en hora argentina (el día elegido entra completo).
+    rango: list[str] = []
+    for etiqueta, valor in (("desde", desde.strip()), ("hasta", hasta.strip())):
+        if not valor:
+            continue
+        try:
+            dia = date.fromisoformat(valor)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Fecha {etiqueta} inválida (AAAA-MM-DD).")
+        if etiqueta == "desde":
+            rango.append(f"created_at.gte.{dia.isoformat()}T00:00:00-03:00")
+        else:
+            rango.append(f"created_at.lt.{(dia + timedelta(days=1)).isoformat()}T00:00:00-03:00")
+    if rango:
+        params["and"] = f"({','.join(rango)})"
+
     pedidos, total_pedidos = _sb_get_total("ordenes", params)
+    for p in pedidos:
+        p["numero"] = numero_pedido(p.get("id"))
     # Comprobante por pedido (UNIQUE orden_id). Si la base aún no tiene 012,
     # el listado igual responde (queda sin comprobante hasta migrar).
     ids = [str(p.get("id")) for p in pedidos if p.get("id")]
@@ -1416,16 +1466,165 @@ def cambiar_estado(pid: str, d: PedidoEstado, request: Request,
     # validada (una orden se cancela una sola vez): recién ahora se devuelve.
     if d.a == "cancelada":
         _devolver_stock_de_pedido(pid, admin.user_id)
+    _avisar_cliente(pid, d.a)
     return {"id": pid, "estado": d.a, "version": nueva_version}
 
 
-def _devolver_stock_de_pedido(pid: str, actor: str) -> None:
+def _avisar_cliente(pid: str, estado: str) -> None:
+    """Email al cliente por el nuevo estado (si el envío está configurado).
+    Nunca interrumpe la operación: el estado ya cambió."""
+    try:
+        campos = "id,nombre,email,acceso_token"
+        try:
+            filas = _sb_get("ordenes", {
+                "select": campos + ",transportista,tracking_codigo,tracking_url",
+                "id": f"eq.{pid}", "limit": 1,
+            }) or []
+        except HTTPException:  # sin migración 017
+            filas = _sb_get("ordenes", {"select": campos, "id": f"eq.{pid}", "limit": 1}) or []
+        if filas:
+            notificar_estado(filas[0], estado)
+    except Exception:
+        print("ERROR admin_api: no se pudo avisar al cliente.")
+
+
+class PedidoEnvio(BaseModel):
+    transportista: str = ""
+    codigo: str = ""
+    url: str = ""
+
+    @field_validator("transportista", "codigo", "url")
+    @classmethod
+    def _limpiar(cls, v: str) -> str:
+        return (v or "").strip()
+
+    @model_validator(mode="after")
+    def _validar(self):
+        if not self.transportista and not self.codigo:
+            raise ValueError("Indicá el transportista o el código de seguimiento.")
+        if len(self.transportista) > 60 or len(self.codigo) > 80 or len(self.url) > 500:
+            raise ValueError("Algún dato de envío es demasiado largo.")
+        if self.url and not re.match(r"^https?://[^\s]+$", self.url):
+            raise ValueError("El enlace de seguimiento debe empezar con http:// o https://.")
+        return self
+
+
+@router.put("/api/admin/pedidos/{pid}/envio")
+def cargar_envio(pid: str, d: PedidoEnvio, request: Request,
+                 admin: AdminActual = Depends(requiere("pedidos", "cambiar_estado"))) -> dict[str, Any]:
+    """Transportista y seguimiento del envío. Si el pedido ya está enviado,
+    el cliente recibe un email con el seguimiento."""
+    _limitar(request.client.host if request.client else "?", "pedido-envio", 30)
+    pid = _uuid(pid, "Pedido")
+    try:
+        filas = _sb_patch("ordenes", {"id": f"eq.{pid}"}, {
+            "transportista": d.transportista or None,
+            "tracking_codigo": d.codigo or None,
+            "tracking_url": d.url or None,
+        }) or []
+    except HTTPException:
+        raise HTTPException(status_code=409,
+                            detail="Falta aplicar la migración 017 (seguimiento de envío) en Supabase.")
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido inexistente.")
+    if filas[0].get("estado") == "enviada":
+        _avisar_cliente(pid, "enviada")
+    return {"id": pid, "transportista": d.transportista, "codigo": d.codigo, "url": d.url}
+
+
+class PedidoReembolso(BaseModel):
+    devolver_stock: bool = False
+    nota: str = ""
+
+    @field_validator("nota")
+    @classmethod
+    def _nota(cls, v: str) -> str:
+        v = (v or "").strip()
+        if len(v) > 500:
+            raise ValueError("La nota es demasiado larga (máximo 500 caracteres).")
+        return v
+
+
+# Transiciones del RPC que terminan en `reembolsada` (005): pagada y entregada.
+ESTADOS_REEMBOLSABLES = ("pagada", "entregada")
+
+
+@router.post("/api/admin/pedidos/{pid}/reembolsar")
+def reembolsar_pedido(pid: str, d: PedidoReembolso, request: Request,
+                      admin: AdminActual = Depends(requiere("pedidos", "cambiar_estado"))) -> dict[str, Any]:
+    """Reembolso total por Mercado Pago + estado `reembolsada` (+ stock opcional).
+
+    Mueve dinero: solo owner/admin, una vez por pedido (clave de idempotencia
+    fija en MP) y se registra en el historial del pedido."""
+    if admin.rol not in ("owner", "admin"):
+        raise HTTPException(status_code=403, detail="Solo owner o admin pueden reembolsar.")
+    _limitar(request.client.host if request.client else "?", "pedido-reembolso", 10)
+    pid = _uuid(pid, "Pedido")
+    filas = _sb_get("ordenes", {
+        "select": "id,estado,nombre,email,acceso_token,mp_payment_id",
+        "id": f"eq.{pid}", "limit": 1,
+    }) or []
+    if not filas:
+        raise HTTPException(status_code=404, detail="Pedido inexistente.")
+    orden = filas[0]
+    estado = str(orden.get("estado") or "")
+    if estado not in ESTADOS_REEMBOLSABLES:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Solo se reembolsan pedidos pagados o entregados (este está {estado or 'sin estado'}).")
+    pago = str(orden.get("mp_payment_id") or "").strip()
+    if not re.fullmatch(r"\d{1,20}", pago):
+        raise HTTPException(
+            status_code=409,
+            detail="Este pedido no tiene un pago de Mercado Pago registrado: reembolsalo desde "
+                   "su panel y cambiá el estado a mano.")
+    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
+    if not token:
+        raise HTTPException(status_code=503, detail="Mercado Pago no está configurado en el servidor.")
+
+    try:
+        r = httpx.post(
+            f"https://api.mercadopago.com/v1/payments/{pago}/refunds",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+                     "X-Idempotency-Key": f"refund-{pid}"},
+            json={}, timeout=20.0,
+        )
+    except httpx.HTTPError:
+        print("ERROR admin_api: fallo de red hacia Mercado Pago (reembolso).")
+        raise HTTPException(status_code=502, detail="No se pudo contactar a Mercado Pago. Reintentá.")
+    if r.status_code not in (200, 201):
+        print(f"ERROR admin_api: Mercado Pago rechazó el reembolso ({r.status_code}).")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Mercado Pago no aceptó el reembolso (código {r.status_code}). Revisalo en su panel.")
+
+    nota = "Reembolso por Mercado Pago" + (f": {d.nota}" if d.nota else "")
+    try:
+        _rpc("cambiar_estado_pedido", {
+            "p_id": pid, "p_a": "reembolsada", "p_nota": nota, "p_version": None,
+            "p_actor": admin.user_id,
+        })
+    except HTTPException:
+        # El webhook de MP puede haber llegado antes y ya dejarlo reembolsado.
+        ahora = _sb_get("ordenes", {"select": "estado", "id": f"eq.{pid}", "limit": 1}) or []
+        if not ahora or ahora[0].get("estado") != "reembolsada":
+            raise HTTPException(
+                status_code=502,
+                detail="El reembolso se hizo en Mercado Pago pero no se pudo actualizar el estado del "
+                       "pedido: pasalo a «reembolsada» a mano.")
+    if d.devolver_stock:
+        _devolver_stock_de_pedido(pid, admin.user_id, "reembolso")
+    _avisar_cliente(pid, "reembolsada")
+    return {"id": pid, "estado": "reembolsada", "stock_devuelto": d.devolver_stock}
+
+
+def _devolver_stock_de_pedido(pid: str, actor: str, motivo: str = "cancelacion") -> None:
     items = _sb_get("orden_items", {"select": "producto_id,cantidad", "orden_id": f"eq.{pid}"}) or []
     for it in items:
         try:
             _rpc("adjust_stock", {
                 "p_producto": it["producto_id"], "p_delta": int(it["cantidad"]),
-                "p_motivo": "cancelacion", "p_nota": pid, "p_actor": actor,
+                "p_motivo": motivo, "p_nota": pid, "p_actor": actor,
             })
         except HTTPException:
             print("ERROR admin_api: no se pudo devolver el stock de un pedido cancelado.")
@@ -1684,10 +1883,10 @@ def bandeja(admin: AdminActual = Depends(requiere("reclamos", "leer"))) -> dict[
         if r.get("estado") in por_estado:
             por_estado[r.get("estado")] += 1
 
-    hoy = datetime.now(timezone.utc).date().isoformat()
+    hoy = _hoy_ar().isoformat()
     abiertos_hoy = sum(1 for r in todos
                        if r.get("estado") == "abierto"
-                       and str(r.get("created_at") or "")[:10] == hoy)
+                       and _dia_ar(r.get("created_at")) == hoy)
 
     # Mensajes de los recientes (para el snippet) y de los abiertos
     # (para "sin responder"). Topes para no armar URLs eternas.
@@ -1933,29 +2132,32 @@ def reporte_ventas(desde: str = "", hasta: str = "",
         if valor and not _fecha.match(valor):
             raise HTTPException(status_code=400, detail=f"Fecha {etiqueta} inválida (usar AAAA-MM-DD).")
     params: dict[str, Any] = {
-        "select": "id,estado,subtotal_centavos,descuento_centavos,total_centavos,subtotal,total,created_at",
+        "select": ("id,estado,subtotal_centavos,descuento_centavos,total_centavos,subtotal,total,created_at,"
+                   "orden_items(cantidad,precio,producto_id,productos(nombre))"),
         "order": "created_at.asc", "limit": 5000,
     }
     filtros_and: list[str] = []
     if desde.strip():
-        filtros_and.append(f"created_at.gte.{desde.strip()}")
+        desde_txt = desde.strip()
+        # Fecha sola = medianoche argentina (Postgres usaría 00:00 UTC).
+        filtros_and.append(f"created_at.gte.{desde_txt}T00:00:00-03:00" if len(desde_txt) == 10
+                           else f"created_at.gte.{desde_txt}")
     if hasta.strip():
         hasta_txt = hasta.strip()
         if len(hasta_txt) == 10:
-            # Fecha sin hora: incluir todo el día elegido. Postgres castea
-            # `lte.2026-10-23` a las 00:00 y dejaba afuera el resto del día.
+            # Fecha sin hora: incluir todo el día elegido (hora argentina).
             try:
                 hasta_limite = (date.fromisoformat(hasta_txt) + timedelta(days=1)).isoformat()
             except ValueError:
                 raise HTTPException(status_code=400, detail="Fecha hasta inválida.")
-            filtros_and.append(f"created_at.lt.{hasta_limite}")
+            filtros_and.append(f"created_at.lt.{hasta_limite}T00:00:00-03:00")
         else:
             filtros_and.append(f"created_at.lte.{hasta_txt}")
     if filtros_and:
         params["and"] = f"({','.join(filtros_and)})"
     ordenes = _sb_get("ordenes", params) or []
-    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
     por_dia: dict[str, dict[str, int]] = defaultdict(lambda: {"pedidos": 0, "total_centavos": 0})
+    top: dict[str, dict[str, Any]] = {}
     total = 0
     pedidos = 0
     por_estado: dict[str, int] = defaultdict(int)
@@ -1966,20 +2168,31 @@ def reporte_ventas(desde: str = "", hasta: str = "",
         if estado in ("cancelada", "reembolsada"):
             continue
         tot = int(o.get("total_centavos") or _a_centavos(o.get("total")))
-        try:
-            dia = (datetime.fromisoformat(str(o.get("created_at") or "").replace("Z", "+00:00"))
-                   .astimezone(tz_ar).date().isoformat())
-        except (TypeError, ValueError):
-            dia = str(o.get("created_at") or "")[:10]
+        dia = _dia_ar(o.get("created_at"))
         por_dia[dia]["pedidos"] += 1
         por_dia[dia]["total_centavos"] += tot
         total += tot
         pedidos += 1
+        for it in o.get("orden_items") or []:
+            clave = str(it.get("producto_id") or "")
+            if not clave:
+                continue
+            fila = top.setdefault(clave, {
+                "producto_id": clave,
+                "nombre": (it.get("productos") or {}).get("nombre") or "Producto eliminado",
+                "unidades": 0, "total_centavos": 0,
+            })
+            cantidad = int(it.get("cantidad") or 0)
+            fila["unidades"] += cantidad
+            fila["total_centavos"] += cantidad * _a_centavos(it.get("precio"))
     return {
         "pedidos": pedidos,
         "total_centavos": total,  # entero, sin floats
+        "ticket_promedio_centavos": (total // pedidos) if pedidos else 0,
         "por_estado": dict(por_estado),
         "por_dia": [{"dia": d, **v} for d, v in sorted(por_dia.items())],
+        # Importe bruto por producto (sin repartir descuentos de cupón).
+        "top_productos": sorted(top.values(), key=lambda f: (-f["unidades"], -f["total_centavos"]))[:10],
     }
 
 

@@ -186,7 +186,7 @@ function Admin() {
     setNoLeidas(0);
   }, []);
 
-  const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: marcarLeidas };
+  const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: marcarLeidas, rol };
 
   return (
     <AdminLayout

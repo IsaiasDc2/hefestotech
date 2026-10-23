@@ -12,24 +12,108 @@ const ESTADOS = ["", "pendiente", "pagada", "preparacion", "enviada", "entregada
 const envioEtiqueta = (v) => (String(v).toLowerCase() === "express" ? "Express" : "Estándar");
 const precioPesos = (v) => formatoARS(Math.round(Number(v ?? 0) * 100));
 
-export default function Pedidos({ avisar, pedirConfirm }) {
+const TRANSPORTISTAS = ["Correo Argentino", "Andreani", "OCA", "Enviopack", "Moto / flete propio", "Otro"];
+const ESTADOS_CON_ENVIO = ["preparacion", "enviada", "entregada"];
+const ESTADOS_REEMBOLSABLES = ["pagada", "entregada"];
+const SIN_FILTROS = { q: "", desde: "", hasta: "" };
+
+// Transportista y seguimiento del envío (migración 017). Si el pedido ya está
+// enviado, al guardar el cliente recibe el seguimiento por email.
+function Seguimiento({ pedido, avisar, onGuardado }) {
+  const [form, setForm] = useState({
+    transportista: pedido.transportista ?? "",
+    codigo: pedido.tracking_codigo ?? "",
+    url: pedido.tracking_url ?? "",
+  });
+  const [guardando, setGuardando] = useState(false);
+  const guardar = async (e) => {
+    e.preventDefault();
+    setGuardando(true);
+    try {
+      await adminApi.cargarEnvioPedido(pedido.id, form);
+      avisar(pedido.estado === "enviada" ? "Seguimiento guardado y enviado al cliente." : "Seguimiento guardado.");
+      onGuardado();
+    } catch (err) {
+      avisar(err?.message ?? "No se pudo guardar el seguimiento.", { tono: "error" });
+    } finally {
+      setGuardando(false);
+    }
+  };
+  return (
+    <form className="adm-form" onSubmit={guardar} aria-label="Seguimiento del envío">
+      <p className="adm-detalle-subtitulo">Seguimiento del envío</p>
+      <div className="adm-seguimiento-campos">
+        <label>Transportista
+          <select value={form.transportista} onChange={(e) => setForm({ ...form, transportista: e.target.value })}>
+            <option value="">Elegí uno</option>
+            {TRANSPORTISTAS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label>Código de seguimiento
+          <input value={form.codigo} maxLength={80} onChange={(e) => setForm({ ...form, codigo: e.target.value })} />
+        </label>
+        <label>Enlace de seguimiento
+          <input type="url" value={form.url} maxLength={500} placeholder="https://" onChange={(e) => setForm({ ...form, url: e.target.value })} />
+        </label>
+      </div>
+      <div className="adm-form-acciones">
+        <button type="submit" className="btn-fantasma adm-btn" disabled={guardando || (!form.transportista && !form.codigo)}>
+          {guardando ? "Guardando…" : "Guardar seguimiento"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export default function Pedidos({ avisar, pedirConfirm, rol }) {
   const [estado, setEstado] = useState("");
   const [cambiando, setCambiando] = useState("");
   const [abierto, setAbierto] = useState("");
   const [bajando, setBajando] = useState("");
   const [viendoPago, setViendoPago] = useState("");
-  const pg = usePaginacion(estado);
+  const [borrador, setBorrador] = useState(SIN_FILTROS);
+  const [filtros, setFiltros] = useState(SIN_FILTROS);
+  const puedeReembolsar = rol === "owner" || rol === "admin";
+  const pg = usePaginacion(`${estado}|${filtros.q}|${filtros.desde}|${filtros.hasta}`);
   const { estado: est, datos, recargar } = useModulo(
-    () => adminApi.pedidos({ estado, limit: pg.por, offset: pg.offset }),
-    [estado, pg.por, pg.offset]
+    () => adminApi.pedidos({ estado, ...filtros, limit: pg.por, offset: pg.offset }),
+    [estado, filtros.q, filtros.desde, filtros.hasta, pg.por, pg.offset]
   );
+  const hayFiltros = Boolean(filtros.q || filtros.desde || filtros.hasta);
+
+  const reembolsar = async (p) => {
+    const ok = await pedirConfirm({
+      titulo: "Reembolsar por Mercado Pago",
+      texto:
+        `Se devuelve el importe total del pedido ${p.numero ?? String(p.id).slice(0, 8)} al cliente ` +
+        "por Mercado Pago y el pedido pasa a «reembolsada». No se puede deshacer.",
+      confirmar: "Reembolsar",
+      peligro: true,
+    });
+    if (!ok) return;
+    const devolverStock = await pedirConfirm({
+      titulo: "¿Devolver los productos al stock?",
+      texto: "Elegí «Sí, devolver» si la mercadería vuelve al inventario. Si no vuelve (rota, perdida), elegí cancelar.",
+      confirmar: "Sí, devolver",
+    });
+    setCambiando(p.id);
+    try {
+      await adminApi.reembolsarPedido(p.id, { devolver_stock: Boolean(devolverStock) });
+      avisar("Reembolso realizado y cliente avisado.");
+      recargar();
+    } catch (err) {
+      avisar(err?.message ?? "No se pudo reembolsar.", { tono: "error" });
+    } finally {
+      setCambiando("");
+    }
+  };
   const lista = datos?.pedidos ?? [];
 
   const cambiar = async (p, a) => {
     const ok = await pedirConfirm({
       titulo: "Cambiar estado",
       texto:
-        `Pasar el pedido ${String(p.id).slice(0, 8)} a «${a}».` +
+        `Pasar el pedido ${p.numero ?? String(p.id).slice(0, 8)} a «${a}».` +
         (a === "cancelada" ? " El stock de sus productos vuelve al inventario." : ""),
       confirmar: "Cambiar",
       peligro: esDestructivo(a),
@@ -108,6 +192,43 @@ export default function Pedidos({ avisar, pedirConfirm }) {
           </div>
         }
       />
+      <section className="card adm-panel" aria-label="Buscar pedidos">
+        <form
+          className="adm-buscador-linea"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setFiltros({ q: borrador.q.trim(), desde: borrador.desde, hasta: borrador.hasta });
+          }}
+        >
+          <input
+            value={borrador.q}
+            onChange={(e) => setBorrador({ ...borrador, q: e.target.value })}
+            placeholder="Número (HT-…), email o nombre"
+            aria-label="Buscar pedidos"
+          />
+          <label>Desde
+            <input type="date" value={borrador.desde} max={borrador.hasta || undefined}
+              onChange={(e) => setBorrador({ ...borrador, desde: e.target.value })} />
+          </label>
+          <label>Hasta
+            <input type="date" value={borrador.hasta} min={borrador.desde || undefined}
+              onChange={(e) => setBorrador({ ...borrador, hasta: e.target.value })} />
+          </label>
+          <button type="submit" className="btn-fantasma adm-btn">Buscar</button>
+          {hayFiltros && (
+            <button
+              type="button"
+              className="btn-fantasma adm-btn"
+              onClick={() => {
+                setBorrador(SIN_FILTROS);
+                setFiltros(SIN_FILTROS);
+              }}
+            >
+              Limpiar
+            </button>
+          )}
+        </form>
+      </section>
       {lista.length === 0 ? (
         <Vacio
           titulo="Sin pedidos"
@@ -136,7 +257,7 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   aria-controls={detalleId}
                 >
                   <span className="adm-pedido-head">
-                    <strong>#{String(p.id).slice(0, 8)}</strong>
+                    <strong>{p.numero ?? `#${String(p.id).slice(0, 8)}`}</strong>
                     <span className={`adm-estado es-${p.estado}`}>{p.estado}</span>
                   </span>
                   <span className="adm-pedido-meta texto-mutado">
@@ -287,10 +408,18 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                   </div>
                 )}
 
+                {abiertoEste && ESTADOS_CON_ENVIO.includes(p.estado) && (
+                  <Seguimiento pedido={p} avisar={avisar} onGuardado={recargar} />
+                )}
+
                 <div className="adm-pedido-acciones">
                   <span className="texto-mutado">Cambiar estado:</span>
                   <div className="adm-acciones">
-                    {siguientesEstados(p.estado).map((s) => (
+                    {siguientesEstados(p.estado)
+                      // Con pago de Mercado Pago, «reembolsada» solo por el reembolso real
+                      // (el botón común cambiaría la etiqueta sin devolver el dinero).
+                      .filter((s) => !(s === "reembolsada" && puedeReembolsar && p.mp_payment_id))
+                      .map((s) => (
                       <button
                         key={s}
                         type="button"
@@ -301,6 +430,16 @@ export default function Pedidos({ avisar, pedirConfirm }) {
                         → {s}
                       </button>
                     ))}
+                    {puedeReembolsar && p.mp_payment_id && ESTADOS_REEMBOLSABLES.includes(p.estado) && (
+                      <button
+                        type="button"
+                        className="btn-fantasma adm-mini es-peligro"
+                        disabled={cambiando === p.id}
+                        onClick={() => reembolsar(p)}
+                      >
+                        Reembolsar por Mercado Pago
+                      </button>
+                    )}
                   </div>
                 </div>
               </li>

@@ -9,6 +9,29 @@ import "./Checkout.css";
 import "./PedidoDetalle.css";
 
 /** /pedido/:id — comprobante con snapshot, QR/enlace de verificación, PDF e impresión. */
+// Transportista y seguimiento que carga el negocio al despachar el pedido.
+function SeguimientoEnvio({ seguimiento, idioma }) {
+  if (!seguimiento) return null;
+  return (
+    <section className="card checkout-panel" aria-label={t(idioma, "ped.seguimiento")}>
+      <h2>{t(idioma, "ped.seguimiento")}</h2>
+      <dl className="comprobante-datos">
+        {seguimiento.transportista && (
+          <div><dt>{t(idioma, "ped.transportista")}</dt><dd>{seguimiento.transportista}</dd></div>
+        )}
+        {seguimiento.codigo && (
+          <div><dt>{t(idioma, "ped.codigoSeguimiento")}</dt><dd>{seguimiento.codigo}</dd></div>
+        )}
+      </dl>
+      {seguimiento.url && (
+        <a className="btn-fantasma" href={seguimiento.url} target="_blank" rel="noopener noreferrer">
+          {t(idioma, "ped.seguirEnvio")}
+        </a>
+      )}
+    </section>
+  );
+}
+
 export default function PedidoDetalle() {
   const { id } = useParams();
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -99,6 +122,7 @@ export default function PedidoDetalle() {
             <p className="badge badge-info">
               {t(idioma, "pago.estado")}: {estado.estado}
             </p>
+            <SeguimientoEnvio seguimiento={estado?.seguimiento} idioma={idioma} />
             <p className="texto-mutado">{t(idioma, "pago.compPendienteAyuda")}</p>
           </section>
           <aside className="card checkout-resumen" aria-label={t(idioma, "ped.acciones")}>
@@ -138,6 +162,7 @@ export default function PedidoDetalle() {
       <div className="comprobante-grid">
         <section className="card checkout-panel comprobante" aria-label={t(idioma, "ped.comprobante")}>
           <p className="badge badge-info">{comp.numero}</p>
+          <SeguimientoEnvio seguimiento={estado?.seguimiento} idioma={idioma} />
           <dl className="comprobante-datos">
             <div><dt>{t(idioma, "ped.emitido")}</dt><dd>{new Date(comp.emitido_en).toLocaleString(idioma === "en" ? "en-US" : "es-AR", { timeZone: "America/Argentina/Buenos_Aires" })}</dd></div>
             <div><dt>{t(idioma, "ped.cliente")}</dt><dd>{comp.ordenes?.nombre} — {comp.ordenes?.email}</dd></div>

@@ -2590,3 +2590,13 @@
     display: inline;
   }
 }
+/* Seguimiento del envío dentro de la tarjeta de pedido (angosta): campos apilados */
+.adm-seguimiento-campos {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.adm-seguimiento-campos label {
+  display: grid;
+  gap: 0.3rem;
+}

@@ -8,6 +8,7 @@
     "dev": "vite",
     "dev:demo": "vite --mode demo",
     "build": "vite build",
+    "postbuild": "node scripts/generar-seo.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",

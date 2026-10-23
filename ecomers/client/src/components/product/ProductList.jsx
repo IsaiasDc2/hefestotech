@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router";
 import { FaMinus, FaPlus, FaWhatsapp, FaCartPlus } from "react-icons/fa6";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useSeo } from "../../hooks/useSeo";
 import useCatalogo from "../../hooks/useCatalogo";
 import { obtenerProductoPorId, precioFinal as calcularPrecioFinal } from "../../services/productService";
 import { CATEGORIAS, nombreCategoria } from "../../constants/categorias";
@@ -11,7 +11,7 @@ import { topeDeStock } from "../../store/cartStore";
 import { nombreSpec, valorSpec } from "../../utils/specs";
 import { JsonLd } from "../seo/JsonLd";
 import { construirJsonLdProducto } from "../seo/jsonLdProducto";
-import { NOMBRE_SITIO } from "../../seo/sitio";
+import { NOMBRE_SITIO, SITE_URL, recortarDescripcion } from "../../seo/sitio";
 import CotizadorEnvio from "../../pages/Carrito/CotizadorEnvio";
 import Beneficios from "./Beneficios";
 import Destacados from "./Destacados";
@@ -84,7 +84,24 @@ function ProductoDetalle({ agregarAlCarrito }) {
   const cantidad = compra.id === id ? compra.cantidad : 1;
 
   // Título dinámico con el nombre real; durante la carga rige el de ruta.
-  useDocumentTitle(producto?.nombre ? `${producto.nombre} | ${NOMBRE_SITIO}` : undefined);
+  // Datos reales del producto para título, descripción, imagen y canonical;
+  // si no existe o no está publicado, la página no se indexa.
+  useSeo(
+    producto?.nombre
+      ? {
+          titulo: `${producto.nombre} | ${NOMBRE_SITIO}`,
+          descripcion: recortarDescripcion(
+            producto.descripcion ||
+              `${producto.nombre}${producto.marca ? ` de ${producto.marca}` : ""} en ${NOMBRE_SITIO}.`
+          ),
+          canonical: `${SITE_URL}/producto/${producto.id}`,
+          imagen: producto.imagen || undefined,
+          tipo: "product",
+        }
+      : !cargando && !producto
+        ? { noindex: true }
+        : null
+  );
 
   const relacionados = useMemo(() => {
     if (!producto) return [];

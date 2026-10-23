@@ -105,11 +105,17 @@ export const adminApi = {
       method: "POST",
       body: productoId ? { producto_id: productoId } : {},
     }),
-  pedidos: ({ estado = "", limit = 50, offset = 0 } = {}) =>
+  pedidos: ({ estado = "", q: texto = "", desde = "", hasta = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/pedidos?limit=${limit}&offset=${offset}` +
-        (estado ? `&estado=${q(estado)}` : "")
+        (estado ? `&estado=${q(estado)}` : "") +
+        (texto.trim() ? `&q=${q(texto.trim())}` : "") +
+        (desde ? `&desde=${q(desde)}` : "") +
+        (hasta ? `&hasta=${q(hasta)}` : "")
     ),
+  cargarEnvioPedido: (id, d) => api(`/api/admin/pedidos/${q(id)}/envio`, { method: "PUT", body: d }),
+  reembolsarPedido: (id, d) =>
+    api(`/api/admin/pedidos/${q(id)}/reembolsar`, { method: "POST", body: d }),
   cambiarEstadoPedido: (id, d) =>
     api(`/api/admin/pedidos/${q(id)}/estado`, { method: "POST", body: d }),
   comprobantePedidoPdf: async (id) => {

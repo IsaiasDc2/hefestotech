@@ -20,7 +20,9 @@ try {
   const destino = sessionStorage.getItem("ht-redirect");
   if (destino && destino.startsWith("/")) {
     sessionStorage.removeItem("ht-redirect");
-    const base = BASENAME === "/" ? "" : BASENAME;
+    // Sin barra final: con VITE_BASE=/hefestotech/ salía /hefestotech//carrito
+    // y la app mostraba "no encontrada" en rutas privadas abiertas por enlace.
+    const base = BASENAME === "/" ? "" : BASENAME.replace(/\/+$/, "");
     if (window.location.pathname.replace(/\/+$/, "") === base.replace(/\/+$/, "") || window.location.pathname === `${base}/`) {
       window.history.replaceState(null, "", `${base}${destino}`);
     }

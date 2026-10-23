@@ -117,3 +117,38 @@ El token nunca se loguea ni se renderiza.
 Regla general: si un endpoint falla (o 403 por rol), el módulo queda
 deshabilitado como **Próximamente** / Sin permiso, sin datos inventados
 (vacío real cuando no hay).
+
+## Operación de pedidos y reportes
+
+- **Número de pedido**: `HT-` + 8 primeros caracteres del id (p. ej. `HT-B952791B`).
+  El buscador de Pedidos acepta número completo o parcial (con o sin `#`/`HT-`),
+  email o nombre, y rango de fechas en hora argentina.
+- **Hora argentina**: "hoy", los 30 días del tablero, la bandeja y los reportes
+  cuentan días en `America/Argentina/Buenos_Aires` (no en UTC).
+- **Seguimiento de envío** (migración `017_envio_seguimiento.sql`): transportista,
+  código y enlace. El cliente lo ve en `/pedido/:id` y, si el pedido ya está
+  enviado, le llega por email. Sin la migración, el panel avisa que falta aplicarla.
+- **Reembolso real**: `POST /api/admin/pedidos/{id}/reembolsar`. Solo owner/admin;
+  pedidos `pagada` o `entregada` con pago de Mercado Pago. Llama a la API de
+  reembolsos de MP con clave de idempotencia fija por pedido, pasa el pedido a
+  `reembolsada` y, opcionalmente, devuelve el stock. En pedidos con pago de MP el
+  botón común «→ reembolsada» se oculta para no cambiar la etiqueta sin devolver el dinero.
+- **Emails al cliente** (opcional, `backend/mailer.py`): pagada, enviada, entregada,
+  cancelada y reembolsada. Requiere `RESEND_API_KEY` y `MAIL_FROM`; sin ellas no
+  hace nada y un fallo del proveedor nunca interrumpe la operación.
+- **Reportes**: ventas, ticket promedio, productos más vendidos (importe bruto) y
+  exportación CSV (separador `;`, BOM para Excel, celdas protegidas contra fórmulas).
+
+## SEO (tienda pública)
+
+- `vite build` ejecuta `scripts/generar-seo.mjs` (postbuild): genera un HTML real por
+  producto y por página pública (estado 200, con título, descripción, canonical,
+  Open Graph, Twitter y JSON-LD propios), `sitemap.xml` (productos con imagen y
+  categorías) y `robots.txt`. En GitHub Pages las rutas profundas responden 404 y
+  los buscadores no las indexan: por eso se prerenderizan.
+- En la app, `useSeoRuta`/`useSeo` mantienen título, descripción, canonical, OG y
+  robots por ruta. Carrito, checkout, cuenta, admin, pagos y pedidos llevan `noindex`;
+  las búsquedas internas (`?q=`) también.
+- `robots.txt` solo rige si el sitio está en la raíz del dominio (en `usuario.github.io/hefestotech`
+  los buscadores solo leen el de `usuario.github.io`); la protección real es el `noindex`.
+- Después de publicar: dar de alta el sitio en Google Search Console y enviar `sitemap.xml`.
