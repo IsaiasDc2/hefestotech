@@ -1,0 +1,310 @@
+{
+  "name": "HefestoTech · Avisos de ofertas",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## HefestoTech · avisos de ofertas\n\nDos disparadores:\n1. **Cupón nuevo**: el backend llama a `/hefestotech-ofertas` al crear un cupón activo.\n2. **Productos en oferta**: todos los días 10:00 se revisa `productos.descuento_porcentaje > 0` y se avisa lo que cambió (la primera corrida solo memoriza; la memoria solo persiste con el workflow **activo**).\n\nSe manda mail a la tabla `suscriptores` (credencial Supabase con service role) y un WhatsApp al dueño con el resumen.\n\nCompletá: `TU_PROYECTO`, `TU_SUPABASE_ANON_KEY`, `TU_PHONE_NUMBER_ID`, `TU_NUMERO_WHATSAPP`.\nNo se manda WhatsApp de marketing a clientes: hoy no hay consentimiento registrado. Gmail gratuito permite ~500 mails por día.",
+        "height": 380,
+        "width": 600
+      },
+      "id": "o-note",
+      "name": "Instrucciones",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hefestotech-ofertas",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "o-hook",
+      "name": "Cupón creado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "hefestotech-ofertas",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Hefesto Secret (X-Hefesto-Secret)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || {};\nconst c = b.datos || {};\nconst sd = $getWorkflowStaticData('global');\nsd.cupones = sd.cupones || [];\nif (b.evento_id && sd.cupones.includes(b.evento_id)) return [];\nif (b.evento_id) sd.cupones = [...sd.cupones, b.evento_id].slice(-100);\n\nconst money = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);\nconst que = c.tipo === 'porcentaje' ? `${c.valor}% de descuento` : `${money(c.valor)} de descuento`;\nconst minimo = c.min_compra ? ` en compras desde ${money(c.min_compra)}` : '';\nconst vence = c.vence_at ? new Date(c.vence_at).toLocaleDateString('es-AR') : '';\nreturn [{ json: { oferta: {\n  titulo: `Cupón ${c.codigo}: ${que}`,\n  lineas: [`Usá el cupón ${c.codigo} y obtené ${que}${minimo}.`].concat(vence ? [`Válido hasta el ${vence}.`] : []),\n  url: c.tienda_url || 'https://isaiasdc2.github.io/hefestotech',\n} } }];"
+      },
+      "id": "o-cupon",
+      "name": "Oferta desde cupón",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "o-cron",
+      "name": "Todos los días 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://TU_PROYECTO.supabase.co/rest/v1/productos?select=id,nombre,precio,precio_con_descuento,descuento_porcentaje&descuento_porcentaje=gt.0&activo=eq.true&deleted_at=is.null&limit=200",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "TU_SUPABASE_ANON_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer TU_SUPABASE_ANON_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "o-http",
+      "name": "Productos en oferta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compara las ofertas vigentes con las ya avisadas. La primera corrida solo\n// memoriza (no manda las ofertas que ya existían).\nconst sd = $getWorkflowStaticData('global');\nconst previas = sd.productos || {};\nconst vigentes = {};\nconst nuevos = [];\nfor (const it of $input.all()) {\n  const p = it.json;\n  if (!p || !p.id) continue;\n  const firma = `${p.descuento_porcentaje}|${p.precio_con_descuento}`;\n  vigentes[p.id] = firma;\n  if (previas[p.id] !== firma) nuevos.push(p);\n}\nconst primera = !sd.inicializado;\nsd.productos = vigentes;\nsd.inicializado = true;\nif (primera || !nuevos.length) return [];\n\nconst money = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(n || 0);\nconst top = nuevos.sort((a, b) => b.descuento_porcentaje - a.descuento_porcentaje).slice(0, 8);\nreturn [{ json: { oferta: {\n  titulo: nuevos.length === 1 ? `Oferta: ${top[0].nombre}` : `${nuevos.length} productos en oferta`,\n  lineas: top.map(p => `${p.nombre}: ${Math.round(p.descuento_porcentaje)}% OFF (ahora ${money(p.precio_con_descuento)})`),\n  url: 'https://isaiasdc2.github.io/hefestotech',\n} } }];"
+      },
+      "id": "o-detect",
+      "name": "Detectar ofertas nuevas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "id": "o-lista",
+      "name": "Oferta lista",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "suscriptores",
+        "returnAll": true
+      },
+      "id": "o-subs",
+      "name": "Suscriptores",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        220
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "",
+          "name": "Supabase HefestoTech (service role)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const oferta = $('Oferta lista').first().json.oferta;\nconst esc = (s) => String(s).replace(/[&<>\"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[ch]));\nconst lineas = oferta.lineas.map(l => `<li>${esc(l)}</li>`).join('');\nconst html = `<div style=\"font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1b1f24\">` +\n  `<h2>🔥 ${esc(oferta.titulo)}</h2><ul>${lineas}</ul>` +\n  `<p style=\"margin:20px 0\"><a href=\"${esc(oferta.url)}\" style=\"background:#0a7fb8;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none\">Ver en la tienda</a></p>` +\n  `<p style=\"color:#6b7280;font-size:12px\">Recibís este mail porque te suscribiste al newsletter de HefestoTech. ` +\n  `Si no querés recibir más, respondé este correo con la palabra BAJA.</p></div>`;\nreturn $input.all()\n  .filter(it => it.json.email && String(it.json.email).includes('@'))\n  .map(it => ({ json: { to_email: it.json.email, subject: `🔥 ${oferta.titulo} | HefestoTech`, html } }));"
+      },
+      "id": "o-mails",
+      "name": "Armar mails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to_email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "o-gmail",
+      "name": "Enviar mail de oferta",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1560,
+        220
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail HefestoTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "TU_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "TU_NUMERO_WHATSAPP",
+        "textBody": "={{ '🔥 Oferta publicada: ' + $json.oferta.titulo + '\\n' + $json.oferta.lineas.join('\\n') }}",
+        "additionalFields": {}
+      },
+      "id": "o-wa",
+      "name": "Avisar al dueño por WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        440
+      ],
+      "credentials": {
+        "whatsAppApi": {
+          "id": "",
+          "name": "WhatsApp HefestoTech"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cupón creado": {
+      "main": [
+        [
+          {
+            "node": "Oferta desde cupón",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oferta desde cupón": {
+      "main": [
+        [
+          {
+            "node": "Oferta lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Todos los días 10:00": {
+      "main": [
+        [
+          {
+            "node": "Productos en oferta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productos en oferta": {
+      "main": [
+        [
+          {
+            "node": "Detectar ofertas nuevas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar ofertas nuevas": {
+      "main": [
+        [
+          {
+            "node": "Oferta lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oferta lista": {
+      "main": [
+        [
+          {
+            "node": "Suscriptores",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Avisar al dueño por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Suscriptores": {
+      "main": [
+        [
+          {
+            "node": "Armar mails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar mails": {
+      "main": [
+        [
+          {
+            "node": "Enviar mail de oferta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
