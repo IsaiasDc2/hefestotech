@@ -14,6 +14,8 @@ from typing import Any, Optional
 
 import httpx
 
+import n8n_hook
+
 
 def numero_pedido(orden_id: Any) -> str:
     """Número legible del pedido: HT- + los primeros 8 caracteres del id."""
@@ -107,6 +109,8 @@ def armar_correo(orden: dict[str, Any], estado: str) -> Optional[tuple[str, str]
 
 def notificar_estado(orden: dict[str, Any], estado: str) -> bool:
     """Avisa al cliente del nuevo estado. Nunca lanza."""
+    # Aviso a n8n (WhatsApp, etc.): independiente del email y de qué estados se mailean.
+    n8n_hook.emitir_pedido(orden, estado, numero_pedido(orden.get("id")))
     try:
         correo = armar_correo(orden, estado)
         if not correo:

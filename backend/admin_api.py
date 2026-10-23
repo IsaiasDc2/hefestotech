@@ -29,6 +29,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, R
 from pydantic import BaseModel, field_validator, model_validator
 
 from comprobantes import comprobante_pdf, obtener_comprobante
+import n8n_hook
 from mailer import notificar_estado, numero_pedido
 from reposicion import evaluar_producto, evaluar_varios
 from storage import StorageError, firmar as firmar_archivo
@@ -1474,7 +1475,7 @@ def _avisar_cliente(pid: str, estado: str) -> None:
     """Email al cliente por el nuevo estado (si el envío está configurado).
     Nunca interrumpe la operación: el estado ya cambió."""
     try:
-        campos = "id,nombre,email,acceso_token"
+        campos = "id,nombre,email,telefono,total_centavos,acceso_token"
         try:
             filas = _sb_get("ordenes", {
                 "select": campos + ",transportista,tracking_codigo,tracking_url",
@@ -2004,6 +2005,8 @@ def crear_cupon(d: CuponCrear, request: Request,
         "min_compra_centavos": d.min_compra_centavos, "usos_max": d.usos_max,
         "activo": d.activo, "vence_at": d.vence_at,
     }) or []
+    if creados and creados[0].get("activo"):
+        n8n_hook.emitir_cupon(creados[0])  # aviso de oferta a n8n (opcional, nunca falla)
     return {"cupon": _redactar(creados[0]) if creados else {}}
 
 

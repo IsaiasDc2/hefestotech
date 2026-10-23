@@ -1168,7 +1168,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
     filas = _sb_get("ordenes", {
         "select": ("id,user_id,estado,subtotal_centavos,descuento_centavos,"
                    "costo_envio_centavos,total_centavos,cupon_codigo,mp_payment_id,"
-                   "acceso_token,nombre,email,"
+                   "acceso_token,nombre,email,telefono,"
                    "orden_items(producto_id,cantidad,precio,productos(nombre))"),
         "id": f"eq.{orden_ref}", "limit": 1,
     }) or []
