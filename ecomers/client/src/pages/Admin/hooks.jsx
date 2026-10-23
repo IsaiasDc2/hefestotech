@@ -168,3 +168,26 @@ export function useModulo(cargador, deps = []) {
 
   return { estado, datos, detalle, recargar, setDatos };
 }
+
+// --- paginación del listado: página y cantidad por página ---
+// La página vuelve a 1 cuando cambia `claveFiltros` (búsqueda, estado, etc.);
+// la cantidad por página se conserva. Todo derivado en el render, sin efectos.
+export function usePaginacion(claveFiltros = "", porInicial = 25) {
+  const [estado, setEstado] = useState({ clave: claveFiltros, pagina: 1, por: porInicial });
+  const pagina = estado.clave === claveFiltros ? estado.pagina : 1;
+  const por = estado.por;
+
+  const irA = useCallback(
+    (n) => {
+      setEstado({ clave: claveFiltros, pagina: Math.max(1, n), por });
+      document.querySelector(".adm-main")?.scrollIntoView?.({ block: "start" });
+    },
+    [claveFiltros, por]
+  );
+  const cambiarPor = useCallback(
+    (n) => setEstado({ clave: claveFiltros, pagina: 1, por: n }),
+    [claveFiltros]
+  );
+
+  return { pagina, por, offset: (pagina - 1) * por, irA, cambiarPor };
+}

@@ -213,6 +213,32 @@ def _sb_get(tabla: str, params: dict[str, Any]) -> Any:
         raise HTTPException(status_code=502, detail="No se pudo consultar la base de datos.")
 
 
+def _sb_get_total(tabla: str, params: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
+    """GET con conteo exacto (cabecera Content-Range) para paginar en el panel.
+
+    Devuelve (filas de la página, total de filas que cumplen el filtro). Si
+    Supabase no manda el total, se estima con offset + filas para no romper.
+    """
+    try:
+        r = _client().get(f"/{tabla}", params=params, headers={"Prefer": "count=exact"})
+        r.raise_for_status()
+        filas = r.json() or []
+    except httpx.HTTPStatusError as e:
+        raise _sb_error(e)
+    except httpx.HTTPError:
+        print("ERROR admin_api: fallo de red hacia supabase.")
+        raise HTTPException(status_code=502, detail="No se pudo consultar la base de datos.")
+    total = None
+    rango = r.headers.get("content-range", "")
+    if "/" in rango:
+        cola = rango.rsplit("/", 1)[1]
+        if cola.isdigit():
+            total = int(cola)
+    if total is None:
+        total = int(params.get("offset") or 0) + len(filas)
+    return filas, total
+
+
 def _sb_post(tabla: str, fila: dict[str, Any], prefer: str = "return=representation") -> Any:
     try:
         r = _client().post(f"/{tabla}", json=fila, headers={"Prefer": prefer})
@@ -1107,7 +1133,7 @@ def listar_productos(papelera: bool = False, q: str = "",
                      admin: AdminActual = Depends(requiere("productos", "leer"))) -> dict[str, Any]:
     params: dict[str, Any] = {
         "select": "*",
-        "order": "nombre.asc",
+        "order": "nombre.asc,id.asc",  # id desempata: sin repetidos entre páginas
         "limit": pag["limit"],
         "offset": pag["offset"],
         "deleted_at": "not.is.null" if papelera else "is.null",
@@ -1116,10 +1142,10 @@ def listar_productos(papelera: bool = False, q: str = "",
         limpio = _filtro_texto(q)
         if limpio:
             params["nombre"] = f"ilike.*{limpio}*"
-    filas = _sb_get("productos", params) or []
+    filas, total = _sb_get_total("productos", params)
     for f in filas:  # centavos para el panel, sin floats
         f["precio_centavos"] = _a_centavos(f.get("precio"))
-    return {"productos": filas, "papelera": papelera}
+    return {"productos": filas, "papelera": papelera, "total": total}
 
 
 @router.post("/api/admin/productos", status_code=201)
@@ -1324,7 +1350,7 @@ def listar_pedidos(estado: str = "",
         if estado not in ESTADOS_PEDIDO:
             raise HTTPException(status_code=400, detail="Estado inválido.")
         params["estado"] = f"eq.{estado}"
-    pedidos = _sb_get("ordenes", params) or []
+    pedidos, total_pedidos = _sb_get_total("ordenes", params)
     # Comprobante por pedido (UNIQUE orden_id). Si la base aún no tiene 012,
     # el listado igual responde (queda sin comprobante hasta migrar).
     ids = [str(p.get("id")) for p in pedidos if p.get("id")]
@@ -1366,7 +1392,7 @@ def listar_pedidos(estado: str = "",
             p["totales"] = {"subtotal_centavos": sub, "descuento_centavos": 0, "total_centavos": sub}
         p["comprobante"] = por_orden.get(str(p.get("id")))
         p["comprobante_pago"] = pagos.get(str(p.get("id")))
-    return {"pedidos": pedidos}
+    return {"pedidos": pedidos, "total": total_pedidos}
 
 
 @router.post("/api/admin/pedidos/{pid}/estado")
@@ -1548,7 +1574,7 @@ def listar_clientes(q: str = "",
         limpio = _filtro_texto(q)
         if limpio:
             params["nombre"] = f"ilike.*{limpio}*"
-    perfiles = _sb_get("perfiles", params) or []
+    perfiles, total = _sb_get_total("perfiles", params)
     ids = [str(p.get("id")) for p in perfiles if p.get("id")]
     resumen = _resumen_pedidos(ids)
     correos = _emails_auth()
@@ -1558,7 +1584,7 @@ def listar_clientes(q: str = "",
         p["resumen"] = resumen.get(uid, {"pedidos": 0, "comprado_centavos": 0,
                                          "ultimo_pedido": None, "ultimo_estado": "",
                                          "pedidos_detalle": []})
-    return {"clientes": perfiles}
+    return {"clientes": perfiles, "total": total}
 
 
 @router.get("/api/admin/reclamos")
@@ -1573,7 +1599,8 @@ def listar_reclamos(estado: str = "",
         if estado not in ESTADOS_RECLAMO:
             raise HTTPException(status_code=400, detail="Estado inválido.")
         params["estado"] = f"eq.{estado}"
-    return {"reclamos": _sb_get("reclamos", params) or []}
+    filas, total = _sb_get_total("reclamos", params)
+    return {"reclamos": filas, "total": total}
 
 
 @router.post("/api/admin/reclamos", status_code=201)
@@ -1760,10 +1787,11 @@ def crear_mensaje_reclamo(rid: str, d: MensajeReclamoCrear, request: Request,
 @router.get("/api/admin/cupones")
 def listar_cupones(pag: dict[str, int] = Depends(_pag),
                    admin: AdminActual = Depends(requiere("cupones", "leer"))) -> dict[str, Any]:
-    return {"cupones": _sb_get("cupones", {
+    filas, total = _sb_get_total("cupones", {
         "select": "*", "deleted_at": "is.null",
         "order": "created_at.desc", "limit": pag["limit"], "offset": pag["offset"],
-    }) or []}
+    })
+    return {"cupones": filas, "total": total}
 
 
 @router.post("/api/admin/cupones", status_code=201)
@@ -1793,10 +1821,11 @@ def borrar_cupon(cid: str,
 @router.get("/api/admin/banners")
 def listar_banners(pag: dict[str, int] = Depends(_pag),
                    admin: AdminActual = Depends(requiere("banners", "leer"))) -> dict[str, Any]:
-    return {"banners": _sb_get("banners", {
+    filas, total = _sb_get_total("banners", {
         "select": "*", "deleted_at": "is.null",
-        "order": "orden.asc", "limit": pag["limit"], "offset": pag["offset"],
-    }) or []}
+        "order": "orden.asc,id.asc", "limit": pag["limit"], "offset": pag["offset"],
+    })
+    return {"banners": filas, "total": total}
 
 
 @router.post("/api/admin/banners", status_code=201)
@@ -1887,9 +1916,9 @@ def listar_auditoria(modulo: str = "", entidad: str = "",
         params["modulo"] = f"eq.{modulo.strip()}"
     if entidad.strip():
         params["entidad"] = f"eq.{entidad.strip()}"
-    filas = _sb_get("audit_log", params) or []
+    filas, total = _sb_get_total("audit_log", params)
     # Append-only: solo lectura; se redactan secretos de diff/meta.
-    return {"eventos": [_redactar(f) for f in filas]}
+    return {"eventos": [_redactar(f) for f in filas], "total": total}
 
 
 @router.get("/api/admin/reportes/ventas")
@@ -2591,8 +2620,9 @@ def listar_proveedores(q: str = "", estado: str = "", provincia: str = "", moned
         params["moneda"] = f"eq.{moneda}"
     if _filtro_texto(provincia):
         params["provincia"] = f"ilike.{_filtro_texto(provincia)}"
-    filas = _sb_get("proveedores", params) or []
-    return {"proveedores": [_proveedor_salida(p) for p in filas], "papelera": papelera}
+    filas, total = _sb_get_total("proveedores", params)
+    return {"proveedores": [_proveedor_salida(p) for p in filas], "papelera": papelera,
+            "total": total}
 
 
 def _historial_proveedor(ordenes_raw: list[dict[str, Any]],

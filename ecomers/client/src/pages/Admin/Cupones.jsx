@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 const VACIO = { codigo: "", tipo: "porcentaje", valor: "", min_compra: "", usos_max: "", activo: true, vence: "" };
 
@@ -19,7 +19,11 @@ export default function Cupones({ avisar, pedirConfirm }) {
   const [form, setForm] = useState(VACIO);
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const { estado, datos, recargar } = useModulo(() => adminApi.cupones(), []);
+  const pg = usePaginacion("");
+  const { estado, datos, recargar } = useModulo(
+    () => adminApi.cupones({ limit: pg.por, offset: pg.offset }),
+    [pg.por, pg.offset]
+  );
   const lista = datos?.cupones ?? [];
 
   const alCrear = async (e) => {
@@ -71,7 +75,7 @@ export default function Cupones({ avisar, pedirConfirm }) {
     <div>
       <Cabecera
         kicker="Promos"
-        titulo={`Cupones (${lista.length})`}
+        titulo={`Cupones (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
@@ -171,6 +175,7 @@ export default function Cupones({ avisar, pedirConfirm }) {
             vacio="Sin cupones."
           />
         )}
+        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
     </div>
   );

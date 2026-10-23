@@ -8,9 +8,21 @@
 import { CATEGORIAS, resolverCategoria } from "../../constants/categorias";
 import { precioFinal } from "../../services/productService";
 import { normalizar } from "../filters/filtros";
+import { paginaValida } from "../../utils/paginacion";
 
 export const ORDENES = ["relevancia", "menor", "mayor", "descuento", "nombre"];
 export const POR_PAGINA = 24;
+export const POR_PAGINA_OPCIONES = [12, 24, 48];
+
+/**
+ * Página y tamaño desde la URL (?pagina=2&por=48). Fuera de los filtros a
+ * propósito: cambiar un filtro vuelve a la página 1, el tamaño se conserva.
+ */
+export function leerPaginacion(params, total) {
+  const n = Number.parseInt(params.get("por") ?? "", 10);
+  const por = POR_PAGINA_OPCIONES.includes(n) ? n : POR_PAGINA;
+  return { por, pagina: paginaValida(params.get("pagina"), total, por) };
+}
 
 const entero = (v) => {
   const n = Number.parseInt(String(v ?? "").replace(/\D/g, ""), 10);

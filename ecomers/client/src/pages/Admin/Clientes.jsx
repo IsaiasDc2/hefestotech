@@ -4,8 +4,8 @@
 import { useState } from "react";
 import { FaBoxOpen, FaReceipt } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 const SIN_RESUMEN = {
   pedidos: 0,
@@ -145,9 +145,10 @@ function PedidosCliente({ pedidos }) {
 export default function Clientes() {
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const pg = usePaginacion(busqueda);
   const { estado, datos, recargar } = useModulo(
-    () => adminApi.clientes({ busqueda }),
-    [busqueda]
+    () => adminApi.clientes({ busqueda, limit: pg.por, offset: pg.offset }),
+    [busqueda, pg.por, pg.offset]
   );
   const lista = datos?.clientes ?? [];
 
@@ -159,7 +160,7 @@ export default function Clientes() {
     <div>
       <Cabecera
         kicker="Personas"
-        titulo={`Clientes (${lista.length})`}
+        titulo={`Clientes (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
@@ -256,6 +257,7 @@ export default function Clientes() {
             })}
           </ul>
         )}
+        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
     </div>
   );

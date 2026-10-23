@@ -1,16 +1,17 @@
 // HefestoTech · Admin · Auditoría: log append-only (solo lectura).
 import { useState } from "react";
 import { adminApi, fechaCorta } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 export default function Auditoria() {
   const [modulo, setModulo] = useState("");
   const [entidad, setEntidad] = useState("");
   const [filtro, setFiltro] = useState({ modulo: "", entidad: "" });
+  const pg = usePaginacion(`${filtro.modulo}|${filtro.entidad}`);
   const { estado, datos, recargar } = useModulo(
-    () => adminApi.auditoria(filtro),
-    [filtro.modulo, filtro.entidad]
+    () => adminApi.auditoria({ ...filtro, limit: pg.por, offset: pg.offset }),
+    [filtro.modulo, filtro.entidad, pg.por, pg.offset]
   );
   const lista = datos?.eventos ?? [];
 
@@ -22,7 +23,7 @@ export default function Auditoria() {
     <div>
       <Cabecera
         kicker="Trazas"
-        titulo={`Auditoría (${lista.length})`}
+        titulo={`Auditoría (${datos?.total ?? lista.length})`}
         acciones={
           <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
             Actualizar
@@ -55,6 +56,7 @@ export default function Auditoria() {
           filaKey={(e) => e.id ?? `${e.created_at ?? "?"}-${e.modulo ?? "?"}-${e.accion ?? e.evento ?? "?"}`}
           vacio="Sin eventos registrados."
         />
+        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
         <p className="texto-mutado">Append-only: este registro no se puede editar ni borrar desde el panel.</p>
       </section>
     </div>

@@ -99,9 +99,11 @@ def test_owner_lista_productos(monkeypatch):
         return []
 
     monkeypatch.setattr(admin_api, "_sb_get", fake_get)
+    monkeypatch.setattr(admin_api, "_sb_get_total", lambda tabla, params: ([], 0))
     r = cliente.get("/api/admin/productos", headers={"Authorization": "Bearer x"})
     assert r.status_code == 200
     assert r.json()["productos"] == []
+    assert r.json()["total"] == 0
 
 
 # --------------------------------------------------------------- checkout ---

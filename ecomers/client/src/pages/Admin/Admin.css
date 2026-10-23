@@ -2517,3 +2517,76 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Paginador de listados */
+.adm-paginador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-suave);
+}
+
+.adm-pag-texto {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.adm-pag-por {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.adm-pag-por select {
+  min-height: 44px;
+}
+
+.adm-pag-botones {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.adm-pag-numeros {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.adm-pag-numeros .adm-mini {
+  min-width: 44px;
+  justify-content: center;
+}
+
+.adm-pag-puntos {
+  min-width: 1.2rem;
+  text-align: center;
+  color: var(--text-muted, inherit);
+}
+
+.adm-pag-compacto {
+  display: none;
+  min-width: 3.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .adm-paginador {
+    justify-content: center;
+    /* el botón flotante del asistente no debe tapar "Siguiente" */
+    padding-bottom: 4.5rem;
+  }
+  .adm-pag-numeros {
+    display: none;
+  }
+  .adm-pag-compacto {
+    display: inline;
+  }
+}

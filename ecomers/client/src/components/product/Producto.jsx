@@ -7,12 +7,15 @@ import { CATEGORIAS, nombreCategoria, nombreCategoriaDb } from "../../constants/
 import {
   ORDENES,
   POR_PAGINA,
+  POR_PAGINA_OPCIONES,
   aplicarCatalogo,
   cantidadFiltrosActivos,
   filtrosAParams,
   leerFiltros,
+  leerPaginacion,
 } from "./catalogo";
 import { formatearPesos } from "../../utils/dinero";
+import { paginasVisibles, rangoVisible, totalPaginas } from "../../utils/paginacion";
 import ProductCard from "./ProductCard";
 import "./ProductCard.css";
 import "./Catalogo.css";
@@ -253,6 +256,69 @@ function ChipsActivos({ filtros, cambiar, limpiar, idioma }) {
   );
 }
 
+/* Paginación numerada. La página vive en la URL (?pagina=2): Atrás, recargar
+   y compartir funcionan. En pantallas angostas queda "‹ 2 / 5 ›". */
+function PaginadorTienda({ total, pagina, por, onPagina, onPor, idioma }) {
+  const cantidad = totalPaginas(total, por);
+  const { desde, hasta } = rangoVisible(pagina, por, total);
+  return (
+    <nav className="catl-paginacion" aria-label={t(idioma, "catl.paginacion")}>
+      <p role="status" aria-live="polite">
+        {t(idioma, "catl.mostrando")} {desde}–{hasta} {t(idioma, "catl.de")} {total}
+      </p>
+      {cantidad > 1 && (
+        <div className="catl-pag-botones">
+          <button
+            type="button"
+            className="catl-pag-nav"
+            onClick={() => onPagina(pagina - 1)}
+            disabled={pagina <= 1}
+            aria-label={`${t(idioma, "catl.anterior")}`}
+          >
+            ‹<span className="catl-pag-texto"> {t(idioma, "catl.anterior")}</span>
+          </button>
+          <span className="catl-pag-numeros">
+            {paginasVisibles(pagina, cantidad).map((n, i) =>
+              n === "…" ? (
+                <span key={`p${i}`} className="catl-pag-puntos" aria-hidden="true">…</span>
+              ) : (
+                <button
+                  key={n}
+                  type="button"
+                  className={`catl-pag-num${n === pagina ? " es-actual" : ""}`}
+                  onClick={() => onPagina(n)}
+                  aria-current={n === pagina ? "page" : undefined}
+                  aria-label={`${t(idioma, "catl.pagina")} ${n}`}
+                >
+                  {n}
+                </button>
+              )
+            )}
+          </span>
+          <span className="catl-pag-compacto" aria-hidden="true">{pagina} / {cantidad}</span>
+          <button
+            type="button"
+            className="catl-pag-nav"
+            onClick={() => onPagina(pagina + 1)}
+            disabled={pagina >= cantidad}
+            aria-label={`${t(idioma, "catl.siguiente")}`}
+          >
+            <span className="catl-pag-texto">{t(idioma, "catl.siguiente")} </span>›
+          </button>
+        </div>
+      )}
+      <label className="catl-pag-por">
+        <span>{t(idioma, "catl.porPagina")}</span>
+        <select value={por} onChange={(e) => onPor(Number(e.target.value))}>
+          {POR_PAGINA_OPCIONES.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </label>
+    </nav>
+  );
+}
+
 function Productos({ agregarAlCarrito }) {
   const idioma = useIdiomaStore((s) => s.idioma);
   const { productos, cargando, error, reintentar } = useCatalogo();
@@ -261,14 +327,17 @@ function Productos({ agregarAlCarrito }) {
   const facetas = useMemo(() => aplicarCatalogo(productos, filtros), [productos, filtros]);
   const dialogoRef = useRef(null);
 
-  const clave = params.toString();
-  const [pagina, setPagina] = useState({ clave, n: POR_PAGINA });
-  const visibles = pagina.clave === clave ? pagina.n : POR_PAGINA;
-
   const cambiar = useCallback(
     (parcial) => {
       setParams(
-        (actuales) => filtrosAParams({ ...leerFiltros(actuales), ...parcial }),
+        (actuales) => {
+          // Cambiar un filtro vuelve a la página 1 (no se copia `pagina`),
+          // pero el tamaño de página elegido se conserva.
+          const siguiente = filtrosAParams({ ...leerFiltros(actuales), ...parcial });
+          const por = actuales.get("por");
+          if (por) siguiente.por = por;
+          return siguiente;
+        },
         // La búsqueda tipeada reemplaza la entrada del historial: "atrás"
         // no tiene que recorrer cada letra.
         { replace: "q" in parcial || "min" in parcial || "max" in parcial }
@@ -280,6 +349,27 @@ function Productos({ agregarAlCarrito }) {
   const limpiar = useCallback(() => setParams({}), [setParams]);
 
   const total = facetas.resultados.length;
+  const { por, pagina } = leerPaginacion(params, total);
+  const visibles = facetas.resultados.slice((pagina - 1) * por, pagina * por);
+
+  const irPagina = (n) => {
+    setParams((actuales) => {
+      const siguiente = Object.fromEntries(actuales);
+      if (n <= 1) delete siguiente.pagina;
+      else siguiente.pagina = String(n);
+      return siguiente;
+    });
+    document.getElementById("catl-titulo")?.scrollIntoView?.({ block: "start" });
+  };
+  const cambiarPor = (n) => {
+    setParams((actuales) => {
+      const siguiente = Object.fromEntries(actuales);
+      delete siguiente.pagina;
+      if (n === POR_PAGINA) delete siguiente.por;
+      else siguiente.por = String(n);
+      return siguiente;
+    });
+  };
   const activos = cantidadFiltrosActivos(filtros);
   const categoriaActual = CATEGORIAS.find((c) => c.db === filtros.categoria);
   const etiquetaCategoria = categoriaActual ? nombreCategoria(categoriaActual, idioma) : undefined;
@@ -420,8 +510,8 @@ function Productos({ agregarAlCarrito }) {
           ) : (
             <>
               <ul className="catl-grilla">
-                {facetas.resultados.slice(0, visibles).map((p, i) => (
-                  <li key={p.id} style={{ "--i": i % POR_PAGINA }}>
+                {visibles.map((p, i) => (
+                  <li key={p.id} style={{ "--i": i }}>
                     <ProductCard
                       producto={p}
                       agregarAlCarrito={agregarAlCarrito}
@@ -430,20 +520,15 @@ function Productos({ agregarAlCarrito }) {
                   </li>
                 ))}
               </ul>
-              {visibles < total && (
-                <div className="catl-paginacion">
-                  <p>
-                    {t(idioma, "catl.mostrando")} {visibles} {t(idioma, "catl.de")} {total}
-                  </p>
-                  <progress max={total} value={visibles} aria-hidden="true" />
-                  <button
-                    type="button"
-                    className="catl-btn-secundario"
-                    onClick={() => setPagina({ clave, n: visibles + POR_PAGINA })}
-                  >
-                    {t(idioma, "catl.mostrarMas")}
-                  </button>
-                </div>
+              {total > POR_PAGINA_OPCIONES[0] && (
+                <PaginadorTienda
+                  total={total}
+                  pagina={pagina}
+                  por={por}
+                  onPagina={irPagina}
+                  onPor={cambiarPor}
+                  idioma={idioma}
+                />
               )}
             </>
           )}

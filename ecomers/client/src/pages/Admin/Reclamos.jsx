@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { adminApi, fechaCorta } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 const ESTADOS = ["", "abierto", "en_revision", "resuelto", "rechazado"];
 const SIGUIENTES = {
@@ -17,9 +17,10 @@ const SIGUIENTES = {
 export default function Reclamos({ avisar }) {
   const [estado, setEstado] = useState("");
   const [cambiando, setCambiando] = useState("");
+  const pg = usePaginacion(estado);
   const { estado: est, datos, recargar } = useModulo(
-    () => adminApi.reclamos({ estado }),
-    [estado]
+    () => adminApi.reclamos({ estado, limit: pg.por, offset: pg.offset }),
+    [estado, pg.por, pg.offset]
   );
   const lista = datos?.reclamos ?? [];
 
@@ -44,7 +45,7 @@ export default function Reclamos({ avisar }) {
     <div>
       <Cabecera
         kicker="Soporte"
-        titulo={`Reclamos (${lista.length})`}
+        titulo={`Reclamos (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <label className="adm-filtro">Estado
@@ -101,6 +102,11 @@ export default function Reclamos({ avisar }) {
             </li>
           ))}
         </ul>
+      )}
+      {(datos?.total ?? 0) > 10 && (
+        <div className="card adm-panel">
+          <Paginador total={datos.total} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
+        </div>
       )}
     </div>
   );

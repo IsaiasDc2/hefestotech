@@ -1,5 +1,6 @@
 // HefestoTech · Admin · primitivas compartidas: toasts, skeletons, vacíos,
 // "Próximamente" y tabla responsive (→tarjetas). Hooks en hooks.jsx.
+import { paginasVisibles, rangoVisible, totalPaginas } from "../../utils/paginacion";
 
 // --- toasts (estado en useToasts, hooks.jsx) ---
 export function ZonaToasts({ lista, onCerrar }) {
@@ -128,5 +129,70 @@ export function Cabecera({ kicker, titulo, insignia = null, acciones = null }) {
         {acciones}
       </div>
     </header>
+  );
+}
+
+// Paginador del listado: "Mostrando 51–100 de 214", cantidad por página,
+// anterior / números / siguiente. En pantallas angostas queda "‹ 2 / 5 ›".
+export function Paginador({ total, pagina, por, onPagina, onPor, opcionesPor = [10, 25, 50, 100] }) {
+  if (!total || total <= Math.min(...opcionesPor)) return null;
+  const cantidad = totalPaginas(total, por);
+  const actual = Math.min(pagina, cantidad);
+  const { desde, hasta } = rangoVisible(actual, por, total);
+  return (
+    <nav className="adm-paginador" aria-label="Paginación">
+      <p className="adm-pag-texto adm-muted" role="status" aria-live="polite">
+        Mostrando {desde}–{hasta} de {total}
+      </p>
+      <label className="adm-pag-por">
+        <span className="adm-muted">Por página</span>
+        <select value={por} onChange={(e) => onPor(Number(e.target.value))}>
+          {opcionesPor.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </label>
+      <div className="adm-pag-botones">
+        <button
+          type="button"
+          className="btn-fantasma adm-mini"
+          onClick={() => onPagina(actual - 1)}
+          disabled={actual <= 1}
+          aria-label="Página anterior"
+        >
+          ‹ Anterior
+        </button>
+        <span className="adm-pag-numeros">
+          {paginasVisibles(actual, cantidad).map((n, i) =>
+            n === "…" ? (
+              <span key={`p${i}`} className="adm-pag-puntos" aria-hidden="true">…</span>
+            ) : (
+              <button
+                key={n}
+                type="button"
+                className={n === actual ? "btn-primary adm-mini" : "btn-fantasma adm-mini"}
+                onClick={() => onPagina(n)}
+                aria-current={n === actual ? "page" : undefined}
+                aria-label={`Página ${n}`}
+              >
+                {n}
+              </button>
+            )
+          )}
+        </span>
+        <span className="adm-pag-compacto adm-muted" aria-hidden="true">
+          {actual} / {cantidad}
+        </span>
+        <button
+          type="button"
+          className="btn-fantasma adm-mini"
+          onClick={() => onPagina(actual + 1)}
+          disabled={actual >= cantidad}
+          aria-label="Página siguiente"
+        >
+          Siguiente ›
+        </button>
+      </div>
+    </nav>
   );
 }

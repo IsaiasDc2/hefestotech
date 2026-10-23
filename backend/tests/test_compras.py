@@ -58,7 +58,12 @@ def _como(monkeypatch, rol, tablas=None, posts=None, patches=None, rpcs=None):
             rpcs.append((funcion, args))
         return {"estado": "recibida_parcial", "pendiente": 4, "items": []}
 
+    def fake_get_total(tabla, params):
+        filas = fake_get(tabla, params)
+        return filas, len(filas)
+
     monkeypatch.setattr(admin_api, "_sb_get", fake_get)
+    monkeypatch.setattr(admin_api, "_sb_get_total", fake_get_total)
     monkeypatch.setattr(admin_api, "_sb_post", fake_post)
     monkeypatch.setattr(admin_api, "_sb_patch", fake_patch)
     monkeypatch.setattr(admin_api, "_sb_delete", lambda tabla, params: [])

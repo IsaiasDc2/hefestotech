@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { FaChevronDown, FaFileArrowDown, FaReceipt } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 import { esDestructivo, siguientesEstados } from "./pedidosUtil";
 
 const ESTADOS = ["", "pendiente", "pagada", "preparacion", "enviada", "entregada", "cancelada", "reembolsada"];
@@ -18,9 +18,10 @@ export default function Pedidos({ avisar, pedirConfirm }) {
   const [abierto, setAbierto] = useState("");
   const [bajando, setBajando] = useState("");
   const [viendoPago, setViendoPago] = useState("");
+  const pg = usePaginacion(estado);
   const { estado: est, datos, recargar } = useModulo(
-    () => adminApi.pedidos({ estado }),
-    [estado]
+    () => adminApi.pedidos({ estado, limit: pg.por, offset: pg.offset }),
+    [estado, pg.por, pg.offset]
   );
   const lista = datos?.pedidos ?? [];
 
@@ -91,7 +92,7 @@ export default function Pedidos({ avisar, pedirConfirm }) {
     <div>
       <Cabecera
         kicker="Ventas"
-        titulo={`Pedidos (${lista.length})`}
+        titulo={`Pedidos (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <label className="adm-filtro">Estado
@@ -306,6 +307,11 @@ export default function Pedidos({ avisar, pedirConfirm }) {
             );
           })}
         </ul>
+      )}
+      {(datos?.total ?? 0) > 10 && (
+        <div className="card adm-panel">
+          <Paginador total={datos.total} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
+        </div>
       )}
     </div>
   );

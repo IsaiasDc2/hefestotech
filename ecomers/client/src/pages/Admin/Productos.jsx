@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
 
@@ -18,9 +18,10 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
 
   const [presetPrevio, setPresetPrevio] = useState(presetQ);
 
+  const pg = usePaginacion(busqueda);
   const { estado, datos, recargar } = useModulo(
-    () => adminApi.productos({ busqueda, limit: 50 }),
-    [busqueda]
+    () => adminApi.productos({ busqueda, limit: pg.por, offset: pg.offset }),
+    [busqueda, pg.por, pg.offset]
   );
 
   // Si llega otro presetQ (p. ej. desde la paleta ⌘K), se ajusta durante el render.
@@ -139,7 +140,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
     <div>
       <Cabecera
         kicker="Catálogo"
-        titulo={`Productos (${lista.length})`}
+        titulo={`Productos (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
@@ -297,6 +298,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
             vacio="Sin productos."
           />
         )}
+        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
       </div>
     </div>

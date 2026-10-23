@@ -5,6 +5,7 @@ import {
   coincideBusqueda,
   filtrosAParams,
   leerFiltros,
+  leerPaginacion,
   ordenar,
 } from "./catalogo";
 
@@ -109,5 +110,23 @@ describe("ordenar", () => {
     const nombres = ordenar(CATALOGO, "relevancia").map((x) => x.nombre);
     expect(nombres.indexOf("Core i7 14700K")).toBeGreaterThan(nombres.indexOf("Ryzen 5 7600"));
     expect(nombres.at(-1)).toBe("Ryzen 7 9800X3D");
+  });
+});
+
+describe("leerPaginacion", () => {
+  test("usa 24 por página y página 1 por defecto", () => {
+    expect(leerPaginacion(params(""), 100)).toEqual({ por: 24, pagina: 1 });
+  });
+  test("respeta ?por y ?pagina válidos", () => {
+    expect(leerPaginacion(params("por=12&pagina=3"), 100)).toEqual({ por: 12, pagina: 3 });
+  });
+  test("ignora tamaños no permitidos y acota la página al total", () => {
+    expect(leerPaginacion(params("por=7"), 100).por).toBe(24);
+    expect(leerPaginacion(params("pagina=99"), 54)).toEqual({ por: 24, pagina: 3 });
+    expect(leerPaginacion(params("pagina=-4"), 54).pagina).toBe(1);
+  });
+  test("cambiar filtros no arrastra la página", () => {
+    const f = leerFiltros(params("categoria=procesadores&pagina=3"));
+    expect(filtrosAParams(f).pagina).toBeUndefined();
   });
 });

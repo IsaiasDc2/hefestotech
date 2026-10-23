@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
-import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
-import { useModulo } from "./hooks";
+import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
+import { useModulo, usePaginacion } from "./hooks";
 
 const VACIO = { titulo: "", imagen: "", link: "", orden: "0", activo: true };
 
@@ -12,7 +12,11 @@ export default function Banners({ avisar, pedirConfirm }) {
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
-  const { estado, datos, recargar } = useModulo(() => adminApi.banners(), []);
+  const pg = usePaginacion("");
+  const { estado, datos, recargar } = useModulo(
+    () => adminApi.banners({ limit: pg.por, offset: pg.offset }),
+    [pg.por, pg.offset]
+  );
   const lista = datos?.banners ?? [];
 
   const alGuardar = async (e) => {
@@ -87,7 +91,7 @@ export default function Banners({ avisar, pedirConfirm }) {
     <div>
       <Cabecera
         kicker="Vidriera"
-        titulo={`Banners (${lista.length})`}
+        titulo={`Banners (${datos?.total ?? lista.length})`}
         acciones={
           <div className="adm-acciones-cab">
             <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
@@ -171,6 +175,7 @@ export default function Banners({ avisar, pedirConfirm }) {
             ))}
           </ul>
         )}
+        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
     </div>
   );
