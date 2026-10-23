@@ -6,7 +6,12 @@ import { Cabecera, Proximamente, SinPermiso, Skeleton, Tabla } from "./ui";
 import { useModulo } from "./hooks";
 
 function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
+  // Fecha local del navegador (no UTC): en Argentina, toISOString() ya es
+  // mañana a partir de las 21:00 y el reporte omitía los pedidos del día.
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
 export default function Reportes() {

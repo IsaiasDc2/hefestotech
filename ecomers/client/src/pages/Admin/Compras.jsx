@@ -195,7 +195,12 @@ function NuevaOrden({ avisar, onCreada, onCancelar }) {
       <form className="adm-form" onSubmit={guardar}>
         <div className="adm-fila-2">
           <label>Proveedor *
-            <select value={proveedorId} onChange={(e) => setProveedorId(e.target.value)} required>
+            <select value={proveedorId} onChange={(e) => {
+              setProveedorId(e.target.value);
+              // Los costos sugeridos son del proveedor anterior: no se
+              // arrastran a la orden del proveedor nuevo.
+              setLineas((ls) => ls.map((l) => ({ ...l, costo: "" })));
+            }} required>
               <option value="">{provs.estado === "cargando" ? "Cargando…" : "Elegí un proveedor"}</option>
               {proveedores.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
             </select>
@@ -212,7 +217,9 @@ function NuevaOrden({ avisar, onCreada, onCancelar }) {
                 value={l.producto_id}
                 onChange={(e) => {
                   const id = e.target.value;
-                  setLinea(i, { producto_id: id, costo: costos[id] != null ? centavosATexto(costos[id]) : l.costo });
+                  // Si el producto no tiene costo vinculado, no conservar el
+                  // costo del producto anterior (se guardaba mal en la OC).
+                  setLinea(i, { producto_id: id, costo: costos[id] != null ? centavosATexto(costos[id]) : "" });
                 }}
                 aria-label={`Producto de la línea ${i + 1}`}
               >
@@ -261,6 +268,12 @@ function DetalleOrden({ id, avisar, pedirConfirm, onCambio, onCerrar }) {
   const oc = datos.orden;
   const items = oc.ordenes_compra_items ?? [];
   const recibible = OC_RECIBIBLES.has(oc.estado);
+  const totalMostrado = edicion
+    ? items.reduce((acc, it) => {
+        const e = edicion[it.producto_id] || {};
+        return acc + (Number(e.cantidad) || 0) * (aCentavos(e.costo) || 0);
+      }, 0)
+    : oc.total_centavos;
   const pendiente = (it) => it.cantidad - it.cantidad_recibida;
   const valorRecibir = (it) => recibir[it.producto_id] ?? String(pendiente(it));
 
@@ -371,7 +384,15 @@ function DetalleOrden({ id, avisar, pedirConfirm, onCambio, onCerrar }) {
           aria-label={`Costo unitario de ${it.productos?.nombre ?? "producto"}`} />
       ) : formatoMoneda(it.costo_unitario_centavos, oc.moneda),
     },
-    { clave: "subtotal", titulo: "Subtotal", ver: (it) => formatoMoneda(it.cantidad * it.costo_unitario_centavos, oc.moneda) },
+    {
+      clave: "subtotal", titulo: "Subtotal",
+      ver: (it) => {
+        const e = edicion?.[it.producto_id];
+        const cantidad = e ? Number(e.cantidad) || 0 : Number(it.cantidad) || 0;
+        const costo = e ? aCentavos(e.costo) || 0 : it.costo_unitario_centavos;
+        return formatoMoneda(cantidad * costo, oc.moneda);
+      },
+    },
   ];
   if (recibible) {
     columnas.push({
@@ -402,7 +423,7 @@ function DetalleOrden({ id, avisar, pedirConfirm, onCambio, onCerrar }) {
       </div>
 
       <Tabla columnas={columnas} filas={items} filaKey={(it) => it.id} vacio="Sin productos." />
-      <p>Total: <strong>{formatoMoneda(oc.total_centavos, oc.moneda)}</strong> · {oc.unidades_recibidas}/{oc.unidades_pedidas} unidades recibidas</p>
+      <p>Total: <strong>{formatoMoneda(totalMostrado, oc.moneda)}</strong> · {oc.unidades_recibidas}/{oc.unidades_pedidas} unidades recibidas</p>
       {oc.notas && <p className="adm-texto-pre texto-mutado">{oc.notas}</p>}
 
       <div className="adm-form-acciones">

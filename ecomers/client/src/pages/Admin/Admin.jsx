@@ -1,7 +1,7 @@
 // HefestoTech · Admin (/admin): shell con navegación interna por estado
 // (no toca las rutas de App.jsx) y carga diferida por módulo: cada vista es
 // un chunk separado además del chunk "admin". noindex: el panel no se indexa.
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { supabase } from "../../components/lib/supabaseClient";
 import useAuthStore from "../../store/authStore";
 import AdminLayout from "./AdminLayout";
@@ -109,9 +109,9 @@ function Admin() {
     let vivo = true;
     (async () => {
       try {
-        const r = await adminApi.notificaciones({ limit: 20 });
+        const r = await adminApi.notificaciones({ limit: 100, soloNoLeidas: true });
         const n = r?.notificaciones ?? [];
-        if (vivo) setNoLeidas(n.filter((x) => !x.leida).length);
+        if (vivo) setNoLeidas(n.length);
       } catch {
         /* campana en 0 */
       }
@@ -177,7 +177,16 @@ function Admin() {
     window.location.assign(import.meta.env.BASE_URL || "/");
   };
 
-  const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: () => setNoLeidas(0) };
+  const marcarLeidas = useCallback(async () => {
+    try {
+      await adminApi.marcarNotificacionesLeidas();
+    } catch {
+      /* si falla, la campana se reintenta al abrir la bandeja */
+    }
+    setNoLeidas(0);
+  }, []);
+
+  const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: marcarLeidas };
 
   return (
     <AdminLayout
@@ -216,7 +225,7 @@ function Admin() {
         {vista === "config" && <Config />}
         {vista === "auditoria" && <Auditoria />}
         {vista === "papelera" && <Papelera {...props} />}
-        {vista === "notificaciones" && <Notificaciones onLeidas={() => setNoLeidas(0)} />}
+        {vista === "notificaciones" && <Notificaciones onLeidas={marcarLeidas} />}
       </Suspense>
       <ZonaToasts lista={lista} onCerrar={cerrar} />
       {dialogo}

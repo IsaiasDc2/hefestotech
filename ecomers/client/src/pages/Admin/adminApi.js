@@ -160,8 +160,9 @@ export const adminApi = {
   crearBanner: (d) => api("/api/admin/banners", { method: "POST", body: d }),
   editarBanner: (id, d) => api(`/api/admin/banners/${q(id)}`, { method: "PUT", body: d }),
   borrarBanner: (id) => api(`/api/admin/banners/${q(id)}`, { method: "DELETE" }),
-  notificaciones: ({ limit = 20, offset = 0 } = {}) =>
-    api(`/api/admin/notificaciones?limit=${limit}&offset=${offset}`),
+  notificaciones: ({ limit = 20, offset = 0, soloNoLeidas = false } = {}) =>
+    api(`/api/admin/notificaciones?limit=${limit}&offset=${offset}${soloNoLeidas ? "&solo_no_leidas=true" : ""}`),
+  marcarNotificacionesLeidas: () => api("/api/admin/notificaciones/leer", { method: "POST" }),
   buscar: (texto, limite = 20) =>
     api(`/api/buscar?q=${q(texto)}&limite=${limite}`),
   auditoria: ({ modulo = "", entidad = "", limit = 50, offset = 0 } = {}) =>

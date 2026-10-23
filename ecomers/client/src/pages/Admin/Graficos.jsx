@@ -35,7 +35,9 @@ function TablaOculta({ etiqueta, filas }) {
 export function Barras({ datos, valor, etiqueta, formato = (n) => n }) {
   const filas = datos ?? [];
   if (!filas.length) return textoVacio();
-  const max = Math.max(1, ...filas.map((d) => Number(valor(d)) || 0));
+  const valores = filas.map((d) => Number(valor(d)) || 0);
+  if (valores.every((v) => v === 0)) return textoVacio();
+  const max = Math.max(1, ...valores);
   const ancho = 640;
   const alto = 190;
   const margen = 22;
@@ -100,6 +102,7 @@ export function BarrasApiladas({ datos, series, etiqueta, formato = (n) => n }) 
   const filas = datos ?? [];
   if (!filas.length) return textoVacio();
   const totales = filas.map((d) => series.reduce((acc, s) => acc + (Number(d[s.clave]) || 0), 0));
+  if (totales.every((v) => v === 0)) return textoVacio();
   const max = Math.max(1, ...totales);
   const ancho = 640;
   const alto = 190;
@@ -237,7 +240,9 @@ export function Donut({ datos, etiqueta }) {
 export function BarrasHorizontales({ datos, valor, etiqueta, formato = (n) => n }) {
   const filas = datos ?? [];
   if (!filas.length) return textoVacio();
-  const max = Math.max(1, ...filas.map((d) => Number(valor(d)) || 0));
+  const valores = filas.map((d) => Number(valor(d)) || 0);
+  if (valores.every((v) => v === 0)) return textoVacio();
+  const max = Math.max(1, ...valores);
 
   return (
     <figure className="adm-grafico">

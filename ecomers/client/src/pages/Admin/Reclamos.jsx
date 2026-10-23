@@ -7,6 +7,12 @@ import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
 import { useModulo } from "./hooks";
 
 const ESTADOS = ["", "abierto", "en_revision", "resuelto", "rechazado"];
+const SIGUIENTES = {
+  abierto: ["en_revision"],
+  en_revision: ["resuelto", "rechazado"],
+  resuelto: [],
+  rechazado: [],
+};
 
 export default function Reclamos({ avisar }) {
   const [estado, setEstado] = useState("");
@@ -80,7 +86,7 @@ export default function Reclamos({ avisar }) {
               </p>
               {r.detalle && <p>{r.detalle}</p>}
               <div className="adm-acciones">
-                {ESTADOS.filter((s) => s && s !== r.estado).map((s) => (
+                {SIGUIENTES[r.estado]?.map((s) => (
                   <button
                     key={s}
                     type="button"

@@ -1,4 +1,5 @@
 // HefestoTech · Admin · Notificaciones: bandeja (campana del topbar).
+import { useEffect } from "react";
 import { adminApi, fechaCorta } from "./adminApi";
 import { Cabecera, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
 import { useModulo } from "./hooks";
@@ -7,14 +8,13 @@ export default function Notificaciones({ onLeidas }) {
   const { estado, datos, recargar } = useModulo(() => adminApi.notificaciones({ limit: 30 }), []);
   const lista = datos?.notificaciones ?? [];
 
+  useEffect(() => {
+    if (onLeidas && lista.length) onLeidas();
+  }, [onLeidas, lista.length]);
+
   if (estado === "cargando") return <Skeleton lineas={6} etiqueta="Cargando notificaciones…" />;
   if (estado === "sin-permiso") return <SinPermiso modulo="Notificaciones" />;
   if (estado === "no-disponible") return <Proximamente modulo="Notificaciones" />;
-
-  if (onLeidas && lista.length) {
-    // Marca visual de lectura al abrir la bandeja (sin endpoint dedicado).
-    setTimeout(onLeidas, 0);
-  }
 
   return (
     <div>

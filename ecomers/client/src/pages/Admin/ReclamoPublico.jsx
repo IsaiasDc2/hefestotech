@@ -26,13 +26,17 @@ export default function ReclamoPublico() {
     // como referencia en el detalle en vez de romper con 404.
     const ordenTxt = form.orden.trim();
     const esUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ordenTxt);
-    const detalleFinal = ordenTxt && !esUuid
-      ? `Orden indicada: ${ordenTxt}\n${form.detalle.trim()}`.slice(0, 2000)
-      : form.detalle.trim();
+    const detalleFinal = [
+      ordenTxt && !esUuid ? `Orden indicada: ${ordenTxt}` : "",
+      form.detalle.trim(),
+      // El contacto va en el detalle: concatenarlo al motivo rompía el
+      // límite de 200 y se filtraba en la respuesta de WhatsApp.
+      `Contacto: ${form.nombre.trim()} <${form.email.trim()}>`,
+    ].filter(Boolean).join("\n").slice(0, 2000);
     try {
       await adminApi.crearReclamo({
         orden_id: esUuid ? ordenTxt : null,
-        motivo: `${form.motivo.trim()} — ${form.nombre.trim()} <${form.email.trim()}>`,
+        motivo: form.motivo.trim(),
         detalle: detalleFinal,
       });
       setEstado("ok");

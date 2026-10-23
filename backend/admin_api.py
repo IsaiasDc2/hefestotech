@@ -20,8 +20,9 @@ import re
 import secrets
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable, Optional
+from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
@@ -105,6 +106,14 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
 
 ESTADOS_PEDIDO = {"pendiente", "pagada", "preparacion", "enviada", "entregada", "cancelada", "reembolsada"}
 ESTADOS_RECLAMO = {"abierto", "en_revision", "resuelto", "rechazado"}
+# Flujo documentado: abierto → en_revision → resuelto | rechazado.
+# Los estados finales no se reabren.
+TRANSICIONES_RECLAMO: dict[str, set[str]] = {
+    "abierto": {"en_revision"},
+    "en_revision": {"resuelto", "rechazado"},
+    "resuelto": set(),
+    "rechazado": set(),
+}
 
 # Mensajes de error de los RPC SQL que es seguro mostrar tal cual
 # (no contienen secretos ni trazas).
@@ -180,12 +189,16 @@ def _client() -> httpx.Client:
 
 def _sb_error(exc: httpx.HTTPStatusError) -> HTTPException:
     try:
-        detalle = exc.response.json().get("message", "")
+        cuerpo = exc.response.json()
     except Exception:
-        detalle = ""
+        cuerpo = {}
+    detalle = str(cuerpo.get("message", "") or "")
+    codigo = str(cuerpo.get("code", "") or "")
     print(f"ERROR admin_api: supabase {exc.response.status_code}.")
-    estado = 409 if _es_duplicado(str(detalle)) else 502
-    return HTTPException(status_code=estado, detail=_mensaje_seguro(str(detalle)))
+    # P0001 = raise_exception de una RPC/trigger: es una regla de negocio
+    # (transición inválida, versión vieja), no una caída del proveedor.
+    estado = 409 if (_es_duplicado(detalle) or codigo == "P0001") else 502
+    return HTTPException(status_code=estado, detail=_mensaje_seguro(detalle))
 
 
 def _sb_get(tabla: str, params: dict[str, Any]) -> Any:
@@ -639,6 +652,20 @@ class CuponCrear(BaseModel):
         if int(v) <= 0 or int(v) > 10_000_000:
             raise ValueError("Límite de usos inválido.")
         return int(v)
+
+    @field_validator("vence_at")
+    @classmethod
+    def _vence(cls, v: Optional[str]) -> Optional[str]:
+        v = (v or "").strip()
+        if not v:
+            return None
+        if not re.match(r"^\d{4}-\d{2}-\d{2}([T ].+)?$", v):
+            raise ValueError("Fecha de vencimiento inválida.")
+        # Fecha sin hora: vale hasta el final del día en Argentina. Guardarla
+        # como 00:00 UTC la vencía a las 21:00 del día anterior.
+        if len(v) == 10:
+            return f"{v}T23:59:59-03:00"
+        return v
 
     @model_validator(mode="after")
     def _porcentaje_acotado(self):
@@ -1575,6 +1602,15 @@ def crear_reclamo(d: ReclamoCrear, request: Request,
 @router.patch("/api/admin/reclamos/{rid}")
 def estado_reclamo(rid: str, d: ReclamoEstado,
                    admin: AdminActual = Depends(requiere("reclamos", "cambiar_estado"))) -> dict[str, Any]:
+    actual = _sb_get("reclamos", {"select": "id,estado", "id": f"eq.{rid}", "limit": 1}) or []
+    if not actual:
+        raise HTTPException(status_code=404, detail="Reclamo inexistente.")
+    de = str(actual[0].get("estado") or "")
+    if d.estado not in TRANSICIONES_RECLAMO.get(de, set()):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Transición inválida: {de} → {d.estado}.",
+        )
     filas = _sb_patch("reclamos", {"id": f"eq.{rid}"}, {"estado": d.estado}) or []
     if not filas:
         raise HTTPException(status_code=404, detail="Reclamo inexistente.")
@@ -1587,19 +1623,25 @@ def estado_reclamo(rid: str, d: ReclamoEstado,
 # y el hilo muestra el detalle original del reclamo como único contexto).
 import re as _re_bandeja
 
-_RE_NOMBRE_RECLAMO = _re_bandeja.compile(r"—\s*(?P<nombre>.+?)\s*<(?P<email>[^<>]+)>\s*$")
+_RE_NOMBRE_RECLAMO = _re_bandeja.compile(
+    r"(?:—|Contacto:)\s*(?P<nombre>.+?)\s*<(?P<email>[^<>]+)>\s*$")
 
 
 def _cliente_de_reclamo(r: dict[str, Any]) -> str:
     """Nombre del reclamante o 'Invitado'.
 
-    El formulario público (/reclamo) guarda `motivo` como
-    '<motivo> — <nombre> <email>'; si no matchea, es invitado/anónimo.
+    Los reclamos nuevos guardan el contacto al final de `detalle`
+    ('Contacto: <nombre> <email>'); los viejos lo tienen en `motivo`
+    ('<motivo> — <nombre> <email>'). Si no matchea, es invitado/anónimo.
     Nunca se inventa un nombre: solo se parsea lo guardado.
     """
-    m = _RE_NOMBRE_RECLAMO.search(str(r.get("motivo") or ""))
-    nombre = (m.group("nombre") if m else "").strip()
-    return nombre or "Invitado"
+    for texto in (r.get("motivo"), r.get("detalle")):
+        m = _RE_NOMBRE_RECLAMO.search(str(texto or ""))
+        if m:
+            nombre = (m.group("nombre") or "").strip()
+            if nombre:
+                return nombre
+    return "Invitado"
 
 
 @router.get("/api/admin/bandeja")
@@ -1789,12 +1831,35 @@ def borrar_banner(bid: str,
 
 
 @router.get("/api/admin/notificaciones")
-def listar_notificaciones(pag: dict[str, int] = Depends(_pag),
+def listar_notificaciones(solo_no_leidas: bool = False,
+                          pag: dict[str, int] = Depends(_pag),
                           admin: AdminActual = Depends(requiere("notificaciones", "leer"))) -> dict[str, Any]:
-    return {"notificaciones": _sb_get("notificaciones", {
+    # La tabla es por usuario; `user_id` null = aviso para todo el staff
+    # (reposición). Sin este filtro se colaban los avisos de los clientes.
+    params: dict[str, Any] = {
         "select": "*", "order": "created_at.desc",
         "limit": pag["limit"], "offset": pag["offset"],
-    }) or []}
+        "or": f"(user_id.eq.{admin.user_id},user_id.is.null)",
+    }
+    if solo_no_leidas:
+        params["leida"] = "eq.false"
+    return {"notificaciones": _sb_get("notificaciones", params) or []}
+
+
+@router.post("/api/admin/notificaciones/leer")
+def marcar_notificaciones_leidas(
+        admin: AdminActual = Depends(requiere("notificaciones", "leer"))) -> dict[str, Any]:
+    """Marca como leídas las notificaciones visibles para este usuario.
+
+    Los avisos de staff (`user_id` null) comparten fila: con varios admins, el
+    primero que abre la bandeja los marca para todos. Es la limitación del
+    esquema actual (no hay tabla de lectura por usuario).
+    """
+    filas = _sb_patch("notificaciones", {
+        "or": f"(user_id.eq.{admin.user_id},user_id.is.null)",
+        "leida": "eq.false",
+    }, {"leida": True}) or []
+    return {"ok": True, "marcadas": len(filas)}
 
 
 @router.get("/api/buscar")
@@ -1846,22 +1911,43 @@ def reporte_ventas(desde: str = "", hasta: str = "",
     if desde.strip():
         filtros_and.append(f"created_at.gte.{desde.strip()}")
     if hasta.strip():
-        filtros_and.append(f"created_at.lte.{hasta.strip()}")
+        hasta_txt = hasta.strip()
+        if len(hasta_txt) == 10:
+            # Fecha sin hora: incluir todo el día elegido. Postgres castea
+            # `lte.2026-10-23` a las 00:00 y dejaba afuera el resto del día.
+            try:
+                hasta_limite = (date.fromisoformat(hasta_txt) + timedelta(days=1)).isoformat()
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Fecha hasta inválida.")
+            filtros_and.append(f"created_at.lt.{hasta_limite}")
+        else:
+            filtros_and.append(f"created_at.lte.{hasta_txt}")
     if filtros_and:
         params["and"] = f"({','.join(filtros_and)})"
     ordenes = _sb_get("ordenes", params) or []
+    tz_ar = ZoneInfo("America/Argentina/Buenos_Aires")
     por_dia: dict[str, dict[str, int]] = defaultdict(lambda: {"pedidos": 0, "total_centavos": 0})
     total = 0
+    pedidos = 0
     por_estado: dict[str, int] = defaultdict(int)
     for o in ordenes:
+        estado = str(o.get("estado") or "")
+        por_estado[estado] += 1
+        # Venta = pedido no cancelado ni reembolsado (docs/ADMIN.md).
+        if estado in ("cancelada", "reembolsada"):
+            continue
         tot = int(o.get("total_centavos") or _a_centavos(o.get("total")))
-        dia = str(o.get("created_at") or "")[:10]
+        try:
+            dia = (datetime.fromisoformat(str(o.get("created_at") or "").replace("Z", "+00:00"))
+                   .astimezone(tz_ar).date().isoformat())
+        except (TypeError, ValueError):
+            dia = str(o.get("created_at") or "")[:10]
         por_dia[dia]["pedidos"] += 1
         por_dia[dia]["total_centavos"] += tot
-        por_estado[o.get("estado") or ""] += 1
         total += tot
+        pedidos += 1
     return {
-        "pedidos": len(ordenes),
+        "pedidos": pedidos,
         "total_centavos": total,  # entero, sin floats
         "por_estado": dict(por_estado),
         "por_dia": [{"dia": d, **v} for d, v in sorted(por_dia.items())],
@@ -2781,8 +2867,10 @@ def estado_reposicion(admin: AdminActual = Depends(requiere("stock", "leer"))) -
     bajos: list[dict[str, Any]] = []
     for grupo in grupos:
         proveedor = grupo.get("proveedor")
-        for item in grupo.get("productos") or []:
-            bajos.append({**item, "proveedor": proveedor})
+        for item in grupo.get("items") or []:
+            # El front usa `id` para el selector de reposición; el sugerido
+            # trae `producto_id`. Se exponen ambos.
+            bajos.append({**item, "id": item.get("producto_id"), "proveedor": proveedor})
     params: dict[str, Any] = {
         "select": ("*,proveedores(id,nombre),"
                    "ordenes_compra_items(cantidad,cantidad_recibida,"

@@ -8,6 +8,13 @@ import { useModulo } from "./hooks";
 
 const VACIO = { codigo: "", tipo: "porcentaje", valor: "", min_compra: "", usos_max: "", activo: true, vence: "" };
 
+function estadoCupon(c) {
+  if (!c.activo) return "Inactivo";
+  if (c.vence_at && new Date(c.vence_at).getTime() < Date.now()) return "Vencido";
+  if (c.usos_max != null && Number(c.usos ?? 0) >= Number(c.usos_max)) return "Agotado";
+  return "Activo";
+}
+
 export default function Cupones({ avisar, pedirConfirm }) {
   const [form, setForm] = useState(VACIO);
   const [altaAbierta, setAltaAbierta] = useState(false);
@@ -149,7 +156,7 @@ export default function Cupones({ avisar, pedirConfirm }) {
                 ver: (c) => (c.tipo === "porcentaje" ? `${c.valor}%` : formatoARS(c.valor)),
               },
               { clave: "min", titulo: "Mínimo", ver: (c) => formatoARS(c.min_compra_centavos ?? 0) },
-              { clave: "estado", titulo: "Estado", ver: (c) => (c.activo ? "Activo" : "Inactivo") },
+              { clave: "estado", titulo: "Estado", ver: (c) => estadoCupon(c) },
               {
                 clave: "acciones", titulo: "Acciones",
                 ver: (c) => (

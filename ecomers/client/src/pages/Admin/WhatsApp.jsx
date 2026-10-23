@@ -49,9 +49,14 @@ function snippet(conversacion, largo = 90) {
 function textoWhatsAppRespuesta(conversacion, borrador) {
   const cliente = conversacion.cliente && conversacion.cliente !== "Invitado" ? ` ${conversacion.cliente}` : "";
   const seguimiento = borrador.trim() ? borrador.trim() : "___";
+  // Los reclamos viejos guardaban " — Nombre <email>" dentro del motivo:
+  // no debe filtrarse en el texto que ve el cliente.
+  const motivo = String(conversacion.motivo || "")
+    .replace(/\s+—\s+.*<[^>]+>\s*$/, "")
+    .trim();
   return (
     `Hola${cliente}, soy de HefestoTech. ` +
-    `Vimos tu reclamo «${conversacion.motivo || "tu consulta"}» y te contamos cómo seguimos: ${seguimiento}`
+    `Vimos tu reclamo «${motivo || "tu consulta"}» y te contamos cómo seguimos: ${seguimiento}`
   );
 }
 
@@ -170,6 +175,13 @@ function Bandeja({ avisar }) {
             q
               ? "Ninguna coincide con esa búsqueda."
               : "Todavía no hay reclamos para atender. Cuando entre uno, aparece acá como conversación."
+          }
+          accion={
+            q ? (
+              <button type="button" className="btn-fantasma adm-btn" onClick={() => setBusqueda("")}>
+                Limpiar búsqueda
+              </button>
+            ) : null
           }
         />
       ) : (
@@ -298,13 +310,14 @@ function Bandeja({ avisar }) {
                       href={whatsappUrl(textoWhatsAppRespuesta(actual, borrador))}
                       target="_blank"
                       rel="noreferrer"
-                      aria-label="Abrir WhatsApp con la respuesta prearmada (no se envía solo)"
+                      aria-label="Abrir el WhatsApp de la tienda con la respuesta prearmada (no se envía solo)"
                     >
-                      Responder por WhatsApp
+                      Abrir WhatsApp de la tienda
                     </a>
                   </div>
                   <p className="texto-mutado ht-band-aviso">
-                    Nada se envía solo: el botón abre WhatsApp con el texto prearmado para que lo revises antes de mandar.
+                    El reclamo no guarda el teléfono del cliente: el botón abre el WhatsApp
+                    de la tienda con el texto prearmado para que lo revises y lo envíes.
                   </p>
                 </div>
               </>
@@ -363,7 +376,9 @@ function Manual() {
               />
               <a
                 className="btn-fantasma adm-btn"
-                href={whatsappUrl(`Asunto: ${p.titulo}\n${textos[p.id]}`)}
+                href={numeroLimpio
+                  ? `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(`Asunto: ${p.titulo}\n${textos[p.id]}`)}`
+                  : whatsappUrl(`Asunto: ${p.titulo}\n${textos[p.id]}`)}
                 target="_blank"
                 rel="noreferrer"
               >

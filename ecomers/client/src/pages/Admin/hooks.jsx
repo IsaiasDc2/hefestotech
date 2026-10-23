@@ -112,6 +112,7 @@ export function useModulo(cargador, deps = []) {
   const [datos, setDatos] = useState(null);
   const [detalle, setDetalle] = useState("");
   const cargadorRef = useRef(cargador);
+  const pedidoRef = useRef(0);
   const clave = JSON.stringify(deps);
 
   // Declarado antes del efecto de carga: corre primero en el mismo commit.
@@ -120,13 +121,16 @@ export function useModulo(cargador, deps = []) {
   });
 
   const recargar = useCallback(async () => {
+    const pedido = ++pedidoRef.current;
     setEstado("cargando");
     setDetalle("");
     try {
       const r = await cargadorRef.current();
+      if (pedido !== pedidoRef.current) return;
       setDatos(r);
       setEstado("ok");
     } catch (e) {
+      if (pedido !== pedidoRef.current) return;
       if (e?.status === 403) {
         setEstado("sin-permiso");
       } else {
@@ -138,15 +142,18 @@ export function useModulo(cargador, deps = []) {
 
   useEffect(() => {
     let vivo = true;
+    const pedido = ++pedidoRef.current;
     (async () => {
+      setEstado("cargando");
+      setDetalle("");
       try {
         const r = await cargadorRef.current();
-        if (vivo) {
+        if (vivo && pedido === pedidoRef.current) {
           setDatos(r);
           setEstado("ok");
         }
       } catch (e) {
-        if (!vivo) return;
+        if (!vivo || pedido !== pedidoRef.current) return;
         if (e?.status === 403) setEstado("sin-permiso");
         else {
           setEstado("no-disponible");
