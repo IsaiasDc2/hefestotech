@@ -109,6 +109,12 @@ async function main() {
   // Los recursos relativos (./brand/...) se romperían dentro de subcarpetas.
   let plantilla = (await readFile(plantillaRuta, "utf8")).replace(/(href|src)="\.\//g, `$1="${base}`);
 
+  // La home no pasa por pagina(): su canonical, Open Graph y JSON-LD vienen
+  // del index.html base. En Vercel hay que reemplazar el dominio de GitHub
+  // Pages por VITE_SITE_URL; en Pages el reemplazo es equivalente.
+  plantilla = plantilla.replace(/https:\/\/IsaiasDc2\.github\.io\/hefestotech/gi, SITE_URL);
+  await writeFile(plantillaRuta, plantilla, "utf8");
+
   const pesos = (n) => `$${Math.round(n).toLocaleString("es-AR")}`;
 
   function pagina({ titulo, descripcion, canonical, imagen = imagenSocial, tipo = "website", jsonld, cuerpo }) {

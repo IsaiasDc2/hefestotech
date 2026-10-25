@@ -28,7 +28,7 @@ services:
       - key: ASSISTANT_RATE_LIMIT_PER_MIN
         value: "20"
       - key: FRONTEND_URL
-        value: https://isaiasdc2.github.io/hefestotech
+        value: https://hefestotech.vercel.app
       - key: BACKEND_URL
         sync: false
       - key: CORS_EXTRA_ORIGINS
