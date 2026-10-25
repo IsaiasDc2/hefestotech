@@ -32,7 +32,7 @@ cliente = TestClient(main.app)
 @pytest.fixture(autouse=True)
 def entorno(monkeypatch):
     for var in ("LLM_PROVIDER", "LLM_API_KEY", "LLM_MODEL", "GEMINI_API_KEY", "GEMINI_MODEL",
-                "GROK_API_KEY", "GROQ_API_KEY", "XAI_API_KEY", "LLM_BASE_URL"):
+                "GROK_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("ASSISTANT_RATE_LIMIT_PER_MIN", "1000")
     monkeypatch.setenv("ASSISTANT_RATE_LIMIT_SESSION_PER_MIN", "1000")
@@ -405,40 +405,27 @@ def test_herramienta_desconocida_o_parametros_raros(ctx):
     assert "productos" in h.ejecutar(ctx, "search_products", {"consulta": "mouse", "inyectado": "x"})
 
 
-# ---------------------------------------------------------------- respaldo ---
-def test_auto_con_gemini_y_groq_deja_respaldo(monkeypatch):
-    from asistente.proveedores import ProveedorConRespaldo
-    for k in ("LLM_PROVIDER", "LLM_API_KEY", "LLM_MODEL", "GEMINI_MODEL", "XAI_API_KEY", "GROQ_API_KEY"):
+# ---------------------------------------------------------------- failover ---
+def test_auto_arma_cadena_con_las_keys_existentes(monkeypatch):
+    from asistente.proveedores import FailoverProvider
+    for k in ("LLM_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY"):
         monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "auto")
     monkeypatch.setenv("GEMINI_API_KEY", "g")
-    monkeypatch.setenv("GROK_API_KEY", "gsk_x")
+    monkeypatch.setenv("GROK_API_KEY", "gsk_x")  # alias usado en backend/.env
     p = crear_proveedor()
-    assert isinstance(p, ProveedorConRespaldo)
-    assert p.principal.nombre == "gemini" and p.respaldo.nombre == "groq"
-    monkeypatch.setenv("GROK_API_KEY", "xai-x")
-    assert crear_proveedor().respaldo.nombre == "grok"
+    assert isinstance(p, FailoverProvider)
+    assert [x.nombre for x in p._proveedores] == ["groq", "gemini"]
 
 
-def test_solo_groq_y_proveedor_explicito(monkeypatch):
-    for k in ("LLM_PROVIDER", "LLM_API_KEY", "GEMINI_API_KEY", "XAI_API_KEY", "GROQ_API_KEY"):
-        monkeypatch.delenv(k, raising=False)
-    monkeypatch.setenv("GROK_API_KEY", "gsk_x")
-    assert crear_proveedor().nombre == "groq"
-    monkeypatch.setenv("GEMINI_API_KEY", "g")
-    monkeypatch.setenv("LLM_PROVIDER", "gemini")
-    assert crear_proveedor().nombre == "gemini"  # explícito: sin respaldo
-
-
-def test_respaldo_toma_el_relevo_y_descansa():
+def test_failover_pasa_al_siguiente_si_falla_antes_de_emitir():
     import asyncio
-    from asistente.proveedores import LLMProvider, ProveedorConRespaldo
+    from asistente.proveedores import FailoverProvider, LLMProvider
 
     class Roto(LLMProvider):
         nombre = "roto"
-        llamadas = 0
 
         async def turno(self, *a):
-            Roto.llamadas += 1
             raise RuntimeError("cuota")
             yield
 
@@ -451,8 +438,4 @@ def test_respaldo_toma_el_relevo_y_descansa():
     async def correr(p):
         return [e async for e in p.turno("s", [], None, 10)]
 
-    p = ProveedorConRespaldo(Roto(), Ok())
-    assert asyncio.run(correr(p)) == [{"tipo": "texto", "delta": "hola"}]
-    assert p.nombre == "ok"
-    asyncio.run(correr(p))
-    assert Roto.llamadas == 1  # el principal descansa, no se reintenta en cada mensaje
+    assert asyncio.run(correr(FailoverProvider([Roto(), Ok()]))) == [{"tipo": "texto", "delta": "hola"}]

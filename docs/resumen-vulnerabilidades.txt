@@ -1,0 +1,190 @@
+RESUMEN DE VULNERABILIDADES — hefestotech
+==========================================
+Para el grupo. Dos auditorías de seguridad sobre el backend (FastAPI +
+Supabase + MercadoPago + IA) y el frontend (React/Vite).
+
+  Auditoría 1 (A1): revisión manual 100% del backend + Semgrep + pip-audit +
+                    npm audit + gitleaks + DAST manual + pytest.
+  Auditoría 2 (A2): re-auditoría post-cambios (failover IA + historial chat)
+                    + OWASP ZAP 2.17.0 active scan sobre los 30 endpoints +
+                    verificación real del esquema Supabase con credenciales.
+
+Detalles completos en security/SECURITY_AUDIT.md y security/SECURITY_AUDIT_2.md.
+Reporte ZAP: security/zap-report-2026-10-22.html.
+
+
+==================================================================
+PARTE 1 — VULNERABILIDADES ENCONTRADAS Y FIXEADAS
+==================================================================
+
+--- A1: bugs críticos funcionales + acceso ------------------------------------
+
+F1 [ALTA] Estado de checkout de invitado SIEMPRE denegado
+  El select de PostgREST no pedía la columna acceso_token -> cualquier
+  invitado con token válido recibía 403. Rompía el flujo real de "ver mi
+  pedido" tras pagar.
+  FIX: columna agregada al select. Test: token válido->200, sin token->403,
+  token malo->403, orden ajena->404.
+
+F2 [ALTA] Reintentar una orden cancelada cobraba SIN stock
+  Se permitía cancelada->pendiente creando preferencia de MP sin re-reservar
+  el stock liberado -> oversell cobrado.
+  FIX: re-lectura de items + verificación stock/activo + re-reserva antes de
+  crear la preferencia; rollback si MP falla. Pendientes no re-reservan
+  (sin doble descuento). Tests cubriendo todos los caminos.
+
+F3 [ALTA] Validador de URL de MercadoPago rechazaba TODO init_point
+  urlparse().scheme devuelve "https" y se comparaba con "https:" -> siempre
+  False -> TODO el checkout fallaba. El pago estaba inoperativo en prod.
+  FIX: comparación corregida; el allowlist anti-SSRF sigue rechazando
+  http://, hosts ajenos y javascript:.
+
+F4 [MEDIA] Comprobantes/PDF apuntaban al esquema viejo de la DB
+  Usaban columnas del esquema 004 (token_verificacion, numero...) que en la
+  DB vigente (006) no existen -> PDF con campos vacíos y link de
+  verificación roto.
+  FIX: select alineado al esquema real (acceso_token, total_centavos,
+  orden_items anidados) + helper propio con httpx.
+
+F5 [MEDIA] pagos_mp.py: implementación MP duplicada y legacy
+  269 líneas de lógica vieja con urllib dinámico (3 findings Semgrep).
+  FIX: archivo ELIMINADO.
+
+F6 [MEDIA] Migraciones duplicadas con esquemas divergentes
+  Parejas 004/006 creaban tablas con columnas distintas; IF NOT EXISTS hacía
+  ganar la primera -> DB podía quedar con esquema incompatible.
+  FIX: copia en el cliente eliminada; README documenta el orden canónico.
+  VERIFICADO EN A2: la DB real tiene el esquema canónico correcto.
+
+F7 [BAJA] Endpoint muerto /api/productos leía un CSV inexistente
+  FIX: eliminado junto con pandas y una función huérfana.
+
+F8 [BAJA] Sin security headers + cron abierto + deps sin pinnear
+  FIX: middleware con nosniff/DENY/no-referrer; requirements.txt pineado
+  completo. (El cron se endureció aún más en A2 -> ver R2 abajo.)
+
+F-S1 [BAJA] Semgrep: urllib dinámico x3 en pagos_mp.py
+  Resuelto por eliminación del archivo (F5).
+
+--- A2: superficie nueva + hallazgos del re-test ------------------------------
+
+N1 [BAJA] POST con body gigante consumía memoria antes de validar
+  FIX: middleware global limite_body -> 413 si el body supera 1 MB
+  (Content-Length y también streams chunked). Verificado: 1.5 MB -> 413.
+
+N2 [BAJA] ecomers/client/.env con secretos de backend
+  Archivo muerto (Vite no lo lee) pero contenía service-role + MP token +
+  Groq key -> riesgo de filtrado accidental.
+  FIX: archivo ELIMINADO. .env.local solo tiene vars VITE_* públicas.
+
+N3 [INFO] /docs y /openapi.json expuestos en producción
+  Facilitaba enumeración de endpoints.
+  FIX: docs_url/openapi_url = None cuando RENDER o DISABLE_API_DOCS están
+  definidos. Verificado: RENDER=true -> 404; local sigue 200.
+
+R2 [BAJA] /api/checkout/liberar-expiradas abierto si no había CRON_SECRET
+  FIX: fail-closed -> 401 siempre si CRON_SECRET no está configurado.
+  Verificado en vivo.
+
+R4 [BAJA-MEDIA] Dependencias del frontend con 11 vulnerabilidades (npm audit)
+  playwright (descarga de browsers sin verificar CA), source-map-js (DoS),
+  vite/esbuild (dev server), react-router (open redirect + constructor
+  injection SSR), braces via gh-pages.
+  FIX: npm audit -> 0 VULNERABILIDADES. Upgrades: react-router-dom
+  6->7.18.4, vite 5->8.3.5, @vitejs/plugin-react->5.2.0, gh-pages->6.1.1,
+  playwright + source-map-js via audit fix. Build verificado.
+
+R8 [BAJA] .venv del proyecto contaminado con herramientas de auditoría
+  semgrep había downgradeado opentelemetry (conflicto de versiones).
+  FIX: semgrep desinstalado, opentelemetry realineado (1.45.1/0.66b1),
+  pip check limpio. Herramientas ahora en venv aparte (~/proyecto/secvenv).
+
+R5/R7 [MEDIA] Esquema de DB sin verificar + sin DAST real (limitaciones A1)
+  CERRADOS en A2: esquema real consultado con credenciales -> canónico;
+  ZAP corrió active scan completo.
+
+
+==================================================================
+PARTE 2 — LO QUE SE VERIFICÓ COMO SEGURO (ataques rechazados)
+==================================================================
+
+DAST manual + ZAP active scan (~5.000 requests fuzzeados, 0 errores 500):
+
+  - /api/admin/* sin token -> 100% 401 (JWT validado contra Supabase)
+  - CORS: origen evil.com -> 400, sin allow-origin
+  - /api/chat x21 -> 429 en la req. 21 (rate-limit 20/min por IP)
+  - /api/chat historial con rol "system" inyectado -> filtrado por allowlist
+  - texto vacío -> 400; items vacíos / cantidad>100 / envío inválido -> 422
+  - webhook MP sin data.id -> ignora; sin MP_WEBHOOK_SECRET -> 503 fail-closed
+  - SSRF: init_point http://, *.evil.com, javascript: -> rechazados
+  - Fallo de TODOS los proveedores IA -> mensaje genérico, sin leak de keys
+  - Semgrep p/python: 0 hallazgos | pip-audit: 0 CVEs | pytest: 10/10
+
+
+==================================================================
+PARTE 3 — LO QUE NO SE FIXEÓ (riesgos residuales aceptados/pendientes)
+==================================================================
+
+R1 [BAJA] Rate-limit solo en memoria (por proceso)
+  Si el backend escala a >1 instancia en Render, el límite se multiplica y
+  se resetea al reiniciar. Aceptado a esta escala; migrar a Redis/Upstash
+  cuando haga falta.
+
+R3 [MEDIA] Sin testing E2E con staging
+  Los flujos de BD/pagos se verificaron por código + tests mockeados, no con
+  un pago real de MercadoPago contra una Supabase de staging.
+  Pendiente: provisionar staging y probar end-to-end.
+
+R6 (A1) [BAJA] Doble escritura pesos/centavos en ordenes
+  El código mantiene subtotal y subtotal_centavos por compatibilidad;
+  riesgo de desincronización futura. Consolidar cuando el esquema se
+  estabilice.
+
+R7 (A1) [BAJA] CORS allow_credentials=True + allowlist por env
+  Un FRONTEND_URL mal configurado expondría credenciales a ese origen.
+  Mantener la lista mínima.
+
+R9 (A1) [BAJA] Sin HSTS/CSP en el backend
+  API JSON pura; HSTS es responsabilidad del TLS frontal (Render/GitHub
+  Pages). Aplicar CSP solo si algún día se sirve HTML.
+
+F-L1 [BAJA] Publishable key de Supabase visible en el historial de git
+  Es la anon key: pública por diseño (viaja en el navegador). La protección
+  real es RLS. NO se purgó el historial (riesgo bajo, higiene opcional).
+
+Migraciones aplicadas a mano [MEDIA->BAJA]
+  El esquema real está verificado correcto, pero el procedimiento de aplicar
+  migraciones sigue siendo manual (riesgo operativo, no de seguridad).
+
+Token en URL (?token=) [INFO, diseño]
+  Los comprobantes y estado de orden pasan el token por query param (ZAP lo
+  marca como info sensible en URL). Es el diseño actual: los links de
+  verificación del PDF necesitan ser clickeables. Alternativa futura: token
+  por header Authorization. Impacto bajo: tokens de un solo uso que expiran.
+
+ZAP único Medium: "HTTP Only Site" [AMBIENTAL]
+  El backend local sirve HTTP plano. En producción Render provee TLS ->
+  no aplica.
+
+Rotación de keys [PENDIENTE OPERATIVO]
+  GROQ_API_KEY, OPENROUTER_API_KEY y sb_secret de Supabase aparecieron en
+  texto claro durante el trabajo de auditoría -> hay que rotarlas en los
+  dashboards y actualizar .env + Render. Paso a paso:
+  docs/guia-rotacion-keys.txt
+
+CRON_SECRET + scheduler [PENDIENTE OPERATIVO]
+  Para que la limpieza de órdenes expiradas funcione hay que definir
+  CRON_SECRET en Render y apuntar un cron (cron-job.org gratis) con el
+  header X-Cron-Secret. Si no, el endpoint queda OFF y las órdenes
+  pendientes expiradas no se cancelan solas (el stock queda reservado).
+
+
+==================================================================
+ESTADO FINAL
+==================================================================
+  Vulnerabilidades explotables conocidas: 0
+  Fixes aplicados: F1-F8, F-S1, N1-N3, R2, R4, R5, R7, R8
+  Residuales aceptados: R1, R6(doble escritura), R7(CORS), R9(HSTS/CSP),
+                        token en URL, publishable key en historial
+  Pendiente operativo (no código): rotar 3 keys, definir CRON_SECRET,
+                                   staging + pago real E2E

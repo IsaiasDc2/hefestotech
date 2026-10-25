@@ -14,19 +14,26 @@ Mensajes neutros:
 reenviar sus `thought_signature`). Sumar un proveedor = implementar `turno`
 y registrarlo en `crear_proveedor`.
 
-Configuración: LLM_PROVIDER (auto | mock | gemini | groq | grok), LLM_API_KEY,
-LLM_MODEL, LLM_MAX_TOKENS. Compatibilidad: si solo existe GEMINI_API_KEY/
-GEMINI_MODEL (configuración previa), se usa Gemini con esos valores.
-En modo auto (sin LLM_PROVIDER): Gemini si hay GEMINI_API_KEY y, si además hay
-GROK_API_KEY (Groq gsk_... o xAI xai-...), queda de respaldo automático.
+Configuración: LLM_PROVIDER (mock | gemini | groq | openrouter | auto),
+LLM_API_KEY, LLM_MODEL, LLM_MAX_TOKENS. Compatibilidad: si solo existe
+GEMINI_API_KEY/GEMINI_MODEL (configuración previa), se usa Gemini con esos
+valores.
+
+`LLM_PROVIDER=auto` arma la cadena de failover groq → gemini → openrouter
+(según qué API keys existan en el entorno): si un proveedor falla antes de
+emitir texto se pasa al siguiente; a mitad del stream no se puede cambiar
+limpio y la falla sube como ProveedorCaido. Las keys por proveedor:
+GROQ_API_KEY, GEMINI_API_KEY (o LLM_API_KEY), OPENROUTER_API_KEY; modelos
+configurables con GROQ_MODEL / OPENROUTER_MODEL.
 """
 
 from __future__ import annotations
 
-import asyncio
+import json
 import os
-import time
 from typing import Any, AsyncIterator, Optional
+
+import httpx
 
 # Con la clave del proyecto, gemini-3.8-flash no respondía en más de 60 s
 # (oct-2026) y gemini-2.5-flash ya no existe para claves nuevas; 3.5-flash
@@ -123,180 +130,194 @@ class GeminiProvider(LLMProvider):
                    "nativo": self._types.Content(role="model", parts=partes)}
 
 
-class ErrorProveedor(RuntimeError):
-    def __init__(self, code: int, detalle: str = ""):
-        super().__init__(f"HTTP {code} {detalle}".strip())
+class ErrorHTTPProveedor(RuntimeError):
+    """El proveedor respondió un HTTP no-200. `code` lo usa agente.py para
+    decidir si reintentar o cortar (4xx != 429 son definitivos)."""
+
+    def __init__(self, code: int):
+        super().__init__(f"HTTP {code}")
         self.code = code
 
 
-MODELO_GROQ_POR_DEFECTO = "openai/gpt-oss-120b"
-MODELO_XAI_POR_DEFECTO = "grok-4"
-URL_GROQ = "https://api.groq.com/openai/v1"
-URL_XAI = "https://api.x.ai/v1"
+class OpenAICompatibleProvider(LLMProvider):
+    """Proveedor con API OpenAI-compatible vía SSE streaming
+    (Groq, OpenRouter y otros con /chat/completions)."""
 
-
-class OpenAICompatProvider(LLMProvider):
-    """Groq (claves gsk_) y xAI Grok (claves xai-): API compatible con OpenAI."""
-
-    def __init__(self, nombre: str, api_key: str, modelo: str, url_base: str, timeout_seg: float, cliente: Any = None):
+    def __init__(self, nombre: str, url: str, api_key: str, modelo: str, timeout_seg: float):
         self.nombre = nombre
         self.modelo = modelo
-        self._url = url_base.rstrip("/") + "/chat/completions"
-        self._clave = api_key
+        self._url = url
+        self._key = api_key
         self._timeout = timeout_seg
-        self._cliente = cliente
 
-    @staticmethod
-    def _mensajes(sistema: str, mensajes: list[dict]) -> list[dict]:
-        import json
-        out: list[dict] = [{"role": "system", "content": sistema}]
+    def _mensajes(self, sistema: str, mensajes: list[dict]) -> list[dict]:
+        out = [{"role": "system", "content": sistema}]
         for m in mensajes:
             if m["rol"] == "herramienta":
-                out.append({"role": "tool", "tool_call_id": m["id"],
-                            "content": json.dumps(m["resultado"], ensure_ascii=False, default=str)})
+                out.append({
+                    "role": "tool",
+                    "tool_call_id": m["id"],
+                    "name": m["nombre"],
+                    "content": json.dumps(m["resultado"], ensure_ascii=False, default=str),
+                })
             elif m["rol"] == "asistente" and m.get("llamadas"):
-                out.append({"role": "assistant", "content": None, "tool_calls": [
-                    {"id": c["id"], "type": "function",
-                     "function": {"name": c["nombre"], "arguments": json.dumps(c["args"], ensure_ascii=False)}}
-                    for c in m["llamadas"]]})
+                out.append({
+                    "role": "assistant",
+                    "content": m.get("texto"),
+                    "tool_calls": [{
+                        "id": c["id"], "type": "function",
+                        "function": {"name": c["nombre"],
+                                     "arguments": json.dumps(c["args"] or {}, ensure_ascii=False)},
+                    } for c in m["llamadas"]],
+                })
             else:
-                out.append({"role": "assistant" if m["rol"] == "asistente" else "user", "content": m["texto"]})
+                rol = "assistant" if m["rol"] == "asistente" else "user"
+                out.append({"role": rol, "content": m["texto"]})
         return out
 
-    async def turno(self, sistema, mensajes, herramientas, max_tokens):
-        import json
-        import httpx
+    def _tools(self, herramientas: Optional[dict]) -> Optional[list]:
+        if not herramientas:
+            return None
+        return [{
+            "type": "function",
+            "function": {"name": n, "description": h["descripcion"], "parameters": h["parametros"]},
+        } for n, h in herramientas.items()]
 
-        cuerpo: dict = {
-            "model": self.modelo, "stream": True, "temperature": 0.3,
+    async def turno(self, sistema, mensajes, herramientas, max_tokens):
+        payload: dict[str, Any] = {
+            "model": self.modelo,
             "messages": self._mensajes(sistema, mensajes),
-            # Los modelos con razonamiento gastan parte del tope pensando.
-            "max_tokens": max_tokens * 2,
+            "max_tokens": max_tokens,
+            "temperature": 0.3,
+            "stream": True,
         }
-        if self.modelo.startswith("openai/gpt-oss"):
-            cuerpo["reasoning_effort"] = "low"
-        if herramientas:
-            cuerpo["tools"] = [{"type": "function", "function": {
-                "name": n, "description": h["descripcion"], "parameters": h["parametros"]}}
-                for n, h in herramientas.items()]
-        acumuladas: dict[int, dict] = {}
-        propio = self._cliente is None
-        cliente = self._cliente or httpx.AsyncClient(timeout=self._timeout)
-        try:
-            async with cliente.stream("POST", self._url, json=cuerpo,
-                                      headers={"Authorization": f"Bearer {self._clave}"}) as r:
-                if r.status_code >= 400:
+        tools = self._tools(herramientas)
+        if tools:
+            payload["tools"] = tools
+        headers = {"Authorization": f"Bearer {self._key}", "Content-Type": "application/json"}
+
+        async with httpx.AsyncClient(timeout=self._timeout) as cli:
+            async with cli.stream("POST", self._url, json=payload, headers=headers) as r:
+                if r.status_code != 200:
                     await r.aread()
-                    raise ErrorProveedor(r.status_code)
+                    raise ErrorHTTPProveedor(r.status_code)
+                llamadas: dict[int, dict] = {}
                 async for linea in r.aiter_lines():
                     if not linea.startswith("data:"):
                         continue
-                    dato = linea[5:].strip()
-                    if not dato or dato == "[DONE]":
+                    data = linea[5:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        trozo = json.loads(data)
+                    except json.JSONDecodeError:
                         continue
-                    for opcion in (json.loads(dato).get("choices") or [])[:1]:
-                        delta = opcion.get("delta") or {}
+                    for ch in (trozo.get("choices") or [])[:1]:
+                        delta = ch.get("delta") or {}
                         if delta.get("content"):
                             yield {"tipo": "texto", "delta": delta["content"]}
                         for tc in delta.get("tool_calls") or []:
-                            acc = acumuladas.setdefault(tc.get("index", 0), {"id": "", "nombre": "", "args": ""})
+                            llamada = llamadas.setdefault(tc.get("index", 0),
+                                                          {"id": "", "nombre": "", "args": ""})
                             if tc.get("id"):
-                                acc["id"] = tc["id"]
+                                llamada["id"] = tc["id"]
                             fn = tc.get("function") or {}
-                            acc["nombre"] += fn.get("name") or ""
-                            acc["args"] += fn.get("arguments") or ""
-        finally:
-            if propio:
-                await cliente.aclose()
-        if acumuladas:
-            llamadas = []
-            for i, acc in sorted(acumuladas.items()):
-                try:
-                    args = json.loads(acc["args"] or "{}")
-                except ValueError:
-                    args = {}
-                llamadas.append({"id": acc["id"] or f"llamada-{i}", "nombre": acc["nombre"],
-                                 "args": args if isinstance(args, dict) else {}})
-            yield {"tipo": "llamadas", "llamadas": llamadas, "nativo": None}
+                            if fn.get("name"):
+                                llamada["nombre"] += fn["name"]
+                            if fn.get("arguments"):
+                                llamada["args"] += fn["arguments"]
+        if llamadas:
+            yield {"tipo": "llamadas", "llamadas": [
+                {"id": llamadas[i]["id"] or f"llamada-{i}",
+                 "nombre": llamadas[i]["nombre"],
+                 "args": _json_o_vacio(llamadas[i]["args"])}
+                for i in sorted(llamadas)
+            ]}
 
 
-class ProveedorConRespaldo(LLMProvider):
-    """Usa el principal y, si falla antes de emitir algo (cuota agotada,
-    caída, timeout), pasa al de respaldo. Tras una falla, el principal descansa
-    DESCANSO_SEG para no pagar el timeout en cada mensaje."""
+def _json_o_vacio(texto: str) -> dict:
+    try:
+        return json.loads(texto or "{}")
+    except json.JSONDecodeError:
+        return {}
 
-    DESCANSO_SEG = 60.0
-    TIMEOUT_PRINCIPAL_SEG = 10.0
 
-    def __init__(self, principal: LLMProvider, respaldo: LLMProvider):
-        self.principal = principal
-        self.respaldo = respaldo
-        self._hasta = 0.0
+class FailoverProvider(LLMProvider):
+    """Cadena de proveedores: si el activo falla antes de emitir texto,
+    pasa al siguiente. A mitad del stream la falla sube (no se puede
+    reintentar limpio). Recuerda el último que funcionó."""
 
-    @property
-    def nombre(self) -> str:  # type: ignore[override]
-        return self.respaldo.nombre if time.monotonic() < self._hasta else self.principal.nombre
+    nombre = "auto"
+
+    def __init__(self, proveedores: list[LLMProvider]):
+        self._proveedores = proveedores
+        self._activo = 0
 
     async def turno(self, sistema, mensajes, herramientas, max_tokens):
-        if time.monotonic() >= self._hasta:
-            emitido = False
+        i = self._activo
+        emitio_texto = False
+        ultimo_error: Optional[Exception] = None
+        while i < len(self._proveedores):
+            p = self._proveedores[i]
             try:
-                async with asyncio.timeout(self.TIMEOUT_PRINCIPAL_SEG):
-                    async for ev in self.principal.turno(sistema, mensajes, herramientas, max_tokens):
-                        emitido = True
-                        yield ev
+                async for ev in p.turno(sistema, mensajes, herramientas, max_tokens):
+                    if ev["tipo"] == "texto":
+                        emitio_texto = True
+                    yield ev
+                self._activo = i
                 return
-            except Exception as e:  # noqa: BLE001
-                if emitido:
+            except Exception as e:  # noqa: BLE001 - failover ante cualquier falla pre-stream
+                ultimo_error = e
+                print(f"asistente/{p.nombre}: falló ({type(e).__name__} {getattr(e, 'code', '')}); "
+                      f"probando siguiente proveedor")
+                if emitio_texto:
                     raise
-                print(f"ERROR asistente: {self.principal.nombre} falló ({type(e).__name__}); "
-                      f"paso a {self.respaldo.nombre}.")
-                self._hasta = time.monotonic() + self.DESCANSO_SEG
-        async for ev in self.respaldo.turno(sistema, mensajes, herramientas, max_tokens):
-            yield ev
+                i += 1
+        raise ultimo_error or ProveedorNoConfigurado("cadena de proveedores vacía")
 
 
-def _clave_openai_compat() -> str:
-    return (os.getenv("GROK_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("XAI_API_KEY") or "").strip()
+# Proveedores OpenAI-compatibles configurables por env. Orden de la cadena
+# auto: groq -> gemini -> openrouter (el que tenga key entra a la cadena).
+_PROVEEDORES_OPENAI = {
+    "groq": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "env_key": "GROQ_API_KEY",
+        "env_model": "GROQ_MODEL",
+        "modelo_defecto": "qwen/qwen3.8-27b",
+    },
+    "openrouter": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "env_key": "OPENROUTER_API_KEY",
+        "env_model": "OPENROUTER_MODEL",
+        "modelo_defecto": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    },
+}
 
 
-def _destino_openai_compat(clave: str) -> tuple[str, str, str]:
-    """(nombre, url, modelo por defecto) según el prefijo de la clave."""
-    if clave.startswith("xai-"):
-        return "grok", os.getenv("LLM_BASE_URL") or URL_XAI, MODELO_XAI_POR_DEFECTO
-    return "groq", os.getenv("LLM_BASE_URL") or URL_GROQ, MODELO_GROQ_POR_DEFECTO
+def _proveedor_openai(nombre: str, timeout_seg: float, conf: Optional[dict] = None) -> OpenAICompatibleProvider:
+    spec = _PROVEEDORES_OPENAI[nombre]
+    clave = os.getenv(spec["env_key"]) or ((conf or {}).get("clave") if nombre == (conf or {}).get("proveedor") else "") or ""
+    if not clave and nombre == "groq":
+        clave = os.getenv("GROK_API_KEY") or ""  # nombre que se usó en backend/.env
+    if not clave:
+        raise ProveedorNoConfigurado(f"{spec['env_key']} no configurada")
+    modelo = os.getenv(spec["env_model"]) or (conf or {}).get("modelo") or spec["modelo_defecto"]
+    return OpenAICompatibleProvider(nombre, spec["url"], clave, modelo, timeout_seg)
 
 
 def configuracion() -> dict:
-    explicito = (os.getenv("LLM_PROVIDER") or "").strip().lower()
-    nombre = "" if explicito == "auto" else explicito
-    clave_gemini = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
-    clave_compat = _clave_openai_compat()
-    respaldo = ""
+    clave = os.getenv("LLM_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
+    nombre = (os.getenv("LLM_PROVIDER") or "").strip().lower()
     if not nombre:
-        if clave_gemini:
-            nombre = "gemini"
-            respaldo = "groq" if clave_compat else ""
-        elif clave_compat:
-            nombre = "groq"
-        else:
-            nombre = "mock"
-    clave = clave_gemini if nombre == "gemini" else (
-        os.getenv("LLM_API_KEY") or clave_compat if nombre in ("groq", "grok") else clave_gemini)
+        nombre = "gemini" if clave else "mock"
     modelo = os.getenv("LLM_MODEL") or (os.getenv("GEMINI_MODEL") if nombre == "gemini" else "") or ""
     return {
         "proveedor": nombre,
         "clave": clave,
         "modelo": modelo,
-        "respaldo": respaldo,
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS") or 800),
         "timeout_seg": float(os.getenv("LLM_TIMEOUT_SEG") or 20),
     }
-
-
-def _crear_openai_compat(clave: str, modelo: str, timeout_seg: float) -> LLMProvider:
-    nombre, url, modelo_defecto = _destino_openai_compat(clave)
-    return OpenAICompatProvider(nombre, clave, modelo or modelo_defecto, url, timeout_seg)
 
 
 def crear_proveedor(conf: Optional[dict] = None) -> LLMProvider:
@@ -307,12 +328,24 @@ def crear_proveedor(conf: Optional[dict] = None) -> LLMProvider:
     if conf["proveedor"] == "gemini":
         if not conf["clave"]:
             raise ProveedorNoConfigurado("LLM_PROVIDER=gemini sin LLM_API_KEY")
-        principal = GeminiProvider(conf["clave"], conf["modelo"] or MODELO_GEMINI_POR_DEFECTO, conf["timeout_seg"])
-        if conf.get("respaldo"):
-            return ProveedorConRespaldo(principal, _crear_openai_compat(_clave_openai_compat(), "", conf["timeout_seg"]))
-        return principal
-    if conf["proveedor"] in ("groq", "grok"):
-        if not conf["clave"]:
-            raise ProveedorNoConfigurado(f"LLM_PROVIDER={conf['proveedor']} sin GROK_API_KEY")
-        return _crear_openai_compat(conf["clave"], conf["modelo"], conf["timeout_seg"])
+        return GeminiProvider(conf["clave"], conf["modelo"] or MODELO_GEMINI_POR_DEFECTO, conf["timeout_seg"])
+    if conf["proveedor"] in _PROVEEDORES_OPENAI:
+        return _proveedor_openai(conf["proveedor"], conf["timeout_seg"], conf)
+    if conf["proveedor"] == "auto":
+        cadena: list[LLMProvider] = []
+        for nombre in ("groq", "gemini", "openrouter"):
+            try:
+                if nombre == "gemini":
+                    clave = os.getenv("GEMINI_API_KEY") or os.getenv("LLM_API_KEY") or ""
+                    if not clave:
+                        continue
+                    cadena.append(GeminiProvider(clave, os.getenv("GEMINI_MODEL") or MODELO_GEMINI_POR_DEFECTO,
+                                                 conf["timeout_seg"]))
+                else:
+                    cadena.append(_proveedor_openai(nombre, conf["timeout_seg"]))
+            except ProveedorNoConfigurado:
+                continue
+        if not cadena:
+            raise ProveedorNoConfigurado("LLM_PROVIDER=auto sin ninguna API key")
+        return FailoverProvider(cadena)
     raise ProveedorNoConfigurado(f"LLM_PROVIDER desconocido: {conf['proveedor']}")
