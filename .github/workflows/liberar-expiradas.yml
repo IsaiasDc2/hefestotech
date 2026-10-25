@@ -1,0 +1,24 @@
+name: Liberar pedidos expirados
+
+# Cancela pedidos pendientes vencidos y devuelve su stock.
+# Requiere el secreto CRON_SECRET del repo (el mismo que en Render).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  liberar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al backend
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://hefestotech.onrender.com' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Falta el secreto CRON_SECRET en GitHub."; exit 1
+          fi
+          curl --fail --silent --show-error --max-time 90 --retry 2 \
+            -X POST "$BACKEND_URL/api/checkout/liberar-expiradas" \
+            -H "x-cron-secret: $CRON_SECRET"

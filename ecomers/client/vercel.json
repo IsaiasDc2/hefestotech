@@ -1,3 +1,10 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/productos", "destination": "/productos.html" },
+    { "source": "/armar", "destination": "/armar.html" },
+    { "source": "/acerca", "destination": "/acerca.html" },
+    { "source": "/contactanos", "destination": "/contactanos.html" },
+    { "source": "/producto/:id", "destination": "/producto/:id.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
