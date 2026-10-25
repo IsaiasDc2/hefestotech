@@ -1111,8 +1111,30 @@ def _alertar_pago_tardio(orden_id: str, pago_id: str, estado_anterior: str) -> N
             continue
 
 
+def _sb_borrar(tabla: str, params: dict[str, Any]) -> None:
+    try:
+        r = _client().delete(f"/{tabla}", params=params)
+        r.raise_for_status()
+    except httpx.HTTPError:
+        print("ERROR checkout_api: no se pudo borrar el evento del webhook.")
+
+
 @router.post("/api/webhooks/mercadopago")
 async def webhook_mercadopago(request: Request) -> dict[str, Any]:
+    # El evento se registra antes de procesar (idempotencia). Si el
+    # procesamiento falla, se borra el registro: si no, el reintento de MP
+    # se tomaría por duplicado y un pago aprobado quedaría sin confirmar.
+    registro: dict[str, str] = {}
+    try:
+        return await _procesar_webhook_mp(request, registro)
+    except Exception:
+        if registro.get("evento_id"):
+            _sb_borrar("eventos_webhook", {"fuente": "eq.mercadopago",
+                                           "evento_id": f"eq.{registro['evento_id']}"})
+        raise
+
+
+async def _procesar_webhook_mp(request: Request, registro: dict[str, str]) -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "webhook-mp", 60)
     query = dict(request.query_params)
     data_id = str(query.get("data.id") or query.get("id") or "").strip()
@@ -1162,6 +1184,7 @@ async def webhook_mercadopago(request: Request) -> dict[str, Any]:
     })
     if not creado:
         return {"recibido": True, "duplicado": True}
+    registro["evento_id"] = evento_id
 
     if not orden_ref:
         return {"recibido": True, "ignorado": "sin external_reference"}

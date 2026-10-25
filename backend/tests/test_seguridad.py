@@ -256,6 +256,42 @@ def test_webhook_exige_secreto_y_firma(monkeypatch):
     assert r.json().get("ignorado") == "pago inexistente en MP"
 
 
+def test_webhook_si_falla_el_procesamiento_el_reintento_se_reprocesa(monkeypatch):
+    monkeypatch.setenv("MP_WEBHOOK_SECRET", "secreto-prueba")
+    ts = str(int(time.time()))
+    v1 = hmac.new(b"secreto-prueba", f"id:77;request-id:req77;ts:{ts};".encode(), hashlib.sha256).hexdigest()
+    cab = {"x-signature": f"ts={ts},v1={v1}", "x-request-id": "req77"}
+    eventos, borrados = set(), []
+
+    def insertar(tabla, fila):
+        if tabla != "eventos_webhook":
+            return True, []
+        if fila["evento_id"] in eventos:
+            return False, []
+        eventos.add(fila["evento_id"])
+        return True, []
+
+    def borrar(tabla, params):
+        borrados.append(tabla)
+        eventos.clear()
+
+    def sb_get_cae(tabla, params):
+        raise checkout_api.HTTPException(status_code=502, detail="No se pudo consultar la base de datos.")
+
+    monkeypatch.setattr(checkout_api, "_pago_mp", lambda pid: {"status": "approved", "external_reference": "ord-1"})
+    monkeypatch.setattr(checkout_api, "_insertar_crudo", insertar)
+    monkeypatch.setattr(checkout_api, "_sb_borrar", borrar)
+    monkeypatch.setattr(checkout_api, "_sb_get", sb_get_cae)
+
+    r = cliente.post("/api/webhooks/mercadopago?data.id=77&type=payment", headers=cab)
+    assert r.status_code == 502
+    assert borrar and borrados == ["eventos_webhook"]  # el evento no queda marcado como recibido
+
+    monkeypatch.setattr(checkout_api, "_sb_get", lambda t, p: [])
+    r = cliente.post("/api/webhooks/mercadopago?data.id=77&type=payment", headers=cab)
+    assert r.status_code == 200 and r.json().get("duplicado") is not True  # se reprocesó
+
+
 # -------------------------------------------------------- liberar expiradas ---
 
 
