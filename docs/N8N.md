@@ -54,6 +54,7 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
 ## Notas
 
 - **No se duplica el email.** El mail al cliente sigue saliendo por Resend. El nodo *Enviar Gmail* del workflow de pedidos viene desactivado: activalo solo si no usás Resend.
+- **Cuidado con los cupones de prueba.** Crear un cupón activo desde el panel dispara el workflow de ofertas: manda mail a **todos** los suscriptores. Para probar, dejá el workflow inactivo o usá una instancia con una lista de prueba.
 - **Teléfonos.** El workflow normaliza a formato WhatsApp Argentina (`549` + área + número). Si el número no se puede normalizar con seguridad, no se envía. Conviene guardar el teléfono como área + número, sin `15`.
 - **Plantillas de WhatsApp.** Los mensajes iniciados por el negocio fuera de las 24 h desde el último mensaje del cliente requieren plantillas aprobadas por Meta. Los nodos vienen con texto libre: para producción, crear las plantillas y cambiar a *Send Template*.
 - **WhatsApp de marketing.** Las ofertas se mandan por mail a `suscriptores` y por WhatsApp solo al dueño. Para escribirles por WhatsApp a los clientes hace falta registrar su consentimiento (hoy no existe). Los mails llevan un aviso de baja (respondiendo "BAJA"); no hay un enlace de baja automático.
