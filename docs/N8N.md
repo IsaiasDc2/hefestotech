@@ -31,7 +31,7 @@ n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo
 
 Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X-Hefesto-Secret`.
 
-**`pedido.estado`** → `/hefestotech-pedidos`. Se emite cuando el backend avisa al cliente: pagos y reembolsos confirmados por Mercado Pago, y los cambios que se hacen desde el panel (preparación, enviada, entregada, cancelada, reembolsada). Las cancelaciones automáticas por pago rechazado o reserva vencida no avisan, para no mandar mensajes a checkouts abandonados.
+**`pedido.estado`** → `/hefestotech-pedidos`. Se emite cuando el backend avisa al cliente: pagos y reembolsos confirmados por Mercado Pago, y los cambios que se hacen desde el panel (preparación, enviada, entregada, cancelada, reembolsada). Las cancelaciones automáticas por pago rechazado o reserva vencida no avisan, para no mandar mensajes a checkouts abandonados. Si el seguimiento se carga después de marcar el pedido como enviado, se emite un segundo aviso con el código (el `evento_id` cambia).
 
 ```json
 {

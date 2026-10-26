@@ -134,6 +134,13 @@ def test_error_de_red_o_http_no_lanza(monkeypatch):
     assert n8n_hook.emitir("pedido.estado", {}, "x", en_segundo_plano=False) is False
 
 
+def test_evento_enviada_cambia_cuando_se_agrega_el_seguimiento():
+    sin_envio = n8n_hook._evento_pedido(ORDEN, "enviada")
+    con_envio = n8n_hook._evento_pedido({**ORDEN, "tracking_codigo": "XYZ999"}, "enviada")
+    assert sin_envio != con_envio
+    assert n8n_hook._evento_pedido(ORDEN, "pagada") == f"{PED}:pagada"
+
+
 def test_notificar_estado_avisa_a_n8n_aunque_el_estado_no_lleve_email(monkeypatch):
     avisos = []
     monkeypatch.setattr(n8n_hook, "emitir_pedido",

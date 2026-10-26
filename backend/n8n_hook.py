@@ -141,12 +141,22 @@ def emitir(evento: str, datos: dict[str, Any], evento_id: str,
         return False
 
 
+def _evento_pedido(orden: dict[str, Any], estado: str) -> str:
+    """Idempotencia por pedido + estado. En `enviada` incluye el seguimiento:
+    si se carga después de marcar el envío, n8n manda un segundo aviso con el
+    código en vez de descartarlo por duplicado."""
+    base = f"{orden.get('id')}:{estado}"
+    if estado == "enviada":
+        base += f":{orden.get('tracking_codigo') or ''}:{orden.get('tracking_url') or ''}"
+    return base
+
+
 def emitir_pedido(orden: dict[str, Any], estado: str, numero: str) -> bool:
     try:
         if not habilitado():
             return False
         return emitir("pedido.estado", payload_pedido(orden, estado, numero),
-                      f"{orden.get('id')}:{estado}")
+                      _evento_pedido(orden, estado))
     except Exception:
         print("ERROR n8n_hook: no se pudo armar el aviso del pedido.")
         return False
