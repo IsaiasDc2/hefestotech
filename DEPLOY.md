@@ -83,11 +83,14 @@ Verificación: abrir la URL. Tiene que verse la home con productos y la etiqueta
 | `MERCADOPAGO_ACCESS_TOKEN` | Access token (`TEST-...` para pruebas) | Para cobrar |
 | `MP_WEBHOOK_SECRET` | Clave secreta del webhook (paso 4.4) | Para cobrar |
 | `BACKEND_URL` | URL pública de este servicio, sin barra final (ej. `https://hefestotech-api.onrender.com`) | Sí |
-| `FRONTEND_URL` | URL del frontend, sin barra final (ya viene `https://isaiasdc2.github.io/hefestotech`) | Sí |
-| `CORS_EXTRA_ORIGINS` | Otros orígenes del front separados por coma (ej. la URL de Vercel) | Si hay más de uno |
+| `FRONTEND_URL` | URL del frontend, sin barra final (ya viene `https://hefestotech.vercel.app`) | Sí |
+| `CORS_EXTRA_ORIGINS` | Otros orígenes del front separados por coma (ej. GitHub Pages) | Si hay más de uno |
 | `CRON_SECRET` | Cadena aleatoria larga (`openssl rand -hex 32`) | Recomendado |
-| `LLM_PROVIDER` | `mock` (sin clave) o `gemini` | No (default `mock` sin clave) |
-| `LLM_API_KEY` / `LLM_MODEL` | Clave y modelo del proveedor | Solo con `gemini` |
+| `LLM_PROVIDER` | `auto` (Groq → Gemini → OpenRouter), `gemini`, `groq`, `openrouter` o `mock` | No (default `mock` sin clave) |
+| `GROQ_API_KEY` / `GEMINI_API_KEY` / `OPENROUTER_API_KEY` | Claves de los proveedores de IA (con `auto` se usa la cadena de las que existan) | Para el asistente |
+| `LLM_API_KEY` / `LLM_MODEL` | Clave y modelo de un proveedor puntual (`GEMINI_MODEL`, `GROQ_MODEL` y `OPENROUTER_MODEL` los pisan) | Solo si no usás las claves por proveedor |
+| `N8N_WEBHOOK_BASE_URL` | Base de los webhooks de n8n, sin barra final (ej. `https://tu-n8n/webhook`) | No (sin esto no avisa) |
+| `N8N_WEBHOOK_SECRET` | Secreto compartido con la credencial *Header Auth* de n8n (`openssl rand -hex 32`) | No (sin esto no avisa) |
 | `TIENDA_NOMBRE`, `TIENDA_CUIT`, `TIENDA_DIRECCION`, `TIENDA_EMAIL`, `TIENDA_TELEFONO` | Datos reales del comercio para el comprobante | Antes de vender |
 
 3. Deploy. Verificación: `curl https://<BACKEND_URL>/` devuelve `{"mensaje": "La API de Hefesto Tech está funcionando correctamente"}`.

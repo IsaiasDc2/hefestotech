@@ -157,7 +157,9 @@ deshabilitado como **Próximamente** / Sin permiso, sin datos inventados
 
 | Var | Efecto |
 |---|---|
-| `CRON_SECRET` | **Requerida** para `POST /api/checkout/liberar-expiradas`. Sin ella el endpoint devuelve 401 (fail-closed). El cron debe pasarla como header `X-Cron-Secret`. |
+| `CRON_SECRET` | **Requerida** para `POST /api/checkout/liberar-expiradas`. Sin ella el endpoint devuelve 503 y con un secreto incorrecto 403 (fail-closed). El cron debe pasarla como header `X-Cron-Secret`. |
 | `DISABLE_API_DOCS` | Si está definida, oculta `/docs`, `/redoc` y `/openapi.json`. En Render no hace falta: `RENDER=true` ya las oculta automáticamente. |
-| `FRONTEND_URL` | Origen extra permitido por CORS (además del allowlist fijo). |
+| `FRONTEND_URL` | Origen extra permitido por CORS (además del allowlist fijo) y base de los enlaces de pedido. |
 | `MP_WEBHOOK_SECRET` | Firma del webhook de MercadoPago; sin ella el webhook es fail-closed (503). |
+| `N8N_WEBHOOK_BASE_URL` | Base de los webhooks de n8n (ej. `https://tu-n8n/webhook`). Opcional: sin ella no se envían avisos. |
+| `N8N_WEBHOOK_SECRET` | Secreto del encabezado `X-Hefesto-Secret`; debe coincidir con la credencial Header Auth de n8n. Opcional. |

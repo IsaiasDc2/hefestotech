@@ -1475,7 +1475,8 @@ def _avisar_cliente(pid: str, estado: str) -> None:
     """Email al cliente por el nuevo estado (si el envío está configurado).
     Nunca interrumpe la operación: el estado ya cambió."""
     try:
-        campos = "id,nombre,email,telefono,total_centavos,acceso_token"
+        campos = ("id,nombre,email,telefono,total_centavos,acceso_token,"
+                  "orden_items(cantidad,precio,productos(nombre))")
         try:
             filas = _sb_get("ordenes", {
                 "select": campos + ",transportista,tracking_codigo,tracking_url",

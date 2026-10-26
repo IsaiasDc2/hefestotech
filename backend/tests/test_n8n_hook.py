@@ -157,3 +157,24 @@ def test_crear_cupon_avisa_la_oferta(monkeypatch):
                      json={"codigo": "hot10", "tipo": "porcentaje", "valor": 10})
     assert r.status_code == 201
     assert avisos == ["HOT10"]
+
+
+def test_aviso_desde_el_panel_trae_items_para_n8n(monkeypatch):
+    consultas = []
+    monkeypatch.setattr(admin_api, "_sb_get", lambda tabla, params: consultas.append(params) or [ORDEN])
+    vistos = []
+    monkeypatch.setattr(admin_api, "notificar_estado", lambda orden, estado: vistos.append((orden, estado)))
+    admin_api._avisar_cliente(PED, "enviada")
+    assert "orden_items(cantidad,precio,productos(nombre))" in consultas[0]["select"]
+    assert vistos == [(ORDEN, "enviada")]
+
+
+def test_workflows_de_n8n_son_json_importable():
+    import json
+
+    raiz = Path(__file__).resolve().parents[2]
+    for nombre in ("hefestotech-pedidos-whatsapp.json", "hefestotech-ofertas.json"):
+        datos = json.loads((raiz / "n8n" / nombre).read_text(encoding="utf-8"))
+        assert datos["name"].startswith("HefestoTech")
+        assert datos["nodes"] and datos["connections"]
+        assert all(nodo.get("type") for nodo in datos["nodes"])

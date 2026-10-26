@@ -25,13 +25,13 @@ n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo
    | `N8N_WEBHOOK_BASE_URL` | `https://TU-N8N/webhook` (sin barra final; para probar usá `/webhook-test`) |
    | `N8N_WEBHOOK_SECRET` | El mismo secreto de la credencial Header Auth |
 
-   Sin las dos, no se envía nada.
+   Sin las dos, no se envía nada. En `render.yaml` están declaradas con `sync: false`; si el servicio no se creó desde el Blueprint, cargalas a mano.
 
 ## Eventos
 
 Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X-Hefesto-Secret`.
 
-**`pedido.estado`** → `/hefestotech-pedidos`. Se emite en cada cambio de estado (pagada, preparacion, enviada, entregada, cancelada, reembolsada), venga de Mercado Pago o del panel.
+**`pedido.estado`** → `/hefestotech-pedidos`. Se emite cuando el backend avisa al cliente: pagos y reembolsos confirmados por Mercado Pago, y los cambios que se hacen desde el panel (preparación, enviada, entregada, cancelada, reembolsada). Las cancelaciones automáticas por pago rechazado o reserva vencida no avisan, para no mandar mensajes a checkouts abandonados.
 
 ```json
 {

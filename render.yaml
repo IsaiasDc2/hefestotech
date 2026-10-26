@@ -33,3 +33,7 @@ services:
         sync: false
       - key: CORS_EXTRA_ORIGINS
         sync: false
+      - key: N8N_WEBHOOK_BASE_URL
+        sync: false
+      - key: N8N_WEBHOOK_SECRET
+        sync: false
