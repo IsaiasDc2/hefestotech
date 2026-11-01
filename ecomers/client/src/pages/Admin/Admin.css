@@ -557,6 +557,232 @@
   gap: 0.6rem;
 }
 
+/* Listados desplegables de Pedidos, Reclamos y Clientes.
+   Una sola tabla/lista por vista: filas separadas por líneas, sin cards. */
+.adm-lista-bloque {
+  border: 1px solid var(--border-suave);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.adm-lista-cabecera {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border-suave);
+  background: var(--surface-elevated);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.adm-lista-cabecera .es-numero {
+  text-align: right;
+}
+
+.adm-lista-bloque.es-pedidos .adm-lista-cabecera,
+.adm-lista-bloque.es-pedidos .adm-registro-toggle {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr) 9.5rem 8.5rem 7.5rem 1.5rem;
+}
+
+.adm-lista-bloque.es-reclamos .adm-lista-cabecera,
+.adm-lista-bloque.es-reclamos .adm-registro-toggle {
+  grid-template-columns: minmax(0, 2fr) 8rem 9.5rem 7.5rem 1.5rem;
+}
+
+.adm-lista-bloque.es-clientes .adm-lista-cabecera,
+.adm-lista-bloque.es-clientes .adm-registro-toggle {
+  grid-template-columns: minmax(0, 1.5fr) 8rem 5.5rem 9rem 10rem 1.5rem;
+}
+
+.adm-lista-registros {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adm-registro {
+  border-bottom: 1px solid var(--border-suave);
+}
+
+.adm-registro:last-child {
+  border-bottom: 0;
+}
+
+.adm-registro-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.adm-registro-toggle:hover {
+  background: var(--surface-elevated);
+}
+
+.adm-registro-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.adm-registro.esta-abierto > .adm-registro-toggle {
+  background: var(--surface-elevated);
+}
+
+.adm-registro-celda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  font-size: 0.88rem;
+}
+
+.adm-registro-celda.es-principal strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.adm-registro-celda.es-numero {
+  align-items: flex-end;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-registro-celda.es-estado {
+  align-items: flex-start;
+}
+
+.adm-registro-sub {
+  color: var(--muted);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-registro-etiqueta {
+  display: none;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.adm-registro-ultimo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.adm-registro-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 0.2rem 1rem 1rem;
+  border-top: 1px solid var(--border-suave);
+  background: var(--surface);
+}
+
+.adm-registro-detalle .adm-detalle-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.adm-registro-detalle .adm-pedido-acciones {
+  margin-top: 0.1rem;
+}
+
+/* Los pedidos dentro de un cliente también son filas, no tarjetas. */
+.adm-cliente-pedido-lista {
+  gap: 0;
+}
+
+.adm-cliente-pedido {
+  border: 0;
+  border-bottom: 1px solid var(--border-suave);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.6rem 0;
+}
+
+.adm-cliente-pedido:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 980px) {
+  .adm-lista-cabecera {
+    display: none;
+  }
+
+  .adm-lista-bloque.es-pedidos .adm-registro-toggle,
+  .adm-lista-bloque.es-reclamos .adm-registro-toggle,
+  .adm-lista-bloque.es-clientes .adm-registro-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.45rem 0.9rem;
+  }
+
+  .adm-registro-celda.es-principal {
+    flex: 1 1 100%;
+  }
+
+  .adm-registro-celda {
+    flex: 1 1 auto;
+  }
+
+  .adm-registro-celda.es-numero {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .adm-registro-celda.es-estado {
+    flex: 0 0 auto;
+  }
+
+  .adm-registro-etiqueta {
+    display: block;
+  }
+
+  .adm-registro-toggle .adm-caret {
+    margin-left: auto;
+    align-self: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .adm-registro-toggle {
+    padding: 0.75rem 0.8rem;
+  }
+
+  .adm-registro-detalle {
+    padding: 0.15rem 0.8rem 0.9rem;
+  }
+
+  .adm-registro-celda {
+    flex: 1 1 100%;
+  }
+
+  .adm-registro-celda.es-estado {
+    flex: 1 1 auto;
+  }
+}
+
 .adm-pedido-head {
   display: flex;
   justify-content: space-between;

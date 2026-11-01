@@ -242,98 +242,126 @@ export default function Pedidos({ avisar, pedirConfirm, rol }) {
           }
         />
       ) : (
-        <ul className="adm-tarjetas">
-          {lista.map((p) => {
-            const abiertoEste = abierto === p.id;
-            const detalleId = `adm-pedido-det-${p.id}`;
-            const descuento = p.descuento_centavos ?? p.totales?.descuento_centavos ?? 0;
-            return (
-              <li key={p.id} className="card adm-pedido">
-                <button
-                  type="button"
-                  className="adm-pedido-toggle"
-                  onClick={() => setAbierto(abiertoEste ? "" : p.id)}
-                  aria-expanded={abiertoEste}
-                  aria-controls={detalleId}
-                >
-                  <span className="adm-pedido-head">
-                    <strong>{p.numero ?? `#${String(p.id).slice(0, 8)}`}</strong>
-                    <span className={`adm-estado es-${p.estado}`}>{p.estado}</span>
-                  </span>
-                  <span className="adm-pedido-meta texto-mutado">
-                    {fechaCorta(p.created_at)}{p.nombre ? ` · ${p.nombre}` : ""}
-                    {p.comprobante ? " · comprobante emitido" : ""}
-                    {p.comprobante_pago ? " · comprobante de pago cargado" : ""}
+        <div className="adm-lista-bloque es-pedidos">
+          <div className="adm-lista-cabecera" aria-hidden="true">
+            <span>Pedido</span>
+            <span>Cliente</span>
+            <span>Fecha</span>
+            <span className="es-numero">Total</span>
+            <span>Estado</span>
+            <span />
+          </div>
+          <ul className="adm-lista-registros">
+            {lista.map((p) => {
+              const abiertoEste = abierto === p.id;
+              const detalleId = `adm-pedido-det-${p.id}`;
+              const descuento = p.descuento_centavos ?? p.totales?.descuento_centavos ?? 0;
+              const items = Array.isArray(p.orden_items) ? p.orden_items : [];
+              const cantidadItems = items.reduce((n, it) => n + Number(it.cantidad ?? 1), 0);
+              const numero = p.numero ?? `#${String(p.id).slice(0, 8)}`;
+              // Con pago de Mercado Pago, «reembolsada» solo por el reembolso real
+              // (el botón común cambiaría la etiqueta sin devolver el dinero).
+              const siguientes = siguientesEstados(p.estado)
+                .filter((s) => !(s === "reembolsada" && puedeReembolsar && p.mp_payment_id));
+              return (
+                <li key={p.id} className={`adm-registro${abiertoEste ? " esta-abierto" : ""}`}>
+                  <button
+                    type="button"
+                    className="adm-registro-toggle"
+                    onClick={() => setAbierto(abiertoEste ? "" : p.id)}
+                    aria-expanded={abiertoEste}
+                    aria-controls={detalleId}
+                    aria-label={`${abiertoEste ? "Ocultar" : "Ver"} detalle del pedido ${numero}`}
+                  >
+                    <span className="adm-registro-celda es-principal">
+                      <strong>{numero}</strong>
+                      <span className="adm-registro-sub">
+                        {cantidadItems === 0
+                          ? "Sin ítems"
+                          : `${cantidadItems} ${cantidadItems === 1 ? "ítem" : "ítems"}`}
+                        {p.comprobante_pago ? " · pago cargado" : ""}
+                        {p.comprobante ? " · comprobante" : ""}
+                      </span>
+                    </span>
+                    <span className="adm-registro-celda">
+                      <span className="adm-registro-etiqueta">Cliente</span>
+                      <span>{p.nombre || "—"}</span>
+                      {p.email ? <span className="adm-registro-sub">{p.email}</span> : null}
+                    </span>
+                    <span className="adm-registro-celda es-fecha">
+                      <span className="adm-registro-etiqueta">Fecha</span>
+                      <span>{fechaCorta(p.created_at)}</span>
+                    </span>
+                    <span className="adm-registro-celda es-numero">
+                      <span className="adm-registro-etiqueta">Total</span>
+                      <strong>{formatoARS(p.total_centavos ?? p.totales?.total_centavos ?? 0)}</strong>
+                    </span>
+                    <span className="adm-registro-celda es-estado">
+                      <span className={`adm-estado${p.estado ? ` es-${p.estado}` : ""}`}>{p.estado || "—"}</span>
+                    </span>
                     <FaChevronDown className="adm-caret" aria-hidden="true" />
-                  </span>
-                </button>
-                <p>
-                  Subtotal {formatoARS(p.totales?.subtotal_centavos ?? 0)}
-                  {" · "}Desc. {formatoARS(descuento)}
-                  {" · "}<strong>Total {formatoARS(p.total_centavos ?? p.totales?.total_centavos ?? 0)}</strong>
-                </p>
-                {Array.isArray(p.orden_items) && p.orden_items.length > 0 && (
-                  <ul className="adm-lista-chica">
-                    {p.orden_items.slice(0, 5).map((it, i) => (
-                      <li key={it.id ?? i}>
-                        {it.productos?.nombre ?? it.producto_nombre ?? "Producto"} × {it.cantidad ?? 1}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                  </button>
 
-                {abiertoEste && (
-                  <div className="adm-pedido-detalle" id={detalleId} role="region" aria-label={`Detalle del pedido ${String(p.id).slice(0, 8)}`}>
-                    <dl className="adm-detalle-grid">
-                      <div>
-                        <dt>Cliente</dt>
-                        <dd>{p.nombre || "—"}</dd>
-                      </div>
-                      <div>
-                        <dt>Email</dt>
-                        <dd>{p.email || "—"}</dd>
-                      </div>
-                      <div>
-                        <dt>Envío</dt>
-                        <dd>{envioEtiqueta(p.envio)} — {formatoARS(p.costo_envio_centavos ?? 0)}</dd>
-                      </div>
-                      <div>
-                        <dt>Dirección de entrega</dt>
-                        <dd>{p.direccion || "—"}</dd>
-                      </div>
-                      <div>
-                        <dt>Ciudad</dt>
-                        <dd>{p.ciudad || "—"}</dd>
-                      </div>
-                      <div>
-                        <dt>Código postal</dt>
-                        <dd>{p.codigo_postal || "—"}</dd>
-                      </div>
-                      {p.cupon_codigo ? (
+                  {abiertoEste && (
+                    <div
+                      className="adm-registro-detalle"
+                      id={detalleId}
+                      role="region"
+                      aria-label={`Detalle del pedido ${String(p.id).slice(0, 8)}`}
+                    >
+                      <dl className="adm-detalle-grid">
                         <div>
-                          <dt>Cupón</dt>
-                          <dd>{p.cupon_codigo} (−{formatoARS(descuento)})</dd>
+                          <dt>Cliente</dt>
+                          <dd>{p.nombre || "—"}</dd>
                         </div>
-                      ) : null}
-                      {p.mp_payment_id ? (
                         <div>
-                          <dt>Pago Mercado Pago</dt>
-                          <dd>{p.mp_payment_id}</dd>
+                          <dt>Email</dt>
+                          <dd>{p.email || "—"}</dd>
                         </div>
-                      ) : null}
-                    </dl>
+                        <div>
+                          <dt>Envío</dt>
+                          <dd>{envioEtiqueta(p.envio)} — {formatoARS(p.costo_envio_centavos ?? 0)}</dd>
+                        </div>
+                        <div>
+                          <dt>Dirección de entrega</dt>
+                          <dd>{p.direccion || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>Ciudad</dt>
+                          <dd>{p.ciudad || "—"}</dd>
+                        </div>
+                        <div>
+                          <dt>Código postal</dt>
+                          <dd>{p.codigo_postal || "—"}</dd>
+                        </div>
+                        {p.cupon_codigo ? (
+                          <div>
+                            <dt>Cupón</dt>
+                            <dd>{p.cupon_codigo} (−{formatoARS(descuento)})</dd>
+                          </div>
+                        ) : null}
+                        {p.mp_payment_id ? (
+                          <div>
+                            <dt>Pago Mercado Pago</dt>
+                            <dd>{p.mp_payment_id}</dd>
+                          </div>
+                        ) : null}
+                      </dl>
 
-                    {Array.isArray(p.orden_items) && p.orden_items.length > 0 && (
                       <div>
                         <p className="adm-detalle-subtitulo">Ítems</p>
-                        <ul className="adm-lista-chica">
-                          {p.orden_items.map((it, i) => (
-                            <li key={it.id ?? i}>
-                              {it.productos?.nombre ?? it.producto_nombre ?? "Producto"} × {it.cantidad ?? 1}
-                              {" · "}{precioPesos(it.precio)}
-                            </li>
-                          ))}
-                        </ul>
+                        {items.length > 0 ? (
+                          <ul className="adm-lista-chica">
+                            {items.map((it, i) => (
+                              <li key={it.id ?? i}>
+                                {it.productos?.nombre ?? it.producto_nombre ?? "Producto"} × {it.cantidad ?? 1}
+                                {" · "}{precioPesos(it.precio)}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="texto-mutado">Pedido sin ítems registrados.</p>
+                        )}
                         <div className="adm-detalle-totales">
                           <p>Subtotal {formatoARS(p.totales?.subtotal_centavos ?? 0)}</p>
                           {descuento > 0 && <p>Descuento −{formatoARS(descuento)}</p>}
@@ -341,111 +369,111 @@ export default function Pedidos({ avisar, pedirConfirm, rol }) {
                           <p><strong>Total {formatoARS(p.total_centavos ?? p.totales?.total_centavos ?? 0)}</strong></p>
                         </div>
                       </div>
-                    )}
 
-                    <div className="adm-detalle-comprobante">
-                      <p className="adm-detalle-subtitulo">Comprobante de pago del cliente</p>
-                      {p.comprobante_pago ? (
-                        <>
-                          <p>
-                            <FaReceipt aria-hidden="true" /> {p.comprobante_pago.archivo_nombre || "Comprobante"}
-                            {" · "}{fechaCorta(p.comprobante_pago.created_at)}
-                            {" · "}{formatoARS(p.comprobante_pago.monto_centavos ?? 0)}
+                      <div className="adm-detalle-comprobante">
+                        <p className="adm-detalle-subtitulo">Comprobante de pago del cliente</p>
+                        {p.comprobante_pago ? (
+                          <>
+                            <p>
+                              <FaReceipt aria-hidden="true" /> {p.comprobante_pago.archivo_nombre || "Comprobante"}
+                              {" · "}{fechaCorta(p.comprobante_pago.created_at)}
+                              {" · "}{formatoARS(p.comprobante_pago.monto_centavos ?? 0)}
+                            </p>
+                            {p.comprobante_pago.nota ? (
+                              <p className="texto-mutado">Nota: {p.comprobante_pago.nota}</p>
+                            ) : null}
+                            <div className="adm-acciones">
+                              <button
+                                type="button"
+                                className="btn-primary adm-btn adm-mini"
+                                disabled={viendoPago === p.id}
+                                onClick={() => verComprobantePago(p)}
+                              >
+                                {viendoPago === p.id ? "Abriendo…" : "Ver comprobante de pago"}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="texto-mutado">
+                            El cliente todavía no cargó un comprobante de pago.
                           </p>
-                          {p.comprobante_pago.nota ? (
-                            <p className="texto-mutado">Nota: {p.comprobante_pago.nota}</p>
-                          ) : null}
-                          <div className="adm-acciones">
-                            <button
-                              type="button"
-                              className="btn-primary adm-btn adm-mini"
-                              disabled={viendoPago === p.id}
-                              onClick={() => verComprobantePago(p)}
-                            >
-                              {viendoPago === p.id ? "Abriendo…" : "Ver comprobante de pago"}
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="texto-mutado">
-                          El cliente todavía no cargó un comprobante de pago.
-                        </p>
-                      )}
-                    </div>
+                        )}
+                      </div>
 
-                    <div className="adm-detalle-comprobante">
-                      {p.comprobante ? (
-                        <>
-                          <p>
-                            <FaReceipt aria-hidden="true" /> Comprobante {p.comprobante.numero || "—"}
-                            {" · "}{fechaCorta(p.comprobante.emitido_en)}
+                      <div className="adm-detalle-comprobante">
+                        {p.comprobante ? (
+                          <>
+                            <p>
+                              <FaReceipt aria-hidden="true" /> Comprobante {p.comprobante.numero || "—"}
+                              {" · "}{fechaCorta(p.comprobante.emitido_en)}
+                            </p>
+                            <div className="adm-acciones">
+                              <button
+                                type="button"
+                                className="btn-fantasma adm-mini"
+                                disabled={bajando === p.id}
+                                onClick={() => comprobante(p, "ver")}
+                              >
+                                Ver
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-primary adm-btn adm-mini"
+                                disabled={bajando === p.id}
+                                onClick={() => comprobante(p, "descargar")}
+                              >
+                                <FaFileArrowDown aria-hidden="true" /> Descargar PDF
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="texto-mutado">
+                            Comprobante: se emite automáticamente cuando Mercado Pago acredita el pago.
                           </p>
-                          <div className="adm-acciones">
-                            <button
-                              type="button"
-                              className="btn-fantasma adm-mini"
-                              disabled={bajando === p.id}
-                              onClick={() => comprobante(p, "ver")}
-                            >
-                              Ver
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-primary adm-btn adm-mini"
-                              disabled={bajando === p.id}
-                              onClick={() => comprobante(p, "descargar")}
-                            >
-                              <FaFileArrowDown aria-hidden="true" /> Descargar PDF
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="texto-mutado">
-                          Comprobante: se emite automáticamente cuando Mercado Pago acredita el pago.
-                        </p>
+                        )}
+                      </div>
+
+                      {ESTADOS_CON_ENVIO.includes(p.estado) && (
+                        <Seguimiento pedido={p} avisar={avisar} onGuardado={recargar} />
                       )}
+
+                      <div className="adm-pedido-acciones">
+                        <span className="texto-mutado">Cambiar estado:</span>
+                        <div className="adm-acciones">
+                          {siguientes.length ? (
+                            siguientes.map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                className={`btn-fantasma adm-mini${esDestructivo(s) ? " es-peligro" : ""}`}
+                                disabled={cambiando === p.id}
+                                onClick={() => cambiar(p, s)}
+                              >
+                                → {s}
+                              </button>
+                            ))
+                          ) : (
+                            <span className="texto-mutado">Sin cambios disponibles.</span>
+                          )}
+                          {puedeReembolsar && p.mp_payment_id && ESTADOS_REEMBOLSABLES.includes(p.estado) && (
+                            <button
+                              type="button"
+                              className="btn-fantasma adm-mini es-peligro"
+                              disabled={cambiando === p.id}
+                              onClick={() => reembolsar(p)}
+                            >
+                              Reembolsar por Mercado Pago
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {abiertoEste && ESTADOS_CON_ENVIO.includes(p.estado) && (
-                  <Seguimiento pedido={p} avisar={avisar} onGuardado={recargar} />
-                )}
-
-                <div className="adm-pedido-acciones">
-                  <span className="texto-mutado">Cambiar estado:</span>
-                  <div className="adm-acciones">
-                    {siguientesEstados(p.estado)
-                      // Con pago de Mercado Pago, «reembolsada» solo por el reembolso real
-                      // (el botón común cambiaría la etiqueta sin devolver el dinero).
-                      .filter((s) => !(s === "reembolsada" && puedeReembolsar && p.mp_payment_id))
-                      .map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className={`btn-fantasma adm-mini${esDestructivo(s) ? " es-peligro" : ""}`}
-                        disabled={cambiando === p.id}
-                        onClick={() => cambiar(p, s)}
-                      >
-                        → {s}
-                      </button>
-                    ))}
-                    {puedeReembolsar && p.mp_payment_id && ESTADOS_REEMBOLSABLES.includes(p.estado) && (
-                      <button
-                        type="button"
-                        className="btn-fantasma adm-mini es-peligro"
-                        disabled={cambiando === p.id}
-                        onClick={() => reembolsar(p)}
-                      >
-                        Reembolsar por Mercado Pago
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
       {(datos?.total ?? 0) > 10 && (
         <div className="card adm-panel">

@@ -2,7 +2,7 @@
 // métricas de sus pedidos: conteo, total comprado, último pedido y estado.
 // Solo lectura; búsqueda por nombre contra /api/admin/clientes.
 import { useState } from "react";
-import { FaBoxOpen, FaReceipt } from "react-icons/fa6";
+import { FaBoxOpen, FaChevronDown, FaReceipt } from "react-icons/fa6";
 import { adminApi, fechaCorta, formatoARS } from "./adminApi";
 import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Vacio } from "./ui";
 import { useModulo, usePaginacion } from "./hooks";
@@ -145,6 +145,7 @@ function PedidosCliente({ pedidos }) {
 export default function Clientes() {
   const [q, setQ] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [abierto, setAbierto] = useState("");
   const pg = usePaginacion(busqueda);
   const { estado, datos, recargar } = useModulo(
     () => adminApi.clientes({ busqueda, limit: pg.por, offset: pg.offset }),
@@ -206,56 +207,118 @@ export default function Clientes() {
             }
           />
         ) : (
-          <ul className="adm-tarjetas">
-            {lista.map((c) => {
-              const r = { ...SIN_RESUMEN, ...(c.resumen ?? {}) };
-              return (
-                <li key={c.id} className="card adm-pedido">
-                  <div className="adm-pedido-head">
-                    <strong>{c.nombre || "Sin nombre"}</strong>
-                    {c.rol && c.rol !== "cliente" ? (
-                      <span className="adm-estado">{c.rol}</span>
-                    ) : null}
-                  </div>
-                  <p className="texto-mutado">
-                    {c.email || "Sin email"} · Alta {fechaCorta(c.created_at)}
-                  </p>
-                  <dl className="adm-detalle-grid">
-                    <div>
-                      <dt>Pedidos</dt>
-                      <dd>{r.pedidos}</dd>
-                    </div>
-                    <div>
-                      <dt>Total comprado</dt>
-                      <dd>{formatoARS(r.comprado_centavos)}</dd>
-                    </div>
-                    <div>
-                      <dt>Ciudad</dt>
-                      <dd>{c.ciudad || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt>Teléfono</dt>
-                      <dd>{c.telefono || "—"}</dd>
-                    </div>
-                    {r.ultimo_pedido ? (
-                      <div>
-                        <dt>Último pedido</dt>
-                        <dd>{fechaCorta(r.ultimo_pedido)} · {r.ultimo_estado || "—"}</dd>
+          <div className="adm-lista-bloque es-clientes">
+            <div className="adm-lista-cabecera" aria-hidden="true">
+              <span>Cliente</span>
+              <span>Ciudad</span>
+              <span className="es-numero">Pedidos</span>
+              <span className="es-numero">Total comprado</span>
+              <span>Último pedido</span>
+              <span />
+            </div>
+            <ul className="adm-lista-registros">
+              {lista.map((c) => {
+                const r = { ...SIN_RESUMEN, ...(c.resumen ?? {}) };
+                const abiertoEste = abierto === c.id;
+                const detalleId = `adm-cliente-det-${c.id}`;
+                const nombre = c.nombre || "Sin nombre";
+                return (
+                  <li key={c.id} className={`adm-registro${abiertoEste ? " esta-abierto" : ""}`}>
+                    <button
+                      type="button"
+                      className="adm-registro-toggle"
+                      onClick={() => setAbierto(abiertoEste ? "" : c.id)}
+                      aria-expanded={abiertoEste}
+                      aria-controls={detalleId}
+                      aria-label={`${abiertoEste ? "Ocultar" : "Ver"} detalle del cliente ${nombre}`}
+                    >
+                      <span className="adm-registro-celda es-principal">
+                        <strong>{nombre}</strong>
+                        <span className="adm-registro-sub">
+                          {c.email || "Sin email"}
+                          {c.rol && c.rol !== "cliente" ? ` · ${c.rol}` : ""}
+                        </span>
+                      </span>
+                      <span className="adm-registro-celda es-ciudad">
+                        <span className="adm-registro-etiqueta">Ciudad</span>
+                        <span>{c.ciudad || "—"}</span>
+                      </span>
+                      <span className="adm-registro-celda es-numero">
+                        <span className="adm-registro-etiqueta">Pedidos</span>
+                        <strong>{r.pedidos}</strong>
+                      </span>
+                      <span className="adm-registro-celda es-numero">
+                        <span className="adm-registro-etiqueta">Total comprado</span>
+                        <strong>{formatoARS(r.comprado_centavos)}</strong>
+                      </span>
+                      <span className="adm-registro-celda es-ultimo">
+                        <span className="adm-registro-etiqueta">Último pedido</span>
+                        {r.ultimo_pedido ? (
+                          <span className="adm-registro-ultimo">
+                            <span>{fechaCorta(r.ultimo_pedido)}</span>
+                            <span className={`adm-estado${r.ultimo_estado ? ` es-${r.ultimo_estado}` : ""}`}>
+                              {r.ultimo_estado || "—"}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="texto-mutado">Sin pedidos</span>
+                        )}
+                      </span>
+                      <FaChevronDown className="adm-caret" aria-hidden="true" />
+                    </button>
+
+                    {abiertoEste && (
+                      <div
+                        className="adm-registro-detalle"
+                        id={detalleId}
+                        role="region"
+                        aria-label={`Detalle del cliente ${nombre}`}
+                      >
+                        <dl className="adm-detalle-grid">
+                          <div>
+                            <dt>Pedidos</dt>
+                            <dd>{r.pedidos}</dd>
+                          </div>
+                          <div>
+                            <dt>Total comprado</dt>
+                            <dd>{formatoARS(r.comprado_centavos)}</dd>
+                          </div>
+                          <div>
+                            <dt>Ciudad</dt>
+                            <dd>{c.ciudad || "—"}</dd>
+                          </div>
+                          <div>
+                            <dt>Teléfono</dt>
+                            <dd>{c.telefono || "—"}</dd>
+                          </div>
+                          <div>
+                            <dt>Alta</dt>
+                            <dd>{fechaCorta(c.created_at)}</dd>
+                          </div>
+                          {r.ultimo_pedido ? (
+                            <div>
+                              <dt>Último pedido</dt>
+                              <dd>{fechaCorta(r.ultimo_pedido)} · {r.ultimo_estado || "—"}</dd>
+                            </div>
+                          ) : null}
+                        </dl>
+                        {c.direccion ? (
+                          <p className="texto-mutado">
+                            Envío: {c.direccion}{c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}
+                          </p>
+                        ) : null}
+                        {(r.pedidos_detalle ?? []).length > 0 ? (
+                          <PedidosCliente pedidos={r.pedidos_detalle ?? []} />
+                        ) : (
+                          <p className="texto-mutado">Este cliente todavía no tiene pedidos.</p>
+                        )}
                       </div>
-                    ) : null}
-                  </dl>
-                  {c.direccion ? (
-                    <p className="texto-mutado">
-                      Envío: {c.direccion}{c.codigo_postal ? `, CP ${c.codigo_postal}` : ""}
-                    </p>
-                  ) : null}
-                  {(r.pedidos_detalle ?? []).length > 0 ? (
-                    <PedidosCliente pedidos={r.pedidos_detalle ?? []} />
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
         <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
