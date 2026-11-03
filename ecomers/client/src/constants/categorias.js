@@ -9,6 +9,7 @@ export const CATEGORIAS = [
   { slug: "fuentes", label: "Fuentes", db: "Fuente" },
   { slug: "gabinetes", label: "Gabinetes", db: "Gabinete" },
   { slug: "monitores", label: "Monitores", db: "Monitor" },
+  { slug: "notebooks", label: "Notebooks", db: "Notebook" },
   { slug: "perifericos", label: "Periféricos", db: "Periferico" },
   { slug: "mousepads", label: "Mousepads", db: "Mousepad" },
   { slug: "coolers", label: "Refrigeración", db: "Cooler" },

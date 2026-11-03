@@ -28,6 +28,14 @@ Estas migraciones se ejecutan a mano en **Supabase Dashboard → SQL Editor**
 > recrea `f_unaccent()` apuntando a `public.unaccent`, y `unaccent` ya vive
 > en el esquema `extensions`. Si se re-ejecuta, correr de nuevo 018.
 
+11. `019_normalizar_categorias.sql` — pasa `productos.categoria` al valor
+    canónico del frontend (`Procesador`, `Memoria RAM`, `Cooler`, …) y
+    sincroniza la tabla `categorias`.
+
+> `019_normalizar_categorias.sql` ya se aplicó (verificación: los 137
+> productos visibles quedaron con categorías canónicas y las 17 categorías de
+> la tabla coinciden). No re-ejecutar; es idempotente de todos modos.
+
 
 ## Archivos superados — NO aplicar en bases nuevas
 

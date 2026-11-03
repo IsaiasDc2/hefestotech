@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
+import { CATEGORIAS } from "../../constants/categorias";
 import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo, usePaginacion } from "./hooks";
 
@@ -177,7 +178,14 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
               <input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} />
             </label>
             <label>Categoría
-              <input value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })} />
+              <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                <option value="General">General</option>
+                {CATEGORIAS.map((c) => (
+                  <option key={c.db} value={c.db}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <div className="adm-fila-3">
