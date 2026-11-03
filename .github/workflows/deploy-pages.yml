@@ -36,12 +36,16 @@ jobs:
           cache: npm
           cache-dependency-path: ecomers/client/package-lock.json
       - run: npm ci
+      # Las variables del repo tienen prioridad. Si todavía no están cargadas,
+      # se usan estos valores por defecto: son claves PÚBLICAS (las que ve
+      # cualquier navegador y que RLS protege), no secretos. Sin esto el sitio
+      # se publicaba en modo demo aunque el build fuera correcto.
       - run: npm run build
         env:
           VITE_BASE: /hefestotech/
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://ewqwmzwtrsjlrrnrotcm.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_2iI32AYW4QMFLzBRfsX6mA_x64hW1sG' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://hefestotech.onrender.com' }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:
