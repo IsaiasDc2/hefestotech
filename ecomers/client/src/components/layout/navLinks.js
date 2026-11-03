@@ -7,6 +7,7 @@ const EN_NAV = [
   "placas-de-video",
   "motherboards",
   "memorias",
+  "notebooks",
   "almacenamiento",
   "fuentes",
   "gabinetes",
