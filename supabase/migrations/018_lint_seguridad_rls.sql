@@ -401,6 +401,7 @@ create policy "notificaciones propias" on public.notificaciones
 -- Órdenes: una sola política de lectura (propias + staff) en vez de dos.
 drop policy if exists "ordenes propias" on public.ordenes;
 drop policy if exists "ordenes lectura staff" on public.ordenes;
+drop policy if exists "ordenes lectura" on public.ordenes;
 create policy "ordenes lectura" on public.ordenes
   for select to authenticated
   using (
@@ -410,6 +411,7 @@ create policy "ordenes lectura" on public.ordenes
 
 drop policy if exists "items de ordenes propias" on public.orden_items;
 drop policy if exists "items lectura staff" on public.orden_items;
+drop policy if exists "items lectura" on public.orden_items;
 create policy "items lectura" on public.orden_items
   for select to authenticated
   using (
