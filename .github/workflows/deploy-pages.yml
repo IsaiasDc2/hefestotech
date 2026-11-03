@@ -6,13 +6,11 @@ name: Deploy a GitHub Pages
 # (son valores públicos del frontend; las claves privadas van solo en el backend).
 
 on:
-  # Deploy automático desactivado hasta completar la configuración inicial:
-  # 1) Settings → Pages → Source: "GitHub Actions"
-  # 2) Settings → Secrets and variables → Actions → Variables: crear
-  #    VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY y VITE_API_URL.
-  # Cuando esté lista, descomentar estas líneas para publicar en cada push a main:
-  # push:
-  #   branches: [main]
+  # Deploy automático activado: Pages ya está en "GitHub Actions" y las
+  # variables VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY y VITE_API_URL
+  # están cargadas en Settings → Secrets and variables → Actions → Variables.
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
