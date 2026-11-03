@@ -14,6 +14,20 @@ Estas migraciones se ejecutan a mano en **Supabase Dashboard → SQL Editor**
 7. `005_product_specs.sql` → `006_specs_iniciales.sql` (independientes, en ese orden)
 8. `007_nuevos_productos.sql`, `008_mensajes_reclamos.sql`,
    `009_suscriptores.sql`, `010_indices_api.sql` (en ese orden)
+9. `011_consolidacion_checkout.sql`, `012_comprobantes_snapshot.sql`,
+   `013_seguridad.sql` (requiere 007_test_admin), `014_proveedores_compras.sql`,
+   `015_sucursales_pagos.sql`, `016_reposicion_pagos.sql`,
+   `017_envio_seguimiento.sql`
+10. `018_lint_seguridad_rls.sql` — cierra las advertencias de
+    `supabase db advisors`: initplan de RLS, políticas permisivas duplicadas,
+    políticas `always true` de proveedores/stock, índice duplicado de
+    `favoritos`, `search_path` de funciones, extensiones movidas a
+    `extensions` e índices de FK.
+
+> **Después de 018 no volver a ejecutar `005_admin_infra.sql`**: ese archivo
+> recrea `f_unaccent()` apuntando a `public.unaccent`, y `unaccent` ya vive
+> en el esquema `extensions`. Si se re-ejecuta, correr de nuevo 018.
+
 
 ## Archivos superados — NO aplicar en bases nuevas
 
