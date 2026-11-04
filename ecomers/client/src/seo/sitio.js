@@ -60,6 +60,9 @@ export function tituloPara(pathname, idioma = "es") {
   if (tabla[pathname]) return tabla[pathname];
   if (pathname.startsWith("/producto/")) return tabla["/producto"];
   if (pathname.startsWith("/pedido/")) return tabla["/pedido"];
+  // El panel usa rutas reales (/admin/productos, /admin/pedidos…): todas
+  // comparten el título del panel, que es solo en español.
+  if (pathname.startsWith("/admin/")) return TITULOS["/admin"];
   return en ? TITULO_NO_ENCONTRADO_EN : TITULO_NO_ENCONTRADO;
 }
 

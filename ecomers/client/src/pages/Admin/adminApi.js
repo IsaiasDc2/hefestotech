@@ -4,10 +4,9 @@
 // el llamador muestra "Próximamente" (ver hooks.jsx `useModulo`).
 import { supabase } from "../../components/lib/supabaseClient";
 import { mensajeDeError } from "../../utils/errores";
+import { API_BASE } from "../../services/apiBase";
 
-export const API_BASE = String(
-  import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000"
-).replace(/\/+$/, "");
+export { API_BASE };
 
 async function sesionToken() {
   try {

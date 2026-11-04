@@ -102,6 +102,8 @@ describe("títulos de pestaña", () => {
     expect(tituloPara("/producto/abc", "en")).toBe("Product | HefestoTech");
     expect(tituloPara("/ruta-que-no-existe", "en")).toBe("Nothing here | HefestoTech");
     expect(tituloPara("/admin", "en")).toBe(TITULOS["/admin"]);
+    expect(tituloPara("/admin/productos")).toBe(TITULOS["/admin"]);
+    expect(tituloPara("/admin/pedidos", "en")).toBe(TITULOS["/admin"]);
   });
 });
 

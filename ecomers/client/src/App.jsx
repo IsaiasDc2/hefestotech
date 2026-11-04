@@ -1,7 +1,6 @@
-import { lazy, useEffect, useState } from "react";
+import { lazy, useEffect } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router";
 import Layout from "./components/layout/Layout";
-import { supabase } from "./components/lib/supabaseClient";
 import useCartStore from "./store/cartStore";
 import useAuthStore from "./store/authStore";
 import useIdiomaStore, { t } from "./store/idiomaStore";
@@ -22,65 +21,53 @@ const Contactanos = lazy(() => import("./pages/Contact/Contacto"));
 const Armador = lazy(() => import("./armador/Armador"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Guard de rutas con rol (sin logica admin: solo decide acceso).
-// - Lee el rol desde public.perfiles.rol (migracion 004; 005 agrega mas
-//   roles pero aun no esta aplicada: ver AUDITORIA.md "Que falta").
-// - Niega por defecto cuando no hay rol: invitados y usuarios sin perfil
-//   ven "denegado" en /admin; en /cuenta los invitados pasan al login y
-//   los autenticados sin rol se deniegan.
-// - Roles con acceso total: owner y admin. Cualquier otro rol se deniega
-//   en /admin hasta que la matriz de permisos este vigente.
-const ROLES_ADMIN = ["owner", "admin"];
-
-function GuardiaRol({ soloAdmin = false, children }) {
-  const [estado, setEstado] = useState("cargando");
+// Guard de /cuenta: espera a que el store resuelva la sesión. Los invitados
+// pasan (la página les muestra el login); los autenticados también.
+function GuardiaCuenta({ children }) {
   const idioma = useIdiomaStore((s) => s.idioma);
-
-  useEffect(() => {
-    let viva = true;
-    (async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session?.user) {
-          if (viva) setEstado(soloAdmin ? "denegado" : "invitado");
-          return;
-        }
-        const { data, error } = await supabase
-          .from("perfiles")
-          .select("rol")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        if (error) throw error;
-        const rol = data?.rol || null;
-        if (!rol) {
-          if (viva) setEstado("denegado");
-          return;
-        }
-        if (soloAdmin && !ROLES_ADMIN.includes(rol)) {
-          if (viva) setEstado("denegado");
-          return;
-        }
-        if (viva) setEstado("ok");
-      } catch (_) {
-        // Error de red o RLS: negar por defecto, nunca abrir por error.
-        if (viva) setEstado("denegado");
-      }
-    })();
-    return () => {
-      viva = false;
-    };
-  }, [soloAdmin]);
-
-  if (estado === "cargando") {
+  const estadoAuth = useAuthStore((s) => s.estadoAuth);
+  if (estadoAuth === "inicial" || estadoAuth === "cargando") {
     return (
       <p className="detalle-estado" role="status">
         {t(idioma, "app.verificando")}
       </p>
     );
   }
-  if (estado === "invitado" || estado === "ok") return children;
+  return children;
+}
+
+// Guard de /admin: el backend decide quién es staff y qué módulos ve
+// (`GET /api/admin/sesion`). Acá solo se evita entrar sin sesión o sin
+// permisos; ningún endpoint confía en este filtro.
+function GuardiaAdmin({ children }) {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const estadoAuth = useAuthStore((s) => s.estadoAuth);
+  const accesoAdmin = useAuthStore((s) => s.accesoAdmin);
+  const permisosCargando = useAuthStore((s) => s.permisosCargando);
+  const revalidar = useAuthStore((s) => s.revalidar);
+
+  useEffect(() => {
+    if (estadoAuth === "autenticado" && accesoAdmin === "desconocido" && !permisosCargando) {
+      revalidar();
+    }
+  }, [estadoAuth, accesoAdmin, permisosCargando, revalidar]);
+
+  const verificando =
+    estadoAuth === "inicial" ||
+    estadoAuth === "cargando" ||
+    (estadoAuth === "autenticado" &&
+      (permisosCargando || accesoAdmin === "desconocido"));
+
+  if (verificando) {
+    return (
+      <p className="detalle-estado" role="status">
+        {t(idioma, "app.verificando")}
+      </p>
+    );
+  }
+  if (estadoAuth === "autenticado" && accesoAdmin === "autorizado") {
+    return children;
+  }
   return (
     <div className="detalle-estado" role="alert">
       <p className="vacio-titulo">{t(idioma, "app.restringido")}</p>
@@ -90,6 +77,15 @@ function GuardiaRol({ soloAdmin = false, children }) {
       <div className="detalle-acciones-error">
         <Link to="/">← {t(idioma, "app.volver")}</Link>
         <Link to="/cuenta">{t(idioma, "app.miCuenta")}</Link>
+        {accesoAdmin === "error" && (
+          <button
+            type="button"
+            className="btn-fantasma"
+            onClick={() => revalidar()}
+          >
+            Reintentar
+          </button>
+        )}
       </div>
     </div>
   );
@@ -162,13 +158,17 @@ export default function App() {
             <Checkout carrito={carrito} vaciarCarrito={vaciarCarrito} />
           }
         />
-        <Route path="cuenta" element={<GuardiaRol><Cuenta /></GuardiaRol>} />
+        <Route path="cuenta" element={<GuardiaCuenta><Cuenta /></GuardiaCuenta>} />
         <Route path="pago-exito" element={<PagoResultado tipo="exito" />} />
         <Route path="pago-pendiente" element={<PagoResultado tipo="pendiente" />} />
         <Route path="pago-fallido" element={<PagoResultado tipo="fallido" />} />
         <Route path="pedido/:id" element={<PedidoDetalle />} />
         <Route path="reclamo" element={<ReclamoPublico />} />
-        <Route path="admin" element={<GuardiaRol soloAdmin><Admin /></GuardiaRol>} />
+        <Route path="admin" element={<GuardiaAdmin><Admin /></GuardiaAdmin>}>
+          {/* El shell lee :modulo con useParams y deriva a /admin/:modulo. */}
+          <Route path=":modulo" element={null} />
+          <Route path="*" element={null} />
+        </Route>
         <Route path="acerca" element={<Acerca />} />
         <Route path="contactanos" element={<Contactanos />} />
         <Route path="armar" element={<Armador />} />

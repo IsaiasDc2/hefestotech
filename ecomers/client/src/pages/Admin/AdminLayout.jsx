@@ -5,52 +5,20 @@ import { Link } from "react-router";
 import {
   FaBars,
   FaBell,
-  FaBox,
   FaBoxesStacked,
-  FaCartShopping,
-  FaChartLine,
   FaChevronLeft,
   FaChevronRight,
-  FaCircleUser,
-  FaClipboardList,
-  FaGear,
-  FaHouse,
   FaMagnifyingGlass,
-  FaMessage,
-  FaMoneyBillWave,
-  FaRectangleAd,
   FaRightFromBracket,
-  FaScaleBalanced,
   FaMoon,
   FaPlus,
   FaSun,
-  FaTrashCan,
   FaTriangleExclamation,
   FaTruck,
   FaTruckFast,
-  FaFileInvoiceDollar,
 } from "react-icons/fa6";
 import { adminApi } from "./adminApi";
 import SelectorSucursal from "./SelectorSucursal";
-
-const NAV = [
-  { id: "inicio", etiqueta: "Inicio", Icono: FaHouse },
-  { id: "productos", etiqueta: "Productos", Icono: FaBox },
-  { id: "stock", etiqueta: "Stock", Icono: FaBoxesStacked },
-  { id: "proveedores", etiqueta: "Proveedores", Icono: FaTruck },
-  { id: "compras", etiqueta: "Compras", Icono: FaFileInvoiceDollar },
-  { id: "pedidos", etiqueta: "Pedidos", Icono: FaCartShopping },
-  { id: "reclamos", etiqueta: "Reclamos", Icono: FaMessage },
-  { id: "whatsapp", etiqueta: "WhatsApp", Icono: FaClipboardList },
-  { id: "banners", etiqueta: "Banners", Icono: FaRectangleAd },
-  { id: "cupones", etiqueta: "Cupones", Icono: FaMoneyBillWave },
-  { id: "reportes", etiqueta: "Reportes", Icono: FaChartLine },
-  { id: "clientes", etiqueta: "Clientes", Icono: FaCircleUser },
-  { id: "config", etiqueta: "Config", Icono: FaGear },
-  { id: "auditoria", etiqueta: "Auditoría", Icono: FaScaleBalanced },
-  { id: "papelera", etiqueta: "Papelera", Icono: FaTrashCan },
-  { id: "notificaciones", etiqueta: "Notificaciones", Icono: FaBell },
-];
 
 function leerTema() {
   try {
@@ -88,7 +56,7 @@ export function BotonTema() {
 }
 
 // Paleta ⌘K: navegación + búsqueda global (GET /api/buscar).
-function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
+function Paleta({ abierta, onCerrar, onIr, vistaActual, modulos = [], puedeBuscar = false }) {
   const [texto, setTexto] = useState("");
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
@@ -132,7 +100,7 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
 
   useEffect(() => {
     const t = texto.trim();
-    if (!abierta || t.length < 2) return;
+    if (!abierta || !puedeBuscar || t.length < 2) return;
     const id = setTimeout(async () => {
       try {
         const r = await adminApi.buscar(t, 8);
@@ -144,13 +112,13 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
       }
     }, 300);
     return () => clearTimeout(id);
-  }, [texto, abierta]);
+  }, [texto, abierta, puedeBuscar]);
 
   const navFiltrada = useMemo(() => {
     const t = texto.trim().toLowerCase();
-    if (!t) return NAV;
-    return NAV.filter((n) => n.etiqueta.toLowerCase().includes(t));
-  }, [texto]);
+    if (!t) return modulos;
+    return modulos.filter((n) => n.etiqueta.toLowerCase().includes(t));
+  }, [texto, modulos]);
 
   if (!abierta) return null;
   return (
@@ -183,7 +151,7 @@ function Paleta({ abierta, onCerrar, onIr, vistaActual }) {
             </li>
           ))}
         </ul>
-        {texto.trim().length >= 2 && (
+        {texto.trim().length >= 2 && puedeBuscar && (
           <div className="adm-paleta-resultados">
             <p className="texto-mutado">
               {buscando ? "Buscando…" : resultados.length ? `${resultados.length} resultado(s)` : "Sin resultados en el catálogo."}
@@ -222,6 +190,8 @@ export default function AdminLayout({
   onSucursal,
   onCrearSucursal,
   avisar,
+  modulos = [],
+  puede = () => false,
   children,
 }) {
   const [colapsada, setColapsada] = useState(false);
@@ -284,9 +254,17 @@ export default function AdminLayout({
     onIr(id, extra);
   };
 
+  const hayAltas =
+    puede("productos", "crear") ||
+    puede("stock", "ajustar") ||
+    puede("stock", "leer") ||
+    puede("proveedores", "crear");
+  const puedeNotificaciones = puede("notificaciones", "leer");
+  const puedeSucursales = puede("sucursales", "leer");
+
   const barra = (enDrawer) => (
     <nav aria-label="Módulos del panel" className={enDrawer ? "adm-nav" : "adm-nav"}>
-      {NAV.map((n) => (
+      {modulos.map((n) => (
         <button
           key={n.id}
           type="button"
@@ -325,45 +303,55 @@ export default function AdminLayout({
           </button>
         </div>
         {barra(false)}
-        <div className="adm-altas">
-          {!colapsada && <p className="adm-altas-titulo">Altas rápidas</p>}
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("productos", { accion: "nuevo" })}
-            title="Nuevo producto"
-          >
-            <FaPlus aria-hidden="true" />
-            {!colapsada && <span>Nuevo producto</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("stock", { accion: "agregar" })}
-            title="Agregar stock"
-          >
-            <FaBoxesStacked aria-hidden="true" />
-            {!colapsada && <span>Agregar stock</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("stock", { accion: "reposicion" })}
-            title="Reposición de stock"
-          >
-            <FaTruckFast aria-hidden="true" />
-            {!colapsada && <span>Reponer stock</span>}
-          </button>
-          <button
-            type="button"
-            className="adm-altas-btn"
-            onClick={() => ir("proveedores", { accion: "nuevo" })}
-            title="Agregar proveedor"
-          >
-            <FaTruck aria-hidden="true" />
-            {!colapsada && <span>Agregar proveedor</span>}
-          </button>
-        </div>
+        {hayAltas && (
+          <div className="adm-altas">
+            {!colapsada && <p className="adm-altas-titulo">Altas rápidas</p>}
+            {puede("productos", "crear") && (
+              <button
+                type="button"
+                className="adm-altas-btn"
+                onClick={() => ir("productos", { accion: "nuevo" })}
+                title="Nuevo producto"
+              >
+                <FaPlus aria-hidden="true" />
+                {!colapsada && <span>Nuevo producto</span>}
+              </button>
+            )}
+            {puede("stock", "ajustar") && (
+              <button
+                type="button"
+                className="adm-altas-btn"
+                onClick={() => ir("stock", { accion: "agregar" })}
+                title="Agregar stock"
+              >
+                <FaBoxesStacked aria-hidden="true" />
+                {!colapsada && <span>Agregar stock</span>}
+              </button>
+            )}
+            {puede("stock", "leer") && (
+              <button
+                type="button"
+                className="adm-altas-btn"
+                onClick={() => ir("stock", { accion: "reposicion" })}
+                title="Reposición de stock"
+              >
+                <FaTruckFast aria-hidden="true" />
+                {!colapsada && <span>Reponer stock</span>}
+              </button>
+            )}
+            {puede("proveedores", "crear") && (
+              <button
+                type="button"
+                className="adm-altas-btn"
+                onClick={() => ir("proveedores", { accion: "nuevo" })}
+                title="Agregar proveedor"
+              >
+                <FaTruck aria-hidden="true" />
+                {!colapsada && <span>Agregar proveedor</span>}
+              </button>
+            )}
+          </div>
+        )}
         <p className="adm-rol texto-mutado">
           {colapsada ? (rol?.slice(0, 1).toUpperCase() ?? "·") : `Rol: ${rol ?? "—"}`}
         </p>
@@ -412,27 +400,29 @@ export default function AdminLayout({
             <kbd>⌘K</kbd>
           </button>
           <div className="adm-topbar-lado">
-            {onSucursal && (
+            {onSucursal && puedeSucursales && (
               <SelectorSucursal
                 sucursales={sucursales}
                 sucursal={sucursal}
                 onCambiar={onSucursal}
-                puedeGestionar={rol === "owner" || rol === "admin"}
+                puedeGestionar={puede("sucursales", "gestionar")}
                 onCrear={onCrearSucursal}
                 avisar={avisar}
               />
             )}
             <BotonTema />
-            <button
-              type="button"
-              className="adm-icon-btn adm-campana"
-              onClick={() => ir("notificaciones")}
-              aria-label={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
-              title="Notificaciones"
-            >
-              <FaBell aria-hidden="true" />
-              {noLeidas > 0 && <span className="adm-punto" aria-hidden="true" />}
-            </button>
+            {puedeNotificaciones && (
+              <button
+                type="button"
+                className="adm-icon-btn adm-campana"
+                onClick={() => ir("notificaciones")}
+                aria-label={noLeidas > 0 ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones"}
+                title="Notificaciones"
+              >
+                <FaBell aria-hidden="true" />
+                {noLeidas > 0 && <span className="adm-punto" aria-hidden="true" />}
+              </button>
+            )}
             <span
               className="adm-usuario"
               title={`${nombreUsuario || "Usuario"}${rol ? ` · ${rol}` : ""}`}
@@ -469,7 +459,14 @@ export default function AdminLayout({
         </main>
       </div>
 
-      <Paleta abierta={paleta} onCerrar={() => setPaleta(false)} onIr={ir} vistaActual={vista} />
+      <Paleta
+        abierta={paleta}
+        onCerrar={() => setPaleta(false)}
+        onIr={ir}
+        vistaActual={vista}
+        modulos={modulos}
+        puedeBuscar={puede("buscar", "leer") && puede("productos", "leer")}
+      />
     </div>
   );
 }

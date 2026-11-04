@@ -1,10 +1,11 @@
-// HefestoTech · Admin (/admin): shell con navegación interna por estado
-// (no toca las rutas de App.jsx) y carga diferida por módulo: cada vista es
-// un chunk separado además del chunk "admin". noindex: el panel no se indexa.
+// HefestoTech · Admin: shell de rutas reales (/admin/:modulo) y carga diferida
+// por módulo. La navegación se filtra con los permisos que devuelve el backend;
+// la autorización real sigue en cada endpoint. noindex: el panel no se indexa.
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
-import { supabase } from "../../components/lib/supabaseClient";
+import { useLocation, useNavigate, useParams } from "react-router";
 import useAuthStore from "../../store/authStore";
 import AdminLayout from "./AdminLayout";
+import { MODULOS, modulosVisibles } from "./adminModules";
 import { adminApi } from "./adminApi";
 import { Skeleton, ZonaToasts } from "./ui";
 import { useConfirm, useToasts } from "./hooks";
@@ -27,27 +28,44 @@ const Auditoria = lazy(() => import("./Auditoria"));
 const Papelera = lazy(() => import("./Papelera"));
 const Notificaciones = lazy(() => import("./Notificaciones"));
 
-const TITULOS = {
-  inicio: "Inicio", productos: "Productos", stock: "Stock", proveedores: "Proveedores",
-  compras: "Compras", pedidos: "Pedidos",
-  reclamos: "Reclamos", whatsapp: "WhatsApp", banners: "Banners", cupones: "Cupones",
-  reportes: "Reportes", clientes: "Clientes", config: "Configuración",
-  auditoria: "Auditoría", papelera: "Papelera", notificaciones: "Notificaciones",
-};
+const TITULOS = Object.fromEntries(MODULOS.map((m) => [m.id, m.etiqueta]));
 
 function Admin() {
-  const [vista, setVista] = useState("inicio");
-  const [presetQ, setPresetQ] = useState("");
-  const [accion, setAccion] = useState("");
-  const [accionSeq, setAccionSeq] = useState(0);
-  const [usuario, setUsuario] = useState(null);
-  const [rol, setRol] = useState(null);
+  const { modulo = "" } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const puede = useAuthStore((s) => s.puede);
+  const usuarioStore = useAuthStore((s) => s.usuario);
+  const perfil = useAuthStore((s) => s.perfil);
+  const logout = useAuthStore((s) => s.logout);
+
   const [noLeidas, setNoLeidas] = useState(0);
   const [sucursal, setSucursal] = useState("");
   const [sucursales, setSucursales] = useState([]);
   const [refrescoInicio, setRefrescoInicio] = useState(0);
   const { lista, avisar, cerrar } = useToasts();
   const { pedir, dialogo } = useConfirm();
+
+  const modulos = modulosVisibles(puede);
+  const permitido = modulos.some((m) => m.id === modulo);
+  const primerModulo = modulos[0]?.id ?? "";
+  const vista = permitido ? modulo : "";
+
+  // Acciones que llegan por navegación (paleta, Inicio, altas rápidas).
+  const presetQ = typeof location.state?.q === "string" ? location.state.q : "";
+  const accion = typeof location.state?.accion === "string" ? location.state.accion : "";
+  const accionSeq = location.state?.seq ?? 0;
+
+  const puedeNotificaciones = puede("notificaciones", "leer");
+  const puedeSucursales = puede("sucursales", "leer");
+
+  const usuario = usuarioStore
+    ? {
+        email: usuarioStore.email || "",
+        nombre: perfil?.nombre || usuarioStore.nombre || "",
+      }
+    : null;
+  const rol = perfil?.rol ?? null;
 
   // noindex: el panel no debe aparecer en buscadores.
   useEffect(() => {
@@ -66,46 +84,17 @@ function Admin() {
     };
   }, []);
 
-  // Usuario + rol (solo display; la autorización real la hace el backend).
+  // /admin y los módulos inexistentes o sin permiso caen en el primero visible.
   useEffect(() => {
-    let vivo = true;
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        const u = data?.session?.user ?? null;
-        if (!vivo) return;
-        if (!u) {
-          setUsuario(null);
-          return;
-        }
-        setUsuario({
-          email: u.email ?? "",
-          nombre: u.user_metadata?.nombre ?? u.user_metadata?.full_name ?? "",
-        });
-        if (u) {
-          const { data: perfil } = await supabase
-            .from("perfiles")
-            .select("nombre,rol")
-            .eq("id", u.id)
-            .maybeSingle();
-          if (vivo) {
-            setRol(perfil?.rol ?? null);
-            if (perfil?.nombre) {
-              setUsuario((previo) => ({ ...(previo ?? {}), nombre: perfil.nombre }));
-            }
-          }
-        }
-      } catch {
-        /* display solamente */
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, []);
+    if (!primerModulo) return;
+    if (!modulo || !permitido) {
+      navigate(`/admin/${primerModulo}`, { replace: true });
+    }
+  }, [modulo, permitido, primerModulo, navigate]);
 
-  // Contador de la campana (si falla, queda en 0 y la bandeja dirá Próximamente).
+  // Contador de la campana (solo si el rol puede ver notificaciones).
   useEffect(() => {
+    if (!puedeNotificaciones) return undefined;
     let vivo = true;
     (async () => {
       try {
@@ -119,11 +108,11 @@ function Admin() {
     return () => {
       vivo = false;
     };
-  }, [vista]);
+  }, [vista, puedeNotificaciones]);
 
-  // Sucursales para el selector de la barra superior. Si el rol no tiene
-  // permiso o la migración 015 falta, la lista queda vacía y el panel sigue.
+  // Sucursales para el selector de la barra superior.
   useEffect(() => {
+    if (!puedeSucursales) return undefined;
     let vivo = true;
     (async () => {
       try {
@@ -136,7 +125,7 @@ function Admin() {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [puedeSucursales]);
 
   const crearSucursal = async (datos) => {
     const r = await adminApi.crearSucursal(datos);
@@ -151,15 +140,17 @@ function Admin() {
   };
 
   const ir = (id, extra = {}) => {
-    if (extra.q !== undefined) setPresetQ(extra.q);
-    else if (id !== "productos") setPresetQ("");
+    const destino = modulos.some((m) => m.id === id) ? id : primerModulo;
+    if (!destino) return;
+    const estado = {};
+    if (extra.q !== undefined) estado.q = extra.q;
     if (extra.accion) {
-      setAccion(extra.accion);
-      setAccionSeq((n) => n + 1);
-    } else {
-      setAccion("");
+      estado.accion = extra.accion;
+      estado.seq = Date.now();
     }
-    setVista(TITULOS[id] ? id : "inicio");
+    navigate(`/admin/${destino}`, {
+      state: Object.keys(estado).length ? estado : null,
+    });
     // El módulo es lazy: scrollear de entrada y reintentar cuando termine
     // de montar, si no el título queda cortado bajo el topbar.
     const alContenido = () => {
@@ -171,22 +162,29 @@ function Admin() {
   };
 
   const salir = async () => {
-    await useAuthStore.getState().logout();
-    // Recarga en la base del sitio (respeta Vite `base`): la guardia vuelve a
-    // evaluar la sesión y el panel deja de mostrarse.
-    window.location.assign(import.meta.env.BASE_URL || "/");
+    await logout();
+    navigate("/", { replace: true });
   };
 
   const marcarLeidas = useCallback(async () => {
+    if (!puede("notificaciones", "leer")) return;
     try {
       await adminApi.marcarNotificacionesLeidas();
     } catch {
       /* si falla, la campana se reintenta al abrir la bandeja */
     }
     setNoLeidas(0);
-  }, []);
+  }, [puede]);
 
-  const props = { avisar, pedirConfirm: pedir, onIr: ir, presetQ, onLeidas: marcarLeidas, rol };
+  const props = {
+    avisar,
+    pedirConfirm: pedir,
+    onIr: ir,
+    presetQ,
+    onLeidas: marcarLeidas,
+    rol,
+    puede,
+  };
 
   return (
     <AdminLayout
@@ -201,8 +199,17 @@ function Admin() {
       onSucursal={setSucursal}
       onCrearSucursal={crearSucursal}
       avisar={avisar}
+      modulos={modulos}
+      puede={puede}
     >
-      <Suspense fallback={<Skeleton lineas={6} etiqueta={`Cargando ${TITULOS[vista] ?? ""}…`} />}>
+      <Suspense
+        fallback={
+          <Skeleton
+            lineas={6}
+            etiqueta={`Cargando ${TITULOS[vista] ?? "módulo"}…`}
+          />
+        }
+      >
         {vista === "inicio" && (
           <Inicio
             onIr={ir}

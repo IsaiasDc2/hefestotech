@@ -15,16 +15,16 @@ import {
 import Marca from "../brand/Marca";
 import { FILA_CATEGORIAS, IDIOMAS, esClaveActiva } from "./navLinks";
 import MobileDrawer from "./MobileDrawer";
-import { supabase } from "../lib/supabaseClient";
 import { useCantidadFavoritos } from "../../services/favoritos";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
+import useAuthStore from "../../store/authStore";
 import useTema from "../../hooks/useTema";
 import "./Navbar.css";
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const [esAdmin, setEsAdmin] = useState(false);
+  const esAdmin = useAuthStore((s) => s.esStaff);
   const [pop, setPop] = useState({ cantidad: cantidadCarrito, activo: false });
   const fijoRef = useRef(null);
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -46,27 +46,6 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
     const id = setTimeout(() => setPop((p) => ({ ...p, activo: false })), 320);
     return () => clearTimeout(id);
   }, [pop.activo]);
-
-  useEffect(() => {
-    let vivo = true;
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user || !vivo) return;
-        const { data } = await supabase
-          .from("perfiles")
-          .select("rol")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        if (vivo && (data?.rol === "owner" || data?.rol === "admin")) setEsAdmin(true);
-      } catch {
-        /* sin sesión o sin red: sin botón de panel */
-      }
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, []);
 
   // Altura real del header fijo para los elementos sticky de las páginas.
   useEffect(() => {
