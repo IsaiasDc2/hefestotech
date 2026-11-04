@@ -56,6 +56,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
         ("sucursales", "leer"), ("sucursales", "gestionar"),
+        ("categorias", "leer"), ("categorias", "crear"), ("categorias", "editar"), ("categorias", "borrar"),
     },
     "admin": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"), ("productos", "borrar"),
@@ -71,6 +72,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
         ("sucursales", "leer"), ("sucursales", "gestionar"),
+        ("categorias", "leer"), ("categorias", "crear"), ("categorias", "editar"), ("categorias", "borrar"),
     },
     "operador": {
         ("productos", "leer"), ("productos", "crear"), ("productos", "editar"),
@@ -83,11 +85,13 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("compras", "leer"), ("compras", "crear"), ("compras", "editar"), ("compras", "cambiar_estado"),
         ("compras", "recibir"),
         ("sucursales", "leer"),
+        ("categorias", "leer"), ("categorias", "crear"), ("categorias", "editar"),
     },
     "soporte": {
         ("productos", "leer"), ("pedidos", "leer"),
         ("reclamos", "leer"), ("reclamos", "crear"), ("reclamos", "editar"), ("reclamos", "cambiar_estado"),
         ("notificaciones", "leer"), ("buscar", "leer"),
+        ("categorias", "leer"),
     },
     "solo_lectura": {
         ("productos", "leer"), ("pedidos", "leer"),
@@ -97,6 +101,7 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("reportes", "leer"), ("buscar", "leer"),
         ("proveedores", "leer"), ("compras", "leer"),
         ("sucursales", "leer"),
+        ("categorias", "leer"),
     },
     # Clientes: solo pueden radicar reclamos propios (el formulario /reclamo
     # es su única vía al backend). Sin esto, el reclamo público exige rol
@@ -105,6 +110,50 @@ PERMISOS: dict[str, set[tuple[str, str]]] = {
         ("reclamos", "crear"),
     },
 }
+
+# --------------------------------------------------- matriz dinámica (020) ---
+# La tabla `admin_permisos` manda; este espejo queda como respaldo para que el
+# panel siga abriendo si la tabla no está migrada o Supabase no responde. La
+# caché evita una consulta por request: 60 s alcanzan para propagar un cambio
+# de rol sin reiniciar el backend.
+_MATRIZ_TTL_SEG = 60
+_matriz_cache: dict[str, Any] = {"leida": 0.0, "valores": None}
+
+
+def _matriz_desde_db() -> dict[str, set[tuple[str, str]]]:
+    filas = _sb_get("admin_permisos", {"select": "rol,modulo,accion"})
+    if not isinstance(filas, list):
+        return {}
+    matriz: dict[str, set[tuple[str, str]]] = defaultdict(set)
+    for fila in filas:
+        if not isinstance(fila, dict):
+            continue
+        rol = str(fila.get("rol") or "").strip()
+        modulo = str(fila.get("modulo") or "").strip()
+        accion = str(fila.get("accion") or "").strip()
+        if rol and modulo and accion:
+            matriz[rol].add((modulo, accion))
+    return dict(matriz)
+
+
+def _cargar_matriz() -> dict[str, set[tuple[str, str]]]:
+    ahora = time.monotonic()
+    if _matriz_cache["valores"] is not None and ahora - _matriz_cache["leida"] < _MATRIZ_TTL_SEG:
+        return _matriz_cache["valores"]
+    try:
+        matriz = _matriz_desde_db()
+    except Exception:
+        # Sin tabla, sin red o error de PostgREST: el espejo mantiene el panel.
+        matriz = {}
+    if not matriz:
+        matriz = PERMISOS
+    _matriz_cache["valores"] = matriz
+    _matriz_cache["leida"] = ahora
+    return matriz
+
+
+def _permisos_de(rol: str) -> set[tuple[str, str]]:
+    return _cargar_matriz().get(rol, set())
 
 ESTADOS_PEDIDO = {"pendiente", "pagada", "preparacion", "enviada", "entregada", "cancelada", "reembolsada"}
 ESTADOS_RECLAMO = {"abierto", "en_revision", "resuelto", "rechazado"}
@@ -292,9 +341,26 @@ def _rpc(funcion: str, args: dict[str, Any]) -> Any:
 
 
 # ------------------------------------------------------------------- auth ---
+# Roles con panel: los de la matriz. Un rol nuevo (p. ej. "vendedor") también
+# entra si `admin_permisos` le da al menos un permiso; "cliente" nunca.
+ROLES_PANEL = {"owner", "admin", "operador", "soporte", "solo_lectura"}
+ROLES_SIN_PANEL = {"cliente"}
+
+
 class AdminActual(BaseModel):
     user_id: str
     rol: str
+    nombre: str = ""
+
+
+def _bearer(authorization: Optional[str]) -> str:
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="Falta el token de sesión.")
+    # El token nunca se loguea ni se devuelve.
+    bearer = authorization.split(" ", 1)[1].strip()
+    if not bearer:
+        raise HTTPException(status_code=401, detail="Falta el token de sesión.")
+    return bearer
 
 
 def _validar_jwt(bearer: str) -> str:
@@ -321,22 +387,52 @@ def _validar_jwt(bearer: str) -> str:
     return uid
 
 
+def _admin_actual(bearer: str) -> AdminActual:
+    """UID validado + rol/nombre leídos de `perfiles` con service_role."""
+    uid = _validar_jwt(bearer)
+    filas = _sb_get("perfiles", {"id": f"eq.{uid}", "select": "id,rol,nombre"})
+    fila = filas[0] if isinstance(filas, list) and filas else {}
+    return AdminActual(
+        user_id=uid,
+        rol=str(fila.get("rol") or ""),
+        nombre=str(fila.get("nombre") or ""),
+    )
+
+
+def _es_rol_de_panel(rol: str) -> bool:
+    if not rol or rol in ROLES_SIN_PANEL:
+        return False
+    return rol in ROLES_PANEL or bool(_permisos_de(rol))
+
+
 def requiere(modulo: str, accion: str) -> Callable[[Optional[str]], AdminActual]:
     def dependencia(authorization: Optional[str] = Header(default=None)) -> AdminActual:
-        if not authorization or not authorization.lower().startswith("bearer "):
-            raise HTTPException(status_code=401, detail="Falta el token de sesión.")
-        # El token nunca se loguea ni se devuelve.
-        bearer = authorization.split(" ", 1)[1].strip()
-        if not bearer:
-            raise HTTPException(status_code=401, detail="Falta el token de sesión.")
-        uid = _validar_jwt(bearer)
-        filas = _sb_get("perfiles", {"id": f"eq.{uid}", "select": "id,rol"})
-        rol = (filas[0].get("rol") if filas else "") or ""
-        if (modulo, accion) not in PERMISOS.get(rol, set()):
+        admin = _admin_actual(_bearer(authorization))
+        if (modulo, accion) not in _permisos_de(admin.rol):
             raise HTTPException(status_code=403, detail="Sin permiso para esta acción.")
-        return AdminActual(user_id=uid, rol=rol)
+        return admin
 
     return dependencia
+
+
+def _admin_panel(authorization: Optional[str] = Header(default=None)) -> AdminActual:
+    """Cualquier rol de la matriz con permiso efectivo, salvo `cliente`."""
+    admin = _admin_actual(_bearer(authorization))
+    if not _es_rol_de_panel(admin.rol):
+        raise HTTPException(status_code=403, detail="Sin acceso al panel.")
+    return admin
+
+
+@router.get("/api/admin/sesion")
+def sesion_admin(admin: AdminActual = Depends(_admin_panel)) -> dict[str, Any]:
+    """Identidad y permisos efectivos para que el panel filtre sus módulos.
+
+    No autoriza nada por sí sola: cada endpoint sigue validando su permiso.
+    """
+    return {
+        "usuario": {"id": admin.user_id, "rol": admin.rol, "nombre": admin.nombre},
+        "permisos": sorted(f"{modulo}.{accion}" for modulo, accion in _permisos_de(admin.rol)),
+    }
 
 
 # Rate-limit simple en memoria para mutaciones sensibles (por IP).
@@ -1032,7 +1128,7 @@ def resumen(sucursal: str = "",
     }) or []
 
     sucursales: list[dict[str, Any]] = []
-    if ("sucursales", "leer") in PERMISOS.get(admin.rol, set()):
+    if ("sucursales", "leer") in _permisos_de(admin.rol):
         try:
             sucursales = _sb_get("sucursales", {
                 "select": "id,nombre,direccion,telefono,activa",
@@ -1817,7 +1913,7 @@ def crear_reclamo(d: ReclamoCrear, request: Request,
         if not ordenes:
             raise HTTPException(status_code=404, detail="Orden inexistente.")
         duenio = ordenes[0].get("user_id")
-        es_staff_pedidos = ("pedidos", "leer") in PERMISOS.get(admin.rol, set())
+        es_staff_pedidos = ("pedidos", "leer") in _permisos_de(admin.rol)
         if duenio != admin.user_id and not es_staff_pedidos:
             raise HTTPException(status_code=403, detail="Sin permiso sobre esa orden.")
     creados = _sb_post("reclamos", {
@@ -2943,7 +3039,7 @@ def ficha_proveedor(pid: str,
     ordenes: Optional[list[dict[str, Any]]] = None
     historial: Optional[dict[str, Any]] = None
     recepciones: Optional[list[dict[str, Any]]] = None
-    if ("compras", "leer") in PERMISOS.get(admin.rol, set()):
+    if ("compras", "leer") in _permisos_de(admin.rol):
         ordenes_raw = _sb_get("ordenes_compra", {
             "select": "id,numero,estado,moneda,fecha_esperada,created_at,"
                       "ordenes_compra_items(producto_id,cantidad,cantidad_recibida,"
