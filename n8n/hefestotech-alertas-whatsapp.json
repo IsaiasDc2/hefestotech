@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222.\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Solo falta `TU_PHONE_NUMBER_ID` (Meta) y elegir la credencial `WhatsApp HefestoTech`.\n- Más detalle en `docs/N8N.md`.",
+        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222 (`5493875029222`).\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Envío por **CallMeBot** (no requiere WhatsApp Business): activá el bot desde el WhatsApp del dueño y pegá la API key en el nodo.\n- Más detalle en `docs/N8N.md`.",
         "height": 380,
         "width": 580
       },
@@ -86,26 +86,40 @@
     },
     {
       "parameters": {
-        "operation": "send",
-        "phoneNumberId": "TU_PHONE_NUMBER_ID",
-        "recipientPhoneNumber": "={{ $json.to_phone }}",
-        "textBody": "={{ $json.texto }}",
-        "additionalFields": {}
+        "url": "https://api.callmebot.com/whatsapp.php",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "+5493875029222"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.texto }}"
+            },
+            {
+              "name": "apikey",
+              "value": "TU_CALLMEBOT_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
       },
       "id": "a-wa",
-      "name": "Enviar WhatsApp",
-      "type": "n8n-nodes-base.whatsApp",
-      "typeVersion": 1.1,
+      "name": "Enviar WhatsApp (CallMeBot)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         780,
         300
-      ],
-      "credentials": {
-        "whatsAppApi": {
-          "id": "",
-          "name": "WhatsApp HefestoTech"
-        }
-      }
+      ]
     }
   ],
   "connections": {
@@ -135,7 +149,7 @@
       "main": [
         [
           {
-            "node": "Enviar WhatsApp",
+            "node": "Enviar WhatsApp (CallMeBot)",
             "type": "main",
             "index": 0
           }

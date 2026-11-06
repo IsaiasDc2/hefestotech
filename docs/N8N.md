@@ -7,7 +7,7 @@ Mercado Pago ─► backend ─► mailer.notificar_estado ─┬─► email (R
 Panel admin  ─►            (cambio de estado)        └─► n8n_hook ─► n8n /hefestotech-pedidos ─► WhatsApp
 Panel admin ─► crear cupón ─► n8n_hook ─► n8n /hefestotech-ofertas ─► mail a suscriptores + WhatsApp al dueño
 n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo de ofertas
-GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► WhatsApp al dueño
+GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► CallMeBot ─► WhatsApp al dueño
 ```
 
 ## Puesta en marcha
@@ -17,7 +17,7 @@ GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► WhatsAp
    - *Header Auth* llamada `Hefesto Secret (X-Hefesto-Secret)`: nombre `X-Hefesto-Secret`, valor = un secreto largo (`openssl rand -hex 32`).
    - WhatsApp Business Cloud API (token de Meta) y Gmail OAuth2.
    - Supabase con la **service role** (solo para leer `suscriptores`; esa tabla no tiene policies de lectura).
-3. **Completar placeholders** en los nodos: `TU_PHONE_NUMBER_ID` (ID de número de Meta; el proyecto Supabase, la anon key y el WhatsApp del dueño ya están cargados).
+3. **Completar placeholders** en los nodos: `TU_CALLMEBOT_API_KEY` en el flujo de alertas (ver abajo) y `TU_PHONE_NUMBER_ID` si algún día se usa el nodo oficial de Meta. El proyecto Supabase, la anon key y el WhatsApp del dueño ya están cargados.
 4. **Activar** los tres workflows (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
 5. **Backend** (Render → Environment):
 
@@ -61,6 +61,17 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
   "liberadas": 2, "revisadas": 6, "telefono": "5493875029222",
   "run_url": "https://github.com/.../actions/runs/123" }
 ```
+
+## CallMeBot (sin WhatsApp Business)
+
+El aviso del liberador no usa la API de Meta: el flujo `hefestotech-alertas-whatsapp.json` llama a **CallMeBot**, que manda un WhatsApp al número que activó el bot. Es gratis y solo para uso personal.
+
+1. Desde el WhatsApp del dueño (`+54 9 387 502-9222`), agregar el contacto **+34 684 728 023** y mandarle el mensaje `I allow callmebot to send me messages`.
+2. El bot responde con una **API key**. Guardarla en `backend/.env` como `CALLMEBOT_API_KEY=...` (ese archivo no se commitea).
+3. Pegar esa key en el nodo *Enviar WhatsApp (CallMeBot)* del flujo, o dejar que el agente la cargue desde `.env`.
+4. Activar el workflow. La llamada queda `https://api.callmebot.com/whatsapp.php?phone=+5493875029222&text=...&apikey=...`.
+
+Solo puede mandar al número que activó el bot (no a clientes), solo texto y sin plantillas. Para mensajes masivos o a clientes hace falta la API oficial de Meta o un proveedor como Twilio.
 
 ## MCP de n8n (OpenCode)
 
