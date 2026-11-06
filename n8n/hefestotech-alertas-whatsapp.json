@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222.\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Completá `TU_PHONE_NUMBER_ID` y la credencial `WhatsApp HefestoTech`.\n- Más detalle en `docs/N8N.md`.",
+        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222.\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Solo falta `TU_PHONE_NUMBER_ID` (Meta) y elegir la credencial `WhatsApp HefestoTech`.\n- Más detalle en `docs/N8N.md`.",
         "height": 380,
         "width": 580
       },

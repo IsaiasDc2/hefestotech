@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## HefestoTech · avisos de ofertas\n\nDos disparadores:\n1. **Cupón nuevo**: el backend llama a `/hefestotech-ofertas` al crear un cupón activo.\n2. **Productos en oferta**: todos los días 10:00 se revisa `productos.descuento_porcentaje > 0` y se avisa lo que cambió (la primera corrida solo memoriza; la memoria solo persiste con el workflow **activo**).\n\nSe manda mail a la tabla `suscriptores` (credencial Supabase con service role) y un WhatsApp al dueño con el resumen.\n\nCompletá: `TU_PROYECTO`, `TU_SUPABASE_ANON_KEY`, `TU_PHONE_NUMBER_ID`, `TU_NUMERO_WHATSAPP`.\nNo se manda WhatsApp de marketing a clientes: hoy no hay consentimiento registrado. Gmail gratuito permite ~500 mails por día.",
+        "content": "## HefestoTech · avisos de ofertas\n\nDos disparadores:\n1. **Cupón nuevo**: el backend llama a `/hefestotech-ofertas` al crear un cupón activo.\n2. **Productos en oferta**: todos los días 10:00 se revisa `productos.descuento_porcentaje > 0` y se avisa lo que cambió (la primera corrida solo memoriza; la memoria solo persiste con el workflow **activo**).\n\nSe manda mail a la tabla `suscriptores` (credencial Supabase con service role) y un WhatsApp al dueño con el resumen.\n\nCompletá solo `TU_PHONE_NUMBER_ID` (el ID de número de Meta). El proyecto Supabase y el WhatsApp del dueño (`5493875029222`) ya están cargados.\nNo se manda WhatsApp de marketing a clientes: hoy no hay consentimiento registrado. Gmail gratuito permite ~500 mails por día.",
         "height": 380,
         "width": 600
       },
@@ -75,17 +75,17 @@
     },
     {
       "parameters": {
-        "url": "https://TU_PROYECTO.supabase.co/rest/v1/productos?select=id,nombre,precio,precio_con_descuento,descuento_porcentaje&descuento_porcentaje=gt.0&activo=eq.true&deleted_at=is.null&limit=200",
+        "url": "https://ewqwmzwtrsjlrrnrotcm.supabase.co/rest/v1/productos?select=id,nombre,precio,precio_con_descuento,descuento_porcentaje&descuento_porcentaje=gt.0&activo=eq.true&deleted_at=is.null&limit=200",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "apikey",
-              "value": "TU_SUPABASE_ANON_KEY"
+              "value": "sb_publishable_2iI32AYW4QMFLzBRfsX6mA_x64hW1sG"
             },
             {
               "name": "Authorization",
-              "value": "Bearer TU_SUPABASE_ANON_KEY"
+              "value": "Bearer sb_publishable_2iI32AYW4QMFLzBRfsX6mA_x64hW1sG"
             }
           ]
         },
@@ -189,7 +189,7 @@
       "parameters": {
         "operation": "send",
         "phoneNumberId": "TU_PHONE_NUMBER_ID",
-        "recipientPhoneNumber": "TU_NUMERO_WHATSAPP",
+        "recipientPhoneNumber": "5493875029222",
         "textBody": "={{ '🔥 Oferta publicada: ' + $json.oferta.titulo + '\\n' + $json.oferta.lineas.join('\\n') }}",
         "additionalFields": {}
       },

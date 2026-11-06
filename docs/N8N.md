@@ -17,13 +17,13 @@ GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► WhatsAp
    - *Header Auth* llamada `Hefesto Secret (X-Hefesto-Secret)`: nombre `X-Hefesto-Secret`, valor = un secreto largo (`openssl rand -hex 32`).
    - WhatsApp Business Cloud API (token de Meta) y Gmail OAuth2.
    - Supabase con la **service role** (solo para leer `suscriptores`; esa tabla no tiene policies de lectura).
-3. **Completar placeholders** en los nodos: `TU_PHONE_NUMBER_ID`, `TU_NUMERO_WHATSAPP` (tu número, para el aviso al dueño), `TU_PROYECTO` y `TU_SUPABASE_ANON_KEY` (el HTTP de ofertas; la anon key es pública).
+3. **Completar placeholders** en los nodos: `TU_PHONE_NUMBER_ID` (ID de número de Meta; el proyecto Supabase, la anon key y el WhatsApp del dueño ya están cargados).
 4. **Activar** los tres workflows (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
 5. **Backend** (Render → Environment):
 
    | Variable | Valor |
    |---|---|
-   | `N8N_WEBHOOK_BASE_URL` | `https://TU-N8N/webhook` (sin barra final; para probar usá `/webhook-test`) |
+   | `N8N_WEBHOOK_BASE_URL` | `https://hefestotech.app.n8n.cloud/webhook` (sin barra final; para probar usá `/webhook-test`) |
    | `N8N_WEBHOOK_SECRET` | El mismo secreto de la credencial Header Auth |
 
    Sin las dos, no se envía nada. En `render.yaml` están declaradas con `sync: false`; si el servicio no se creó desde el Blueprint, cargalas a mano.
@@ -61,6 +61,22 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
   "liberadas": 2, "revisadas": 6, "telefono": "5493875029222",
   "run_url": "https://github.com/.../actions/runs/123" }
 ```
+
+## MCP de n8n (OpenCode)
+
+La instancia es `https://hefestotech.app.n8n.cloud`. El servidor MCP está en `https://hefestotech.app.n8n.cloud/mcp-server/http` y se configura una sola vez en `~/.config/opencode/opencode.jsonc`:
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "n8n": { "type": "remote", "url": "https://hefestotech.app.n8n.cloud/mcp-server/http" }
+    }
+  }
+}
+```
+
+Usa OAuth: en OpenCode, `/mcps` → `n8n` → iniciar sesión. Con eso el agente puede importar, editar, activar y ejecutar workflows sin manejar una API key. Si el estado queda en `needs_auth`, falta ese login.
 
 ## Notas
 
