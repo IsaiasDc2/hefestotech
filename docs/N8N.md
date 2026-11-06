@@ -7,17 +7,18 @@ Mercado Pago ─► backend ─► mailer.notificar_estado ─┬─► email (R
 Panel admin  ─►            (cambio de estado)        └─► n8n_hook ─► n8n /hefestotech-pedidos ─► WhatsApp
 Panel admin ─► crear cupón ─► n8n_hook ─► n8n /hefestotech-ofertas ─► mail a suscriptores + WhatsApp al dueño
 n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo de ofertas
+GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► WhatsApp al dueño
 ```
 
 ## Puesta en marcha
 
-1. **n8n**: importar `n8n/hefestotech-pedidos-whatsapp.json` y `n8n/hefestotech-ofertas.json` (*Workflows → Import from file*).
+1. **n8n**: importar `n8n/hefestotech-pedidos-whatsapp.json`, `n8n/hefestotech-ofertas.json` y `n8n/hefestotech-alertas-whatsapp.json` (*Workflows → Import from file*).
 2. **Credenciales en n8n**
    - *Header Auth* llamada `Hefesto Secret (X-Hefesto-Secret)`: nombre `X-Hefesto-Secret`, valor = un secreto largo (`openssl rand -hex 32`).
    - WhatsApp Business Cloud API (token de Meta) y Gmail OAuth2.
    - Supabase con la **service role** (solo para leer `suscriptores`; esa tabla no tiene policies de lectura).
 3. **Completar placeholders** en los nodos: `TU_PHONE_NUMBER_ID`, `TU_NUMERO_WHATSAPP` (tu número, para el aviso al dueño), `TU_PROYECTO` y `TU_SUPABASE_ANON_KEY` (el HTTP de ofertas; la anon key es pública).
-4. **Activar** ambos workflows (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
+4. **Activar** los tres workflows (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
 5. **Backend** (Render → Environment):
 
    | Variable | Valor |
@@ -26,6 +27,8 @@ n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo
    | `N8N_WEBHOOK_SECRET` | El mismo secreto de la credencial Header Auth |
 
    Sin las dos, no se envía nada. En `render.yaml` están declaradas con `sync: false`; si el servicio no se creó desde el Blueprint, cargalas a mano.
+
+6. **GitHub Actions** (*Settings → Secrets and variables → Actions*): cargar la **variable** `N8N_WEBHOOK_BASE_URL` y el **secreto** `N8N_WEBHOOK_SECRET` con los mismos valores. Sin esto, el liberador de pedidos vencidos funciona igual pero no manda el aviso por WhatsApp.
 
 ## Eventos
 
@@ -51,6 +54,14 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
   "usos_max": 50, "vence_at": null, "tienda_url": "https://..." }
 ```
 
+**`alerta.workflow`** → `/hefestotech-alertas`. Lo emite el workflow de GitHub Actions que libera pedidos vencidos, solo cuando liberó al menos un pedido o cuando la corrida falló. El destinatario es siempre el WhatsApp del dueño (`5493875029222`); las corridas sin pedidos liberados no mandan nada para no generar 96 mensajes por día.
+
+```json
+{ "workflow": "Liberar pedidos expirados", "resultado": "success",
+  "liberadas": 2, "revisadas": 6, "telefono": "5493875029222",
+  "run_url": "https://github.com/.../actions/runs/123" }
+```
+
 ## Notas
 
 - **No se duplica el email.** El mail al cliente sigue saliendo por Resend. El nodo *Enviar Gmail* del workflow de pedidos viene desactivado: activalo solo si no usás Resend.
@@ -61,4 +72,5 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
 - **Descuentos de producto.** El panel no edita `descuento_porcentaje`; si lo cargás directo en Supabase, el workflow diario lo detecta y avisa. La primera corrida solo memoriza lo que ya estaba en oferta.
 - **Seguridad.** El aviso no incluye datos de pago ni la service role. `link_pedido` lleva el `acceso_token` del cliente (igual que el mail): tratá la instancia de n8n y su historial de ejecuciones como datos sensibles.
 - **Fallos.** El envío corre en un hilo con timeout de 5 s y los errores solo se loguean; n8n caído no afecta a cobros ni a cambios de estado. No hay reintentos: si n8n estuvo caído, ese aviso se pierde.
+- **Avisos del liberador.** El workflow de GitHub manda `alerta.workflow` a n8n y n8n lo reenvía al WhatsApp del dueño. Si n8n está caído, el liberador igual termina: el aviso se pierde y queda el error en el log de Actions.
 - **Pruebas.** `backend/tests/test_n8n_hook.py` (sin red). Prueba manual: con el workflow en modo *Listen for test event*, `N8N_WEBHOOK_BASE_URL=https://TU-N8N/webhook-test`, y cambiar el estado de un pedido de prueba desde el panel.

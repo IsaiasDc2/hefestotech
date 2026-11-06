@@ -1,0 +1,150 @@
+{
+  "name": "HefestoTech · Alertas del workflow (WhatsApp)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222.\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Completá `TU_PHONE_NUMBER_ID` y la credencial `WhatsApp HefestoTech`.\n- Más detalle en `docs/N8N.md`.",
+        "height": 380,
+        "width": 580
+      },
+      "id": "a-note",
+      "name": "Instrucciones",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        -280
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hefestotech-alertas",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "a-hook",
+      "name": "Aviso de workflow",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "hefestotech-alertas",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Hefesto Secret (X-Hefesto-Secret)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || {};\nconst d = b.datos || {};\n\n// Idempotencia: si GitHub reintenta el mismo aviso, no se manda dos veces.\nconst sd = $getWorkflowStaticData('global');\nsd.vistos = sd.vistos || [];\nif (b.evento_id && sd.vistos.includes(b.evento_id)) return [];\nif (b.evento_id) sd.vistos = [...sd.vistos, b.evento_id].slice(-300);\n\nconst ok = d.resultado === 'success';\nconst liberadas = Number(d.liberadas || 0);\nconst revisadas = Number(d.revisadas || 0);\nconst runUrl = String(d.run_url || '');\n\nconst texto = ok\n  ? `🧹 *Pedidos vencidos liberados*\\n\\nSe liberaron *${liberadas}* de *${revisadas}* pedidos revisados y el stock volvió a la tienda.`\n  : `⚠️ *Falló el liberador de pedidos*\\n\\nEl workflow no pudo completar la limpieza. Revisá GitHub Actions:${runUrl ? `\\n${runUrl}` : ''}`;\n\nreturn [{ json: { to_phone: '5493875029222', texto } }];"
+      },
+      "id": "a-msg",
+      "name": "Preparar mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.to_phone && !!$json.texto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a-if",
+      "name": "¿Tiene WhatsApp válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "TU_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $json.to_phone }}",
+        "textBody": "={{ $json.texto }}",
+        "additionalFields": {}
+      },
+      "id": "a-wa",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        300
+      ],
+      "credentials": {
+        "whatsAppApi": {
+          "id": "",
+          "name": "WhatsApp HefestoTech"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Aviso de workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar mensaje": {
+      "main": [
+        [
+          {
+            "node": "¿Tiene WhatsApp válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene WhatsApp válido?": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

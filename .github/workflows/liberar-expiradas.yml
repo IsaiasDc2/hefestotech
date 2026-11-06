@@ -2,6 +2,8 @@ name: Liberar pedidos expirados
 
 # Cancela pedidos pendientes vencidos y devuelve su stock.
 # Requiere el secreto CRON_SECRET del repo (el mismo que en Render).
+# Si N8N_WEBHOOK_BASE_URL y N8N_WEBHOOK_SECRET están cargados, avisa por
+# WhatsApp al dueño cuando libera pedidos o cuando el workflow falla.
 on:
   schedule:
     - cron: "*/15 * * * *"
@@ -12,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Llamar al backend
+        id: liberar
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           BACKEND_URL: ${{ vars.BACKEND_URL || 'https://hefestotech.onrender.com' }}
@@ -19,6 +22,52 @@ jobs:
           if [ -z "$CRON_SECRET" ]; then
             echo "Falta el secreto CRON_SECRET en GitHub."; exit 1
           fi
-          curl --fail --silent --show-error --max-time 90 --retry 2 \
+          respuesta=$(curl --fail --silent --show-error --max-time 90 --retry 2 \
             -X POST "$BACKEND_URL/api/checkout/liberar-expiradas" \
-            -H "x-cron-secret: $CRON_SECRET"
+            -H "x-cron-secret: $CRON_SECRET")
+          echo "$respuesta"
+          revisadas=$(echo "$respuesta" | jq -r '.revisadas // 0')
+          liberadas=$(echo "$respuesta" | jq -r '.liberadas // 0')
+          echo "revisadas=$revisadas" >> "$GITHUB_OUTPUT"
+          echo "liberadas=$liberadas" >> "$GITHUB_OUTPUT"
+
+      # Aviso por WhatsApp vía n8n (/hefestotech-alertas). Nunca hace fallar
+      # el job: si n8n está caído, el pedido igual se liberó.
+      - name: Avisar por WhatsApp
+        if: always()
+        env:
+          N8N_WEBHOOK_BASE_URL: ${{ vars.N8N_WEBHOOK_BASE_URL }}
+          N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
+          RESULTADO: ${{ job.status }}
+          LIBERADAS: ${{ steps.liberar.outputs.liberadas }}
+          REVISADAS: ${{ steps.liberar.outputs.revisadas }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$N8N_WEBHOOK_BASE_URL" ] || [ -z "$N8N_WEBHOOK_SECRET" ]; then
+            echo "n8n sin configurar: no se envía el aviso por WhatsApp."
+            exit 0
+          fi
+          liberadas=$(echo "${LIBERADAS:-0}" | tr -dc '0-9')
+          liberadas=${liberadas:-0}
+          revisadas=$(echo "${REVISADAS:-0}" | tr -dc '0-9')
+          revisadas=${revisadas:-0}
+          if [ "$RESULTADO" = "success" ] && [ "$liberadas" -eq 0 ]; then
+            echo "Sin pedidos liberados: no se manda WhatsApp."
+            exit 0
+          fi
+          base="${N8N_WEBHOOK_BASE_URL%/}"
+          aviso=$(jq -n \
+            --arg resultado "$RESULTADO" \
+            --argjson liberadas "$liberadas" \
+            --argjson revisadas "$revisadas" \
+            --arg run_url "$RUN_URL" \
+            --arg evento_id "liberar-expiradas:${GITHUB_RUN_ID}:${RESULTADO}" \
+            --arg ocurrio_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{evento:"alerta.workflow",evento_id:$evento_id,ocurrio_at:$ocurrio_at,datos:{workflow:"Liberar pedidos expirados",resultado:$resultado,liberadas:$liberadas,revisadas:$revisadas,telefono:"5493875029222",run_url:$run_url}}')
+          curl --fail --silent --show-error --max-time 30 --retry 2 \
+            -X POST "$base/hefestotech-alertas" \
+            -H "Content-Type: application/json" \
+            -H "X-Hefesto-Secret: $N8N_WEBHOOK_SECRET" \
+            -d "$aviso" \
+            && echo "Aviso enviado a n8n." \
+            || echo "ERROR: no se pudo avisar a n8n (el pedido ya se liberó)."
