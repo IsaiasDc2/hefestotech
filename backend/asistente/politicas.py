@@ -81,7 +81,7 @@ def politicas() -> dict[str, dict]:
         "contacto": {
             "titulo": "Contacto",
             "puntos": [
-                _p("WhatsApp de la tienda (el chat muestra el botón) y email contacto@hefestotech.com.", "publicado"),
+                _p("WhatsApp de la tienda (el chat muestra el botón) y email Hefestotech077@gmail.com.", "publicado"),
                 _p("Horario de atención: lunes a viernes de 9 a 18 hs.", "publicado"),
             ],
         },

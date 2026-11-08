@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FaEnvelope, FaPhone, FaLocationDot, FaClock, FaUser, FaTag, FaMessage, FaWhatsapp } from "react-icons/fa6";
 import { whatsappUrl } from "../../constants/whatsapp";
+import { EMAIL_CONTACTO } from "../../constants/contacto";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Contacto.css"
 
@@ -69,7 +70,7 @@ function Contactanos() {
             <FaEnvelope className="info-icono" aria-hidden="true" />
             <div>
               <h3>{t(idioma, "cont.email")}</h3>
-              <p>contacto@hefestotech.com</p>
+              <p>{EMAIL_CONTACTO}</p>
             </div>
           </div>
 

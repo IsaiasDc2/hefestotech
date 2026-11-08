@@ -23,3 +23,17 @@ def _limpiar_estado_global(monkeypatch):
     admin_api._registro.clear()
     monkeypatch.setattr(admin_api, "_matriz_desde_db", lambda: {})
     yield
+
+
+@pytest.fixture(autouse=True)
+def _sin_avisos_externos(monkeypatch):
+    """Los tests nunca deben usar los webhooks de `backend/.env`.
+
+    `main.py` carga el `.env` real al importarse: sin esto, el hook de n8n
+    sale a la red y compite con los `httpx.post` que cada test intercepta.
+    Los tests de n8n/mailer cargan sus propias variables con `monkeypatch`.
+    """
+    for clave in ("N8N_WEBHOOK_BASE_URL", "N8N_WEBHOOK_SECRET",
+                  "RESEND_API_KEY", "MAIL_FROM"):
+        monkeypatch.delenv(clave, raising=False)
+    yield

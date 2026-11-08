@@ -682,7 +682,7 @@ _herramientas: get_product · tarjetas: RTX 4070 SUPER MSI 12GB ($850.000, stock
 
 **Obtenido:**
 
-> Te paso con una persona del equipo: tocá el botón de WhatsApp y la consulta va precargada. También podés escribir a contacto@hefestotech.com. Horario de atención: lunes a viernes de 9 a 18 hs.
+> Te paso con una persona del equipo: tocá el botón de WhatsApp y la consulta va precargada. También podés escribir a Hefestotech077@gmail.com. Horario de atención: lunes a viernes de 9 a 18 hs.
 
 _herramientas: escalate_to_human · botón de WhatsApp_
 
@@ -696,7 +696,7 @@ _herramientas: escalate_to_human · botón de WhatsApp_
 
 **Obtenido:**
 
-> Lamento el problema. Te paso con una persona del equipo: tocá el botón de WhatsApp y la consulta va precargada. También podés escribir a contacto@hefestotech.com. Horario de atención: lunes a viernes de 9 a 18 hs.
+> Lamento el problema. Te paso con una persona del equipo: tocá el botón de WhatsApp y la consulta va precargada. También podés escribir a Hefestotech077@gmail.com. Horario de atención: lunes a viernes de 9 a 18 hs.
 
 _herramientas: escalate_to_human · botón de WhatsApp_
 

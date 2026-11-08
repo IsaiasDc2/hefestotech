@@ -2,12 +2,16 @@ name: Liberar pedidos expirados
 
 # Cancela pedidos pendientes vencidos y devuelve su stock.
 # Requiere el secreto CRON_SECRET del repo (el mismo que en Render).
-# Si N8N_WEBHOOK_BASE_URL y N8N_WEBHOOK_SECRET están cargados, avisa por
-# WhatsApp al dueño cuando libera pedidos o cuando el workflow falla.
+# Manda un email a la casilla oficial cuando libera pedidos o cuando falla.
 on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      forzar_aviso:
+        description: "Mandar un email de prueba aunque no haya pedidos liberados"
+        type: boolean
+        default: false
 
 jobs:
   liberar:
@@ -31,43 +35,73 @@ jobs:
           echo "revisadas=$revisadas" >> "$GITHUB_OUTPUT"
           echo "liberadas=$liberadas" >> "$GITHUB_OUTPUT"
 
-      # Aviso por WhatsApp vía n8n (/hefestotech-alertas). Nunca hace fallar
-      # el job: si n8n está caído, el pedido igual se liberó.
-      - name: Avisar por WhatsApp
+      # Aviso por email (Gmail SMTP). Nunca hace fallar el job: si el correo
+      # no sale, el pedido igual se liberó.
+      - name: Avisar por email
         if: always()
         env:
-          N8N_WEBHOOK_BASE_URL: ${{ vars.N8N_WEBHOOK_BASE_URL }}
-          N8N_WEBHOOK_SECRET: ${{ secrets.N8N_WEBHOOK_SECRET }}
-          RESULTADO: ${{ job.status }}
+          GMAIL_USER: ${{ vars.GMAIL_USER || 'Hefestotech077@gmail.com' }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ vars.MAIL_TO || 'Hefestotech077@gmail.com' }}
+          RESULTADO: ${{ steps.liberar.outcome }}
           LIBERADAS: ${{ steps.liberar.outputs.liberadas }}
           REVISADAS: ${{ steps.liberar.outputs.revisadas }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FORZAR: ${{ inputs.forzar_aviso }}
         run: |
-          if [ -z "$N8N_WEBHOOK_BASE_URL" ] || [ -z "$N8N_WEBHOOK_SECRET" ]; then
-            echo "n8n sin configurar: no se envía el aviso por WhatsApp."
-            exit 0
-          fi
-          liberadas=$(echo "${LIBERADAS:-0}" | tr -dc '0-9')
-          liberadas=${liberadas:-0}
-          revisadas=$(echo "${REVISADAS:-0}" | tr -dc '0-9')
-          revisadas=${revisadas:-0}
-          if [ "$RESULTADO" = "success" ] && [ "$liberadas" -eq 0 ]; then
-            echo "Sin pedidos liberados: no se manda WhatsApp."
-            exit 0
-          fi
-          base="${N8N_WEBHOOK_BASE_URL%/}"
-          aviso=$(jq -n \
-            --arg resultado "$RESULTADO" \
-            --argjson liberadas "$liberadas" \
-            --argjson revisadas "$revisadas" \
-            --arg run_url "$RUN_URL" \
-            --arg evento_id "liberar-expiradas:${GITHUB_RUN_ID}:${RESULTADO}" \
-            --arg ocurrio_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{evento:"alerta.workflow",evento_id:$evento_id,ocurrio_at:$ocurrio_at,datos:{workflow:"Liberar pedidos expirados",resultado:$resultado,liberadas:$liberadas,revisadas:$revisadas,telefono:"5493875029222",run_url:$run_url}}')
-          curl --fail --silent --show-error --max-time 30 --retry 2 \
-            -X POST "$base/hefestotech-alertas" \
-            -H "Content-Type: application/json" \
-            -H "X-Hefesto-Secret: $N8N_WEBHOOK_SECRET" \
-            -d "$aviso" \
-            && echo "Aviso enviado a n8n." \
-            || echo "ERROR: no se pudo avisar a n8n (el pedido ya se liberó)."
+          python - <<'PY'
+          import os
+          import smtplib
+          import ssl
+          from email.message import EmailMessage
+
+          usuario = os.environ.get("GMAIL_USER", "").strip()
+          clave = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
+          destino = os.environ.get("MAIL_TO", "").strip()
+          resultado = os.environ.get("RESULTADO", "")
+          forzar = os.environ.get("FORZAR", "").lower() == "true"
+
+          liberadas = int(os.environ.get("LIBERADAS") or 0)
+          revisadas = int(os.environ.get("REVISADAS") or 0)
+          run_url = os.environ.get("RUN_URL", "")
+
+          if not usuario or not clave:
+              print("Falta GMAIL_APP_PASSWORD en GitHub: no se manda el email.")
+              raise SystemExit(0)
+
+          if resultado == "success" and liberadas == 0 and not forzar:
+              print("Sin pedidos liberados: no se manda email.")
+              raise SystemExit(0)
+
+          if forzar:
+              asunto = "HefestoTech · Prueba del aviso del liberador"
+              cuerpo = f"Email de prueba del workflow de pedidos vencidos.\n\nRun: {run_url}\n"
+          elif resultado == "success":
+              asunto = f"HefestoTech · {liberadas} pedido(s) vencido(s) liberado(s)"
+              cuerpo = (
+                  f"Se liberaron {liberadas} de {revisadas} pedidos revisados.\n"
+                  "El stock volvió a la tienda.\n\n"
+                  f"Run: {run_url}\n"
+              )
+          else:
+              asunto = "HefestoTech · Falló el liberador de pedidos"
+              cuerpo = (
+                  "El workflow no pudo completar la limpieza de pedidos vencidos.\n\n"
+                  f"Run: {run_url}\n"
+              )
+
+          mensaje = EmailMessage()
+          mensaje["From"] = usuario
+          mensaje["To"] = destino
+          mensaje["Subject"] = asunto
+          mensaje.set_content(cuerpo)
+
+          try:
+              contexto = ssl.create_default_context()
+              with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=contexto, timeout=30) as servidor:
+                  servidor.login(usuario, clave)
+                  servidor.send_message(mensaje)
+              print(f"Email enviado a {destino}.")
+          except Exception as error:
+              print(f"ERROR al enviar el email: {error}")
+          PY

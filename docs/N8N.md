@@ -7,18 +7,18 @@ Mercado Pago ─► backend ─► mailer.notificar_estado ─┬─► email (R
 Panel admin  ─►            (cambio de estado)        └─► n8n_hook ─► n8n /hefestotech-pedidos ─► WhatsApp
 Panel admin ─► crear cupón ─► n8n_hook ─► n8n /hefestotech-ofertas ─► mail a suscriptores + WhatsApp al dueño
 n8n (cada día 10:00) ─► Supabase productos con descuento ─► mismo flujo de ofertas
-GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► CallMeBot ─► WhatsApp al dueño
+GitHub Actions (liberar vencidos) ─► Gmail ─► email a Hefestotech077@gmail.com
 ```
 
 ## Puesta en marcha
 
-1. **n8n**: importar `n8n/hefestotech-pedidos-whatsapp.json`, `n8n/hefestotech-ofertas.json` y `n8n/hefestotech-alertas-whatsapp.json` (*Workflows → Import from file*).
+1. **n8n**: importar `n8n/hefestotech-pedidos-whatsapp.json` y `n8n/hefestotech-ofertas.json` (*Workflows → Import from file*). El flujo `n8n/hefestotech-alertas.json` es una alternativa opcional (Telegram): el liberador de pedidos vencidos ya manda email directo desde GitHub Actions.
 2. **Credenciales en n8n**
    - *Header Auth* llamada `Hefesto Secret (X-Hefesto-Secret)`: nombre `X-Hefesto-Secret`, valor = un secreto largo (`openssl rand -hex 32`).
    - WhatsApp Business Cloud API (token de Meta) y Gmail OAuth2.
    - Supabase con la **service role** (solo para leer `suscriptores`; esa tabla no tiene policies de lectura).
-3. **Completar placeholders** en los nodos: `TU_CALLMEBOT_API_KEY` en el flujo de alertas (ver abajo) y `TU_PHONE_NUMBER_ID` si algún día se usa el nodo oficial de Meta. El proyecto Supabase, la anon key y el WhatsApp del dueño ya están cargados.
-4. **Activar** los tres workflows (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
+3. **Completar placeholders** en los nodos de pedidos/ofertas: `TU_PHONE_NUMBER_ID` si se usa el nodo oficial de Meta. El proyecto Supabase, la anon key y el WhatsApp del dueño ya están cargados. El flujo de alertas por Telegram (opcional) usa `TU_TELEGRAM_BOT_TOKEN` y `TU_TELEGRAM_CHAT_ID`.
+4. **Activar** los workflows que uses (la memoria de ofertas ya avisadas solo persiste con el workflow activo).
 5. **Backend** (Render → Environment):
 
    | Variable | Valor |
@@ -28,7 +28,7 @@ GitHub Actions (liberar vencidos) ─► n8n /hefestotech-alertas ─► CallMeB
 
    Sin las dos, no se envía nada. En `render.yaml` están declaradas con `sync: false`; si el servicio no se creó desde el Blueprint, cargalas a mano.
 
-6. **GitHub Actions** (*Settings → Secrets and variables → Actions*): cargar la **variable** `N8N_WEBHOOK_BASE_URL` y el **secreto** `N8N_WEBHOOK_SECRET` con los mismos valores. Sin esto, el liberador de pedidos vencidos funciona igual pero no manda el aviso por WhatsApp.
+6. **GitHub Actions** (*Settings → Secrets and variables → Actions*): cargar la **variable** `GMAIL_USER=Hefestotech077@gmail.com`, la **variable** `MAIL_TO=Hefestotech077@gmail.com` y el **secreto** `GMAIL_APP_PASSWORD` (contraseña de aplicación de Gmail). Sin la contraseña, el liberador funciona igual pero no manda el aviso por email.
 
 ## Eventos
 
@@ -54,40 +54,43 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
   "usos_max": 50, "vence_at": null, "tienda_url": "https://..." }
 ```
 
-**`alerta.workflow`** → `/hefestotech-alertas`. Lo emite el workflow de GitHub Actions que libera pedidos vencidos, solo cuando liberó al menos un pedido o cuando la corrida falló. El destinatario es siempre el WhatsApp del dueño (`5493875029222`); las corridas sin pedidos liberados no mandan nada para no generar 96 mensajes por día.
+**`alerta.workflow`** → `/hefestotech-alertas` (opcional, solo si usás el flujo de Telegram). El workflow de GitHub Actions que libera pedidos vencidos ya no llama a n8n: manda un **email directo por Gmail SMTP** a `Hefestotech077@gmail.com` cuando libera al menos un pedido o cuando la corrida falla. Las corridas sin pedidos liberados no mandan nada para no generar 96 mails por día.
 
-```json
-{ "workflow": "Liberar pedidos expirados", "resultado": "success",
-  "liberadas": 2, "revisadas": 6, "telefono": "5493875029222",
-  "run_url": "https://github.com/.../actions/runs/123" }
-```
+## Aviso por email del liberador (Gmail)
 
-## CallMeBot (sin WhatsApp Business)
+El workflow `.github/workflows/liberar-expiradas.yml` envía el aviso con `smtplib` desde GitHub Actions, sin pasar por n8n ni por un proveedor externo.
 
-El aviso del liberador no usa la API de Meta: el flujo `hefestotech-alertas-whatsapp.json` llama a **CallMeBot**, que manda un WhatsApp al número que activó el bot. Es gratis y solo para uso personal.
+1. En la cuenta `Hefestotech077@gmail.com`, activar la verificación en dos pasos y crear una **contraseña de aplicación** (Google → Seguridad → Contraseñas de aplicaciones).
+2. Guardarla solo en GitHub: *Settings → Secrets and variables → Actions* → **secreto** `GMAIL_APP_PASSWORD`.
+3. Cargar las **variables** `GMAIL_USER=Hefestotech077@gmail.com` y `MAIL_TO=Hefestotech077@gmail.com` (el workflow ya las usa por defecto, pero conviene dejarlas explícitas).
+4. Probar con *Run workflow* y `forzar_aviso=true`: llega un mail de prueba aunque no haya pedidos vencidos.
 
-1. Desde el WhatsApp del dueño (`+54 9 387 502-9222`), agregar el contacto **+34 684 728 023** y mandarle el mensaje `I allow callmebot to send me messages`.
-2. El bot responde con una **API key**. Guardarla en `backend/.env` como `CALLMEBOT_API_KEY=...` (ese archivo no se commitea).
-3. Pegar esa key en el nodo *Enviar WhatsApp (CallMeBot)* del flujo, o dejar que el agente la cargue desde `.env`.
-4. Activar el workflow. La llamada queda `https://api.callmebot.com/whatsapp.php?phone=+5493875029222&text=...&apikey=...`.
+El correo sale solo si `liberadas > 0`, si el job falló o si se fuerza la prueba. Si falta la contraseña, el liberador funciona igual y solo imprime el aviso en el log de Actions.
 
-Solo puede mandar al número que activó el bot (no a clientes), solo texto y sin plantillas. Para mensajes masivos o a clientes hace falta la API oficial de Meta o un proveedor como Twilio.
+## Flujo alternativo de Telegram (opcional)
+
+`n8n/hefestotech-alertas.json` queda como alternativa si algún día preferís Telegram en vez de email. Importarlo, completar `TU_TELEGRAM_BOT_TOKEN` (de `@BotFather`) y `TU_TELEGRAM_CHAT_ID`, y apuntar el workflow de GitHub a `N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`. No hace falta para el aviso por email.
 
 ## MCP de n8n (OpenCode)
 
-La instancia es `https://hefestotech.app.n8n.cloud`. El servidor MCP está en `https://hefestotech.app.n8n.cloud/mcp-server/http` y se configura una sola vez en `~/.config/opencode/opencode.jsonc`:
+La instancia es `https://hefestotech.app.n8n.cloud`. El servidor MCP está en `https://hefestotech.app.n8n.cloud/mcp-server/http` y se configura una sola vez en `~/.config/opencode/opencode.jsonc` con un **bearer token** (no OAuth):
 
 ```jsonc
 {
   "mcp": {
     "servers": {
-      "n8n": { "type": "remote", "url": "https://hefestotech.app.n8n.cloud/mcp-server/http" }
+      "n8n": {
+        "type": "remote",
+        "url": "https://hefestotech.app.n8n.cloud/mcp-server/http",
+        "oauth": false,
+        "headers": { "Authorization": "Bearer <TOKEN_N8N>" }
+      }
     }
   }
 }
 ```
 
-Usa OAuth: en OpenCode, `/mcps` → `n8n` → iniciar sesión. Con eso el agente puede importar, editar, activar y ejecutar workflows sin manejar una API key. Si el estado queda en `needs_auth`, falta ese login.
+El token se genera en n8n → *Settings → MCP Server* y se guarda en `backend/.env` como `TOKEN_N8N=...` (nunca en el repo ni en el chat). Es un bearer del MCP, no la API pública: `/api/v1` sigue devolviendo 401. Con eso el agente puede importar, editar, publicar y ejecutar workflows.
 
 ## Notas
 
@@ -99,5 +102,5 @@ Usa OAuth: en OpenCode, `/mcps` → `n8n` → iniciar sesión. Con eso el agente
 - **Descuentos de producto.** El panel no edita `descuento_porcentaje`; si lo cargás directo en Supabase, el workflow diario lo detecta y avisa. La primera corrida solo memoriza lo que ya estaba en oferta.
 - **Seguridad.** El aviso no incluye datos de pago ni la service role. `link_pedido` lleva el `acceso_token` del cliente (igual que el mail): tratá la instancia de n8n y su historial de ejecuciones como datos sensibles.
 - **Fallos.** El envío corre en un hilo con timeout de 5 s y los errores solo se loguean; n8n caído no afecta a cobros ni a cambios de estado. No hay reintentos: si n8n estuvo caído, ese aviso se pierde.
-- **Avisos del liberador.** El workflow de GitHub manda `alerta.workflow` a n8n y n8n lo reenvía al WhatsApp del dueño. Si n8n está caído, el liberador igual termina: el aviso se pierde y queda el error en el log de Actions.
+- **Avisos del liberador.** El workflow de GitHub manda un email directo por Gmail a `Hefestotech077@gmail.com`; n8n no participa. Si falta la contraseña de aplicación, el liberador igual termina y el aviso queda solo en el log de Actions.
 - **Pruebas.** `backend/tests/test_n8n_hook.py` (sin red). Prueba manual: con el workflow en modo *Listen for test event*, `N8N_WEBHOOK_BASE_URL=https://TU-N8N/webhook-test`, y cambiar el estado de un pedido de prueba desde el panel.

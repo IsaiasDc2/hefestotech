@@ -1,9 +1,9 @@
 {
-  "name": "HefestoTech · Alertas del workflow (WhatsApp)",
+  "name": "HefestoTech · Alertas del workflow (Telegram)",
   "nodes": [
     {
       "parameters": {
-        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Avisa **por WhatsApp al dueño**: +54 9 387 502-9222 (`5493875029222`).\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Envío por **CallMeBot** (no requiere WhatsApp Business): activá el bot desde el WhatsApp del dueño y pegá la API key en el nodo.\n- Más detalle en `docs/N8N.md`.",
+        "content": "## HefestoTech · alertas del workflow\n\nGitHub Actions llama a este webhook cuando el liberador de pedidos vencidos termina con pedidos liberados o cuando falla (`N8N_WEBHOOK_BASE_URL` + `/hefestotech-alertas`).\n\n- Manda el aviso por **Telegram** (gratis y oficial) al chat del dueño.\n- No manda nada si la corrida terminó bien y no liberó pedidos (evita 96 mensajes por día).\n- Credencial del webhook: *Header Auth* con nombre `X-Hefesto-Secret` y el valor de `N8N_WEBHOOK_SECRET`.\n- Completá `TU_TELEGRAM_BOT_TOKEN` y `TU_TELEGRAM_CHAT_ID`.\n- Más detalle en `docs/N8N.md`.",
         "height": 380,
         "width": 580
       },
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.first().json.body || {};\nconst d = b.datos || {};\n\n// Idempotencia: si GitHub reintenta el mismo aviso, no se manda dos veces.\nconst sd = $getWorkflowStaticData('global');\nsd.vistos = sd.vistos || [];\nif (b.evento_id && sd.vistos.includes(b.evento_id)) return [];\nif (b.evento_id) sd.vistos = [...sd.vistos, b.evento_id].slice(-300);\n\nconst ok = d.resultado === 'success';\nconst liberadas = Number(d.liberadas || 0);\nconst revisadas = Number(d.revisadas || 0);\nconst runUrl = String(d.run_url || '');\n\nconst texto = ok\n  ? `🧹 *Pedidos vencidos liberados*\\n\\nSe liberaron *${liberadas}* de *${revisadas}* pedidos revisados y el stock volvió a la tienda.`\n  : `⚠️ *Falló el liberador de pedidos*\\n\\nEl workflow no pudo completar la limpieza. Revisá GitHub Actions:${runUrl ? `\\n${runUrl}` : ''}`;\n\nreturn [{ json: { to_phone: '5493875029222', texto } }];"
+        "jsCode": "const b = $input.first().json.body || {};\nconst d = b.datos || {};\n\n// Idempotencia: si GitHub reintenta el mismo aviso, no se manda dos veces.\nconst sd = $getWorkflowStaticData('global');\nsd.vistos = sd.vistos || [];\nif (b.evento_id && sd.vistos.includes(b.evento_id)) return [];\nif (b.evento_id) sd.vistos = [...sd.vistos, b.evento_id].slice(-300);\n\nconst ok = d.resultado === 'success';\nconst liberadas = Number(d.liberadas || 0);\nconst revisadas = Number(d.revisadas || 0);\nconst runUrl = String(d.run_url || '');\n\nconst texto = ok\n  ? `🧹 *Pedidos vencidos liberados*\\n\\nSe liberaron *${liberadas}* de *${revisadas}* pedidos revisados y el stock volvió a la tienda.`\n  : `⚠️ *Falló el liberador de pedidos*\\n\\nEl workflow no pudo completar la limpieza. Revisá GitHub Actions:${runUrl ? `\\n${runUrl}` : ''}`;\n\nreturn [{ json: { texto } }];"
       },
       "id": "a-msg",
       "name": "Preparar mensaje",
@@ -62,7 +62,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ !!$json.to_phone && !!$json.texto }}",
+              "leftValue": "={{ !!$json.texto }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -76,7 +76,7 @@
         "options": {}
       },
       "id": "a-if",
-      "name": "¿Tiene WhatsApp válido?",
+      "name": "¿Hay mensaje?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -86,34 +86,30 @@
     },
     {
       "parameters": {
-        "url": "https://api.callmebot.com/whatsapp.php",
-        "sendQuery": true,
-        "queryParameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botTU_TELEGRAM_BOT_TOKEN/sendMessage",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
           "parameters": [
             {
-              "name": "phone",
-              "value": "+5493875029222"
+              "name": "chat_id",
+              "value": "TU_TELEGRAM_CHAT_ID"
             },
             {
               "name": "text",
               "value": "={{ $json.texto }}"
             },
             {
-              "name": "apikey",
-              "value": "TU_CALLMEBOT_API_KEY"
+              "name": "parse_mode",
+              "value": "Markdown"
             }
           ]
         },
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "text"
-            }
-          }
-        }
+        "options": {}
       },
       "id": "a-wa",
-      "name": "Enviar WhatsApp (CallMeBot)",
+      "name": "Enviar aviso por Telegram",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -138,18 +134,18 @@
       "main": [
         [
           {
-            "node": "¿Tiene WhatsApp válido?",
+            "node": "¿Hay mensaje?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "¿Tiene WhatsApp válido?": {
+    "¿Hay mensaje?": {
       "main": [
         [
           {
-            "node": "Enviar WhatsApp (CallMeBot)",
+            "node": "Enviar aviso por Telegram",
             "type": "main",
             "index": 0
           }

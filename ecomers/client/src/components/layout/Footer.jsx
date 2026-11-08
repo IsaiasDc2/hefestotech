@@ -13,6 +13,7 @@ import { FaCcVisa, FaCcMastercard } from "react-icons/fa";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../brand/Marca";
 import { WHATSAPP_URL } from "../../constants/whatsapp";
+import { EMAIL_CONTACTO, EMAIL_URL } from "../../constants/contacto";
 import { linkOfertas } from "../../constants/categorias";
 import { IDIOMAS } from "./navLinks";
 import "./Footer.css";
@@ -145,7 +146,7 @@ function Footer() {
               </li>
               <li>
                 <FaEnvelope aria-hidden="true" />
-                <a href="mailto:contacto@hefestotech.com">contacto@hefestotech.com</a>
+                <a href={EMAIL_URL}>{EMAIL_CONTACTO}</a>
               </li>
             </ul>
             <ul className="ft-pagos" aria-label={t(idioma, "ft.pagos")}>
