@@ -56,8 +56,9 @@ jobs:
           from email.message import EmailMessage
 
           usuario = os.environ.get("GMAIL_USER", "").strip()
-          clave = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-          destino = os.environ.get("MAIL_TO", "").strip()
+          # Google muestra la clave en grupos de 4: si se copia con espacios, se sacan.
+          clave = os.environ.get("GMAIL_APP_PASSWORD", "").replace(" ", "").strip()
+          destino = os.environ.get("MAIL_TO", "").strip() or usuario
           resultado = os.environ.get("RESULTADO", "")
           forzar = os.environ.get("FORZAR", "").lower() == "true"
 
