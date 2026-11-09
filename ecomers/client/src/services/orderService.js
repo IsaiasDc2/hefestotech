@@ -138,11 +138,29 @@ export const reintentarPago = (ordenId, token = "") =>
 export const obtenerComprobante = (id, token = "") =>
   backend(`/api/comprobantes/${encodeURIComponent(id)}`, { tokenOrden: token });
 
-// El PDF se abre como link (sin headers posibles): acá el token sigue en
-// la query, igual que el link de verificación impreso en el comprobante.
-export const urlComprobantePdf = (id, token = "") => {
-  const q = token ? `?token=${encodeURIComponent(token)}` : "";
-  return `${apiBase()}/api/comprobantes/${encodeURIComponent(id)}/pdf${q}`;
+// El PDF se pide con fetch y se entrega como blob: el token de invitado va
+// por header, así no queda en la URL del link ni en el historial.
+export const descargarComprobantePdf = async (id, token = "") => {
+  const t = await sesionToken();
+  let respuesta;
+  try {
+    respuesta = await fetch(
+      `${apiBase()}/api/comprobantes/${encodeURIComponent(id)}/pdf`,
+      {
+        headers: {
+          ...(t ? { Authorization: `Bearer ${t}` } : {}),
+          ...(token ? { "X-Orden-Token": token } : {}),
+        },
+      },
+    );
+  } catch {
+    throw new Error("Sin conexión con el backend.");
+  }
+  if (!respuesta.ok) {
+    const datos = await respuesta.json().catch(() => ({}));
+    throw new Error(mensajeDeError(datos, respuesta.status));
+  }
+  return respuesta.blob();
 };
 
 export const obtenerMisOrdenes = async () => {

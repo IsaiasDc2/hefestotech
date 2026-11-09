@@ -115,6 +115,6 @@ def comprobante_pdf(c: dict) -> bytes:
         f"TOTAL: ${pesos(total):>,}".replace(",", "."),
         "=" * 58,
         LEYENDA,
-        f"Verificacion: {_env('FRONTEND_URL', '')}/pedido/{c.get('orden_id','')}?token={c.get('token_verificacion','')}",
+        f"Verificacion: {_env('FRONTEND_URL', '')}/pedido/{c.get('orden_id','')}#token={c.get('token_verificacion','')}",
     ]
     return _pdf_minimo(lineas)

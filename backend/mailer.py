@@ -67,7 +67,8 @@ def armar_correo(orden: dict[str, Any], estado: str) -> Optional[tuple[str, str]
     token = str(orden.get("acceso_token") or "")
     enlace = None
     if front and orden.get("id"):
-        url = f"{front}/pedido/{orden['id']}" + (f"?token={token}" if token else "")
+        # El token va en el fragmento: no viaja al servidor ni en el Referer.
+        url = f"{front}/pedido/{orden['id']}" + (f"#token={token}" if token else "")
         enlace = ("Ver mi pedido", url)
 
     if estado == "pagada":

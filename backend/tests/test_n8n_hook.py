@@ -68,7 +68,7 @@ def test_payload_pedido():
 def test_payload_pedido_con_enlace(monkeypatch):
     _activar(monkeypatch)
     p = n8n_hook.payload_pedido(ORDEN, "pagada", "HT-AAAAAAAA")
-    assert p["link_pedido"] == f"https://tienda.ej.com/pedido/{PED}?token=tok"
+    assert p["link_pedido"] == f"https://tienda.ej.com/pedido/{PED}#token=tok"
 
 
 def test_payload_pedido_tolera_datos_faltantes():

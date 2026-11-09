@@ -51,7 +51,8 @@ def payload_pedido(orden: dict[str, Any], estado: str, numero: str) -> dict[str,
     token = str(orden.get("acceso_token") or "")
     enlace = ""
     if front and orden.get("id"):
-        enlace = f"{front}/pedido/{orden['id']}" + (f"?token={token}" if token else "")
+        # Fragmento, no query: el token no viaja al servidor ni en el Referer.
+        enlace = f"{front}/pedido/{orden['id']}" + (f"#token={token}" if token else "")
     items = []
     for i in orden.get("orden_items") or []:
         prod = i.get("productos") or {}

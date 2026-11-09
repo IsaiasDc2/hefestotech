@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useLocation, useParams, useSearchParams } from "react-router";
 import { FaFileArrowDown, FaPrint, FaReceipt } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
-import { obtenerComprobante, obtenerEstadoPedido, urlComprobantePdf } from "../../services/orderService";
+import { obtenerComprobante, obtenerEstadoPedido, descargarComprobantePdf } from "../../services/orderService";
 import ComprobantePago from "./ComprobantePago";
 import "./Checkout.css";
 import "./PedidoDetalle.css";
@@ -36,13 +36,43 @@ export default function PedidoDetalle() {
   const { id } = useParams();
   const idioma = useIdiomaStore((s) => s.idioma);
   const [params] = useSearchParams();
+  const ubicacion = useLocation();
+  // Links nuevos: #token=... (el fragmento no viaja al servidor ni en el
+  // Referer). Se mantiene ?token= para los links y QR ya impresos.
+  const tokenHash =
+    new URLSearchParams(ubicacion.hash.replace(/^#/, "")).get("token") ?? "";
   const token =
-    params.get("token") ?? (id ? sessionStorage.getItem(`ck_token_${id}`) ?? "" : "");
+    params.get("token") ||
+    tokenHash ||
+    (id ? sessionStorage.getItem(`ck_token_${id}`) ?? "" : "");
   const [comp, setComp] = useState(null);
   const [qr, setQr] = useState("");
   const [estado, setEstado] = useState(null);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [descargandoPdf, setDescargandoPdf] = useState(false);
+  const [errorPdf, setErrorPdf] = useState("");
+
+  // El PDF se baja con el token por header (no en la URL) y se guarda como blob.
+  const bajarPdf = async () => {
+    setDescargandoPdf(true);
+    setErrorPdf("");
+    try {
+      const blob = await descargarComprobantePdf(id, token);
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = `comprobante-${comp?.numero || id}.pdf`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setErrorPdf(t(idioma, "ped.noDescarga"));
+    } finally {
+      setDescargandoPdf(false);
+    }
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -69,8 +99,10 @@ export default function PedidoDetalle() {
   }, [id, token, idioma]);
 
   // QR generado en el navegador: el link de verificación lleva el token del
-  // pedido y no tiene que viajar a un servicio de terceros.
-  const verificacion = `${window.location.origin}${window.location.pathname}?token=${encodeURIComponent(token)}`;
+  // pedido y no tiene que viajar a un servicio de terceros. Va en el
+  // fragmento (#token=) para que no quede en logs ni en el Referer.
+  const verificacion = `${window.location.origin}${window.location.pathname}` +
+    (token ? `#token=${encodeURIComponent(token)}` : "");
   useEffect(() => {
     let vivo = true;
     import("qrcode")
@@ -200,9 +232,10 @@ export default function PedidoDetalle() {
 
         <aside className="card checkout-resumen" aria-label={t(idioma, "ped.acciones")}>
           <h2>{t(idioma, "ped.acciones")}</h2>
-          <a className="btn-primary" href={urlComprobantePdf(id, token)} download>
+          <button type="button" className="btn-primary" onClick={bajarPdf} disabled={descargandoPdf}>
             <FaFileArrowDown aria-hidden="true" /> {t(idioma, "ped.descargar")}
-          </a>
+          </button>
+          {errorPdf && <p className="texto-mutado" role="alert">{errorPdf}</p>}
           <div className="checkout-acciones checkout-acciones-secundarias">
             <button type="button" className="btn-fantasma" onClick={() => window.print()}>
               <FaPrint aria-hidden="true" /> {t(idioma, "ped.imprimir")}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { FaCircleCheck, FaClock, FaCircleXmark } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
@@ -19,6 +19,7 @@ const CONFIG_KEYS = {
 export default function PagoResultado({ tipo }) {
   const idioma = useIdiomaStore((s) => s.idioma);
   const [params] = useSearchParams();
+  const ubicacion = useLocation();
   const [estado, setEstado] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
@@ -30,8 +31,11 @@ export default function PagoResultado({ tipo }) {
 
   // MP devuelve external_reference como query param en el retorno.
   const ordenId = params.get("external_reference") ?? params.get("orden_id") ?? "";
+  const tokenHash =
+    new URLSearchParams(ubicacion.hash.replace(/^#/, "")).get("token") ?? "";
   const tokenInvitado =
-    params.get("token") ??
+    params.get("token") ||
+    tokenHash ||
     (ordenId ? sessionStorage.getItem(`ck_token_${ordenId}`) ?? "" : "");
 
   useEffect(() => {

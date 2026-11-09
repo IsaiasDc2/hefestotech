@@ -43,7 +43,7 @@ Cuerpo común: `{ "evento", "evento_id", "ocurrio_at", "datos" }`. Encabezado `X
   "total": 12345.0, "moneda": "ARS",
   "items": [{ "nombre": "RAM 16GB", "cantidad": 2, "precio_unitario": 5000.0 }],
   "envio": { "transportista": "Andreani", "codigo": "ABC123", "url": "https://..." },
-  "link_pedido": "https://.../pedido/<id>?token=..."
+  "link_pedido": "https://.../pedido/<id>#token=..."
 }
 ```
 

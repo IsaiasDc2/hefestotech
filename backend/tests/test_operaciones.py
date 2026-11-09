@@ -266,6 +266,11 @@ def test_envia_por_resend_cuando_esta_configurado(monkeypatch):
     assert "HT-AAAAAAAA" in kw["json"]["subject"]
     assert "ABC123" in cuerpo and "Andreani" in cuerpo
     assert "&lt;b&gt;Ana" in cuerpo and "<b>Ana" not in cuerpo  # escapado
+    # El link del pedido va con el token en el fragmento, no en la query.
+    _, html_entregada = mailer.armar_correo(
+        {"id": PED, "nombre": "Ana", "acceso_token": "tok"}, "entregada")
+    assert "/pedido/" in html_entregada and "#token=tok" in html_entregada
+    assert "?token=" not in html_entregada
 
 
 def test_un_email_caido_nunca_lanza(monkeypatch):

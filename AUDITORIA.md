@@ -95,8 +95,8 @@ Prohibido cumplido: no se tocó `src/`, no se commiteó, no se ejecutó contra p
 | ID | Sev | archivo:línea | Problema | Impacto | Solución | Esf |
 |---|---|---|---|---|---|---|
 | SEC-01 | Alta | 003:85-86 + 004:90-103 | `movimientos_stock` lectura abierta a authenticated | Cualquiera lee stock/motivos/actores | Policy con `has_permission('stock','leer')` | S |
-| SEC-02 | Media | 005:283-284 | Insert notificaciones con permiso de lectura, sin user_id | Inyección de avisos (phishing interno) | Solo service_role o WITH CHECK propio | S-M |
-| SEC-03 | Media | orderService.js + PagoResultado + PedidoDetalle + checkout_api:528 | Token invitado en query y en QR a qrserver | Robo de link = PII; fuga a tercero | Token por header/sessionStorage; QR sin token | M |
+| SEC-02 | Media | 005:283-284 | Insert notificaciones con permiso de lectura, sin user_id | Inyección de avisos (phishing interno) | Solo service_role o WITH CHECK propio | S-M<br>Resuelto en 022 |
+| SEC-03 | Media | orderService.js + PagoResultado + PedidoDetalle + checkout_api:528 | Token invitado en query y en QR a qrserver | Robo de link = PII; fuga a tercero | Token por header/sessionStorage; QR sin token | M<br>Resuelto: token en fragmento y PDF con header |
 | SEC-04 | Media | package.json:22 + npm audit | react-router 6.27 vulnerable (open redirect + injection); 11 vulns (8 high) | Phishing; resto dev-only | `npm audit fix` + planificar majors | S/M-L |
 | SEC-05 | Media | *_api.py rate-limits + render.yaml | Rate-limit por IP directa tras proxy | Falsos 429 o sin freno real | X-Forwarded-For confiable o Redis | M |
 | SEC-06 | Baja | checkout_api.py:297-303 | CheckoutCrear valida email solo por longitud | Basura en comprobantes | Reusar `_EMAIL_RE` | S |
