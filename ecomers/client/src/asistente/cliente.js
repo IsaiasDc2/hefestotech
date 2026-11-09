@@ -7,6 +7,7 @@
  * tipo que la UI traduce (limite, validacion, caido, sin-conexion).
  */
 import { crearLectorSSE } from "./sse.js";
+import { API_BASE } from "../services/apiBase";
 
 export class ErrorChat extends Error {
   constructor(tipo, detalle = "") {
@@ -17,7 +18,7 @@ export class ErrorChat extends Error {
 }
 
 export function urlApi() {
-  return String(import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+  return API_BASE;
 }
 
 function detalleDe(json) {

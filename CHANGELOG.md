@@ -11,6 +11,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - `docs/QA-ASISTENTE.md`: 47 conversaciones de prueba con esperado vs. obtenido, también corridas por pytest.
 
 ### Corregido
+- **SEC-02** (`supabase/migrations/022_notificaciones_insert.sql`): se cierra el insert directo de notificaciones para usuarios autenticados. Solo el backend (`service_role`) y la función `public.notificar()` (SECURITY DEFINER) pueden crear avisos; antes cualquier staff podía insertar uno para otro usuario o para todo el panel.
+- El correo de contacto es clickeable y el teléfono de la página de contacto usa el WhatsApp real de la tienda (`+54 9 387 502-9222`) en vez del placeholder de Buenos Aires.
+- El asistente, el footer y el formulario de contacto comparten `API_BASE` en vez de repetir la lectura de `VITE_API_URL`.
 - El asistente anterior respondía sin acceso al catálogo, bloqueaba el servidor con `time.sleep` y devolvía errores como respuestas `200` (detalle IA01–IA10 en `AUDITORIA.md`).
 - Datos de tarjeta escritos en el chat se borran antes de llegar al modelo, a los logs y al almacenamiento del navegador.
 

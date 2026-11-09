@@ -14,6 +14,7 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import Marca from "../brand/Marca";
 import { WHATSAPP_URL } from "../../constants/whatsapp";
 import { EMAIL_CONTACTO, EMAIL_URL } from "../../constants/contacto";
+import { API_BASE } from "../../services/apiBase";
 import { linkOfertas } from "../../constants/categorias";
 import { IDIOMAS } from "./navLinks";
 import "./Footer.css";
@@ -29,8 +30,7 @@ function Newsletter({ idioma }) {
     if (!(email.trim().length > 3 && email.includes("@")) || estado === "enviando") return;
     setEstado("enviando");
     try {
-      const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
-      const respuesta = await fetch(`${API_URL}/api/newsletter`, {
+      const respuesta = await fetch(`${API_BASE}/api/newsletter`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { FaEnvelope, FaPhone, FaLocationDot, FaClock, FaUser, FaTag, FaMessage, FaWhatsapp } from "react-icons/fa6";
-import { whatsappUrl } from "../../constants/whatsapp";
-import { EMAIL_CONTACTO } from "../../constants/contacto";
+import { whatsappUrl, whatsappVisible, WHATSAPP_NUMERO } from "../../constants/whatsapp";
+import { EMAIL_CONTACTO, EMAIL_URL } from "../../constants/contacto";
+import { API_BASE } from "../../services/apiBase";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import "./Contacto.css"
 
@@ -38,8 +39,7 @@ function Contactanos() {
     setErrorEnvio("");
     try {
       const datos = Object.fromEntries(new FormData(e.target).entries());
-      const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
-      const respuesta = await fetch(`${API_URL}/api/contacto`, {
+      const respuesta = await fetch(`${API_BASE}/api/contacto`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(datos),
@@ -70,7 +70,9 @@ function Contactanos() {
             <FaEnvelope className="info-icono" aria-hidden="true" />
             <div>
               <h3>{t(idioma, "cont.email")}</h3>
-              <p>{EMAIL_CONTACTO}</p>
+              <p>
+                <a href={EMAIL_URL}>{EMAIL_CONTACTO}</a>
+              </p>
             </div>
           </div>
 
@@ -78,7 +80,9 @@ function Contactanos() {
             <FaPhone className="info-icono" aria-hidden="true" />
             <div>
               <h3>{t(idioma, "cont.telefono")}</h3>
-              <p>+54 11 1234-5678</p>
+              <p>
+                <a href={`tel:+${WHATSAPP_NUMERO}`}>{whatsappVisible()}</a>
+              </p>
             </div>
           </div>
 
