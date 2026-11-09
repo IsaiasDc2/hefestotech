@@ -32,7 +32,7 @@ export const precioFinal = (producto = {}) => {
 };
 
 // Solo lo publicable: activo y fuera de la papelera (deleted_at, mig. 005).
-// La RLS de lectura es pública, así que el filtro tiene que ir siempre.
+// La RLS (mig. 023) ya filtra, pero el filtro explícito evita depender de ella.
 const consultaVisibles = () =>
   supabase.from("productos").select("*").eq("activo", true).is("deleted_at", null);
 
