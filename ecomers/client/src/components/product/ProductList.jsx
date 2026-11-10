@@ -142,7 +142,9 @@ function ProductoDetalle({ agregarAlCarrito }) {
     );
   }
 
-  const especificaciones = producto.especificaciones || {};
+  // `incluye` (combos y PC armadas) se muestra aparte, como lista.
+  const { incluye: incluyeCrudo, ...especificaciones } = producto.especificaciones || {};
+  const incluye = Array.isArray(incluyeCrudo) ? incluyeCrudo : [];
   const tieneOferta = Number(producto.descuento_porcentaje ?? 0) > 0;
   const precio = Number(producto.precio ?? 0);
   const final = calcularPrecioFinal(producto);
@@ -253,6 +255,20 @@ function ProductoDetalle({ agregarAlCarrito }) {
           <Destacados producto={producto} />
           {tienePrecio && hayStock && <CotizadorEnvio compacto subtotal={final * cantidad} />}
           <Beneficios stock={stock} ultimasUnidades={ULTIMAS_UNIDADES} envioGratis={Boolean(producto.envio_gratis)} />
+
+          {incluye.length > 0 && (
+            <div className="detalle-incluye">
+              <h2>{t(idioma, "pd.incluye")}</h2>
+              <ul>
+                {incluye.map((c, i) => (
+                  <li key={c.id ?? i} style={{ "--lote": i }} className="entra-lote">
+                    <span className="detalle-incluye-cant">{Number(c.cantidad) || 1}×</span>
+                    {c.id ? <Link to={`/producto/${c.id}`}>{c.nombre}</Link> : <span>{c.nombre}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {Object.keys(especificaciones).length > 0 && (
             <div className="detalle-especificaciones">

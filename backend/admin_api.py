@@ -488,6 +488,103 @@ def _totales_con_cupon(subtotal: int, cupon: Optional[dict[str, Any]]) -> dict[s
 
 
 # ---------------------------------------------------------------- modelos ---
+# Ofertas, combos, PC armadas y notebooks: todos son filas de `productos`.
+# - Oferta: `descuento_porcentaje` (0-90). El precio que se cobra
+#   (`precio_con_descuento`) lo recalcula SIEMPRE el servidor.
+# - Combo / PC armada: `componentes` (ids del catálogo + cantidad). Se guardan
+#   en `especificaciones.incluye` con el nombre leído de la DB.
+# - Notebook / PC armada: ficha técnica en `especificaciones` (texto plano).
+DESCUENTO_MAXIMO = 90
+_MAX_COMPONENTES = 30
+_MAX_SPECS = 25
+
+
+class Componente(BaseModel):
+    id: str
+    cantidad: int = 1
+
+    @field_validator("id")
+    @classmethod
+    def _id(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not re.fullmatch(r"[0-9a-fA-F-]{36}", v):
+            raise ValueError("Componente inválido.")
+        return v.lower()
+
+    @field_validator("cantidad")
+    @classmethod
+    def _cantidad(cls, v: int) -> int:
+        if v is None or int(v) < 1 or int(v) > 20:
+            raise ValueError("Cantidad de componente inválida (1 a 20).")
+        return int(v)
+
+
+def _validar_descuento(v: Optional[float]) -> Optional[float]:
+    if v is None:
+        return None
+    v = float(v)
+    if v < 0 or v > DESCUENTO_MAXIMO:
+        raise ValueError(f"Descuento inválido (0 a {DESCUENTO_MAXIMO} %).")
+    return round(v, 2)
+
+
+def _validar_specs(v: Optional[dict[str, Any]]) -> Optional[dict[str, str]]:
+    """Ficha técnica: pares clave -> texto cortos. `incluye` es del servidor."""
+    if v is None:
+        return None
+    if not isinstance(v, dict) or len(v) > _MAX_SPECS:
+        raise ValueError(f"Ficha técnica inválida (máximo {_MAX_SPECS} datos).")
+    limpio: dict[str, str] = {}
+    for k, val in v.items():
+        clave = str(k or "").strip()[:60]
+        texto = str(val if val is not None else "").strip()[:300]
+        if clave and clave != "incluye" and texto:
+            limpio[clave] = texto
+    return limpio
+
+
+def _validar_componentes(v: Optional[list[Componente]]) -> Optional[list[Componente]]:
+    if v is None:
+        return None
+    if len(v) > _MAX_COMPONENTES:
+        raise ValueError(f"Máximo {_MAX_COMPONENTES} componentes.")
+    return v
+
+
+def _precio_oferta(precio: Any, descuento: Any) -> Optional[float]:
+    """Precio con descuento redondeado a centavos; None si no hay oferta."""
+    try:
+        p, d = float(precio or 0), float(descuento or 0)
+    except (TypeError, ValueError):
+        return None
+    if d <= 0:
+        return None
+    return round(p * (1 - d / 100), 2)
+
+
+def _resolver_componentes(componentes: list[Componente]) -> list[dict[str, Any]]:
+    """Lee nombre y código de cada componente desde la DB (nunca del cliente)."""
+    if not componentes:
+        return []
+    ids = sorted({c.id for c in componentes})
+    filas = _sb_get("productos", {
+        "select": "id,nombre,codigo,deleted_at",
+        "id": f"in.({','.join(ids)})",
+    }) or []
+    por_id = {str(f.get("id")): f for f in filas if f.get("deleted_at") is None}
+    if any(c.id not in por_id for c in componentes):
+        raise HTTPException(status_code=400, detail="Algún componente no existe o está en la papelera.")
+    return [
+        {
+            "id": c.id,
+            "nombre": str(por_id[c.id].get("nombre") or "Producto"),
+            "codigo": str(por_id[c.id].get("codigo") or ""),
+            "cantidad": c.cantidad,
+        }
+        for c in componentes
+    ]
+
+
 class ProductoCrear(BaseModel):
     nombre: str
     marca: str = ""
@@ -497,6 +594,25 @@ class ProductoCrear(BaseModel):
     categoria: str = "General"
     codigo: str = ""
     imagen: str = ""
+    descuento_porcentaje: float = 0
+    destacado: bool = False
+    especificaciones: dict[str, Any] = {}
+    componentes: list[Componente] = []
+
+    @field_validator("descuento_porcentaje")
+    @classmethod
+    def _descuento(cls, v: float) -> float:
+        return _validar_descuento(v) or 0
+
+    @field_validator("especificaciones")
+    @classmethod
+    def _specs(cls, v: dict[str, Any]) -> dict[str, str]:
+        return _validar_specs(v) or {}
+
+    @field_validator("componentes")
+    @classmethod
+    def _componentes(cls, v: list[Componente]) -> list[Componente]:
+        return _validar_componentes(v) or []
 
     @field_validator("nombre")
     @classmethod
@@ -532,6 +648,24 @@ class ProductoEditar(BaseModel):
     destacado: Optional[bool] = None
     activo: Optional[bool] = None
     imagen: Optional[str] = None
+    descuento_porcentaje: Optional[float] = None
+    especificaciones: Optional[dict[str, Any]] = None
+    componentes: Optional[list[Componente]] = None
+
+    @field_validator("descuento_porcentaje")
+    @classmethod
+    def _descuento(cls, v: Optional[float]) -> Optional[float]:
+        return _validar_descuento(v)
+
+    @field_validator("especificaciones")
+    @classmethod
+    def _specs(cls, v: Optional[dict[str, Any]]) -> Optional[dict[str, str]]:
+        return _validar_specs(v)
+
+    @field_validator("componentes")
+    @classmethod
+    def _componentes(cls, v: Optional[list[Componente]]) -> Optional[list[Componente]]:
+        return _validar_componentes(v)
 
     @field_validator("nombre", "marca", "descripcion", "categoria")
     @classmethod
@@ -1320,7 +1454,15 @@ def crear_producto(d: ProductoCrear, request: Request,
     fila: dict[str, Any] = {
         "nombre": d.nombre, "marca": d.marca, "precio": d.precio,
         "stock": d.stock, "descripcion": d.descripcion, "categoria": d.categoria,
+        "descuento_porcentaje": d.descuento_porcentaje,
+        "precio_con_descuento": _precio_oferta(d.precio, d.descuento_porcentaje),
+        "destacado": d.destacado,
     }
+    specs: dict[str, Any] = dict(d.especificaciones)
+    if d.componentes:
+        specs["incluye"] = _resolver_componentes(d.componentes)
+    if specs:
+        fila["especificaciones"] = specs
     if (d.imagen or "").strip():
         if not _url_imagen_ok(d.imagen.strip()):
             raise HTTPException(status_code=400, detail="URL de imagen inválida.")
@@ -1345,9 +1487,37 @@ def crear_producto(d: ProductoCrear, request: Request,
 def editar_producto(pid: str, d: ProductoEditar, request: Request,
                     admin: AdminActual = Depends(requiere("productos", "editar"))) -> dict[str, Any]:
     _limitar(request.client.host if request.client else "?", "producto-editar", 30)
-    cambios = {k: v for k, v in d.model_dump().items() if v is not None}
-    if not cambios:
+    cambios = {k: v for k, v in d.model_dump(exclude={"componentes"}).items() if v is not None}
+    if not cambios and d.componentes is None:
         raise HTTPException(status_code=400, detail="Sin cambios para aplicar.")
+    toca_precio = "precio" in cambios or "descuento_porcentaje" in cambios
+    toca_specs = "especificaciones" in cambios or d.componentes is not None
+    if toca_precio or toca_specs:
+        actuales = _sb_get("productos", {
+            "select": "precio,descuento_porcentaje,especificaciones",
+            "id": f"eq.{pid}", "deleted_at": "is.null", "limit": 1,
+        }) or []
+        if not actuales:
+            raise HTTPException(status_code=404, detail="Producto inexistente o en papelera.")
+        actual = actuales[0]
+        if toca_precio:
+            # El precio que se cobra siempre se recalcula: editar solo el
+            # precio de un producto en oferta no deja un descuento viejo.
+            precio = cambios.get("precio", actual.get("precio"))
+            descuento = cambios.get("descuento_porcentaje", actual.get("descuento_porcentaje"))
+            cambios["precio_con_descuento"] = _precio_oferta(precio, descuento)
+        if toca_specs:
+            previas = actual.get("especificaciones") or {}
+            specs = dict(cambios.get("especificaciones", {
+                k: v for k, v in previas.items() if k != "incluye"
+            }))
+            if d.componentes is not None:
+                incluye = _resolver_componentes(d.componentes)
+            else:
+                incluye = previas.get("incluye") or []
+            if incluye:
+                specs["incluye"] = incluye
+            cambios["especificaciones"] = specs
     filas = _sb_patch("productos", {"id": f"eq.{pid}", "deleted_at": "is.null"}, cambios) or []
     if not filas:
         raise HTTPException(status_code=404, detail="Producto inexistente o en papelera.")
