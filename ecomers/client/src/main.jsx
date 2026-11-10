@@ -8,6 +8,7 @@ import ErrorGeneral from "./components/ErrorGeneral.jsx";
 import "@fontsource-variable/geist/wght.css";
 import "@fontsource-variable/geist-mono/wght.css";
 import "./styles/index.css";
+import "./styles/movimiento.css";
 
 const BASENAME =
   import.meta.env.VITE_BASE ?? (import.meta.env.BASE_URL === "/" ? "/" : "/hefestotech");

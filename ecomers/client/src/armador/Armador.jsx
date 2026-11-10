@@ -17,6 +17,7 @@ import { PASO_EXTRAS } from "./pasos";
 import { precioFinal } from "./adaptar";
 import ArmadorCard from "./ArmadorCard";
 import ArmadorResumen from "./ArmadorResumen";
+import IconoPieza from "./IconoPieza";
 import "./Armador.css";
 
 const CATEGORIAS_PRINCIPALES = new Set(
@@ -228,6 +229,26 @@ function Armador() {
           <p>
             {t(idioma, "arm.introS")} {TOTAL_PASOS} {t(idioma, "arm.introS2")}
           </p>
+          <ul className="armador-piezas" aria-label={t(idioma, "arm.pasosDe")}>
+            {[...PASOS, { id: "extras", extras: true }].map((p, i) => (
+              <li key={p.id} style={{ "--i": i }}>
+                <button
+                  type="button"
+                  className="armador-pieza"
+                  onClick={() => {
+                    a.setIniciado(true);
+                    irAPaso(i);
+                  }}
+                >
+                  <IconoPieza pieza={p.id} />
+                  <span>{p.extras ? t(idioma, "arm.extras") : nombrePaso(p)}</span>
+                  {a.elegidos[i]?.producto && (
+                    <FaCheck aria-hidden="true" className="armador-pieza-ok" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
           <div className="armador-intro-acciones">
             <button
               type="button"
@@ -323,6 +344,7 @@ function Armador() {
                     elegido ? `, ${t(idioma, "arm.elegido")} ${elegido.nombre}` : ""
                   }${salteado && !elegido ? `, ${t(idioma, "arm.salteado")}` : ""}`}
                 >
+                  <IconoPieza pieza={p.id} className="stepper-icono" />
                   {elegido ? (
                     <FaCheck aria-hidden="true" className="pop" />
                   ) : (
@@ -343,6 +365,7 @@ function Armador() {
               aria-current={esExtras ? "step" : undefined}
               onClick={() => irAPaso(PASOS.length)}
             >
+              <IconoPieza pieza="extras" className="stepper-icono" />
               {t(idioma, "arm.extras")}{a.extras.length > 0 && ` (${a.extras.length})`}
             </button>
           </li>

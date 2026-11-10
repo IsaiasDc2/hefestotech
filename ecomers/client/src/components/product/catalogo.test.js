@@ -5,7 +5,7 @@ import {
   coincideBusqueda,
   filtrosAParams,
   leerFiltros,
-  leerPaginacion,
+  leerVisibles,
   ordenar,
 } from "./catalogo";
 
@@ -113,20 +113,21 @@ describe("ordenar", () => {
   });
 });
 
-describe("leerPaginacion", () => {
-  test("usa 24 por página y página 1 por defecto", () => {
-    expect(leerPaginacion(params(""), 100)).toEqual({ por: 24, pagina: 1 });
+describe("leerVisibles (Cargar más)", () => {
+  test("arranca mostrando 5", () => {
+    expect(leerVisibles(params(""), 100)).toBe(5);
   });
-  test("respeta ?por y ?pagina válidos", () => {
-    expect(leerPaginacion(params("por=12&pagina=3"), 100)).toEqual({ por: 12, pagina: 3 });
+  test("respeta ?ver y lo redondea al tramo de 5", () => {
+    expect(leerVisibles(params("ver=15"), 100)).toBe(15);
+    expect(leerVisibles(params("ver=12"), 100)).toBe(15);
   });
-  test("ignora tamaños no permitidos y acota la página al total", () => {
-    expect(leerPaginacion(params("por=7"), 100).por).toBe(24);
-    expect(leerPaginacion(params("pagina=99"), 54)).toEqual({ por: 24, pagina: 3 });
-    expect(leerPaginacion(params("pagina=-4"), 54).pagina).toBe(1);
+  test("tolera basura y no pasa del total", () => {
+    expect(leerVisibles(params("ver=-4"), 100)).toBe(5);
+    expect(leerVisibles(params("ver=abc"), 100)).toBe(5);
+    expect(leerVisibles(params("ver=500"), 23)).toBe(23);
   });
-  test("cambiar filtros no arrastra la página", () => {
-    const f = leerFiltros(params("categoria=procesadores&pagina=3"));
-    expect(filtrosAParams(f).pagina).toBeUndefined();
+  test("cambiar filtros vuelve al primer tramo", () => {
+    const f = leerFiltros(params("categoria=procesadores&ver=20"));
+    expect(filtrosAParams(f).ver).toBeUndefined();
   });
 });

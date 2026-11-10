@@ -6,6 +6,7 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { obtenerEstadoPedido, reintentarPago } from "../../services/orderService";
 import { esUrlMP } from "../../utils/mercadoPago";
 import ComprobantePago from "./ComprobantePago";
+import CompraExitosa from "../../components/ui/CompraExitosa";
 import { traducirError } from "../../utils/errores";
 import "./Checkout.css";
 
@@ -93,8 +94,17 @@ export default function PagoResultado({ tipo }) {
     }
   };
 
+  const acreditada = estadoActual === "pagada" || estadoActual === "pagado";
+
   return (
     <div className="checkout centrado">
+      {acreditada && estado?.id && (
+        <CompraExitosa
+          ordenId={String(estado.id)}
+          codigo={String(estado.id).slice(0, 8)}
+          destino={`/pedido/${estado.id}`}
+        />
+      )}
       <div className="card anim-entrada checkout-exito">
         <span className="marca-centrada" aria-hidden="true">
           <Marca variante="simbolo" ancho={44} alto={44} decorativa />

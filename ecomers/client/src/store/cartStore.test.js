@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import useCartStore from "./cartStore";
+import useCartStore, { registrarAvisoCarrito } from "./cartStore";
 
 const gpu = { id: "gpu", nombre: "GPU", precio: 1000, stock: 2 };
 const cpu = { id: "cpu", nombre: "CPU", precio: 500, stock: 5 };
@@ -11,12 +11,25 @@ beforeEach(() => {
 });
 
 describe("carrito", () => {
-  test("agregar suma cantidades y abre el carrito", () => {
+  test("agregar suma cantidades y avisa sin tapar la página", () => {
+    const avisos = [];
+    registrarAvisoCarrito((producto, n) => avisos.push([producto.id, n]));
     const { agregarAlCarrito } = useCartStore.getState();
     agregarAlCarrito(cpu);
     agregarAlCarrito(cpu, 2);
+    registrarAvisoCarrito(null);
     expect(carrito()).toEqual([{ ...cpu, cantidad: 3 }]);
+    expect(useCartStore.getState().isCartOpen).toBe(false);
+    expect(avisos).toEqual([[cpu.id, 1], [cpu.id, 2]]);
+  });
+
+  test("abrir: true abre el carrito lateral y no avisa", () => {
+    const avisos = [];
+    registrarAvisoCarrito(() => avisos.push(1));
+    useCartStore.getState().agregarAlCarrito(cpu, 1, { abrir: true });
+    registrarAvisoCarrito(null);
     expect(useCartStore.getState().isCartOpen).toBe(true);
+    expect(avisos).toEqual([]);
   });
 
   test("nunca supera el stock conocido (F15)", () => {

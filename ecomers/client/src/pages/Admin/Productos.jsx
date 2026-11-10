@@ -8,10 +8,21 @@ import { adminApi, formatoARS } from "./adminApi";
 import { CATEGORIAS } from "../../constants/categorias";
 import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo, usePaginacion } from "./hooks";
+import { CamposOferta, FichaTecnica, PanelOferta, SelectorComponentes } from "./AltaEspecial";
+import { TIPOS_ALTA, tipoDeCategoria } from "./altaEspecialUtil";
 
-const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
+const VACIO_FORM = {
+  nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "",
+  descuento: "0", destacado: false, specs: {}, componentes: [],
+};
 
-const POR_PAGINA_CATEGORIA = 10;
+const formDeTipo = (tipo) => ({
+  ...VACIO_FORM,
+  categoria: TIPOS_ALTA[tipo]?.categoria ?? "General",
+  descuento: String(TIPOS_ALTA[tipo]?.descuentoSugerido ?? 0),
+});
+
+const POR_PAGINA_CATEGORIA = 5;
 
 // "Memoria RAM" ya es el valor que guarda la base; para las categorías que
 // tienen etiqueta propia en el catálogo se usa esa, y si no, el valor crudo.
@@ -137,6 +148,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [altaAbierta, setAltaAbierta] = useState(accionInicial === "nuevo");
+  const [tipo, setTipo] = useState("producto");
   const [refresco, setRefresco] = useState(0);
 
   const [presetPrevio, setPresetPrevio] = useState(presetQ);
@@ -189,6 +201,14 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
         if (form.descripcion !== undefined) cambios.descripcion = form.descripcion;
         if (form.categoria !== undefined) cambios.categoria = form.categoria;
         if (form.imagen !== undefined) cambios.imagen = form.imagen.trim();
+        cambios.descuento_porcentaje = Number(form.descuento) || 0;
+        cambios.destacado = Boolean(form.destacado);
+        if (TIPOS_ALTA[tipo]?.ficha || Object.keys(form.specs).length > 0) {
+          cambios.especificaciones = form.specs;
+        }
+        if (TIPOS_ALTA[tipo]?.componentes) {
+          cambios.componentes = form.componentes.map((c) => ({ id: c.id, cantidad: c.cantidad }));
+        }
         await adminApi.editarProducto(editando, cambios);
         avisar("Producto actualizado.");
       } else {
@@ -201,8 +221,14 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
           categoria: form.categoria || "General",
           codigo: form.codigo.trim(),
           imagen: form.imagen.trim(),
+          descuento_porcentaje: Number(form.descuento) || 0,
+          destacado: Boolean(form.destacado),
+          especificaciones: form.specs,
+          componentes: TIPOS_ALTA[tipo]?.componentes
+            ? form.componentes.map((c) => ({ id: c.id, cantidad: c.cantidad }))
+            : [],
         });
-        avisar("Producto creado.");
+        avisar(`${TIPOS_ALTA[tipo]?.etiqueta ?? "Producto"} creado.`);
       }
       // La categoría tocada queda abierta para ver el resultado del guardado.
       const categoriaTocada = form.categoria || "General";
@@ -252,9 +278,17 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
   };
 
   const alEditar = (p) => {
+    const specs = { ...(p.especificaciones ?? {}) };
+    const incluye = Array.isArray(specs.incluye) ? specs.incluye : [];
+    delete specs.incluye;
+    setTipo(tipoDeCategoria(p.categoria));
     setEditando(p.id);
     setAltaAbierta(true);
     setForm({
+      descuento: String(Number(p.descuento_porcentaje ?? 0)),
+      destacado: Boolean(p.destacado),
+      specs: Object.fromEntries(Object.entries(specs).map(([k, v]) => [k, String(v ?? "")])),
+      componentes: incluye.map((c) => ({ id: c.id, nombre: c.nombre, cantidad: Number(c.cantidad) || 1 })),
       nombre: p.nombre ?? "",
       marca: p.marca ?? "",
       precio: p.precio ?? "",
@@ -278,10 +312,18 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
       setAltaAbierta(false);
       setEditando(null);
       setForm(VACIO_FORM);
+      setTipo("producto");
     } else {
       setAltaAbierta(true);
     }
   };
+  const abrirAlta = (clave) => {
+    setTipo(clave);
+    setEditando(null);
+    setForm(formDeTipo(clave));
+    setAltaAbierta(true);
+  };
+  const cfgTipo = TIPOS_ALTA[tipo] ?? TIPOS_ALTA.producto;
 
   return (
     <div>
@@ -293,24 +335,44 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
             <button type="button" className="btn-fantasma adm-btn" onClick={refrescarListados}>
               Actualizar
             </button>
-            <button
-              type="button"
-              className={mostrarForm ? "btn-fantasma adm-btn" : "btn-primary adm-btn"}
-              onClick={alternarAlta}
-              aria-expanded={mostrarForm}
-            >
-              {mostrarForm ? <FaXmark aria-hidden="true" /> : <FaPlus aria-hidden="true" />}{" "}
-              {mostrarForm ? "Cerrar" : "Nuevo producto"}
-            </button>
+            {mostrarForm ? (
+              <button type="button" className="btn-fantasma adm-btn" onClick={alternarAlta} aria-expanded="true">
+                <FaXmark aria-hidden="true" /> Cerrar
+              </button>
+            ) : (
+              <span className="adm-tipos-alta" role="group" aria-label="Agregar al catálogo">
+                {Object.entries(TIPOS_ALTA).map(([clave, cfg]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    className={clave === "producto" ? "btn-primary adm-btn" : "btn-fantasma adm-btn"}
+                    onClick={() => abrirAlta(clave)}
+                  >
+                    <FaPlus aria-hidden="true" /> {cfg.etiqueta}
+                  </button>
+                ))}
+              </span>
+            )}
           </div>
         }
       />
 
       <div className={mostrarForm ? "adm-grid-2 adm-grid-productos" : ""}>
-      {mostrarForm && (
-      <section className="card adm-panel" aria-label={editando ? "Editar producto" : "Nuevo producto"}>
+      {mostrarForm && tipo === "oferta" && (
+        <PanelOferta
+          avisar={avisar}
+          onCerrar={alternarAlta}
+          onListo={(categoria) => {
+            setApertura((a) => ({ ...a, mapa: { ...a.mapa, [categoria]: true } }));
+            alternarAlta();
+            refrescarListados();
+          }}
+        />
+      )}
+      {mostrarForm && tipo !== "oferta" && (
+      <section className="card adm-panel" aria-label={editando ? "Editar producto" : cfgTipo.titulo}>
         <div className="adm-panel-cab">
-          <h2>{editando ? "Editar producto" : "Nuevo producto"}</h2>
+          <h2>{editando ? `Editar ${cfgTipo.etiqueta.toLowerCase()}` : cfgTipo.titulo}</h2>
           <button type="button" className="btn-fantasma adm-mini" onClick={alternarAlta} aria-label="Cerrar alta">
             Cerrar
           </button>
@@ -349,6 +411,25 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
               </label>
             )}
           </div>
+          <CamposOferta
+            precio={form.precio}
+            descuento={form.descuento}
+            destacado={form.destacado}
+            onDescuento={(v) => setForm((f) => ({ ...f, descuento: v }))}
+            onDestacado={(v) => setForm((f) => ({ ...f, destacado: v }))}
+          />
+          {cfgTipo.componentes && (
+            <SelectorComponentes
+              elegidos={form.componentes}
+              onCambio={(componentes) => setForm((f) => ({ ...f, componentes }))}
+              onUsarSuma={(precio) => setForm((f) => ({ ...f, precio: String(precio) }))}
+            />
+          )}
+          <FichaTecnica
+            campos={cfgTipo.ficha}
+            valores={form.specs}
+            onCambio={(specs) => setForm((f) => ({ ...f, specs }))}
+          />
           <label>Descripción
             <input value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
           </label>

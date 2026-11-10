@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { loginUsuario, registrarUsuario, obtenerSesion, cerrarSesion, suscribirCambiosAuth } from "../services/authService";
+import { loginUsuario, registrarUsuario, obtenerSesion, cerrarSesion, suscribirCambiosAuth, guardarDatosEnvio } from "../services/authService";
 import { obtenerSesionAdmin } from "../services/sesionAdminService";
 import useIdiomaStore, { t } from "./idiomaStore";
 import { traducirErrorAuth } from "../utils/errores";
@@ -189,6 +189,21 @@ const useAuthStore = create((set, get) => ({
       // tiene permisos; si el intento anterior falló, sí se reintenta.
       if (cambioDeCuenta || !get().esStaff) void get().revalidar();
     }),
+
+  // Guarda dirección/ciudad/CP en la cuenta (los usa el próximo checkout).
+  // No bloquea la compra: si falla, el pedido sigue con lo que se tipeó.
+  actualizarEnvio: async (datos) => {
+    if (!get().isAuthenticated) return;
+    try {
+      const actualizado = await guardarDatosEnvio(datos);
+      const actual = get().usuario;
+      if (actualizado && actual?.id === actualizado.id) {
+        set({ usuario: { ...actual, envio: actualizado.envio } });
+      }
+    } catch {
+      /* sin red o modo demo: queda para la próxima compra */
+    }
+  },
 
   logout: async () => {
     try {

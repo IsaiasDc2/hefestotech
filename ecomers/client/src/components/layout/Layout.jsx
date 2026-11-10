@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import Asistente from "./Asistente";
 import Marca from "../brand/Marca";
 import CarritoLateral from "../../pages/Carrito/CarritoLateral";
+import ContenedorAvisos from "../ui/AvisoCarrito";
 import { usePausaPestana } from "../../hooks/useMotion";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { MODO_DEMO } from "../lib/supabaseClient";
@@ -62,6 +63,7 @@ function Layout({
 
       <Footer />
       <Asistente />
+      <ContenedorAvisos />
       {MODO_DEMO && (
         <p className="aviso-demo" role="note" title={t(idioma, "demo.detalle")}>
           {t(idioma, "demo.etiqueta")}

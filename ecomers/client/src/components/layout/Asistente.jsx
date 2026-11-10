@@ -11,6 +11,7 @@ import {
   FaThumbsDown,
 } from "react-icons/fa6";
 import Marca from "../brand/Marca.jsx";
+import RobotHefesto from "../ui/RobotHefesto";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useCartStore from "../../store/cartStore";
 import { whatsappUrl } from "../../constants/whatsapp";
@@ -108,6 +109,11 @@ function Asistente() {
   const { sesion, mensajes: chat, modo = "" } = conversacion;
   const setModo = (valor) => setConversacion((c) => (c.modo === valor ? c : { ...c, modo: valor }));
   const visible = abierto && (!enCheckout || rutaApertura === pathname);
+  // Mini HefestoTech: sale de la burbuja al abrir, se sube al borde del panel
+  // y al cerrar vuelve volando. Se sigue durante el render (sin efectos);
+  // "vuelve" se desmonta cuando termina su animación.
+  const [robot, setRobot] = useState({ visible: false, modo: "oculto" });
+  if (robot.visible !== visible) setRobot({ visible, modo: visible ? "llega" : "vuelve" });
   const sinEmpezar = !chat.some((m) => m.rol === "usuario");
   const escribiendo = estado === "escribiendo";
   const ultimoUsuario = [...chat].reverse().find((m) => m.rol === "usuario");
@@ -205,7 +211,7 @@ function Asistente() {
     if (m.idServidor) enviarFeedback({ sesion, mensajeId: m.idServidor, valor });
   };
 
-  const agregarTarjeta = (tarjeta) => agregarAlCarrito(productoParaCarrito(tarjeta, BASE), 1, { abrir: false });
+  const agregarTarjeta = (tarjeta) => agregarAlCarrito(productoParaCarrito(tarjeta, BASE), 1, { abrir: false, avisar: false });
   const agregarArmado = (tarjetas) =>
     agregarVarios(tarjetas.map((x) => productoParaCarrito(x, BASE)), { abrir: false });
   const alNavegar = () => {
@@ -316,6 +322,16 @@ function Asistente() {
 
   return (
     <div className={`asistente${enCheckout ? " es-mini" : ""}${sobreBarra ? " es-sobre-barra" : ""}`}>
+      {robot.modo !== "oculto" && !enCheckout && (
+        <RobotHefesto
+          className={`robot--afuera es-${robot.modo}`}
+          saludo={t(idioma, "as.robotHola")}
+          despedida={t(idioma, "as.robotChau")}
+          onAnimationEnd={(e) => {
+            if (e.animationName === "robot-despide") setRobot((r) => ({ ...r, modo: "oculto" }));
+          }}
+        />
+      )}
       {visible && (
         <div
           className="asistente-panel card"
@@ -365,6 +381,7 @@ function Asistente() {
             aria-label={t(idioma, "as.conversacion")}
             ref={mensajesRef}
           >
+            <RobotHefesto className="robot--adentro" />
             <div className="asistente-msg es-ia">
               <span className="asistente-msg-avatar" aria-hidden="true">
                 <Marca variante="simbolo" ancho={18} alto={18} decorativa />

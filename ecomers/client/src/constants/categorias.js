@@ -10,6 +10,8 @@ export const CATEGORIAS = [
   { slug: "gabinetes", label: "Gabinetes", db: "Gabinete" },
   { slug: "monitores", label: "Monitores", db: "Monitor" },
   { slug: "notebooks", label: "Notebooks", db: "Notebook" },
+  { slug: "pc-armadas", label: "PC armadas", db: "PC Armada" },
+  { slug: "combos", label: "Combos", db: "Combo" },
   { slug: "perifericos", label: "Periféricos", db: "Periferico" },
   { slug: "mousepads", label: "Mousepads", db: "Mousepad" },
   { slug: "coolers", label: "Refrigeración", db: "Cooler" },

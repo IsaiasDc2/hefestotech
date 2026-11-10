@@ -554,3 +554,352 @@
     transform: none;
   }
 }
+
+/* ============================================================
+   Movimiento del home (estilo gamer, sin marear)
+   - Hero: el texto entra en cascada; la grilla "respira" con un
+     barrido de luz; la vitrina flota apenas.
+   - Hover de categorías/promos: elevación y glow, solo con mouse.
+   ============================================================ */
+.ini-hero-texto > * {
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) both;
+}
+.ini-hero-texto > :nth-child(2) { animation-delay: 70ms; }
+.ini-hero-texto > :nth-child(3) { animation-delay: 140ms; }
+.ini-hero-texto > :nth-child(4) { animation-delay: 210ms; }
+.ini-hero-texto > :nth-child(5) { animation-delay: 280ms; }
+
+.ini-vitrina {
+  animation: ht-entrada var(--dur-650, 650ms) var(--ease-out) 120ms both;
+}
+
+.ini-hero-fondo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 40%, rgba(56, 182, 245, 0.16) 50%, transparent 60%);
+  transform: translateX(-100%);
+  animation: ini-barrido 7s var(--ease-in-out) 1.2s infinite;
+}
+
+.ini-vitrina-principal .ini-pozo img {
+  animation: ini-flotar 3.6s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes ini-barrido {
+  0% { transform: translateX(-100%); }
+  35%, 100% { transform: translateX(100%); }
+}
+
+@keyframes ini-flotar {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+.ini-categoria,
+.ini-promo,
+.ini-beneficios li {
+  transition:
+    transform var(--dur-220, 220ms) var(--ease-out),
+    border-color var(--dur-2) ease,
+    box-shadow var(--dur-220, 220ms) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ini-categoria:hover,
+  .ini-promo:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent), 0 0 24px rgba(56, 182, 245, 0.22);
+  }
+  .ini-categoria:hover .ini-pozo img {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  .ini-beneficios li:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.ini-categoria .ini-pozo img {
+  transition: transform var(--dur-220, 220ms) var(--ease-out);
+}
+
+html[data-tab-oculta="true"] .ini-hero-fondo::after,
+html[data-tab-oculta="true"] .ini-vitrina-principal .ini-pozo img {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ini-hero-texto > *,
+  .ini-vitrina {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .ini-hero-fondo::after,
+  .ini-vitrina-principal .ini-pozo img {
+    animation: none;
+  }
+  .ini-categoria:hover,
+  .ini-promo:hover,
+  .ini-beneficios li:hover,
+  .ini-categoria:hover .ini-pozo img {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Banner de ofertas destacadas (bof)
+   Fondo oscuro con auroras de marca que se desplazan lento;
+   tarjetas blancas que entran escalonadas y se elevan al hover.
+   ============================================================ */
+.bof {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5, 1.25rem);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(120deg, #06121f 0%, #0a1d33 45%, #12093a 100%);
+  color: #fff;
+}
+
+.bof-aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.bof-aurora i {
+  position: absolute;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: bof-aurora 14s var(--ease-in-out) infinite alternate;
+}
+
+.bof-aurora i:nth-child(1) { left: -10%; top: -30%; background: #1aa3ec; }
+.bof-aurora i:nth-child(2) { right: -12%; top: 10%; background: #7c3aed; animation-duration: 18s; animation-delay: -6s; }
+.bof-aurora i:nth-child(3) { left: 35%; bottom: -55%; background: #06b6d4; animation-duration: 16s; animation-delay: -3s; }
+
+@keyframes bof-aurora {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(12%, 10%) scale(1.15); }
+}
+
+.bof-texto {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.bof-marca {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fde047;
+  font-size: 1.2rem;
+  box-shadow: 0 0 24px rgba(253, 224, 71, 0.35);
+}
+
+.bof-kicker {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.bof h2 {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.bof-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  margin-top: 0.4rem;
+  padding: 0 1.1rem;
+  border-radius: 12px;
+  background: #fff;
+  color: #0a1d33;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.bof-cta:active {
+  transform: scale(0.97);
+}
+
+.bof-tarjetas {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0.3rem 0.1rem 0.6rem;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.bof-tarjetas::-webkit-scrollbar {
+  display: none;
+}
+
+.bof-tarjetas > li {
+  position: relative;
+  scroll-snap-align: start;
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 120ms);
+}
+
+.bof-tarjeta {
+  display: grid;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 0.9rem 0.9rem 1rem;
+  border-radius: 18px;
+  background: #fff;
+  color: #0f172a;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  transition: transform var(--dur-220, 220ms) var(--ease-out), box-shadow var(--dur-220, 220ms) var(--ease-out);
+}
+
+.bof-foto {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 0.4rem;
+  overflow: hidden;
+}
+
+.bof-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform var(--dur-450, 450ms) var(--ease-out);
+}
+
+.bof-marca-prod {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.bof-nombre {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.92rem;
+  line-height: 1.3;
+  min-height: 2.6em;
+}
+
+.bof-precios {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.bof-ahorro {
+  padding: 0.12rem 0.45rem;
+  border-radius: 6px;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 700;
+}
+
+.bof-precio {
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bof-agregar {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 1.05rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(26, 163, 236, 0.45);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.bof-agregar:active {
+  transform: scale(0.92);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bof-tarjeta:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(26, 163, 236, 0.6);
+  }
+  .bof-tarjeta:hover .bof-foto img {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  .bof-cta:hover {
+    transform: translateX(3px);
+  }
+}
+
+@media (min-width: 900px) {
+  .bof {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2.4fr);
+    align-items: center;
+  }
+  .bof-tarjetas {
+    overflow: visible;
+  }
+}
+
+html[data-tab-oculta="true"] .bof-aurora i {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bof-aurora i {
+    animation: none;
+  }
+  .bof-tarjetas > li {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .bof-tarjeta:hover,
+  .bof-tarjeta:hover .bof-foto img,
+  .bof-cta:hover {
+    transform: none;
+  }
+}

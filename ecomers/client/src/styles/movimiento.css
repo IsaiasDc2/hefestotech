@@ -1,0 +1,1156 @@
+/* ============================================================
+   HefestoTech · Movimiento
+   Camión de envío, "Cargar más", aviso de carrito y entradas.
+   Curvas y duraciones: tokens de index.css (--ease-out, --dur-*).
+   Solo transform / opacity; cada loop se pausa con la pestaña
+   oculta y todo tiene variante para prefers-reduced-motion.
+   ============================================================ */
+
+/* ---------- Camión de envío en movimiento ---------- */
+.camion {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.1em;
+  height: 1.5em;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.camion-icono {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05em;
+  filter: drop-shadow(0 0 6px var(--primary-resplandor, rgba(56, 182, 245, 0.45)));
+  animation: camion-rebote 520ms var(--ease-in-out) infinite alternate;
+}
+
+.camion-lineas {
+  position: absolute;
+  inset: 0 auto 0 -0.35em;
+  display: grid;
+  align-content: center;
+  gap: 0.18em;
+  width: 0.9em;
+}
+
+.camion-lineas i {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0;
+  animation: camion-velocidad 760ms linear infinite;
+}
+
+.camion-lineas i:nth-child(2) {
+  width: 70%;
+  margin-left: 30%;
+  animation-delay: 250ms;
+}
+
+.camion-lineas i:nth-child(3) {
+  width: 85%;
+  animation-delay: 500ms;
+}
+
+.camion-ruta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.05em;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0.55;
+  background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 11px);
+  background-size: 22px 2px;
+  animation: camion-ruta 600ms linear infinite;
+}
+
+@keyframes camion-rebote {
+  from { transform: translateY(0) rotate(0deg); }
+  to { transform: translateY(-2px) rotate(-1.5deg); }
+}
+
+@keyframes camion-velocidad {
+  0% { opacity: 0; transform: translateX(10px) scaleX(0.4); }
+  25% { opacity: 0.9; }
+  100% { opacity: 0; transform: translateX(-10px) scaleX(1); }
+}
+
+@keyframes camion-ruta {
+  from { background-position: 0 0; }
+  to { background-position: -22px 0; }
+}
+
+/* Beneficio del home: el ícono del envío es el camión andando. */
+.ini-beneficio-icono .camion {
+  font-size: 1.15rem;
+}
+
+/* Barra de envío gratis del carrito: el camión maneja hasta donde llega
+   el relleno. Pista de ancho completo que se corre con transform. */
+.cart-envio-pista {
+  position: relative;
+  padding-top: 1.35rem;
+}
+
+.cart-envio-camion {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  transform: translateX(calc((var(--relleno, 0) - 1) * 100%));
+  transition: transform var(--dur-450, 450ms) var(--ease-out);
+}
+
+.cart-envio-camion .camion {
+  position: absolute;
+  right: -0.5em;
+  top: 0;
+  font-size: 0.95rem;
+}
+
+.cart-envio-camion.is-completo .camion {
+  color: var(--ok);
+}
+
+/* ---------- "Cargar más" ---------- */
+.cargar-mas {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  margin: 1.5rem auto 0.5rem;
+  width: min(100%, 320px);
+  text-align: center;
+}
+
+.cargar-mas-texto {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.cargar-mas-texto strong {
+  color: var(--text);
+}
+
+.cargar-mas-barra {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card-2, var(--surface-elevated));
+}
+
+.cargar-mas-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--grad-marca);
+  transform: scaleX(var(--progreso, 0));
+  transform-origin: left center;
+  transition: transform var(--dur-450, 450ms) var(--ease-out);
+}
+
+.cargar-mas-btn {
+  min-width: 190px;
+}
+
+.cargar-mas-flecha {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cargar-mas-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 6px 22px var(--primary-resplandor, rgba(56, 182, 245, 0.25));
+  }
+  .cargar-mas-btn:hover:not(:disabled) .cargar-mas-flecha {
+    transform: translateY(3px);
+  }
+}
+
+/* Los ítems que llegan con "Cargar más" entran en cascada corta. */
+.entra-lote {
+  animation: entra-lote var(--dur-3) var(--ease-out) both;
+  animation-delay: min(calc(var(--lote, 0) * 45ms), 225ms);
+}
+
+@keyframes entra-lote {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Aviso "Agregado al carrito" (Sonner, headless) ---------- */
+.aviso-carrito {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "foto texto cerrar"
+    "foto ver ver";
+  align-items: center;
+  column-gap: 0.85rem;
+  row-gap: 0.55rem;
+  width: min(360px, calc(100vw - 24px));
+  padding: 0.85rem 0.9rem;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--primary-borde, var(--border-strong));
+  background: var(--surface-elevated, var(--card));
+  color: var(--text);
+  box-shadow: var(--shadow-pop, 0 18px 48px rgba(0, 0, 0, 0.5));
+  font-family: var(--font-body, inherit);
+}
+
+.aviso-carrito::before {
+  /* Filo neón arriba: identidad gamer sin gritar. */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--grad-marca);
+}
+
+.aviso-carrito-brillo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.09) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: aviso-brillo 900ms var(--ease-out) 120ms both;
+}
+
+.aviso-carrito-foto {
+  grid-area: foto;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--well, var(--card-2));
+  color: var(--text-muted);
+  font-size: 1.3rem;
+}
+
+.aviso-carrito-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  padding: 4px;
+}
+
+.aviso-carrito-check {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ok, var(--success));
+  color: #04120a;
+  font-size: 0.7rem;
+  box-shadow: 0 0 0 3px var(--surface-elevated, var(--card)), 0 0 14px rgba(74, 222, 128, 0.55);
+  animation: aviso-check 320ms var(--ease-out) 80ms both;
+}
+
+.aviso-carrito-texto {
+  grid-area: texto;
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.aviso-carrito-texto strong {
+  font-size: 0.92rem;
+  color: var(--ok, var(--success));
+}
+
+.aviso-carrito-nombre {
+  overflow: hidden;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.aviso-carrito-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso-carrito-ver {
+  grid-area: ver;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out), background-color var(--dur-2) ease;
+}
+
+.aviso-carrito-ver:active {
+  transform: scale(0.97);
+}
+
+.aviso-carrito-cuenta {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso-carrito-cerrar {
+  grid-area: cerrar;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .aviso-carrito-ver:hover {
+    background: var(--accent-hover);
+  }
+  .aviso-carrito-cerrar:hover {
+    background: var(--card-2, var(--surface));
+    color: var(--text);
+  }
+}
+
+@keyframes aviso-check {
+  from { opacity: 0; transform: scale(0.6) rotate(-20deg); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes aviso-brillo {
+  to { transform: translateX(100%); }
+}
+
+/* ---------- Marcas del home en cinta continua ---------- */
+.cinta {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.cinta-pista {
+  display: flex;
+  width: max-content;
+  animation: cinta 32s linear infinite;
+}
+
+.cinta-pista > ul {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  padding-right: 0.6rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cinta:hover .cinta-pista {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes cinta {
+  to { transform: translateX(-50%); }
+}
+
+/* ---------- Pausas y movimiento reducido ---------- */
+html[data-tab-oculta="true"] .camion-icono,
+html[data-tab-oculta="true"] .camion-lineas i,
+html[data-tab-oculta="true"] .camion-ruta,
+html[data-tab-oculta="true"] .cinta-pista {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Movimiento reducido = menos y más suave, no cero: el camión sigue
+     andando despacio (sin líneas de velocidad), el resto queda quieto. */
+  .camion-icono {
+    animation-duration: 1400ms;
+  }
+  .camion-ruta {
+    animation-duration: 1800ms;
+  }
+  .camion-lineas i,
+  .cinta-pista,
+  .aviso-carrito-brillo {
+    animation: none;
+  }
+  .camion-lineas {
+    display: none;
+  }
+  .cinta-pista {
+    width: auto;
+  }
+  .cinta-pista > ul {
+    flex-wrap: wrap;
+  }
+  .cinta-pista > ul[aria-hidden="true"] {
+    display: none;
+  }
+  .entra-lote {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .aviso-carrito-check {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .cart-envio-camion,
+  .cargar-mas-barra > span,
+  .cargar-mas-flecha {
+    transition-duration: 0ms;
+  }
+}
+
+@keyframes entra-lote-suave {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Express: el mismo camión, más apurado. */
+.camion--rapido .camion-icono {
+  animation-duration: 300ms;
+}
+.camion--rapido .camion-lineas i {
+  animation-duration: 420ms;
+}
+.camion--rapido .camion-ruta {
+  animation-duration: 320ms;
+}
+
+.checkout-prellenado {
+  margin: 0 0 0.75rem;
+  animation: ht-entrada var(--dur-3) var(--ease-out) both;
+}
+
+/* ---------- Barra de aviso: el camión pasa dejando las letras ---------- */
+.hd-aviso {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hd-aviso-texto {
+  position: relative;
+  z-index: 1;
+}
+
+/* Pista de ancho completo: se corre con transform y el camión va en su
+   punta derecha. En la primera pasada el texto se destapa a la par
+   (mismo tramo lineal de 2,4 s); después solo cruza por detrás. */
+.hd-aviso-viaje {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transform: translateX(-100%);
+  animation: aviso-viaje 11s linear 400ms infinite;
+}
+
+.hd-aviso-viaje::before {
+  /* Estela de luz detrás del camión. */
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  right: 1.2em;
+  width: 9rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent));
+  opacity: 0.7;
+}
+
+.hd-aviso-camion {
+  position: absolute;
+  top: 50%;
+  right: -0.4em;
+  translate: 0 -50%;
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hd-aviso-texto {
+    clip-path: inset(0 100% 0 0);
+    animation: aviso-destapar 2.4s linear 400ms both;
+  }
+}
+
+@keyframes aviso-destapar {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes aviso-viaje {
+  0% { transform: translateX(-100%); }
+  21.8% { transform: translateX(0); }
+  25% { transform: translateX(3em); }
+  100% { transform: translateX(3em); }
+}
+
+html[data-tab-oculta="true"] .hd-aviso-viaje {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-aviso-viaje {
+    display: none;
+  }
+}
+
+/* ---------- Componentes que se mueven al scrollear ----------
+   Animaciones atadas al scroll (animation-timeline: view()): cada pieza
+   sube y se arma a medida que entra en pantalla, y las piezas de PC de
+   la promo flotan y giran mientras pasan. Se usan translate/scale/rotate
+   sueltos (no `transform`) para no pisar los hovers. Sin soporte del
+   navegador, todo se ve quieto y completo. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .catl .catl-grilla > li,
+    .ini .ini-grilla > li,
+    .ini .ini-categorias > li,
+    .ini .ini-beneficios > li,
+    .ini .ini-promo,
+    .ht-sh,
+    .cuenta-favoritos > div,
+    .pedidos-lista > li {
+      animation: scroll-armar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+
+    /* Columnas alternadas: la grilla se "arma" desde los costados. */
+    .catl .catl-grilla > li:nth-child(odd),
+    .ini .ini-grilla > li:nth-child(odd),
+    .ini .ini-categorias > li:nth-child(odd) {
+      animation-name: scroll-armar-izq;
+    }
+    .catl .catl-grilla > li:nth-child(even),
+    .ini .ini-grilla > li:nth-child(even),
+    .ini .ini-categorias > li:nth-child(even) {
+      animation-name: scroll-armar-der;
+    }
+
+    .ini .ini-promo-piezas .ini-pozo {
+      animation: scroll-flotar linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+    .ini .ini-promo-piezas .ini-pozo:nth-child(2) {
+      animation-name: scroll-flotar-inverso;
+    }
+
+    .ini .ini-beneficio-icono {
+      animation: scroll-girar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 40%;
+    }
+  }
+}
+
+@keyframes scroll-armar {
+  from { opacity: 0; translate: 0 48px; scale: 0.94; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+@keyframes scroll-armar-izq {
+  from { opacity: 0; translate: -28px 56px; rotate: -3deg; scale: 0.94; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; scale: 1; }
+}
+
+@keyframes scroll-armar-der {
+  from { opacity: 0; translate: 28px 56px; rotate: 3deg; scale: 0.94; }
+  to { opacity: 1; translate: 0 0; rotate: 0deg; scale: 1; }
+}
+
+@keyframes scroll-flotar {
+  from { translate: 0 36px; rotate: -8deg; }
+  to { translate: 0 -36px; rotate: 6deg; }
+}
+
+@keyframes scroll-flotar-inverso {
+  from { translate: 0 -30px; rotate: 7deg; }
+  to { translate: 0 30px; rotate: -5deg; }
+}
+
+@keyframes scroll-girar {
+  from { rotate: -90deg; scale: 0.6; opacity: 0; }
+  to { rotate: 0deg; scale: 1; opacity: 1; }
+}
+
+/* ---------- "¡Comprado con éxito!" (festejo de compra) ----------
+   Evento raro y feliz: acá vive el presupuesto de "delight". */
+.compra-ok {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.18), transparent 55%),
+    linear-gradient(160deg, #1aa3ec 0%, #0b6fc2 55%, #08488a 100%);
+  color: #fff;
+  animation: compra-ok-fondo 360ms var(--ease-out) both;
+}
+
+.compra-ok-cuerpo {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  max-width: 440px;
+  text-align: center;
+}
+
+.compra-ok-check {
+  position: relative;
+  z-index: 1;
+  width: 112px;
+  height: 112px;
+  filter: drop-shadow(0 10px 30px rgba(0, 20, 60, 0.35));
+  animation: compra-ok-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both;
+}
+
+.compra-ok-circulo {
+  fill: #fff;
+}
+
+.compra-ok-tilde {
+  fill: none;
+  stroke: #0b6fc2;
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: compra-ok-tilde 420ms var(--ease-out) 520ms forwards;
+}
+
+.compra-ok-anillos {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+
+.compra-ok-anillos i {
+  position: absolute;
+  left: -56px;
+  top: -56px;
+  width: 112px;
+  height: 112px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  opacity: 0;
+  animation: compra-ok-anillo 1.6s var(--ease-out) 600ms 2;
+}
+
+.compra-ok-anillos i:nth-child(2) {
+  animation-delay: 900ms;
+}
+
+.compra-ok h2 {
+  margin: 0.4rem 0 0;
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  letter-spacing: -0.02em;
+  color: #fff;
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) 650ms both;
+}
+
+.compra-ok p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) 740ms both;
+}
+
+.compra-ok-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) 820ms both;
+}
+
+.compra-ok-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0 1.3rem;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: #08488a;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.compra-ok-btn--suave {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+
+.compra-ok-btn:active {
+  transform: scale(0.97);
+}
+
+.compra-ok-btn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+@keyframes compra-ok-fondo {
+  from { opacity: 0; }
+}
+
+@keyframes compra-ok-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes compra-ok-tilde {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes compra-ok-anillo {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+
+/* ---------- Mini HefestoTech (robotito del asistente) ---------- */
+.robot {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-self: center;
+  width: 76px;
+  margin: 0.2rem auto 0.4rem;
+  animation: robot-llega 620ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.robot-cuerpo-entero {
+  display: grid;
+  justify-items: center;
+  animation: robot-flotar 2.4s var(--ease-in-out) 700ms infinite alternate;
+}
+
+.robot-antena {
+  position: relative;
+  width: 2px;
+  height: 12px;
+  background: var(--border-strong, #4b5563);
+}
+
+.robot-antena i {
+  position: absolute;
+  top: -6px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  animation: robot-luz 1.2s ease-in-out infinite alternate;
+}
+
+.robot-cabeza {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--surface-elevated-2, #1f2430), var(--surface, #14171d));
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 18px var(--primary-resplandor, rgba(56, 182, 245, 0.35)), inset 0 -6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.robot-cabeza .marca img {
+  display: block;
+  animation: robot-parpadeo 4s ease-in-out 1.4s infinite;
+}
+
+.robot-oreja {
+  position: absolute;
+  top: 14px;
+  width: 6px;
+  height: 16px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.robot-oreja--izq { left: -7px; }
+.robot-oreja--der { right: -7px; }
+
+.robot-torso {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 26px;
+  margin-top: 3px;
+  border-radius: 10px 10px 14px 14px;
+  background: linear-gradient(180deg, var(--surface-elevated-2, #1f2430), var(--surface, #14171d));
+  border: 2px solid var(--border-strong, #4b5563);
+}
+
+.robot-pecho {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ok, #4ade80);
+  box-shadow: 0 0 10px var(--ok, #4ade80);
+  animation: robot-luz 1.6s ease-in-out infinite alternate;
+}
+
+.robot-brazo {
+  position: absolute;
+  top: 2px;
+  width: 6px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--border-strong, #4b5563);
+  transform-origin: 50% 3px;
+}
+
+.robot-brazo--izq {
+  left: -9px;
+  transform: rotate(14deg);
+}
+
+.robot-brazo--der {
+  right: -9px;
+  background: var(--accent);
+  transform: rotate(-150deg);
+  animation: robot-saludo 520ms var(--ease-in-out) 500ms 4 alternate both;
+}
+
+.robot-propulsor {
+  width: 16px;
+  height: 10px;
+  margin-top: 1px;
+  border-radius: 0 0 50% 50%;
+  background: radial-gradient(circle at 50% 0%, #fff, var(--accent) 45%, transparent 75%);
+  transform-origin: top center;
+  animation: robot-fuego 180ms linear infinite alternate;
+}
+
+.robot-sombra {
+  width: 38px;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  filter: blur(2px);
+  animation: robot-sombra 2.4s var(--ease-in-out) 700ms infinite alternate;
+}
+
+@keyframes robot-llega {
+  from { opacity: 0; transform: translateY(26px) scale(0.6); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes robot-flotar {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
+@keyframes robot-sombra {
+  from { transform: scaleX(1); opacity: 0.9; }
+  to { transform: scaleX(0.75); opacity: 0.5; }
+}
+
+@keyframes robot-saludo {
+  from { transform: rotate(-150deg); }
+  to { transform: rotate(-110deg); }
+}
+
+@keyframes robot-luz {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+@keyframes robot-parpadeo {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.15); }
+}
+
+@keyframes robot-fuego {
+  from { transform: scaleY(0.7); opacity: 0.7; }
+  to { transform: scaleY(1.15); opacity: 1; }
+}
+
+html[data-tab-oculta="true"] .robot-cuerpo-entero,
+html[data-tab-oculta="true"] .robot-antena i,
+html[data-tab-oculta="true"] .robot-pecho,
+html[data-tab-oculta="true"] .robot-propulsor,
+html[data-tab-oculta="true"] .robot-sombra,
+html[data-tab-oculta="true"] .robot-cabeza .marca img {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compra-ok,
+  .compra-ok h2,
+  .compra-ok p,
+  .compra-ok-acciones,
+  .compra-ok-check,
+  .robot {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .compra-ok-anillos {
+    display: none;
+  }
+  .compra-ok-tilde {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .robot-cuerpo-entero,
+  .robot-sombra,
+  .robot-propulsor,
+  .robot-brazo--der,
+  .robot-cabeza .marca img {
+    animation: none;
+  }
+}
+
+/* ---------- Mini HefestoTech fuera del recuadro ----------
+   Sale de la burbuja en arco, se para sobre el borde superior del panel
+   (asomando afuera), patrulla mirando alrededor y, al cerrar, vuelve a la
+   burbuja. Medidas del panel = las de Asistente.css. */
+.asistente {
+  --panel-w: min(380px, calc(100vw - 2.5rem));
+  --panel-h: max(380px, min(560px, calc(100dvh - 7rem)));
+  --robot-dx: calc(var(--panel-w) - 120px);
+  --robot-dy: calc(var(--panel-h) + 0.75rem - 20px);
+}
+
+.robot--afuera {
+  position: absolute;
+  z-index: 2;
+  right: calc(var(--panel-w) - 104px);
+  bottom: calc(56px + 0.75rem + var(--panel-h) - 24px);
+  margin: 0;
+  pointer-events: none;
+}
+
+.robot--afuera.es-llega {
+  animation:
+    robot-sale 760ms cubic-bezier(0.34, 1.4, 0.64, 1) both,
+    robot-patrulla 10s var(--ease-in-out) 900ms infinite;
+}
+
+.robot--afuera.es-vuelve {
+  animation: robot-despide 1300ms var(--ease-in-out) both;
+}
+
+/* Dentro del panel solo en móvil (ahí el panel ocupa la pantalla). */
+.robot--adentro {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .robot--afuera {
+    display: none;
+  }
+  .robot--adentro {
+    display: grid;
+  }
+}
+
+@keyframes robot-sale {
+  0% { opacity: 0; translate: var(--robot-dx) var(--robot-dy); scale: 0.3; rotate: 0deg; }
+  45% { opacity: 1; translate: calc(var(--robot-dx) * 0.55) calc(var(--robot-dy) * 0.15 - 40px); scale: 0.85; rotate: -12deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; }
+}
+
+@keyframes robot-vuelve {
+  0% { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; }
+  35% { opacity: 1; translate: -10px -26px; scale: 1.05; rotate: 10deg; }
+  100% { opacity: 0; translate: var(--robot-dx) var(--robot-dy); scale: 0.25; rotate: 30deg; }
+}
+
+/* Patrulla sobre el borde: camina a la derecha, mira, salta, vuelve. */
+@keyframes robot-patrulla {
+  0%, 6% { transform: translateX(0) rotate(0deg); }
+  30% { transform: translateX(calc(var(--panel-w) - 190px)) rotate(4deg); }
+  36% { transform: translateX(calc(var(--panel-w) - 190px)) rotate(-8deg); }
+  42% { transform: translateX(calc(var(--panel-w) - 190px)) rotate(8deg); }
+  48% { transform: translateX(calc(var(--panel-w) - 190px)) rotate(0deg); }
+  52% { transform: translateX(calc(var(--panel-w) - 190px)) translateY(-18px) rotate(0deg); }
+  56% { transform: translateX(calc(var(--panel-w) - 190px)) translateY(0) rotate(0deg); }
+  64% { transform: translateX(calc(var(--panel-w) - 260px)) translateY(-70px) scaleX(-1) rotate(-14deg); }
+  72% { transform: translateX(calc(var(--panel-w) - 330px)) translateY(-40px) scaleX(-1) rotate(10deg); }
+  80% { transform: translateX(0) scaleX(-1) rotate(-4deg); }
+  86% { transform: translateX(0) scaleX(-1) rotate(0deg); }
+  92%, 100% { transform: translateX(0) rotate(0deg); }
+}
+
+html[data-tab-oculta="true"] .robot--afuera {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot--afuera.es-llega {
+    animation: entra-lote-suave var(--dur-2) ease both;
+  }
+  .robot--afuera.es-vuelve {
+    animation: robot-despide 400ms ease both;
+  }
+}
+
+/* Ficha de combo / PC armada: qué incluye. */
+.detalle-incluye {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.detalle-incluye h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.detalle-incluye ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detalle-incluye li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+}
+
+.detalle-incluye a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--border-strong);
+}
+
+.detalle-incluye a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.detalle-incluye-cant {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 1.6rem;
+  border-radius: 8px;
+  background: var(--primary-suave, rgba(56, 182, 245, 0.12));
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Saludo al llegar, vuelo y despedida al cerrar. */
+.robot-globo {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 3;
+  padding: 0.35rem 0.7rem;
+  border-radius: 12px;
+  background: #fff;
+  color: #0a1d33;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.robot-globo::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -1px;
+  border: 6px solid transparent;
+  border-top-color: #fff;
+}
+
+.robot--afuera.es-llega .robot-globo--hola {
+  animation: robot-globo 2.8s var(--ease-out) 650ms both;
+}
+
+.robot--afuera.es-vuelve .robot-globo--chau {
+  animation: robot-globo-chau 1300ms var(--ease-out) both;
+}
+
+.robot--afuera.es-vuelve .robot-brazo--der {
+  animation: robot-saludo 200ms var(--ease-in-out) 4 alternate both;
+}
+
+.robot--afuera .robot-propulsor {
+  height: 14px;
+  animation-duration: 120ms;
+}
+
+@keyframes robot-globo {
+  0% { opacity: 0; scale: 0.6; }
+  10%, 85% { opacity: 1; scale: 1; }
+  100% { opacity: 0; scale: 0.9; }
+}
+
+@keyframes robot-globo-chau {
+  0% { opacity: 0; scale: 0.6; }
+  12%, 50% { opacity: 1; scale: 1; }
+  62%, 100% { opacity: 0; scale: 0.8; }
+}
+
+@keyframes robot-despide {
+  0% { opacity: 1; translate: 0 0; scale: 1; rotate: 0deg; }
+  20% { opacity: 1; translate: 0 -8px; scale: 1.04; rotate: -4deg; }
+  48% { opacity: 1; translate: 0 -4px; scale: 1; rotate: 4deg; }
+  62% { opacity: 1; translate: -14px -40px; scale: 1.05; rotate: -12deg; }
+  100% { opacity: 0; translate: var(--robot-dx) var(--robot-dy); scale: 0.25; rotate: 25deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robot--afuera.es-llega .robot-globo--hola {
+    animation: robot-globo 2.8s ease 300ms both;
+  }
+}

@@ -1,6 +1,7 @@
 // HefestoTech · Admin · hooks compartidos: toasts, confirmación y useModulo.
 // Separados de ui.jsx para que Fast Refresh trate ese archivo como solo-componentes.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PASO_CARGA } from "../../hooks/useCargarMas";
 
 // --- toasts (con acción opcional, p. ej. Deshacer 10s) ---
 let proximoId = 1;
@@ -111,6 +112,7 @@ export function useModulo(cargador, deps = []) {
   const [estado, setEstado] = useState("cargando");
   const [datos, setDatos] = useState(null);
   const [detalle, setDetalle] = useState("");
+  const [actualizando, setActualizando] = useState(false);
   const cargadorRef = useRef(cargador);
   const pedidoRef = useRef(0);
   const clave = JSON.stringify(deps);
@@ -120,17 +122,25 @@ export function useModulo(cargador, deps = []) {
     cargadorRef.current = cargador;
   });
 
+  // Con datos ya en pantalla, recargar (filtro, "Cargar más") no vuelve al
+  // esqueleto: la lista queda visible y se reemplaza cuando llega la nueva.
+  const hayDatosRef = useRef(false);
+
   const recargar = useCallback(async () => {
     const pedido = ++pedidoRef.current;
-    setEstado("cargando");
+    if (!hayDatosRef.current) setEstado("cargando");
+    setActualizando(true);
     setDetalle("");
     try {
       const r = await cargadorRef.current();
       if (pedido !== pedidoRef.current) return;
+      hayDatosRef.current = true;
       setDatos(r);
       setEstado("ok");
+      setActualizando(false);
     } catch (e) {
       if (pedido !== pedidoRef.current) return;
+      setActualizando(false);
       if (e?.status === 403) {
         setEstado("sin-permiso");
       } else {
@@ -144,16 +154,20 @@ export function useModulo(cargador, deps = []) {
     let vivo = true;
     const pedido = ++pedidoRef.current;
     (async () => {
-      setEstado("cargando");
+      if (!hayDatosRef.current) setEstado("cargando");
+      setActualizando(true);
       setDetalle("");
       try {
         const r = await cargadorRef.current();
         if (vivo && pedido === pedidoRef.current) {
+          hayDatosRef.current = true;
           setDatos(r);
           setEstado("ok");
+          setActualizando(false);
         }
       } catch (e) {
         if (!vivo || pedido !== pedidoRef.current) return;
+        setActualizando(false);
         if (e?.status === 403) setEstado("sin-permiso");
         else {
           setEstado("no-disponible");
@@ -166,28 +180,22 @@ export function useModulo(cargador, deps = []) {
     };
   }, [clave]);
 
-  return { estado, datos, detalle, recargar, setDatos };
+  return { estado, datos, detalle, recargar, setDatos, actualizando };
 }
 
-// --- paginación del listado: página y cantidad por página ---
-// La página vuelve a 1 cuando cambia `claveFiltros` (búsqueda, estado, etc.);
-// la cantidad por página se conserva. Todo derivado en el render, sin efectos.
-export function usePaginacion(claveFiltros = "", porInicial = 25) {
-  const [estado, setEstado] = useState({ clave: claveFiltros, pagina: 1, por: porInicial });
-  const pagina = estado.clave === claveFiltros ? estado.pagina : 1;
-  const por = estado.por;
-
-  const irA = useCallback(
-    (n) => {
-      setEstado({ clave: claveFiltros, pagina: Math.max(1, n), por });
-      document.querySelector(".adm-main")?.scrollIntoView?.({ block: "start" });
-    },
-    [claveFiltros, por]
-  );
+// --- "Cargar más" del listado ---
+// Se piden los primeros `por` registros (de a PASO_CARGA) desde el offset 0;
+// "Cargar más" agranda el límite y la lista crece en el lugar. Vuelve al
+// primer tramo cuando cambia `claveFiltros` (búsqueda, estado, etc.).
+// Conserva la forma { pagina, por, offset, irA, cambiarPor } que usan los
+// módulos, así ninguno cambia su llamada a la API.
+export function usePaginacion(claveFiltros = "", porInicial = PASO_CARGA) {
+  const [estado, setEstado] = useState({ clave: claveFiltros, por: porInicial });
+  const por = estado.clave === claveFiltros ? estado.por : porInicial;
   const cambiarPor = useCallback(
-    (n) => setEstado({ clave: claveFiltros, pagina: 1, por: n }),
-    [claveFiltros]
+    (n) => setEstado({ clave: claveFiltros, por: Math.max(porInicial, Number(n) || porInicial) }),
+    [claveFiltros, porInicial]
   );
-
-  return { pagina, por, offset: (pagina - 1) * por, irA, cambiarPor };
+  const irA = useCallback(() => {}, []);
+  return { pagina: 1, por, offset: 0, irA, cambiarPor, paso: porInicial };
 }

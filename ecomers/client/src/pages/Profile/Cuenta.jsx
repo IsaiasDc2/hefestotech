@@ -4,6 +4,8 @@ import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket, FaCartPlus, FaTra
 import Login from "../Login/Login";
 import Registro from "../Login/Registro";
 import Marca from "../../components/brand/Marca";
+import CargarMas from "../../components/ui/CargarMas";
+import useCargarMas from "../../hooks/useCargarMas";
 import ProductCard from "../../components/product/ProductCard";
 import useAuthStore from "../../store/authStore";
 import useCartStore from "../../store/cartStore";
@@ -36,11 +38,15 @@ const ESTADOS_CON_COMPROBANTE = ["pagada", "preparacion", "enviada", "entregada"
 const totalDeOrden = (o) =>
   o.total_centavos != null ? Number(o.total_centavos) / 100 : Number(o.total ?? 0);
 
+// Recorrido de un pedido pago, para la línea de progreso de cada tarjeta.
+const ETAPAS_PEDIDO = ["pagada", "preparacion", "enviada", "entregada"];
+
 function SeccionPedidos() {
   const idioma = useIdiomaStore((s) => s.idioma);
   const usuario = useAuthStore((s) => s.usuario);
   const { datos, error, cargando } = useCarga(obtenerMisOrdenes, usuario?.id ?? null);
   const pedidos = datos ?? [];
+  const carga = useCargarMas(usuario?.id ?? "");
 
   if (cargando) {
     return (
@@ -85,36 +91,74 @@ function SeccionPedidos() {
       <h2>
         {t(idioma, "cuenta.pedidos")} ({pedidos.length})
       </h2>
-      <ul className="adm-tarjetas cuenta-pedidos">
-        {pedidos.map((o) => {
-          const unidades = (o.orden_items ?? []).reduce((acc, i) => acc + Number(i.cantidad ?? 0), 0);
+      <ul className="pedidos-lista">
+        {pedidos.slice(0, carga.cantidad).map((o, i) => {
+          const items = o.orden_items ?? [];
+          const unidades = items.reduce((acc, it) => acc + Number(it.cantidad ?? 0), 0);
+          const fotos = items.map((it) => it.productos?.imagen).filter(Boolean);
           const destino = ESTADOS_CON_COMPROBANTE.includes(o.estado)
             ? `/pedido/${o.id}`
             : `/checkout?orden_id=${o.id}`;
+          const etapa = ETAPAS_PEDIDO.indexOf(o.estado);
+          const cancelado = o.estado === "cancelada" || o.estado === "reembolsada";
           return (
-            <li key={o.id} className="card adm-pedido">
-              <div className="adm-pedido-head">
-                <strong>
-                  {t(idioma, "chk.orden")} #{String(o.id).slice(0, 8)}
-                </strong>
-                <span className={`adm-estado es-${o.estado}`}>
-                  {t(idioma, `chk.${o.estado}`)}
-                </span>
+            <li key={o.id} className={`pedido-card ${carga.claseLote(i)}`} style={carga.estiloLote(i)}>
+              <div className="pedido-cab">
+                <div className="pedido-id">
+                  <strong>
+                    {t(idioma, "chk.orden")} #{String(o.id).slice(0, 8)}
+                  </strong>
+                  <span className="texto-mutado">
+                    {o.created_at
+                      ? new Date(o.created_at).toLocaleDateString(idioma === "en" ? "en-US" : "es-AR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </span>
+                </div>
+                <span className={`adm-estado es-${o.estado}`}>{t(idioma, `chk.${o.estado}`)}</span>
               </div>
-              <p className="texto-mutado">
-                {o.created_at ? new Date(o.created_at).toLocaleDateString(idioma === "en" ? "en-US" : "es-AR") : "—"}
-                {" · "}
-                {unidades} {unidades === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
-                {" · "}
-                <strong>{formatearPesos(totalDeOrden(o))}</strong>
-              </p>
-              <Link to={destino} className="btn-fantasma">
-                {t(idioma, "cuenta.verDetalle")} <FaArrowRight aria-hidden="true" />
-              </Link>
+
+              {!cancelado && (
+                <ol
+                  className="pedido-progreso"
+                  style={{ "--avance": Math.max(0, etapa) / (ETAPAS_PEDIDO.length - 1) }}
+                  aria-label={t(idioma, "cuenta.progreso")}
+                >
+                  {ETAPAS_PEDIDO.map((e, n) => (
+                    <li key={e} className={n <= etapa ? "es-hecho" : undefined} aria-current={n === etapa ? "step" : undefined}>
+                      <span className="pedido-punto" aria-hidden="true" />
+                      <span className="pedido-etapa">{t(idioma, `chk.${e}`)}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+              {fotos.length > 0 && (
+                <div className="pedido-fotos" aria-hidden="true">
+                  {fotos.slice(0, 4).map((src, n) => (
+                    <img key={n} src={src} alt="" width="56" height="56" loading="lazy" decoding="async" />
+                  ))}
+                  {fotos.length > 4 && <span className="pedido-mas">+{fotos.length - 4}</span>}
+                </div>
+              )}
+
+              <div className="pedido-pie">
+                <span className="texto-mutado">
+                  {unidades} {unidades === 1 ? t(idioma, "catl.producto") : t(idioma, "catl.productos")}
+                </span>
+                <strong className="pedido-total">{formatearPesos(totalDeOrden(o))}</strong>
+                <Link to={destino} className="btn-fantasma pedido-ver">
+                  {t(idioma, "cuenta.verDetalle")} <FaArrowRight aria-hidden="true" />
+                </Link>
+              </div>
             </li>
           );
         })}
       </ul>
+      <CargarMas mostrados={carga.cantidad} total={pedidos.length} onMas={carga.mas} />
     </div>
   );
 }
@@ -139,6 +183,7 @@ function SeccionReclamos() {
   const lista = carga.datos ?? [];
   const cargando = carga.cargando;
   const error = carga.error ? t(idioma, "cuenta.noReclamos") : "";
+  const cargaReclamos = useCargarMas(usuario?.id ?? "");
 
   if (!isAuthenticated) {
     return (
@@ -178,8 +223,8 @@ function SeccionReclamos() {
         </div>
       ) : (
         <ul className="adm-tarjetas">
-          {lista.map((r) => (
-            <li key={r.id} className="card adm-pedido">
+          {lista.slice(0, cargaReclamos.cantidad).map((r, i) => (
+            <li key={r.id} className={`card adm-pedido ${cargaReclamos.claseLote(i)}`} style={cargaReclamos.estiloLote(i)}>
               <div className="adm-pedido-head">
                 <strong>{String(r.motivo || "—").split("—")[0].trim().slice(0, 60) || "—"}</strong>
                 <span className={`adm-estado es-${r.estado}`}>{r.estado}</span>
@@ -193,6 +238,7 @@ function SeccionReclamos() {
           ))}
         </ul>
       )}
+      <CargarMas mostrados={cargaReclamos.cantidad} total={lista.length} onMas={cargaReclamos.mas} />
     </div>
   );
 }
@@ -204,6 +250,7 @@ function SeccionFavoritos() {
   const idioma = useIdiomaStore((s) => s.idioma);
   const { ids, cargando, error, ultimoQuitado, quitar, quitarMuchos, deshacerQuitado, limpiarError } = useFavoritos();
   const agregarAlCarrito = useCartStore((s) => s.agregarAlCarrito);
+  const agregarVarios = useCartStore((s) => s.agregarVarios);
   const [eliminandoId, setEliminandoId] = useState(null);
   const [errorOculto, setErrorOculto] = useState(null);
   const claveIds = ids.length > 0 ? ids.join(",") : null;
@@ -214,6 +261,7 @@ function SeccionFavoritos() {
   const lista = claveIds == null ? { visibles: [], ocultosIds: [] } : carga.datos ?? ultimaLista;
   const productos = lista.visibles;
   const ocultosIds = lista.ocultosIds;
+  const cargaFavoritos = useCargarMas(claveIds ?? "");
   const cargandoProductos = carga.cargando && ultimaLista.visibles.length === 0 && !carga.datos;
   const errorProductos =
     carga.error && errorOculto !== carga.error ? t(idioma, "cuenta.noFav") : "";
@@ -295,14 +343,33 @@ function SeccionFavoritos() {
           </button>
         </p>
       )}
+      {productos.length > 0 && (
+        <div className="fav-barra">
+          <p>
+            <strong>{productos.length}</strong> {productos.length === 1 ? t(idioma, "cuenta.favUno") : t(idioma, "cuenta.favVarios")}
+          </p>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => agregarVarios(productos.filter((p) => Number(p.stock) > 0))}
+          >
+            <FaCartPlus aria-hidden="true" /> {t(idioma, "cuenta.favTodos")}
+          </button>
+        </div>
+      )}
       <div className="cuenta-favoritos">
-        {productos.map((producto) => (
+        {productos.slice(0, cargaFavoritos.cantidad).map((producto, i) => (
           <div
             key={producto.id}
-            style={eliminandoId === String(producto.id) ? { opacity: 0, transition: "opacity 180ms" } : undefined}
+            className={`fav-item ${cargaFavoritos.claseLote(i)}`.trim()}
+            style={
+              eliminandoId === String(producto.id)
+                ? { opacity: 0, transition: "opacity 180ms" }
+                : cargaFavoritos.estiloLote(i)
+            }
           >
             <ProductCard producto={producto} agregarAlCarrito={agregarAlCarrito} />
-            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+            <div className="fav-acciones">
               <button
                 type="button"
                 className="btn-fantasma"
@@ -323,6 +390,7 @@ function SeccionFavoritos() {
           </div>
         ))}
       </div>
+      <CargarMas mostrados={cargaFavoritos.cantidad} total={productos.length} onMas={cargaFavoritos.mas} />
       {productos.length === 0 && ocultosIds.length > 0 && (
         <div className="vacio">
           <p className="vacio-titulo">{t(idioma, "cuenta.soloNo")}</p>

@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { Link } from "react-router";
 import {
   FaArrowRight,
+  FaBolt,
+  FaCartPlus,
   FaCreditCard,
   FaMoneyBillTransfer,
   FaScrewdriverWrench,
@@ -18,6 +20,8 @@ import { formatearPesos } from "../../utils/dinero";
 import ProductCard from "../../components/product/ProductCard";
 import ProductCarousel from "../../components/product/ProductCarousel";
 import SectionHeader from "../../components/ui/SectionHeader";
+import CamionEnvio from "../../components/ui/CamionEnvio";
+import Revelar from "../../components/ui/Revelar";
 import "./Home.css";
 
 const CATEGORIAS_HOME = [
@@ -141,11 +145,11 @@ function Beneficios({ idioma }) {
   ];
   return (
     <section className="contenedor" aria-label={t(idioma, "promo.aria")}>
-      <ul className="ini-beneficios">
+      <Revelar as="ul" escalonado className="ini-beneficios">
         {items.map(({ icono: Icono, titulo, texto }) => (
           <li key={titulo}>
             <span className="ini-beneficio-icono" aria-hidden="true">
-              <Icono />
+              {Icono === FaTruckFast ? <CamionEnvio /> : <Icono />}
             </span>
             <span>
               <strong>{t(idioma, titulo)}</strong>
@@ -153,7 +157,76 @@ function Beneficios({ idioma }) {
             </span>
           </li>
         ))}
-      </ul>
+      </Revelar>
+    </section>
+  );
+}
+
+// Banner de ofertas destacadas: fondo con brillo en movimiento, texto a la
+// izquierda y las tres mejores ofertas reales como tarjetas blancas con el
+// ahorro marcado. Sin ofertas cargadas, no se dibuja.
+function BannerOfertas({ ofertas, agregarAlCarrito, idioma }) {
+  const top = useMemo(
+    () =>
+      [...ofertas]
+        .filter(conFoto)
+        .sort((a, b) => (b.precio - precioFinal(b)) - (a.precio - precioFinal(a)))
+        .slice(0, 3),
+    [ofertas]
+  );
+  if (top.length === 0) return null;
+
+  return (
+    <section className="contenedor ini-seccion" aria-labelledby="ini-banner-ofertas">
+      <div className="bof">
+        <span className="bof-aurora" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <div className="bof-texto">
+          <span className="bof-marca" aria-hidden="true">
+            <FaBolt />
+          </span>
+          <p className="bof-kicker">{t(idioma, "bof.kicker")}</p>
+          <h2 id="ini-banner-ofertas">{t(idioma, "bof.titulo")}</h2>
+          <Link to={linkOfertas} className="bof-cta">
+            {t(idioma, "bof.cta")} <FaArrowRight aria-hidden="true" />
+          </Link>
+        </div>
+        <ul className="bof-tarjetas">
+          {top.map((p, i) => {
+            const final = precioFinal(p);
+            const ahorro = Math.max(0, Number(p.precio) - final);
+            return (
+              <li key={p.id} style={{ "--i": i }}>
+                <Link to={`/producto/${p.id}`} className="bof-tarjeta">
+                  <span className="bof-foto">
+                    <img src={p.imagen} alt="" width="400" height="400" loading="lazy" decoding="async" />
+                  </span>
+                  <span className="bof-marca-prod">{p.marca}</span>
+                  <span className="bof-nombre">{p.nombre}</span>
+                  <span className="bof-precios">
+                    <s>{formatearPesos(p.precio)}</s>
+                    {ahorro > 0 && <span className="bof-ahorro">-{formatearPesos(ahorro)}</span>}
+                  </span>
+                  <strong className="bof-precio">{formatearPesos(final)}</strong>
+                </Link>
+                {agregarAlCarrito && (
+                  <button
+                    type="button"
+                    className="bof-agregar"
+                    onClick={() => agregarAlCarrito(p)}
+                    aria-label={`${t(idioma, "bof.agregar")}: ${p.nombre}`}
+                  >
+                    <FaCartPlus aria-hidden="true" />
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 }
@@ -183,7 +256,7 @@ function Categorias({ productos, idioma }) {
         id="ini-categorias"
         verTodo="/productos"
       />
-      <ul className="ini-categorias">
+      <Revelar as="ul" escalonado className="ini-categorias">
         {tarjetas.map((c) => (
           <li key={c.slug}>
             <Link to={linkCategoria(c.slug)} className="ini-categoria">
@@ -197,7 +270,7 @@ function Categorias({ productos, idioma }) {
             </Link>
           </li>
         ))}
-      </ul>
+      </Revelar>
     </section>
   );
 }
@@ -210,7 +283,7 @@ function Promos({ productos, idioma }) {
 
   return (
     <section className="contenedor ini-seccion" aria-label={t(idioma, "ini.promosAria")}>
-      <div className="ini-promos">
+      <Revelar escalonado className="ini-promos">
         <Link to="/armar" className="ini-promo ini-promo--armar">
           <span className="ini-promo-texto">
             <span className="ini-eyebrow">{t(idioma, "ini.armarKicker")}</span>
@@ -243,7 +316,7 @@ function Promos({ productos, idioma }) {
             </span>
           </span>
         </a>
-      </div>
+      </Revelar>
     </section>
   );
 }
@@ -266,13 +339,25 @@ function Marcas({ productos, idioma }) {
   return (
     <section className="contenedor ini-seccion" aria-labelledby="ini-marcas">
       <SectionHeader kicker={t(idioma, "ini.marcasKicker")} titulo={t(idioma, "ini.marcasTitulo")} id="ini-marcas" />
-      <ul className="ini-marcas">
-        {marcas.map((m) => (
-          <li key={m}>
-            <Link to={`/productos?marca=${encodeURIComponent(m)}`}>{m}</Link>
-          </li>
-        ))}
-      </ul>
+      <div className="cinta">
+        <div className="cinta-pista">
+          <ul className="ini-marcas">
+            {marcas.map((m) => (
+              <li key={m}>
+                <Link to={`/productos?marca=${encodeURIComponent(m)}`}>{m}</Link>
+              </li>
+            ))}
+          </ul>
+          {/* Copia para que la cinta gire sin corte; fuera del árbol accesible. */}
+          <ul className="ini-marcas" aria-hidden="true">
+            {marcas.map((m) => (
+              <li key={m}>
+                <Link to={`/productos?marca=${encodeURIComponent(m)}`} tabIndex={-1}>{m}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }
@@ -324,6 +409,8 @@ function Home({ agregarAlCarrito }) {
         <>
           <Categorias productos={productos} idioma={idioma} />
 
+          <BannerOfertas ofertas={ofertas} agregarAlCarrito={agregarAlCarrito} idioma={idioma} />
+
           <div className="contenedor ini-seccion">
             <ProductCarousel
               titulo={t(idioma, "ini.ofertasTitulo")}
@@ -344,13 +431,13 @@ function Home({ agregarAlCarrito }) {
                 id="ini-destacados"
                 verTodo="/productos"
               />
-              <ul className="ini-grilla">
+              <Revelar as="ul" escalonado className="ini-grilla">
                 {destacados.map((p) => (
                   <li key={p.id}>
                     <ProductCard producto={p} agregarAlCarrito={agregarAlCarrito} />
                   </li>
                 ))}
-              </ul>
+              </Revelar>
             </section>
           )}
 

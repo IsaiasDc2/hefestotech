@@ -3066,3 +3066,166 @@
     max-width: none;
   }
 }
+
+/* ---------- Altas especiales: oferta, notebook, PC armada, combo ---------- */
+.adm-tipos-alta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.adm-componentes,
+.adm-ficha {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.adm-componentes legend,
+.adm-ficha legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.adm-componentes-resultados,
+.adm-componentes-elegidos {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-componentes-resultados button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-2) ease, background-color var(--dur-2) ease;
+}
+
+.adm-componentes-resultados button:hover,
+.adm-componentes-resultados button.es-elegido {
+  border-color: var(--accent);
+  background: var(--surface-elevated-2, var(--surface));
+}
+
+.adm-componentes-resultados img,
+.adm-componentes-sinfoto {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.adm-componentes-nombre {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.adm-componentes-elegidos li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  background: var(--surface-elevated-2, var(--surface));
+  font-size: 0.85rem;
+  animation: entra-lote var(--dur-3) var(--ease-out) both;
+}
+
+.adm-componentes-cantidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-componentes-cantidad button,
+.adm-componentes-quitar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.adm-componentes-quitar:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.adm-componentes-suma {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.adm-oferta-campos {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  align-items: end;
+  gap: 0.8rem;
+}
+
+.adm-form label.adm-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.adm-oferta-preview {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: var(--primary-suave, rgba(56, 182, 245, 0.12));
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.adm-oferta-preview svg {
+  color: var(--accent);
+}
+
+.adm-panel-oferta {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 560px) {
+  .adm-oferta-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

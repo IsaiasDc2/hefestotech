@@ -20,6 +20,7 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import useAuthStore from "../../store/authStore";
 import useTema from "../../hooks/useTema";
 import "./Navbar.css";
+import CamionEnvio from "../ui/CamionEnvio";
 
 function Navbar({ cantidadCarrito, abrirCarrito }) {
   const [texto, setTexto] = useState("");
@@ -72,7 +73,14 @@ function Navbar({ cantidadCarrito, abrirCarrito }) {
   return (
     <>
       <div className="hd-aviso">
-        <p className="contenedor">{t(idioma, "hd.aviso")}</p>
+        {/* El camión cruza la barra y va dejando el texto; después vuelve a
+            pasar cada tanto por detrás de las letras. Decorativo. */}
+        <span className="hd-aviso-viaje" aria-hidden="true">
+          <CamionEnvio className="hd-aviso-camion" />
+        </span>
+        <div className="hd-aviso-texto">
+          <p className="contenedor">{t(idioma, "hd.aviso")}</p>
+        </div>
       </div>
 
       <header ref={fijoRef} className="hd">
