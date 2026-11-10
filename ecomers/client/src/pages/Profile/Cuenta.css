@@ -93,6 +93,65 @@
   min-height: 44px;
 }
 
+/* Acceso al panel: aparece apenas el backend confirma que la cuenta es staff. */
+.cuenta-panel-admin {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1rem;
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.cuenta-panel-icono {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.cuenta-panel-texto {
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+
+.cuenta-panel-admin h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1.1rem;
+}
+
+.cuenta-panel-texto p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.cuenta-panel-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  flex: 0 0 auto;
+  text-decoration: none;
+}
+
+.cuenta-panel-verificando {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+  .cuenta-panel-boton {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 .panel-cuenta .badge {
   margin-bottom: 0.9rem;
 }

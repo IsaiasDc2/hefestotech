@@ -5,13 +5,17 @@ import { supabase } from "../components/lib/supabaseClient";
 import { mensajeDeError } from "../utils/errores";
 import { API_BASE } from "./apiBase";
 
-export async function obtenerSesionAdmin() {
-  let token = "";
-  try {
-    const { data } = await supabase.auth.getSession();
-    token = data?.session?.access_token ?? "";
-  } catch {
-    /* sin sesión: token queda vacío */
+// `tokenConocido` evita volver a pedirle la sesión a supabase-js justo después
+// de iniciar sesión, cuando el token ya lo tenemos en la mano.
+export async function obtenerSesionAdmin(tokenConocido = "") {
+  let token = tokenConocido || "";
+  if (!token) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      token = data?.session?.access_token ?? "";
+    } catch {
+      /* sin sesión: token queda vacío */
+    }
   }
   if (!token) {
     const e = new Error("Sesión inválida o vencida.");
