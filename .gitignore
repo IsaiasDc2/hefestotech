@@ -3,6 +3,8 @@
 **/.env.local
 # tooling local (no versionar)
 .opencode/
+# salida local de Graphify (no versionar)
+graphify-out/
 # skills de agentes locales (no versionar)
 ecomers/client/.agents/
 node_modules/
