@@ -170,7 +170,7 @@ export const obtenerMisOrdenes = async () => {
   if (!user) throw new Error("Sin sesion activa");
   const { data, error } = await supabase
     .from("ordenes")
-    .select("*, orden_items(*)")
+    .select("*, orden_items(*, productos(nombre, imagen))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);

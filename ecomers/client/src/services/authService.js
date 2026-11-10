@@ -1,11 +1,22 @@
 import { supabase } from "../components/lib/supabaseClient";
 
+const texto = (v, max = 160) => String(v ?? "").trim().slice(0, max);
+
+export const datosEnvioDe = (meta = {}) => ({
+  direccion: texto(meta?.direccion),
+  ciudad: texto(meta?.ciudad, 80),
+  codigo_postal: texto(meta?.codigo_postal, 8),
+});
+
 const mapearUsuario = (user, session = null) => {
   if (!user) return null;
   return {
     id: user.id,
     email: user.email,
     nombre: user.user_metadata?.nombre || user.email,
+    // Datos de envío cargados al registrarse (o en la última compra): el
+    // checkout los completa solo. El pago nunca se guarda acá.
+    envio: datosEnvioDe(user.user_metadata),
     ...(session ? { token: session.access_token } : {}),
   };
 };
@@ -28,7 +39,7 @@ export const registrarUsuario = async (datos) => {
     email: datos.email,
     password: datos.password,
     options: {
-      data: { nombre: datos.nombre || datos.email },
+      data: { nombre: datos.nombre || datos.email, ...datosEnvioDe(datos) },
     },
   });
   if (error) throw new Error(error.message);
@@ -36,6 +47,14 @@ export const registrarUsuario = async (datos) => {
     token: data.session?.access_token || null,
     usuario: mapearUsuario(data.user, data.session),
   };
+};
+
+// Guarda los datos de envío en la cuenta (user_metadata) para que el próximo
+// checkout ya los tenga. Solo dirección, ciudad y CP: nada de pagos.
+export const guardarDatosEnvio = async (datos) => {
+  const { data, error } = await supabase.auth.updateUser({ data: datosEnvioDe(datos) });
+  if (error) throw new Error(error.message);
+  return mapearUsuario(data.user);
 };
 
 export const obtenerSesion = async () => {

@@ -213,3 +213,63 @@
     transition: none;
   }
 }
+
+/* ---------- Registro en dos pasos: cuenta + datos de envío ---------- */
+.reg-paso {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reg-paso-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--grad-marca);
+  color: var(--on-accent);
+  font-size: 0.75rem;
+  box-shadow: 0 0 12px var(--primary-resplandor, rgba(56, 182, 245, 0.4));
+}
+
+.reg-paso-camion {
+  margin-left: auto;
+}
+
+.reg-envio {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--border);
+  animation: ht-entrada var(--dur-3) var(--ease-out) 80ms both;
+}
+
+.reg-envio-ayuda {
+  margin: -0.2rem 0 0;
+  font-size: 0.8rem;
+}
+
+.reg-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+@media (max-width: 420px) {
+  .reg-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg-envio {
+    animation: none;
+  }
+}

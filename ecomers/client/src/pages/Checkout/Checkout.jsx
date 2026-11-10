@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { FaLock, FaTruckFast, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
+import { FaLock, FaCircleCheck, FaTriangleExclamation } from "react-icons/fa6";
 import Marca from "../../components/brand/Marca";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { crearCheckout, obtenerCuotas, obtenerEstadoCheckout } from "../../services/orderService";
 import useCartStore from "../../store/cartStore";
+import useAuthStore from "../../store/authStore";
 import { esUrlMP } from "../../utils/mercadoPago";
 import { traducirError } from "../../utils/errores";
 import { leerCp } from "../../utils/codigoPostal";
 import { COSTO_ENVIO_ESTANDAR, COSTO_ENVIO_EXPRESS, UMBRAL_ENVIO_GRATIS, costoEnvio } from "../../constants/politicas";
 import logoMP from "../../assets/mercadopago.svg";
+import CamionEnvio from "../../components/ui/CamionEnvio";
+import CompraExitosa from "../../components/ui/CompraExitosa";
 import "./Checkout.css";
 
 // Estimación SOLO para mostrar en pantalla. El total que se cobra lo
@@ -78,6 +81,23 @@ function Checkout({ carrito = [], vaciarCarrito }) {
   const [error, setError] = useState("");
   const [consulta, setConsulta] = useState({ id: "", orden: null, error: "", restaurado: false });
   const [cuotas, setCuotas] = useState([]);
+
+  // Con sesión, el formulario arranca con los datos de la cuenta (registro o
+  // última compra). Se ajusta durante el render, una vez por usuario, y nunca
+  // pisa lo que el cliente ya tipeó. El pago no se guarda: se elige en MP.
+  const usuario = useAuthStore((s) => s.usuario);
+  const actualizarEnvio = useAuthStore((s) => s.actualizarEnvio);
+  const [prellenado, setPrellenado] = useState({ uid: "", aplicado: false });
+  if (usuario?.id && prellenado.uid !== usuario.id) {
+    const env = usuario.envio ?? {};
+    const nombreCuenta = usuario.nombre && usuario.nombre !== usuario.email ? usuario.nombre : "";
+    if (!nombre && nombreCuenta) setNombre(nombreCuenta);
+    if (!email && usuario.email) setEmail(usuario.email);
+    if (!direccion && env.direccion) setDireccion(env.direccion);
+    if (!ciudad && env.ciudad) setCiudad(env.ciudad);
+    if (!codigoPostal && env.codigo_postal) setCodigoPostal(env.codigo_postal);
+    setPrellenado({ uid: usuario.id, aplicado: Boolean(env.direccion || env.ciudad) });
+  }
 
   // Al volver de Mercado Pago (?orden_id=...) se lee el estado REAL desde
   // el servidor. Nada se da por pagado por el hecho de volver.
@@ -174,6 +194,19 @@ function Checkout({ carrito = [], vaciarCarrito }) {
       if (!esUrlMP(resp.init_point)) {
         throw new Error(t(idioma, "chk.respInvalida"));
       }
+      // Con sesión, la dirección usada queda en la cuenta para la próxima
+      // compra. Espera poco: nunca demora el paso a Mercado Pago.
+      const env = usuario?.envio ?? {};
+      const cambio =
+        env.direccion !== direccion.trim() ||
+        env.ciudad !== ciudad.trim() ||
+        env.codigo_postal !== codigoPostal.trim();
+      if (usuario && cambio) {
+        await Promise.race([
+          actualizarEnvio({ direccion, ciudad, codigo_postal: codigoPostal }),
+          new Promise((r) => setTimeout(r, 1500)),
+        ]);
+      }
       // Respaldo por si vuelve de MP con fallo/cancelación: permite restaurar.
       try {
         sessionStorage.setItem(RESPALDO_CARRITO, JSON.stringify(carrito));
@@ -196,6 +229,13 @@ function Checkout({ carrito = [], vaciarCarrito }) {
     const acreditada = estado === "pagada";
     return (
       <div className="checkout centrado">
+        {acreditada && orden?.orden_id && (
+          <CompraExitosa
+            ordenId={String(orden.orden_id)}
+            codigo={String(orden.orden_id).slice(0, 8)}
+            destino={`/pedido/${orden.orden_id}`}
+          />
+        )}
         <div className="card anim-entrada checkout-exito">
           <span className="marca-centrada" aria-hidden="true">
             <Marca variante="simbolo" ancho={44} alto={44} decorativa />
@@ -274,6 +314,11 @@ function Checkout({ carrito = [], vaciarCarrito }) {
         <div className="checkout-col">
           <section className="card checkout-panel" aria-label={t(idioma, "chk.datosEnvio")}>
             <h2>{t(idioma, "chk.datosEnvio")}</h2>
+            {prellenado.aplicado && (
+              <p className="badge badge-ok checkout-prellenado" role="status">
+                <FaCircleCheck aria-hidden="true" /> {t(idioma, "chk.prellenado")}
+              </p>
+            )}
             <div className="checkout-campos">
               <label>{t(idioma, "chk.nombre")}
                 <input value={nombre} onChange={(e) => setNombre(e.target.value)} required autoComplete="name" />
@@ -300,11 +345,11 @@ function Checkout({ carrito = [], vaciarCarrito }) {
             <div className="checkout-opciones" role="radiogroup" aria-label={t(idioma, "chk.metodoEnvio")}>
               <label className={envio === "estandar" ? "activo" : ""}>
                 <input type="radio" name="envio" value="estandar" checked={envio === "estandar"} onChange={() => setEnvio("estandar")} />
-                <FaTruckFast aria-hidden="true" /> {t(idioma, "chk.estandar")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_ESTANDAR)}
+                <CamionEnvio /> {t(idioma, "chk.estandar")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_ESTANDAR)}
               </label>
               <label className={envio === "express" ? "activo" : ""}>
                 <input type="radio" name="envio" value="express" checked={envio === "express"} onChange={() => setEnvio("express")} />
-                <FaTruckFast aria-hidden="true" /> {t(idioma, "chk.express")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_EXPRESS)}
+                <CamionEnvio className="camion--rapido" /> {t(idioma, "chk.express")} — {subtotalEst >= UMBRAL_ENVIO_GRATIS ? t(idioma, "chk.gratis") : pesos(COSTO_ENVIO_EXPRESS)}
               </label>
             </div>
           </section>

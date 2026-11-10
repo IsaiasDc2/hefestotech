@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
-import { FaCircleCheck } from "react-icons/fa6";
+import { FaCircleCheck, FaLocationDot, FaCity, FaHashtag } from "react-icons/fa6";
 import useAuthStore from "../../store/authStore";
 import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { traducirErrorAuth } from "../../utils/errores";
 import Marca from "../../components/brand/Marca";
+import CamionEnvio from "../../components/ui/CamionEnvio";
+import "./Login.css";
+import { esCpValido, guardarCp, leerCp } from "../../utils/codigoPostal";
 
 function Registro() {
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -12,6 +15,9 @@ function Registro() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmar, setConfirmar] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [ciudad, setCiudad] = useState("");
+  const [codigoPostal, setCodigoPostal] = useState(leerCp);
   const [localError, setLocalError] = useState("");
   const [pendienteEmail, setPendienteEmail] = useState(false);
 
@@ -62,8 +68,20 @@ function Registro() {
       setLocalError(t(idioma, "reg.noCoinciden"));
       return;
     }
+    if (!esCpValido(codigoPostal)) {
+      setLocalError(t(idioma, "reg.cpInvalido"));
+      return;
+    }
+    guardarCp(codigoPostal);
     try {
-      const data = await registro({ nombre: nombre.trim(), email: email.trim(), password });
+      const data = await registro({
+        nombre: nombre.trim(),
+        email: email.trim(),
+        password,
+        direccion: direccion.trim(),
+        ciudad: ciudad.trim(),
+        codigo_postal: codigoPostal.trim(),
+      });
       if (!data?.token) setPendienteEmail(true);
     } catch (err) {
       setLocalError(traducirErrorAuth(err?.message, idioma) ?? t(idioma, "reg.error"));
@@ -78,6 +96,10 @@ function Registro() {
           HefestoTech
         </p>
         <h2>{t(idioma, "reg.titulo")}</h2>
+
+        <p className="reg-paso">
+          <span className="reg-paso-num">1</span> {t(idioma, "reg.paso1")}
+        </p>
 
         <div className="input-con-icono">
           <FaUser className="input-icono" aria-hidden="true" />
@@ -130,6 +152,58 @@ function Registro() {
             required
             autoComplete="new-password"
           />
+        </div>
+
+        <div className="reg-envio">
+          <p className="reg-paso">
+            <span className="reg-paso-num">2</span> {t(idioma, "reg.paso2")}
+            <CamionEnvio className="reg-paso-camion" />
+          </p>
+          <p className="reg-envio-ayuda texto-mutado">{t(idioma, "reg.envioAyuda")}</p>
+
+          <div className="input-con-icono">
+            <FaLocationDot className="input-icono" aria-hidden="true" />
+            <input
+              type="text"
+              placeholder={t(idioma, "reg.direccionPh")}
+              aria-label={t(idioma, "reg.direccionPh")}
+              value={direccion}
+              onChange={(e) => setDireccion(e.target.value)}
+              required
+              maxLength={160}
+              autoComplete="street-address"
+            />
+          </div>
+
+          <div className="reg-fila">
+            <div className="input-con-icono">
+              <FaCity className="input-icono" aria-hidden="true" />
+              <input
+                type="text"
+                placeholder={t(idioma, "reg.ciudadPh")}
+                aria-label={t(idioma, "reg.ciudadPh")}
+                value={ciudad}
+                onChange={(e) => setCiudad(e.target.value)}
+                required
+                maxLength={80}
+                autoComplete="address-level2"
+              />
+            </div>
+            <div className="input-con-icono">
+              <FaHashtag className="input-icono" aria-hidden="true" />
+              <input
+                type="text"
+                placeholder={t(idioma, "reg.cpPh")}
+                aria-label={t(idioma, "reg.cpPh")}
+                value={codigoPostal}
+                onChange={(e) => setCodigoPostal(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                required
+                inputMode="numeric"
+                pattern="[0-9]{4}"
+                autoComplete="postal-code"
+              />
+            </div>
+          </div>
         </div>
 
         {(localError || error) && (
