@@ -37,7 +37,7 @@ const useAuthStore = create((set, get) => ({
   // Permiso efectivo según el backend. No autoriza nada por sí solo.
   puede: (modulo, accion) => get().permisos.includes(`${modulo}.${accion}`),
 
-  revalidar: async () => {
+  revalidar: async (tokenConocido = "") => {
     if (!get().isAuthenticated || !get().usuario) {
       set({ ...SIN_ACCESO });
       return;
@@ -48,7 +48,7 @@ const useAuthStore = create((set, get) => ({
     set({ permisosCargando: true });
     const promesa = (async () => {
       try {
-        const datos = await obtenerSesionAdmin();
+        const datos = await obtenerSesionAdmin(tokenConocido);
         // Si la sesión cambió mientras viajaba la respuesta, se descarta.
         if (!get().isAuthenticated || get().usuario?.id !== uid) return;
         set({
@@ -92,8 +92,9 @@ const useAuthStore = create((set, get) => ({
         ...SIN_ACCESO,
       });
       // No bloquea el login: si Render está despertando, el guard muestra
-      // "verificando" mientras llega la respuesta.
-      void get().revalidar();
+      // "verificando" mientras llega la respuesta. Se le pasa el token recién
+      // emitido para no volver a consultar a supabase-js.
+      void get().revalidar(data.token);
     } catch (err) {
       set({
         error: mensajeDe(err, "auth.errLogin"),

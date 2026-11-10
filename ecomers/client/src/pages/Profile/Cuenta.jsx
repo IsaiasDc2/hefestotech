@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket, FaCartPlus, FaTrashCan, FaRotateLeft, FaTriangleExclamation } from "react-icons/fa6";
+import { FaBoxOpen, FaHeart, FaArrowRight, FaRightFromBracket, FaCartPlus, FaTrashCan, FaRotateLeft, FaTriangleExclamation, FaShieldHalved } from "react-icons/fa6";
 import Login from "../Login/Login";
 import Registro from "../Login/Registro";
 import Marca from "../../components/brand/Marca";
@@ -336,6 +336,42 @@ function SeccionFavoritos() {
   );
 }
 
+// Aviso de acceso al panel: aparece solo cuando el backend ya confirmó que la
+// cuenta es staff (`GET /api/admin/sesion`), sin recargar la página.
+function AccesoPanel() {
+  const idioma = useIdiomaStore((s) => s.idioma);
+  const esStaff = useAuthStore((s) => s.esStaff);
+  const permisosCargando = useAuthStore((s) => s.permisosCargando);
+  const perfil = useAuthStore((s) => s.perfil);
+
+  if (permisosCargando) {
+    return (
+      <p className="cuenta-panel-verificando texto-mutado" role="status">
+        {t(idioma, "cuenta.panelVerificando")}
+      </p>
+    );
+  }
+  if (!esStaff) return null;
+
+  return (
+    <div className="panel-cuenta card cuenta-panel-admin anim-entrada">
+      <span className="cuenta-panel-icono" aria-hidden="true">
+        <FaShieldHalved />
+      </span>
+      <div className="cuenta-panel-texto">
+        <h2>{t(idioma, "cuenta.panelTitulo")}</h2>
+        <p className="texto-mutado">
+          {t(idioma, "cuenta.panelTexto")}
+          {perfil?.rol ? ` (${perfil.rol})` : ""}
+        </p>
+      </div>
+      <Link to="/admin" className="btn-primary cuenta-panel-boton">
+        {t(idioma, "cuenta.panelBoton")} <FaArrowRight aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
 function Cuenta() {
   const [params, setParams] = useSearchParams();
   const idioma = useIdiomaStore((s) => s.idioma);
@@ -362,6 +398,7 @@ function Cuenta() {
           </button>
         </div>
       )}
+      {isAuthenticated && usuario && <AccesoPanel />}
       <nav className="cuenta-tabs" aria-label={t(idioma, "cuenta.secciones")} role="tablist">
         {vistas.map((v) => (
           <button

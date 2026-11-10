@@ -62,11 +62,16 @@ export const cerrarSesion = async () => {
   if (error) throw new Error(error.message);
 };
 
+// supabase-js emite onAuthStateChange DENTRO del lock de auth: si el callback
+// vuelve a llamar a la librería (p. ej. getSession() para pedir permisos), se
+// traba hasta el próximo refresco de la página. Por eso se difiere con
+// setTimeout(0): corre recién cuando el lock ya se liberó.
 export const suscribirCambiosAuth = (callback) => {
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_evento, session) => {
-    callback(session ? mapearUsuario(session.user, session) : null);
+    const usuario = session ? mapearUsuario(session.user, session) : null;
+    setTimeout(() => callback(usuario), 0);
   });
   return () => subscription.unsubscribe();
 };

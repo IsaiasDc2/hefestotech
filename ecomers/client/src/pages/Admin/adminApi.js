@@ -56,11 +56,17 @@ export const adminApi = {
     api(`/api/admin/resumen${sucursal ? `?sucursal=${q(sucursal)}` : ""}`),
   sucursales: () => api("/api/admin/sucursales"),
   crearSucursal: (d) => api("/api/admin/sucursales", { method: "POST", body: d }),
-  productos: ({ papelera = false, busqueda = "", limit = 50, offset = 0 } = {}) =>
+  productos: ({ papelera = false, busqueda = "", categoria = "", limit = 50, offset = 0 } = {}) =>
     api(
       `/api/admin/productos?papelera=${papelera ? "true" : "false"}` +
         (busqueda.trim() ? `&q=${q(busqueda.trim())}` : "") +
+        (categoria.trim() ? `&categoria=${q(categoria.trim())}` : "") +
         `&limit=${limit}&offset=${offset}`
+    ),
+  categoriasProductos: ({ papelera = false, busqueda = "" } = {}) =>
+    api(
+      `/api/admin/productos/categorias?papelera=${papelera ? "true" : "false"}` +
+        (busqueda.trim() ? `&q=${q(busqueda.trim())}` : "")
     ),
   crearProducto: (d) => api("/api/admin/productos", { method: "POST", body: d }),
   editarProducto: (id, d) => api(`/api/admin/productos/${q(id)}`, { method: "PUT", body: d }),

@@ -1,15 +1,21 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Cargar backend/.env siempre, aunque uvicorn se ejecute desde otra carpeta
+# (por ejemplo `uvicorn main:app --app-dir backend`). Tiene que ir antes de
+# importar los routers: algunos leen configuración al importarse.
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os
-from dotenv import load_dotenv
 
 from admin_api import router as admin_router
 from asistente.router import router as asistente_router
 from checkout_api import router as checkout_router
 from contacto_api import router as contacto_router
-
-load_dotenv()
 
 def _flag(nombre: str) -> bool:
     return os.getenv(nombre, "").strip().lower() in ("1", "true", "si", "sí", "yes")

@@ -89,6 +89,78 @@ function ComprobantePagoCliente({ pedido }) {
   );
 }
 
+const ENVIOS = {
+  estandar: "Envío estándar",
+  express: "Envío express",
+  retiro: "Retiro en local",
+};
+
+// Datos de entrega y pago del pedido. Solo se dibuja lo que el backend trajo:
+// un campo vacío no se inventa, se omite.
+function DatosPedido({ pedido }) {
+  const direccion = [pedido.direccion, pedido.ciudad, pedido.codigo_postal ? `CP ${pedido.codigo_postal}` : ""]
+    .filter(Boolean)
+    .join(", ");
+  const entrega = ENVIOS[pedido.envio] || pedido.envio || "";
+  const filas = [
+    ["Entrega", entrega],
+    ["Dirección", direccion],
+    ["Transportista", pedido.transportista],
+    ["Pago", pedido.metodo_pago],
+  ].filter(([, valor]) => Boolean(valor));
+
+  if (filas.length === 0 && !pedido.tracking_codigo) return null;
+
+  return (
+    <dl className="adm-detalle-grid adm-cliente-pedido-datos">
+      {filas.map(([etiqueta, valor]) => (
+        <div key={etiqueta}>
+          <dt>{etiqueta}</dt>
+          <dd>{valor}</dd>
+        </div>
+      ))}
+      {pedido.tracking_codigo ? (
+        <div>
+          <dt>Seguimiento</dt>
+          <dd>
+            {pedido.tracking_url ? (
+              <a href={pedido.tracking_url} target="_blank" rel="noreferrer">
+                {pedido.tracking_codigo}
+              </a>
+            ) : (
+              pedido.tracking_codigo
+            )}
+          </dd>
+        </div>
+      ) : null}
+    </dl>
+  );
+}
+
+// Subtotal, descuento y envío solo aparecen si el pedido los tiene cargados.
+function TotalesPedido({ pedido }) {
+  const filas = [
+    ["Subtotal", pedido.subtotal_centavos],
+    ["Descuento", pedido.descuento_centavos ? -pedido.descuento_centavos : 0],
+    ["Envío", pedido.costo_envio_centavos],
+  ].filter(([, centavos]) => Number(centavos || 0) !== 0);
+
+  return (
+    <ul className="adm-cliente-totales">
+      {filas.map(([etiqueta, centavos]) => (
+        <li key={etiqueta}>
+          <span className="texto-mutado">{etiqueta}</span>
+          <span>{formatoARS(centavos)}</span>
+        </li>
+      ))}
+      <li className="es-total">
+        <span>Total</span>
+        <span>{formatoARS(pedido.total_centavos)}</span>
+      </li>
+    </ul>
+  );
+}
+
 function PedidosCliente({ pedidos }) {
   const [abierto, setAbierto] = useState(false);
   return (
@@ -109,18 +181,34 @@ function PedidosCliente({ pedidos }) {
                   {formatoARS(o.total_centavos)}
                 </span>
               </div>
+              <DatosPedido pedido={o} />
+
+              <p className="adm-detalle-subtitulo">
+                Productos comprados ({(o.items ?? []).length})
+              </p>
               {(o.items ?? []).length > 0 ? (
-                <ul className="adm-cliente-items">
-                  {(o.items ?? []).map((it, i) => (
-                    <li key={`${o.id}-${i}`} className="adm-cliente-item">
-                      <FotoProducto item={it} />
-                      <span className="adm-cliente-item-nombre">
-                        {it.nombre}
-                        <span className="texto-mutado"> × {it.cantidad}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="adm-cliente-items">
+                    {(o.items ?? []).map((it, i) => (
+                      <li key={`${o.id}-${i}`} className="adm-cliente-item">
+                        <FotoProducto item={it} />
+                        <span className="adm-cliente-item-datos">
+                          <span className="adm-cliente-item-nombre">{it.nombre}</span>
+                          <span className="texto-mutado adm-cliente-item-sub">
+                            {[it.codigo, it.marca].filter(Boolean).join(" · ") || "Sin código"}
+                          </span>
+                        </span>
+                        <span className="adm-cliente-item-cantidad">
+                          {it.cantidad} × {formatoARS(it.precio_centavos ?? 0)}
+                        </span>
+                        <span className="adm-cliente-item-subtotal">
+                          {formatoARS(it.subtotal_centavos ?? 0)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <TotalesPedido pedido={o} />
+                </>
               ) : (
                 <p className="texto-mutado">Pedido sin ítems registrados.</p>
               )}
