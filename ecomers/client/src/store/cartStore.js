@@ -21,6 +21,13 @@ function sumar(carrito, producto, cantidad) {
   return [...carrito, { ...producto, cantidad: Math.min(cantidad, tope(producto)) }];
 }
 
+// Aviso "agregado al carrito": lo registra la UI (AvisoCarrito.jsx). El store
+// no importa componentes; sin aviso registrado (tests), no pasa nada.
+let avisoCarrito = null;
+export function registrarAvisoCarrito(fn) {
+  avisoCarrito = typeof fn === "function" ? fn : null;
+}
+
 const useCartStore = create(
   persist(
     (set, get) => ({
@@ -30,11 +37,13 @@ const useCartStore = create(
       abrirCarrito: () => set({ isCartOpen: true }),
       cerrarCarrito: () => set({ isCartOpen: false }),
 
-      // abrir: false lo usa el asistente, que confirma el alta en su propia
-      // tarjeta sin tapar el chat con el carrito lateral.
-      agregarAlCarrito: (producto, cantidad = 1, { abrir = true } = {}) => {
+      // Por defecto confirma con un aviso animado ("Agregado al carrito") en
+      // vez de tapar la página con el carrito lateral. El asistente pasa
+      // avisar: false porque confirma el alta en su propia tarjeta.
+      agregarAlCarrito: (producto, cantidad = 1, { abrir = false, avisar = true } = {}) => {
         const n = Math.max(1, Math.floor(Number(cantidad) || 1));
         set({ carrito: sumar(get().carrito, producto, n), ...(abrir ? { isCartOpen: true } : {}) });
+        if (avisar && !abrir) avisoCarrito?.(producto, n);
       },
 
       // Alta en lote (armador): un solo cambio de estado y una sola apertura

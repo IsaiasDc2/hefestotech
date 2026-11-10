@@ -702,3 +702,111 @@
     transition-duration: 0.01ms;
   }
 }
+
+/* ---------- Piezas con íconos de línea (inicio y pasos) ---------- */
+.armador-piezas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  align-self: stretch;
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  gap: 0.75rem;
+  margin-block: 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.armador-piezas > li {
+  animation: ht-entrada var(--dur-450, 450ms) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+.armador-pieza {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 1.1rem 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--dur-220, 220ms) var(--ease-out),
+    border-color var(--dur-2) ease,
+    color var(--dur-2) ease,
+    box-shadow var(--dur-220, 220ms) var(--ease-out);
+}
+
+.armador-pieza .icono-pieza {
+  width: 58px;
+  height: 58px;
+  color: var(--text);
+  transition: transform var(--dur-220, 220ms) var(--ease-out), color var(--dur-2) ease;
+}
+
+.armador-pieza-ok {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  color: var(--success);
+}
+
+.icono-pieza .pieza-gira {
+  transform-box: view-box;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .armador-pieza:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--accent), 0 10px 26px rgba(56, 182, 245, 0.2);
+  }
+  .armador-pieza:hover .icono-pieza {
+    color: var(--accent);
+    transform: scale(1.08);
+  }
+  .armador-pieza:hover .pieza-gira,
+  .stepper-chip:hover .pieza-gira {
+    animation: pieza-gira 1.2s linear infinite;
+  }
+}
+
+.stepper-icono {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.stepper-chip.is-actual .pieza-gira {
+  animation: pieza-gira 2.4s linear infinite;
+}
+
+@keyframes pieza-gira {
+  to { transform: rotate(360deg); }
+}
+
+html[data-tab-oculta="true"] .pieza-gira {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .armador-piezas > li {
+    animation: none;
+  }
+  .pieza-gira,
+  .stepper-chip.is-actual .pieza-gira {
+    animation: none !important;
+  }
+  .armador-pieza:hover,
+  .armador-pieza:hover .icono-pieza {
+    transform: none;
+  }
+}

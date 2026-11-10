@@ -258,3 +258,229 @@
 .contenido:has(.cuenta-favoritos, .cuenta-pedidos) {
   max-width: 1080px;
 }
+
+/* ---------- Mis pedidos: tarjetas con avance del envío ---------- */
+.pedidos-lista {
+  display: grid;
+  gap: var(--space-4, 1rem);
+  margin: var(--space-4, 1rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pedido-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  transition: border-color var(--dur-2) ease, transform var(--dur-220, 220ms) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pedido-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+  }
+}
+
+.pedido-cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pedido-id {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.pedido-id .texto-mutado {
+  font-size: 0.8rem;
+}
+
+.pedido-progreso {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pedido-progreso::before,
+.pedido-progreso::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 12.5%;
+  right: 12.5%;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.pedido-progreso::after {
+  background: var(--grad-marca);
+  transform: scaleX(var(--avance, 0));
+  transform-origin: left center;
+  animation: pedido-avance 900ms var(--ease-out) 200ms both;
+}
+
+@keyframes pedido-avance {
+  from { transform: scaleX(0); }
+}
+
+.pedido-progreso li {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.pedido-punto {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: var(--surface);
+  transition: border-color var(--dur-2) ease;
+}
+
+.pedido-progreso li.es-hecho .pedido-punto {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.pedido-progreso li[aria-current="step"] .pedido-punto {
+  box-shadow: 0 0 0 5px var(--primary-suave, rgba(56, 182, 245, 0.2));
+  animation: pedido-pulso 1.8s ease-in-out infinite;
+}
+
+@keyframes pedido-pulso {
+  50% { box-shadow: 0 0 0 9px transparent; }
+}
+
+.pedido-etapa {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.pedido-progreso li.es-hecho .pedido-etapa {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pedido-fotos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pedido-fotos img,
+.pedido-mas {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+
+.pedido-mas {
+  display: grid;
+  place-items: center;
+  background: var(--surface-elevated-2, var(--surface));
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.pedido-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+}
+
+.pedido-total {
+  margin-left: auto;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pedido-ver {
+  min-height: 40px;
+}
+
+/* ---------- Favoritos ---------- */
+.fav-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: var(--space-4, 1rem);
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.fav-barra p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.fav-barra strong {
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.fav-item {
+  position: relative;
+}
+
+.fav-acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.fav-acciones .btn-fantasma {
+  min-height: 40px;
+  padding: 0 0.6rem;
+  font-size: 0.82rem;
+}
+
+html[data-tab-oculta="true"] .pedido-progreso li[aria-current="step"] .pedido-punto {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-progreso::after,
+  .pedido-progreso li[aria-current="step"] .pedido-punto {
+    animation: none;
+  }
+  .pedido-card:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pedido-etapa {
+    font-size: 0.62rem;
+  }
+  .pedido-total {
+    margin-left: 0;
+  }
+}

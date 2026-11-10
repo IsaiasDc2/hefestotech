@@ -5,6 +5,7 @@ import useIdiomaStore, { t } from "../../store/idiomaStore";
 import { topeDeStock } from "../../store/cartStore";
 import { UMBRAL_ENVIO_GRATIS } from "../../constants/politicas";
 import "./CarritoLateral.css";
+import CamionEnvio from "../../components/ui/CamionEnvio";
 
 function CarritoLateral({
   isOpen,
@@ -113,6 +114,14 @@ function CarritoLateral({
                 </>
               )}
             </p>
+            <div className="cart-envio-pista">
+            <span
+              className={`cart-envio-camion${envioGratis ? " is-completo" : ""}`}
+              style={{ "--relleno": progreso }}
+              aria-hidden="true"
+            >
+              <CamionEnvio />
+            </span>
             <div
               className="cart-envio-barra"
               role="progressbar"
@@ -125,6 +134,7 @@ function CarritoLateral({
                 className={`cart-envio-relleno${envioGratis ? " is-completo" : ""}`}
                 style={{ "--relleno": progreso }}
               />
+            </div>
             </div>
           </div>
         )}
