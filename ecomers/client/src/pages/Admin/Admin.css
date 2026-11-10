@@ -2826,3 +2826,243 @@
   display: grid;
   gap: 0.3rem;
 }
+/* ------------------------------------------------------------------ */
+/* Productos plegados por categoría (Memoria RAM, Procesador, etc.).   */
+/* Mismo lenguaje que los listados de Pedidos/Clientes: una sola caja, */
+/* filas separadas por líneas y nada de tarjetas sueltas.              */
+/* ------------------------------------------------------------------ */
+.adm-categorias-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.2rem 0 0.7rem;
+}
+
+.adm-categorias-barra p {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.adm-categorias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-suave);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.adm-categoria {
+  border-bottom: 1px solid var(--border-suave);
+}
+
+.adm-categoria:last-child {
+  border-bottom: 0;
+}
+
+.adm-categoria-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.adm-categoria-toggle:hover {
+  background: var(--surface-elevated);
+}
+
+.adm-categoria-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.adm-categoria.esta-abierta > .adm-categoria-toggle {
+  background: var(--surface-elevated);
+}
+
+/* El caret va adelante del nombre, así que anula el margin-left:auto global. */
+.adm-categoria-toggle .adm-caret {
+  margin-left: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  transform: rotate(-90deg);
+}
+
+.adm-categoria.esta-abierta > .adm-categoria-toggle .adm-caret {
+  transform: rotate(0deg);
+  color: var(--primary);
+}
+
+.adm-categoria-nombre {
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.adm-categoria-alerta {
+  flex: 0 0 auto;
+  border: 1px solid var(--aviso-borde);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  background: var(--aviso-suave);
+  color: var(--aviso);
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm-categoria-conteo {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm-categoria-cuerpo {
+  padding: 0.2rem 1rem 1rem;
+  border-top: 1px solid var(--border-suave);
+}
+
+.adm-categoria-cuerpo .adm-paginador {
+  padding-bottom: 0;
+}
+
+.adm-stock-bajo {
+  color: var(--aviso);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .adm-categoria-toggle {
+    flex-wrap: wrap;
+    padding: 0.75rem 0.8rem;
+  }
+
+  .adm-categoria-nombre {
+    flex: 1 1 auto;
+  }
+
+  .adm-categoria-alerta {
+    order: 3;
+    margin-left: 1.45rem;
+  }
+
+  .adm-categoria-cuerpo {
+    padding: 0.15rem 0.8rem 0.9rem;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Ficha del cliente: qué compró, a qué precio y con qué comprobante.  */
+/* ------------------------------------------------------------------ */
+.adm-cliente-pedido-datos {
+  margin: 0.5rem 0 0;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.adm-cliente-items {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
+.adm-cliente-item {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  max-width: none;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-suave);
+}
+
+.adm-cliente-item:last-child {
+  border-bottom: 0;
+}
+
+.adm-cliente-item-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.adm-cliente-item-nombre {
+  font-weight: 600;
+}
+
+.adm-cliente-item-sub {
+  font-size: 0.72rem;
+}
+
+.adm-cliente-item-cantidad {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm-cliente-item-subtotal {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.adm-cliente-totales {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0.55rem 0 0;
+  border-top: 1px dashed var(--border-suave);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  margin-left: auto;
+  max-width: 18rem;
+}
+
+.adm-cliente-totales li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-cliente-totales .es-total {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 560px) {
+  .adm-cliente-item {
+    grid-template-columns: 48px minmax(0, 1fr);
+    row-gap: 0.25rem;
+  }
+
+  .adm-cliente-item-cantidad,
+  .adm-cliente-item-subtotal {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .adm-cliente-totales {
+    max-width: none;
+  }
+}

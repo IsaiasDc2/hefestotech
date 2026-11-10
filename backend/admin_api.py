@@ -1244,7 +1244,7 @@ def crear_sucursal(d: SucursalCrear, request: Request,
 
 
 @router.get("/api/admin/productos")
-def listar_productos(papelera: bool = False, q: str = "",
+def listar_productos(papelera: bool = False, q: str = "", categoria: str = "",
                      pag: dict[str, int] = Depends(_pag),
                      admin: AdminActual = Depends(requiere("productos", "leer"))) -> dict[str, Any]:
     params: dict[str, Any] = {
@@ -1258,10 +1258,59 @@ def listar_productos(papelera: bool = False, q: str = "",
         limpio = _filtro_texto(q)
         if limpio:
             params["nombre"] = f"ilike.*{limpio}*"
+    cat = _filtro_texto(categoria)
+    if cat == "General":
+        # El agrupador cuenta las filas sin categoría como "General": al abrir
+        # ese grupo tienen que aparecer también.
+        params["or"] = "(categoria.eq.General,categoria.is.null,categoria.eq.)"
+    elif cat:
+        params["categoria"] = f"eq.{cat}"
     filas, total = _sb_get_total("productos", params)
     for f in filas:  # centavos para el panel, sin floats
         f["precio_centavos"] = _a_centavos(f.get("precio"))
     return {"productos": filas, "papelera": papelera, "total": total}
+
+
+# Agrupador del panel: cuántos productos tiene cada categoría. El listado del
+# admin se dibuja plegado por categoría y cada una se carga al abrirla, así que
+# acá solo viaja la columna `categoria`, no las filas enteras.
+_TOPE_CATEGORIAS = 10000
+
+
+@router.get("/api/admin/productos/categorias")
+def contar_productos_por_categoria(
+    papelera: bool = False, q: str = "",
+    admin: AdminActual = Depends(requiere("productos", "leer")),
+) -> dict[str, Any]:
+    params: dict[str, Any] = {
+        "select": "categoria,stock,stock_minimo",
+        "deleted_at": "not.is.null" if papelera else "is.null",
+        "limit": _TOPE_CATEGORIAS,
+    }
+    if q.strip():
+        limpio = _filtro_texto(q)
+        if limpio:
+            params["nombre"] = f"ilike.*{limpio}*"
+    filas = _sb_get("productos", params) or []
+    conteo: dict[str, dict[str, int]] = {}
+    for f in filas:
+        nombre = (str(f.get("categoria") or "").strip() or "General")
+        acum = conteo.setdefault(nombre, {"total": 0, "stock_bajo": 0})
+        acum["total"] += 1
+        try:
+            if int(f.get("stock") or 0) <= int(f.get("stock_minimo") or 0):
+                acum["stock_bajo"] += 1
+        except (TypeError, ValueError):
+            pass
+    categorias = [
+        {"categoria": k, "total": v["total"], "stock_bajo": v["stock_bajo"]}
+        for k, v in sorted(conteo.items(), key=lambda kv: kv[0].lower())
+    ]
+    return {
+        "categorias": categorias,
+        "total": sum(c["total"] for c in categorias),
+        "truncado": len(filas) >= _TOPE_CATEGORIAS,
+    }
 
 
 @router.post("/api/admin/productos", status_code=201)
@@ -1792,8 +1841,11 @@ def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
     filas = _sb_get("ordenes", {
         # `ordenes.comprobante_numero` es de otra rama de la migracion 004 y puede
         # no existir: el numero se toma de la tabla `comprobantes` (migracion 012).
-        "select": ("id,user_id,estado,total_centavos,created_at,"
-                   "orden_items(cantidad,productos(nombre,imagen))"),
+        "select": ("id,user_id,estado,total_centavos,subtotal_centavos,"
+                   "costo_envio_centavos,descuento_centavos,created_at,"
+                   "direccion,ciudad,codigo_postal,envio,transportista,"
+                   "tracking_codigo,tracking_url,mp_payment_method,"
+                   "orden_items(cantidad,precio,productos(nombre,imagen,codigo,marca))"),
         "user_id": f"in.({','.join(ids)})",
         "order": "created_at.desc",
         "limit": 2000,
@@ -1841,17 +1893,34 @@ def _resumen_pedidos(ids: list[str]) -> dict[str, dict[str, Any]]:
         items = []
         for it in (o.get("orden_items") or []):
             prod = it.get("productos") or {}
+            cantidad = int(it.get("cantidad") or 1)
+            unitario = _a_centavos(it.get("precio"))
             items.append({
                 "nombre": str(prod.get("nombre") or "Producto"),
-                "cantidad": int(it.get("cantidad") or 1),
+                "codigo": str(prod.get("codigo") or ""),
+                "marca": str(prod.get("marca") or ""),
+                "cantidad": cantidad,
                 "imagen": str(prod.get("imagen") or ""),
+                "precio_centavos": unitario,
+                "subtotal_centavos": unitario * cantidad,
             })
         r["pedidos_detalle"].append({
             "id": str(o.get("id") or ""),
             "codigo": numeros.get(str(o.get("id")), ""),
             "estado": str(o.get("estado") or ""),
             "total_centavos": int(o.get("total_centavos") or 0),
+            "subtotal_centavos": int(o.get("subtotal_centavos") or 0),
+            "costo_envio_centavos": int(o.get("costo_envio_centavos") or 0),
+            "descuento_centavos": int(o.get("descuento_centavos") or 0),
             "created_at": o.get("created_at"),
+            "direccion": str(o.get("direccion") or ""),
+            "ciudad": str(o.get("ciudad") or ""),
+            "codigo_postal": str(o.get("codigo_postal") or ""),
+            "envio": str(o.get("envio") or ""),
+            "transportista": str(o.get("transportista") or ""),
+            "tracking_codigo": str(o.get("tracking_codigo") or ""),
+            "tracking_url": str(o.get("tracking_url") or ""),
+            "metodo_pago": str(o.get("mp_payment_method") or ""),
             "items": items,
             "comprobante_pago": comprobantes.get(str(o.get("id"))),
         })

@@ -145,9 +145,16 @@ def test_clientes_incluye_fotos_de_los_productos(monkeypatch):
         "id": ORDEN, "user_id": "uid-cliente", "estado": "pagada",
         "total_centavos": 100000,
         "created_at": "2026-10-21T12:00:00+00:00",
+        "subtotal_centavos": 95000,
+        "costo_envio_centavos": 5000,
+        "direccion": "Av. Belgrano 1234",
+        "ciudad": "Salta",
+        "codigo_postal": "4400",
+        "envio": "estandar",
         "orden_items": [
-            {"cantidad": 2, "productos": {
+            {"cantidad": 2, "precio": 450.5, "productos": {
                 "nombre": "RTX 4070", "imagen": "https://cdn.example/rtx.jpg",
+                "codigo": "HT-0012", "marca": "NVIDIA",
             }},
             {"cantidad": 1, "productos": None},
         ],
@@ -179,10 +186,18 @@ def test_clientes_incluye_fotos_de_los_productos(monkeypatch):
     assert r["comprado_centavos"] == 100000
     assert r["pedidos_detalle"][0]["codigo"] == "HT-0001"
     assert r["pedidos_detalle"][0]["items"] == [
-        {"nombre": "RTX 4070", "cantidad": 2,
-         "imagen": "https://cdn.example/rtx.jpg"},
-        {"nombre": "Producto", "cantidad": 1, "imagen": ""},
+        {"nombre": "RTX 4070", "codigo": "HT-0012", "marca": "NVIDIA",
+         "cantidad": 2, "imagen": "https://cdn.example/rtx.jpg",
+         "precio_centavos": 45050, "subtotal_centavos": 90100},
+        {"nombre": "Producto", "codigo": "", "marca": "",
+         "cantidad": 1, "imagen": "",
+         "precio_centavos": 0, "subtotal_centavos": 0},
     ]
+    # Datos de entrega y totales del pedido, para la ficha del cliente.
+    assert r["pedidos_detalle"][0]["direccion"] == "Av. Belgrano 1234"
+    assert r["pedidos_detalle"][0]["ciudad"] == "Salta"
+    assert r["pedidos_detalle"][0]["subtotal_centavos"] == 95000
+    assert r["pedidos_detalle"][0]["costo_envio_centavos"] == 5000
     assert r["pedidos_detalle"][0]["comprobante_pago"] == recibo
 
 

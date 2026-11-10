@@ -1,13 +1,134 @@
 // HefestoTech · Admin · Productos: alta, edición, borrado lógico (papelera)
-// con Deshacer (10s) y lotes. Sin datos inventados: vacío real si no hay.
+// con Deshacer (10s) y lotes. El listado va plegado por categoría: cada
+// subcategoría se abre y se cierra, y recién al abrirla pide sus productos.
+// Sin datos inventados: vacío real si no hay.
 import { useState } from "react";
-import { FaPlus, FaXmark } from "react-icons/fa6";
+import { FaChevronDown, FaPlus, FaXmark } from "react-icons/fa6";
 import { adminApi, formatoARS } from "./adminApi";
 import { CATEGORIAS } from "../../constants/categorias";
 import { Cabecera, Paginador, Proximamente, SinPermiso, Skeleton, Tabla, Vacio } from "./ui";
 import { useModulo, usePaginacion } from "./hooks";
 
 const VACIO_FORM = { nombre: "", marca: "", precio: "", stock: "0", descripcion: "", categoria: "General", codigo: "", imagen: "" };
+
+const POR_PAGINA_CATEGORIA = 10;
+
+// "Memoria RAM" ya es el valor que guarda la base; para las categorías que
+// tienen etiqueta propia en el catálogo se usa esa, y si no, el valor crudo.
+function etiquetaCategoria(db) {
+  const hit = CATEGORIAS.find((c) => c.db === db);
+  return hit ? hit.label : db;
+}
+
+// Productos de una sola categoría. Se monta al abrir el acordeón, así que el
+// pedido al backend sale recién ahí; `refresco` lo vuelve a pedir después de
+// crear, editar o mandar a papelera.
+function ListaCategoria({ categoria, busqueda, refresco, onEditar, onBorrar }) {
+  // `refresco` no entra en la clave de paginación a propósito: tras editar un
+  // producto se recargan los datos pero la persona se queda en su página.
+  const pg = usePaginacion(`${categoria}|${busqueda}`, POR_PAGINA_CATEGORIA);
+  const { estado, datos, detalle } = useModulo(
+    () =>
+      adminApi.productos({
+        categoria,
+        busqueda,
+        limit: pg.por,
+        offset: pg.offset,
+      }),
+    [categoria, busqueda, refresco, pg.por, pg.offset]
+  );
+
+  if (estado === "cargando") {
+    return <Skeleton lineas={4} etiqueta={`Cargando ${etiquetaCategoria(categoria)}…`} />;
+  }
+  if (estado === "sin-permiso") {
+    return <p className="texto-mutado">No tenés permiso para ver esta categoría.</p>;
+  }
+  if (estado === "no-disponible") {
+    return (
+      <p className="texto-mutado">
+        No se pudieron cargar los productos de esta categoría.
+        {detalle ? ` Detalle: ${detalle}` : ""}
+      </p>
+    );
+  }
+
+  const lista = datos?.productos ?? [];
+  if (lista.length === 0) {
+    return <Vacio titulo="Sin productos en esta categoría" />;
+  }
+
+  return (
+    <>
+      <Tabla
+        columnas={[
+          {
+            clave: "nombre",
+            titulo: "Producto",
+            ver: (p) => (
+              <>
+                <strong>{p.nombre}</strong>
+                <br />
+                <span className="texto-mutado">
+                  {[p.codigo, p.marca].filter(Boolean).join(" · ") || "—"}
+                </span>
+              </>
+            ),
+          },
+          {
+            clave: "imagen",
+            titulo: "Foto",
+            ver: (p) =>
+              p.imagen ? (
+                <img src={p.imagen} alt="" width={44} height={44} loading="lazy" className="adm-miniatura-tabla" />
+              ) : (
+                <span className="texto-mutado">—</span>
+              ),
+          },
+          { clave: "precio", titulo: "Precio", ver: (p) => formatoARS(p.precio_centavos ?? 0) },
+          {
+            clave: "stock",
+            titulo: "Stock",
+            ver: (p) => {
+              const stock = Number(p.stock ?? 0);
+              const minimo = Number(p.stock_minimo ?? 5);
+              return (
+                <span className={stock <= minimo ? "adm-stock-bajo" : undefined}>
+                  {stock} en stock · mín {minimo}
+                </span>
+              );
+            },
+          },
+          {
+            clave: "acciones",
+            titulo: "Acciones",
+            ver: (p) => (
+              <span className="adm-acciones">
+                <button type="button" className="btn-fantasma adm-mini" onClick={() => onEditar(p)}>
+                  Editar
+                </button>
+                <button type="button" className="btn-fantasma adm-mini es-peligro" onClick={() => onBorrar(p)}>
+                  Papelera
+                </button>
+              </span>
+            ),
+          },
+        ]}
+        filas={lista}
+        filaKey={(p) => p.id}
+        vacio="Sin productos."
+      />
+      <Paginador
+        total={datos?.total ?? 0}
+        pagina={pg.pagina}
+        por={pg.por}
+        onPagina={pg.irA}
+        onPor={pg.cambiarPor}
+        opcionesPor={[10, 25, 50]}
+      />
+    </>
+  );
+}
 
 export default function Productos({ avisar, pedirConfirm, presetQ = "", accionInicial }) {
   const [q, setQ] = useState(presetQ);
@@ -16,13 +137,22 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
   const [editando, setEditando] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [altaAbierta, setAltaAbierta] = useState(accionInicial === "nuevo");
+  const [refresco, setRefresco] = useState(0);
 
   const [presetPrevio, setPresetPrevio] = useState(presetQ);
 
-  const pg = usePaginacion(busqueda);
-  const { estado, datos, recargar } = useModulo(
-    () => adminApi.productos({ busqueda, limit: pg.por, offset: pg.offset }),
-    [busqueda, pg.por, pg.offset]
+  // Qué categorías están desplegadas. `porDefecto` arranca en true cuando hay
+  // búsqueda (así los resultados se ven sin abrir una por una) y el mapa
+  // guarda lo que la persona abrió o cerró a mano.
+  const [apertura, setApertura] = useState({
+    clave: presetQ,
+    porDefecto: presetQ.trim() !== "",
+    mapa: {},
+  });
+
+  const { estado, datos, detalle, recargar } = useModulo(
+    () => adminApi.categoriasProductos({ busqueda }),
+    [busqueda, refresco]
   );
 
   // Si llega otro presetQ (p. ej. desde la paleta ⌘K), se ajusta durante el render.
@@ -31,8 +161,21 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
     setQ(presetQ);
     setBusqueda(presetQ);
   }
+  if (apertura.clave !== busqueda) {
+    setApertura({ clave: busqueda, porDefecto: busqueda.trim() !== "", mapa: {} });
+  }
 
-  const lista = datos?.productos ?? [];
+  const categorias = datos?.categorias ?? [];
+  const estaAbierta = (cat) => apertura.mapa[cat] ?? apertura.porDefecto;
+  const alternarCategoria = (cat) =>
+    setApertura((a) => ({ ...a, mapa: { ...a.mapa, [cat]: !(a.mapa[cat] ?? a.porDefecto) } }));
+  const abrirTodas = () => setApertura((a) => ({ ...a, porDefecto: true, mapa: {} }));
+  const cerrarTodas = () => setApertura((a) => ({ ...a, porDefecto: false, mapa: {} }));
+
+  const refrescarListados = () => {
+    setRefresco((n) => n + 1);
+    recargar();
+  };
 
   const alGuardar = async (e) => {
     e.preventDefault();
@@ -61,10 +204,13 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
         });
         avisar("Producto creado.");
       }
+      // La categoría tocada queda abierta para ver el resultado del guardado.
+      const categoriaTocada = form.categoria || "General";
+      setApertura((a) => ({ ...a, mapa: { ...a.mapa, [categoriaTocada]: true } }));
       setForm(VACIO_FORM);
       setEditando(null);
       setAltaAbierta(false);
-      recargar();
+      refrescarListados();
     } catch (err) {
       avisar(err?.message ?? "No se pudo guardar.", { tono: "error" });
     } finally {
@@ -82,7 +228,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
     if (!ok) return;
     try {
       await adminApi.borrarProducto(p.id);
-      recargar();
+      refrescarListados();
       // Deshacer disponible 10 segundos.
       avisar(`«${p.nombre}» movido a papelera.`, {
         tono: "aviso",
@@ -93,7 +239,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
             try {
               await adminApi.restaurarProducto(p.id);
               avisar("Producto restaurado.");
-              recargar();
+              refrescarListados();
             } catch (err) {
               avisar(err?.message ?? "No se pudo restaurar.", { tono: "error" });
             }
@@ -124,7 +270,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
 
   if (estado === "cargando") return <Skeleton lineas={8} etiqueta="Cargando productos…" />;
   if (estado === "sin-permiso") return <SinPermiso modulo="Productos" />;
-  if (estado === "no-disponible") return <Proximamente modulo="Productos" />;
+  if (estado === "no-disponible") return <Proximamente modulo="Productos" detalle={detalle} />;
 
   const mostrarForm = altaAbierta || Boolean(editando);
   const alternarAlta = () => {
@@ -141,10 +287,10 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
     <div>
       <Cabecera
         kicker="Catálogo"
-        titulo={`Productos (${datos?.total ?? lista.length})`}
+        titulo={`Productos (${datos?.total ?? 0})`}
         acciones={
           <div className="adm-acciones-cab">
-            <button type="button" className="btn-fantasma adm-btn" onClick={recargar}>
+            <button type="button" className="btn-fantasma adm-btn" onClick={refrescarListados}>
               Actualizar
             </button>
             <button
@@ -256,7 +402,7 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
       )}
 
       <section className="card adm-panel" aria-label="Listado">
-        <h2 className="sr-only">Listado de productos</h2>
+        <h2 className="sr-only">Listado de productos por categoría</h2>
         <form
           className="adm-buscador-linea"
           onSubmit={(e) => {
@@ -272,7 +418,8 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
           />
           <button type="submit" className="btn-fantasma adm-btn">Buscar</button>
         </form>
-        {lista.length === 0 ? (
+
+        {categorias.length === 0 ? (
           <Vacio
             titulo="Sin productos"
             texto={busqueda ? "Ninguno coincide con la búsqueda." : "Todavía no hay productos cargados."}
@@ -285,28 +432,63 @@ export default function Productos({ avisar, pedirConfirm, presetQ = "", accionIn
             }
           />
         ) : (
-          <Tabla
-            columnas={[
-              { clave: "nombre", titulo: "Producto", ver: (p) => <><strong>{p.nombre}</strong><br /><span className="texto-mutado">{p.codigo ?? ""} · {p.marca ?? ""}</span></> },
-              { clave: "imagen", titulo: "Foto", ver: (p) => (p.imagen ? <img src={p.imagen} alt="" width={44} height={44} loading="lazy" className="adm-miniatura-tabla" /> : <span className="texto-mutado">—</span>) },
-              { clave: "precio", titulo: "Precio", ver: (p) => formatoARS(p.precio_centavos ?? 0) },
-              { clave: "stock", titulo: "Stock", ver: (p) => `${p.stock ?? 0} en stock · mín ${p.stock_minimo ?? 5}` },
-              {
-                clave: "acciones", titulo: "Acciones",
-                ver: (p) => (
-                  <span className="adm-acciones">
-                    <button type="button" className="btn-fantasma adm-mini" onClick={() => alEditar(p)}>Editar</button>
-                    <button type="button" className="btn-fantasma adm-mini es-peligro" onClick={() => alBorrar(p)}>Papelera</button>
-                  </span>
-                ),
-              },
-            ]}
-            filas={lista}
-            filaKey={(p) => p.id}
-            vacio="Sin productos."
-          />
+          <>
+            <div className="adm-categorias-barra">
+              <p className="texto-mutado">
+                {categorias.length} {categorias.length === 1 ? "categoría" : "categorías"}
+                {busqueda ? ` con resultados para «${busqueda}»` : ""}
+              </p>
+              <span className="adm-acciones">
+                <button type="button" className="btn-fantasma adm-mini" onClick={abrirTodas}>
+                  Abrir todas
+                </button>
+                <button type="button" className="btn-fantasma adm-mini" onClick={cerrarTodas}>
+                  Cerrar todas
+                </button>
+              </span>
+            </div>
+
+            <ul className="adm-categorias">
+              {categorias.map((c) => {
+                const abierta = estaAbierta(c.categoria);
+                const panelId = `adm-cat-${c.categoria.replace(/\s+/g, "-").toLowerCase()}`;
+                return (
+                  <li key={c.categoria} className={`adm-categoria${abierta ? " esta-abierta" : ""}`}>
+                    <button
+                      type="button"
+                      className="adm-categoria-toggle"
+                      onClick={() => alternarCategoria(c.categoria)}
+                      aria-expanded={abierta}
+                      aria-controls={panelId}
+                    >
+                      <FaChevronDown className="adm-caret" aria-hidden="true" />
+                      <span className="adm-categoria-nombre">{etiquetaCategoria(c.categoria)}</span>
+                      {c.stock_bajo > 0 && (
+                        <span className="adm-categoria-alerta" title="Productos en su stock mínimo o por debajo">
+                          {c.stock_bajo} con stock bajo
+                        </span>
+                      )}
+                      <span className="adm-categoria-conteo">
+                        {c.total} {c.total === 1 ? "producto" : "productos"}
+                      </span>
+                    </button>
+                    {abierta && (
+                      <div className="adm-categoria-cuerpo" id={panelId} role="region" aria-label={etiquetaCategoria(c.categoria)}>
+                        <ListaCategoria
+                          categoria={c.categoria}
+                          busqueda={busqueda}
+                          refresco={refresco}
+                          onEditar={alEditar}
+                          onBorrar={alBorrar}
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
-        <Paginador total={datos?.total ?? 0} pagina={pg.pagina} por={pg.por} onPagina={pg.irA} onPor={pg.cambiarPor} />
       </section>
       </div>
     </div>
